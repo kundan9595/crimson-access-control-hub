@@ -70,7 +70,7 @@ const BrandDialog: React.FC<BrandDialogProps> = ({ open, onOpenChange, brand }) 
       status: data.status,
     };
 
-    if (isEditing) {
+    if (isEditing && brand) {
       updateBrandMutation.mutate(
         { id: brand.id, updates: brandData },
         {

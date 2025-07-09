@@ -1,10 +1,41 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import type { Tables } from '@/integrations/supabase/types';
 
-export type Brand = Tables<'brands'>;
-export type Category = Tables<'categories'>;
-export type Color = Tables<'colors'>;
+// Define the types based on the actual database schema
+export type Brand = {
+  id: string;
+  name: string;
+  description: string | null;
+  logo_url: string | null;
+  status: 'active' | 'inactive';
+  created_at: string;
+  updated_at: string;
+  created_by: string | null;
+  updated_by: string | null;
+};
+
+export type Category = {
+  id: string;
+  name: string;
+  description: string | null;
+  parent_id: string | null;
+  status: 'active' | 'inactive';
+  created_at: string;
+  updated_at: string;
+  created_by: string | null;
+  updated_by: string | null;
+};
+
+export type Color = {
+  id: string;
+  name: string;
+  hex_code: string;
+  status: 'active' | 'inactive';
+  created_at: string;
+  updated_at: string;
+  created_by: string | null;
+  updated_by: string | null;
+};
 
 // Brand services
 export async function fetchBrands(): Promise<Brand[]> {

@@ -64,7 +64,7 @@ const ColorDialog: React.FC<ColorDialogProps> = ({ open, onOpenChange, color }) 
       status: data.status,
     };
 
-    if (isEditing) {
+    if (isEditing && color) {
       updateColorMutation.mutate(
         { id: color.id, updates: colorData },
         {

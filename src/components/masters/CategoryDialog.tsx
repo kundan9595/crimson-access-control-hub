@@ -73,7 +73,7 @@ const CategoryDialog: React.FC<CategoryDialogProps> = ({ open, onOpenChange, cat
       status: data.status,
     };
 
-    if (isEditing) {
+    if (isEditing && category) {
       updateCategoryMutation.mutate(
         { id: category.id, updates: categoryData },
         {
