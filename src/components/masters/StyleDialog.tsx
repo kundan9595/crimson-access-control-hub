@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -75,9 +76,17 @@ export const StyleDialog: React.FC<StyleDialogProps> = ({
 
   const onSubmit = async (data: FormData) => {
     try {
-      // Add the missing color_variants property with default value
+      // Ensure all required fields are present and properly typed
       const styleData = {
-        ...data,
+        name: data.name,
+        code: data.code,
+        description: data.description || null,
+        size_category: data.size_category || null,
+        fabric_composition: data.fabric_composition || null,
+        care_instructions: data.care_instructions || null,
+        season: data.season || null,
+        gender: data.gender || null,
+        status: data.status,
         color_variants: style?.color_variants || [],
       };
 
