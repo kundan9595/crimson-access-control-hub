@@ -18,6 +18,7 @@ import SizeGroupsPage from "./pages/SizeGroupsPage";
 import ZonesPage from "./pages/ZonesPage";
 import PriceTypesPage from "./pages/PriceTypesPage";
 import VendorsPage from "./pages/VendorsPage";
+import StylesPage from "./pages/StylesPage";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 
@@ -48,6 +49,7 @@ const App = () => (
               <Route path="masters/zones" element={<ZonesPage />} />
               <Route path="masters/price-types" element={<PriceTypesPage />} />
               <Route path="masters/vendors" element={<VendorsPage />} />
+              <Route path="masters/styles" element={<StylesPage />} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>
