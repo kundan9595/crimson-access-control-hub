@@ -86,10 +86,7 @@ export type Zone = {
 export type PriceType = {
   id: string;
   name: string;
-  code: string;
   description: string | null;
-  is_default: boolean | null;
-  multiplier: number | null;
   status: 'active' | 'inactive';
   created_at: string;
   updated_at: string;

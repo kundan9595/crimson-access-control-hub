@@ -21,7 +21,6 @@ const PriceTypesPage = () => {
 
   const filteredPriceTypes = priceTypes?.filter(priceType =>
     priceType.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    priceType.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
     priceType.description?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
@@ -54,7 +53,7 @@ const PriceTypesPage = () => {
             <DollarSign className="h-8 w-8" />
             Price Types
           </h1>
-          <p className="text-muted-foreground">Configure pricing structures and multipliers</p>
+          <p className="text-muted-foreground">Configure pricing structures</p>
         </div>
         <Button onClick={() => setIsDialogOpen(true)}>
           <Plus className="h-4 w-4 mr-2" />
@@ -65,7 +64,7 @@ const PriceTypesPage = () => {
       <Card>
         <CardHeader>
           <CardTitle>Search Price Types</CardTitle>
-          <CardDescription>Find price types by name, code, or description</CardDescription>
+          <CardDescription>Find price types by name or description</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="relative">
@@ -88,21 +87,12 @@ const PriceTypesPage = () => {
                 <div className="flex-1">
                   <div className="flex items-center gap-3 mb-2">
                     <h3 className="text-lg font-semibold">{priceType.name}</h3>
-                    <Badge variant="outline">Code: {priceType.code}</Badge>
-                    {priceType.is_default && (
-                      <Badge variant="secondary">Default</Badge>
-                    )}
                     <Badge variant={priceType.status === 'active' ? 'default' : 'secondary'}>
                       {priceType.status}
                     </Badge>
                   </div>
                   {priceType.description && (
                     <p className="text-muted-foreground mb-2">{priceType.description}</p>
-                  )}
-                  {priceType.multiplier && (
-                    <p className="text-sm text-muted-foreground mb-2">
-                      Multiplier: {priceType.multiplier}x
-                    </p>
                   )}
                   <div className="text-sm text-muted-foreground">
                     Created: {new Date(priceType.created_at).toLocaleDateString()}

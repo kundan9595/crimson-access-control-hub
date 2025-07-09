@@ -4,7 +4,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { useForm } from 'react-hook-form';
@@ -15,10 +14,7 @@ import { PriceType } from '@/services/mastersService';
 
 const priceTypeSchema = z.object({
   name: z.string().min(1, 'Name is required'),
-  code: z.string().min(1, 'Code is required'),
   description: z.string().optional(),
-  is_default: z.boolean().optional(),
-  multiplier: z.number().positive('Multiplier must be positive').optional(),
   status: z.enum(['active', 'inactive']),
 });
 
@@ -38,10 +34,7 @@ const PriceTypeDialog = ({ priceType, open, onOpenChange }: PriceTypeDialogProps
     resolver: zodResolver(priceTypeSchema),
     defaultValues: {
       name: priceType?.name || '',
-      code: priceType?.code || '',
       description: priceType?.description || '',
-      is_default: priceType?.is_default || false,
-      multiplier: priceType?.multiplier || 1,
       status: priceType?.status || 'active',
     },
   });
@@ -50,19 +43,13 @@ const PriceTypeDialog = ({ priceType, open, onOpenChange }: PriceTypeDialogProps
     if (priceType) {
       form.reset({
         name: priceType.name,
-        code: priceType.code,
         description: priceType.description || '',
-        is_default: priceType.is_default || false,
-        multiplier: priceType.multiplier || 1,
         status: priceType.status,
       });
     } else {
       form.reset({
         name: '',
-        code: '',
         description: '',
-        is_default: false,
-        multiplier: 1,
         status: 'active',
       });
     }
@@ -72,10 +59,7 @@ const PriceTypeDialog = ({ priceType, open, onOpenChange }: PriceTypeDialogProps
     try {
       const priceTypeData = {
         name: data.name,
-        code: data.code,
         description: data.description || null,
-        is_default: data.is_default || null,
-        multiplier: data.multiplier || null,
         status: data.status,
       };
 
@@ -121,20 +105,6 @@ const PriceTypeDialog = ({ priceType, open, onOpenChange }: PriceTypeDialogProps
 
             <FormField
               control={form.control}
-              name="code"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Code</FormLabel>
-                  <FormControl>
-                    <Input {...field} placeholder="Enter price type code" />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
               name="description"
               render={({ field }) => (
                 <FormItem>
@@ -143,44 +113,6 @@ const PriceTypeDialog = ({ priceType, open, onOpenChange }: PriceTypeDialogProps
                     <Textarea {...field} placeholder="Enter description (optional)" />
                   </FormControl>
                   <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="multiplier"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Multiplier</FormLabel>
-                  <FormControl>
-                    <Input
-                      {...field}
-                      type="number"
-                      step="0.0001"
-                      placeholder="Enter multiplier"
-                      onChange={(e) => field.onChange(parseFloat(e.target.value) || 1)}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="is_default"
-              render={({ field }) => (
-                <FormItem className="flex flex-row items-start space-x-3 space-y-0">
-                  <FormControl>
-                    <Checkbox
-                      checked={field.value}
-                      onCheckedChange={field.onChange}
-                    />
-                  </FormControl>
-                  <div className="space-y-1 leading-none">
-                    <FormLabel>Default Price Type</FormLabel>
-                  </div>
                 </FormItem>
               )}
             />

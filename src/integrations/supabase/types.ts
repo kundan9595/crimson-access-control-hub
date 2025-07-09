@@ -200,39 +200,30 @@ export type Database = {
       }
       price_types: {
         Row: {
-          code: string
           created_at: string
           created_by: string | null
           description: string | null
           id: string
-          is_default: boolean | null
-          multiplier: number | null
           name: string
           status: string
           updated_at: string
           updated_by: string | null
         }
         Insert: {
-          code: string
           created_at?: string
           created_by?: string | null
           description?: string | null
           id?: string
-          is_default?: boolean | null
-          multiplier?: number | null
           name: string
           status?: string
           updated_at?: string
           updated_by?: string | null
         }
         Update: {
-          code?: string
           created_at?: string
           created_by?: string | null
           description?: string | null
           id?: string
-          is_default?: boolean | null
-          multiplier?: number | null
           name?: string
           status?: string
           updated_at?: string
