@@ -69,6 +69,7 @@ serve(async (req) => {
     } = await req.json()
 
     console.log('Creating user with data:', { firstName, lastName, email, department, designation })
+    console.log('Selected roles received:', selectedRoles, 'Type:', typeof selectedRoles, 'Length:', selectedRoles?.length)
 
     // Create user with admin client
     const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
@@ -136,31 +137,43 @@ serve(async (req) => {
     console.log('Profile created/updated successfully:', profile?.id)
     
     // Assign roles to the user
-    if (selectedRoles && selectedRoles.length > 0) {
-      console.log('Assigning roles:', selectedRoles)
+    if (selectedRoles && Array.isArray(selectedRoles) && selectedRoles.length > 0) {
+      console.log('Processing roles - Count:', selectedRoles.length)
       
-      const userRoles = selectedRoles.map((roleId: string) => ({
-        user_id: newUser.user.id,
-        role_id: roleId,
-        assigned_by: user.id,
-      }))
+      // Remove duplicates and filter out any invalid values
+      const uniqueRoleIds = [...new Set(selectedRoles.filter(roleId => roleId && typeof roleId === 'string'))]
+      console.log('Unique role IDs after filtering:', uniqueRoleIds)
+      
+      if (uniqueRoleIds.length > 0) {
+        const userRoles = uniqueRoleIds.map((roleId: string) => ({
+          user_id: newUser.user.id,
+          role_id: roleId,
+          assigned_by: user.id,
+        }))
 
-      const { error: rolesError } = await supabaseAdmin
-        .from('user_roles')
-        .insert(userRoles)
-      
-      if (rolesError) {
-        console.error('Error assigning roles:', rolesError)
-        return new Response(
-          JSON.stringify({ error: rolesError.message }),
-          { 
-            status: 400, 
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-          }
-        )
+        console.log('User roles to insert:', userRoles)
+
+        const { error: rolesError } = await supabaseAdmin
+          .from('user_roles')
+          .insert(userRoles)
+        
+        if (rolesError) {
+          console.error('Error assigning roles:', rolesError)
+          return new Response(
+            JSON.stringify({ error: rolesError.message }),
+            { 
+              status: 400, 
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+            }
+          )
+        }
+
+        console.log('Roles assigned successfully - inserted', uniqueRoleIds.length, 'roles')
+      } else {
+        console.log('No valid roles to assign after filtering')
       }
-
-      console.log('Roles assigned successfully')
+    } else {
+      console.log('No roles provided or selectedRoles is not an array:', selectedRoles)
     }
     
     console.log('User creation process completed successfully')
