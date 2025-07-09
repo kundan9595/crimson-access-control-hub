@@ -145,23 +145,56 @@ const ZoneDialog = ({ zone, open, onOpenChange }: ZoneDialogProps) => {
         savedZone = await createZone.mutateAsync(zoneData);
       }
 
-      // Add new locations that don't have IDs
-      const newLocations = locations.filter(loc => !loc.id);
-      for (const location of newLocations) {
-        await createZoneLocation({
-          zone_id: savedZone.id,
-          state: location.state,
-          city: location.city,
-        });
+      console.log('Zone saved:', savedZone);
+
+      // Handle locations - delete existing ones and create new ones for updates
+      if (zone) {
+        // For updates, remove all existing locations first
+        const existingLocations = zone.locations || [];
+        for (const existingLocation of existingLocations) {
+          try {
+            await deleteZoneLocation(existingLocation.id);
+          } catch (error) {
+            console.error('Error deleting existing location:', error);
+          }
+        }
       }
 
-      onOpenChange(false);
+      // Create all current locations
+      for (const location of locations) {
+        try {
+          await createZoneLocation({
+            zone_id: savedZone.id,
+            state: location.state,
+            city: location.city,
+          });
+          console.log('Location created:', location);
+        } catch (error) {
+          console.error('Error creating location:', error);
+          toast({
+            title: "Warning",
+            description: `Failed to save location: ${location.state}, ${location.city}`,
+            variant: "destructive",
+          });
+        }
+      }
+
+      console.log('All operations completed, closing dialog');
+      
+      // Reset form and close dialog
       form.reset();
       setLocations([]);
       setSelectedStateId('');
       setSelectedCityId('');
+      onOpenChange(false);
+
     } catch (error) {
       console.error('Error saving zone:', error);
+      toast({
+        title: "Error",
+        description: "Failed to save zone",
+        variant: "destructive",
+      });
     }
   };
 
