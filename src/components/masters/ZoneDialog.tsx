@@ -13,6 +13,7 @@ import { Zone } from '@/services/mastersService';
 import { createZoneLocation, deleteZoneLocation } from '@/services/mastersService';
 import { Plus, X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useQueryClient } from '@tanstack/react-query';
 
 const zoneSchema = z.object({
   name: z.string().min(1, 'Name is required'),
@@ -36,6 +37,7 @@ interface ZoneDialogProps {
 const ZoneDialog = ({ zone, open, onOpenChange }: ZoneDialogProps) => {
   const createZone = useCreateZone();
   const updateZone = useUpdateZone();
+  const queryClient = useQueryClient();
   const { toast } = useToast();
   
   const [locations, setLocations] = useState<Location[]>(
@@ -180,6 +182,9 @@ const ZoneDialog = ({ zone, open, onOpenChange }: ZoneDialogProps) => {
       }
 
       console.log('All operations completed, closing dialog');
+      
+      // Invalidate zones query to refresh the data in the UI
+      queryClient.invalidateQueries({ queryKey: ['zones'] });
       
       // Reset form and close dialog
       form.reset();

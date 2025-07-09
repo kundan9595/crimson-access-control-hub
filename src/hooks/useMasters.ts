@@ -1,57 +1,57 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { 
-  fetchBrands, 
-  fetchCategories, 
-  fetchColors,
-  fetchSizeGroups,
-  fetchSizes,
-  fetchZones,
-  fetchPriceTypes,
-  fetchVendors,
-  createBrand,
-  createCategory,
-  createColor,
-  createSizeGroup,
-  createSize,
-  createZone,
-  createPriceType,
-  createVendor,
-  updateBrand,
-  updateCategory,
-  updateColor,
-  updateSizeGroup,
-  updateSize,
-  updateZone,
-  updatePriceType,
-  updateVendor,
-  deleteBrand,
-  deleteCategory,
-  deleteColor,
-  deleteSizeGroup,
-  deleteSize,
-  deleteZone,
-  deletePriceType,
-  deleteVendor,
-  type Brand,
-  type Category,
-  type Color,
-  type SizeGroup,
-  type Size,
-  type Zone,
-  type PriceType,
-  type Vendor
-} from '@/services/mastersService';
 import { useToast } from '@/hooks/use-toast';
+import {
+  fetchBrands,
+  createBrand,
+  updateBrand,
+  deleteBrand,
+  fetchCategories,
+  createCategory,
+  updateCategory,
+  deleteCategory,
+  fetchColors,
+  createColor,
+  updateColor,
+  deleteColor,
+  fetchSizeGroups,
+  createSizeGroup,
+  updateSizeGroup,
+  deleteSizeGroup,
+  fetchSizes,
+  createSize,
+  updateSize,
+  deleteSize,
+  fetchZones,
+  createZone,
+  updateZone,
+  deleteZone,
+  fetchPriceTypes,
+  createPriceType,
+  updatePriceType,
+  deletePriceType,
+  fetchVendors,
+  createVendor,
+  updateVendor,
+  deleteVendor,
+  Brand,
+  Category,
+  Color,
+  SizeGroup,
+  Size,
+  Zone,
+  PriceType,
+  Vendor,
+} from '@/services/mastersService';
 
-// Brands hooks
-export function useBrands() {
+// Brand hooks
+export const useBrands = () => {
   return useQuery({
     queryKey: ['brands'],
     queryFn: fetchBrands,
   });
-}
+};
 
-export function useCreateBrand() {
+export const useCreateBrand = () => {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
@@ -65,21 +65,22 @@ export function useCreateBrand() {
       });
     },
     onError: (error) => {
+      console.error('Error creating brand:', error);
       toast({
         title: "Error",
-        description: error.message,
+        description: "Failed to create brand",
         variant: "destructive",
       });
     },
   });
-}
+};
 
-export function useUpdateBrand() {
+export const useUpdateBrand = () => {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: ({ id, updates }: { id: string; updates: Partial<Brand> }) => 
+    mutationFn: ({ id, updates }: { id: string; updates: Partial<Brand> }) =>
       updateBrand(id, updates),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['brands'] });
@@ -89,16 +90,17 @@ export function useUpdateBrand() {
       });
     },
     onError: (error) => {
+      console.error('Error updating brand:', error);
       toast({
         title: "Error",
-        description: error.message,
+        description: "Failed to update brand",
         variant: "destructive",
       });
     },
   });
-}
+};
 
-export function useDeleteBrand() {
+export const useDeleteBrand = () => {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
@@ -112,24 +114,25 @@ export function useDeleteBrand() {
       });
     },
     onError: (error) => {
+      console.error('Error deleting brand:', error);
       toast({
         title: "Error",
-        description: error.message,
+        description: "Failed to delete brand",
         variant: "destructive",
       });
     },
   });
-}
+};
 
-// Categories hooks
-export function useCategories() {
+// Category hooks
+export const useCategories = () => {
   return useQuery({
     queryKey: ['categories'],
     queryFn: fetchCategories,
   });
-}
+};
 
-export function useCreateCategory() {
+export const useCreateCategory = () => {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
@@ -143,16 +146,17 @@ export function useCreateCategory() {
       });
     },
     onError: (error) => {
+      console.error('Error creating category:', error);
       toast({
         title: "Error",
-        description: error.message,
+        description: "Failed to create category",
         variant: "destructive",
       });
     },
   });
-}
+};
 
-export function useUpdateCategory() {
+export const useUpdateCategory = () => {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
@@ -167,16 +171,17 @@ export function useUpdateCategory() {
       });
     },
     onError: (error) => {
+      console.error('Error updating category:', error);
       toast({
         title: "Error",
-        description: error.message,
+        description: "Failed to update category",
         variant: "destructive",
       });
     },
   });
-}
+};
 
-export function useDeleteCategory() {
+export const useDeleteCategory = () => {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
@@ -190,24 +195,25 @@ export function useDeleteCategory() {
       });
     },
     onError: (error) => {
+      console.error('Error deleting category:', error);
       toast({
         title: "Error",
-        description: error.message,
+        description: "Failed to delete category",
         variant: "destructive",
       });
     },
   });
-}
+};
 
-// Colors hooks
-export function useColors() {
+// Color hooks
+export const useColors = () => {
   return useQuery({
     queryKey: ['colors'],
     queryFn: fetchColors,
   });
-}
+};
 
-export function useCreateColor() {
+export const useCreateColor = () => {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
@@ -221,16 +227,17 @@ export function useCreateColor() {
       });
     },
     onError: (error) => {
+      console.error('Error creating color:', error);
       toast({
         title: "Error",
-        description: error.message,
+        description: "Failed to create color",
         variant: "destructive",
       });
     },
   });
-}
+};
 
-export function useUpdateColor() {
+export const useUpdateColor = () => {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
@@ -245,16 +252,17 @@ export function useUpdateColor() {
       });
     },
     onError: (error) => {
+      console.error('Error updating color:', error);
       toast({
         title: "Error",
-        description: error.message,
+        description: "Failed to update color",
         variant: "destructive",
       });
     },
   });
-}
+};
 
-export function useDeleteColor() {
+export const useDeleteColor = () => {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
@@ -268,47 +276,49 @@ export function useDeleteColor() {
       });
     },
     onError: (error) => {
+      console.error('Error deleting color:', error);
       toast({
         title: "Error",
-        description: error.message,
+        description: "Failed to delete color",
         variant: "destructive",
       });
     },
   });
-}
+};
 
-// Size Groups hooks
-export function useSizeGroups() {
+// Size Group hooks
+export const useSizeGroups = () => {
   return useQuery({
-    queryKey: ['size-groups'],
+    queryKey: ['sizeGroups'],
     queryFn: fetchSizeGroups,
   });
-}
+};
 
-export function useCreateSizeGroup() {
+export const useCreateSizeGroup = () => {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
   return useMutation({
     mutationFn: createSizeGroup,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['size-groups'] });
+      queryClient.invalidateQueries({ queryKey: ['sizeGroups'] });
       toast({
         title: "Success",
         description: "Size group created successfully",
       });
     },
     onError: (error) => {
+      console.error('Error creating size group:', error);
       toast({
         title: "Error",
-        description: error.message,
+        description: "Failed to create size group",
         variant: "destructive",
       });
     },
   });
-}
+};
 
-export function useUpdateSizeGroup() {
+export const useUpdateSizeGroup = () => {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
@@ -316,54 +326,56 @@ export function useUpdateSizeGroup() {
     mutationFn: ({ id, updates }: { id: string; updates: Partial<SizeGroup> }) =>
       updateSizeGroup(id, updates),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['size-groups'] });
+      queryClient.invalidateQueries({ queryKey: ['sizeGroups'] });
       toast({
         title: "Success",
         description: "Size group updated successfully",
       });
     },
     onError: (error) => {
+      console.error('Error updating size group:', error);
       toast({
         title: "Error",
-        description: error.message,
+        description: "Failed to update size group",
         variant: "destructive",
       });
     },
   });
-}
+};
 
-export function useDeleteSizeGroup() {
+export const useDeleteSizeGroup = () => {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
   return useMutation({
     mutationFn: deleteSizeGroup,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['size-groups'] });
+      queryClient.invalidateQueries({ queryKey: ['sizeGroups'] });
       toast({
         title: "Success",
         description: "Size group deleted successfully",
       });
     },
     onError: (error) => {
+      console.error('Error deleting size group:', error);
       toast({
         title: "Error",
-        description: error.message,
+        description: "Failed to delete size group",
         variant: "destructive",
       });
     },
   });
-}
+};
 
-// Sizes hooks
-export function useSizes() {
+// Size hooks
+export const useSizes = () => {
   return useQuery({
     queryKey: ['sizes'],
     queryFn: fetchSizes,
   });
-}
+};
 
-export function useCreateSize() {
+export const useCreateSize = () => {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
@@ -377,16 +389,17 @@ export function useCreateSize() {
       });
     },
     onError: (error) => {
+      console.error('Error creating size:', error);
       toast({
         title: "Error",
-        description: error.message,
+        description: "Failed to create size",
         variant: "destructive",
       });
     },
   });
-}
+};
 
-export function useUpdateSize() {
+export const useUpdateSize = () => {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
@@ -401,16 +414,17 @@ export function useUpdateSize() {
       });
     },
     onError: (error) => {
+      console.error('Error updating size:', error);
       toast({
         title: "Error",
-        description: error.message,
+        description: "Failed to update size",
         variant: "destructive",
       });
     },
   });
-}
+};
 
-export function useDeleteSize() {
+export const useDeleteSize = () => {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
@@ -424,24 +438,25 @@ export function useDeleteSize() {
       });
     },
     onError: (error) => {
+      console.error('Error deleting size:', error);
       toast({
         title: "Error",
-        description: error.message,
+        description: "Failed to delete size",
         variant: "destructive",
       });
     },
   });
-}
+};
 
-// Zones hooks
-export function useZones() {
+// Zone hooks
+export const useZones = () => {
   return useQuery({
     queryKey: ['zones'],
     queryFn: fetchZones,
   });
-}
+};
 
-export function useCreateZone() {
+export const useCreateZone = () => {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
@@ -455,16 +470,17 @@ export function useCreateZone() {
       });
     },
     onError: (error) => {
+      console.error('Error creating zone:', error);
       toast({
         title: "Error",
-        description: error.message,
+        description: "Failed to create zone",
         variant: "destructive",
       });
     },
   });
-}
+};
 
-export function useUpdateZone() {
+export const useUpdateZone = () => {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
@@ -479,16 +495,17 @@ export function useUpdateZone() {
       });
     },
     onError: (error) => {
+      console.error('Error updating zone:', error);
       toast({
         title: "Error",
-        description: error.message,
+        description: "Failed to update zone",
         variant: "destructive",
       });
     },
   });
-}
+};
 
-export function useDeleteZone() {
+export const useDeleteZone = () => {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
@@ -502,47 +519,49 @@ export function useDeleteZone() {
       });
     },
     onError: (error) => {
+      console.error('Error deleting zone:', error);
       toast({
         title: "Error",
-        description: error.message,
+        description: "Failed to delete zone",
         variant: "destructive",
       });
     },
   });
-}
+};
 
-// Price Types hooks
-export function usePriceTypes() {
+// Price Type hooks
+export const usePriceTypes = () => {
   return useQuery({
-    queryKey: ['price-types'],
+    queryKey: ['priceTypes'],
     queryFn: fetchPriceTypes,
   });
-}
+};
 
-export function useCreatePriceType() {
+export const useCreatePriceType = () => {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
   return useMutation({
     mutationFn: createPriceType,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['price-types'] });
+      queryClient.invalidateQueries({ queryKey: ['priceTypes'] });
       toast({
         title: "Success",
         description: "Price type created successfully",
       });
     },
     onError: (error) => {
+      console.error('Error creating price type:', error);
       toast({
         title: "Error",
-        description: error.message,
+        description: "Failed to create price type",
         variant: "destructive",
       });
     },
   });
-}
+};
 
-export function useUpdatePriceType() {
+export const useUpdatePriceType = () => {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
@@ -550,54 +569,56 @@ export function useUpdatePriceType() {
     mutationFn: ({ id, updates }: { id: string; updates: Partial<PriceType> }) =>
       updatePriceType(id, updates),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['price-types'] });
+      queryClient.invalidateQueries({ queryKey: ['priceTypes'] });
       toast({
         title: "Success",
         description: "Price type updated successfully",
       });
     },
     onError: (error) => {
+      console.error('Error updating price type:', error);
       toast({
         title: "Error",
-        description: error.message,
+        description: "Failed to update price type",
         variant: "destructive",
       });
     },
   });
-}
+};
 
-export function useDeletePriceType() {
+export const useDeletePriceType = () => {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
   return useMutation({
     mutationFn: deletePriceType,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['price-types'] });
+      queryClient.invalidateQueries({ queryKey: ['priceTypes'] });
       toast({
         title: "Success",
         description: "Price type deleted successfully",
       });
     },
     onError: (error) => {
+      console.error('Error deleting price type:', error);
       toast({
         title: "Error",
-        description: error.message,
+        description: "Failed to delete price type",
         variant: "destructive",
       });
     },
   });
-}
+};
 
-// Vendors hooks
-export function useVendors() {
+// Vendor hooks
+export const useVendors = () => {
   return useQuery({
     queryKey: ['vendors'],
     queryFn: fetchVendors,
   });
-}
+};
 
-export function useCreateVendor() {
+export const useCreateVendor = () => {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
@@ -611,16 +632,17 @@ export function useCreateVendor() {
       });
     },
     onError: (error) => {
+      console.error('Error creating vendor:', error);
       toast({
         title: "Error",
-        description: error.message,
+        description: "Failed to create vendor",
         variant: "destructive",
       });
     },
   });
-}
+};
 
-export function useUpdateVendor() {
+export const useUpdateVendor = () => {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
@@ -635,16 +657,17 @@ export function useUpdateVendor() {
       });
     },
     onError: (error) => {
+      console.error('Error updating vendor:', error);
       toast({
         title: "Error",
-        description: error.message,
+        description: "Failed to update vendor",
         variant: "destructive",
       });
     },
   });
-}
+};
 
-export function useDeleteVendor() {
+export const useDeleteVendor = () => {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
@@ -658,11 +681,12 @@ export function useDeleteVendor() {
       });
     },
     onError: (error) => {
+      console.error('Error deleting vendor:', error);
       toast({
         title: "Error",
-        description: error.message,
+        description: "Failed to delete vendor",
         variant: "destructive",
       });
     },
   });
-}
+};
