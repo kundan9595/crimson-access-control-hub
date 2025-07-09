@@ -5,10 +5,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Edit, Trash2, Search, Plus, ArrowLeft } from 'lucide-react';
+import { Edit, Trash2, Search, Plus, ArrowLeft, Download, Upload } from 'lucide-react';
 import { useBrands, useDeleteBrand } from '@/hooks/useMasters';
 import { Link, useSearchParams } from 'react-router-dom';
 import BrandDialog from '@/components/masters/BrandDialog';
+import BulkImportDialog from '@/components/masters/BulkImportDialog';
 import type { Brand } from '@/services/mastersService';
 
 const BrandsPage = () => {
@@ -17,6 +18,7 @@ const BrandsPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [editingBrand, setEditingBrand] = useState<Brand | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [bulkImportOpen, setBulkImportOpen] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
 
   useEffect(() => {
@@ -42,6 +44,30 @@ const BrandsPage = () => {
     setEditingBrand(null);
   };
 
+  const handleExport = () => {
+    if (!brands || brands.length === 0) return;
+
+    const csvContent = [
+      ['Name', 'Description', 'Status', 'Created At'].join(','),
+      ...brands.map(brand => [
+        `"${brand.name}"`,
+        `"${brand.description || ''}"`,
+        brand.status,
+        new Date(brand.created_at).toLocaleDateString()
+      ].join(','))
+    ].join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `brands-${new Date().toISOString().split('T')[0]}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
   const filteredBrands = brands?.filter(brand =>
     brand.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     brand.description?.toLowerCase().includes(searchTerm.toLowerCase())
@@ -63,13 +89,23 @@ const BrandsPage = () => {
           </Button>
           <div>
             <h1 className="text-3xl font-bold">Brands</h1>
-            <p className="text-muted-foreground">Manage all your product brands</p>
+            <p className="text-muted-foreground">Manage your product brands</p>
           </div>
         </div>
-        <Button onClick={() => setDialogOpen(true)}>
-          <Plus className="h-4 w-4 mr-2" />
-          Add Brand
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={handleExport} disabled={!brands?.length}>
+            <Download className="h-4 w-4 mr-2" />
+            Export
+          </Button>
+          <Button variant="outline" onClick={() => setBulkImportOpen(true)}>
+            <Upload className="h-4 w-4 mr-2" />
+            Import
+          </Button>
+          <Button onClick={() => setDialogOpen(true)}>
+            <Plus className="h-4 w-4 mr-2" />
+            Add Brand
+          </Button>
+        </div>
       </div>
 
       <Card>
@@ -94,7 +130,6 @@ const BrandsPage = () => {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Logo</TableHead>
                   <TableHead>Name</TableHead>
                   <TableHead>Description</TableHead>
                   <TableHead>Status</TableHead>
@@ -105,15 +140,6 @@ const BrandsPage = () => {
               <TableBody>
                 {filteredBrands.map((brand) => (
                   <TableRow key={brand.id}>
-                    <TableCell>
-                      {brand.logo_url ? (
-                        <img src={brand.logo_url} alt={brand.name} className="w-10 h-10 rounded object-cover" />
-                      ) : (
-                        <div className="w-10 h-10 bg-muted rounded flex items-center justify-center text-xs">
-                          No Logo
-                        </div>
-                      )}
-                    </TableCell>
                     <TableCell className="font-medium">{brand.name}</TableCell>
                     <TableCell className="max-w-xs truncate">{brand.description || '-'}</TableCell>
                     <TableCell>
@@ -158,6 +184,17 @@ const BrandsPage = () => {
         open={dialogOpen}
         onOpenChange={handleDialogClose}
         brand={editingBrand}
+      />
+
+      <BulkImportDialog
+        open={bulkImportOpen}
+        onOpenChange={setBulkImportOpen}
+        type="brands"
+        templateHeaders={['Name', 'Description', 'Status']}
+        sampleData={[
+          ['Apple', 'Technology company', 'active'],
+          ['Samsung', 'Electronics manufacturer', 'active']
+        ]}
       />
     </div>
   );

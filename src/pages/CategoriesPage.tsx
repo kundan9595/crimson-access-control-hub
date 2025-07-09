@@ -5,10 +5,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Edit, Trash2, Search, Plus, ArrowLeft } from 'lucide-react';
+import { Edit, Trash2, Search, Plus, ArrowLeft, Download, Upload } from 'lucide-react';
 import { useCategories, useDeleteCategory } from '@/hooks/useMasters';
 import { Link, useSearchParams } from 'react-router-dom';
 import CategoryDialog from '@/components/masters/CategoryDialog';
+import BulkImportDialog from '@/components/masters/BulkImportDialog';
 import type { Category } from '@/services/mastersService';
 
 const CategoriesPage = () => {
@@ -17,6 +18,7 @@ const CategoriesPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [bulkImportOpen, setBulkImportOpen] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
 
   useEffect(() => {
@@ -40,6 +42,30 @@ const CategoriesPage = () => {
   const handleDialogClose = () => {
     setDialogOpen(false);
     setEditingCategory(null);
+  };
+
+  const handleExport = () => {
+    if (!categories || categories.length === 0) return;
+
+    const csvContent = [
+      ['Name', 'Description', 'Status', 'Created At'].join(','),
+      ...categories.map(category => [
+        `"${category.name}"`,
+        `"${category.description || ''}"`,
+        category.status,
+        new Date(category.created_at).toLocaleDateString()
+      ].join(','))
+    ].join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `categories-${new Date().toISOString().split('T')[0]}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
   };
 
   const filteredCategories = categories?.filter(category =>
@@ -66,10 +92,20 @@ const CategoriesPage = () => {
             <p className="text-muted-foreground">Organize your products into categories</p>
           </div>
         </div>
-        <Button onClick={() => setDialogOpen(true)}>
-          <Plus className="h-4 w-4 mr-2" />
-          Add Category
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={handleExport} disabled={!categories?.length}>
+            <Download className="h-4 w-4 mr-2" />
+            Export
+          </Button>
+          <Button variant="outline" onClick={() => setBulkImportOpen(true)}>
+            <Upload className="h-4 w-4 mr-2" />
+            Import
+          </Button>
+          <Button onClick={() => setDialogOpen(true)}>
+            <Plus className="h-4 w-4 mr-2" />
+            Add Category
+          </Button>
+        </div>
       </div>
 
       <Card>
@@ -96,7 +132,6 @@ const CategoriesPage = () => {
                 <TableRow>
                   <TableHead>Name</TableHead>
                   <TableHead>Description</TableHead>
-                  <TableHead>Parent Category</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Created At</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
@@ -107,12 +142,6 @@ const CategoriesPage = () => {
                   <TableRow key={category.id}>
                     <TableCell className="font-medium">{category.name}</TableCell>
                     <TableCell className="max-w-xs truncate">{category.description || '-'}</TableCell>
-                    <TableCell>
-                      {category.parent_id 
-                        ? categories?.find(c => c.id === category.parent_id)?.name || 'Unknown'
-                        : '-'
-                      }
-                    </TableCell>
                     <TableCell>
                       <Badge variant={category.status === 'active' ? 'default' : 'secondary'}>
                         {category.status}
@@ -155,6 +184,17 @@ const CategoriesPage = () => {
         open={dialogOpen}
         onOpenChange={handleDialogClose}
         category={editingCategory}
+      />
+
+      <BulkImportDialog
+        open={bulkImportOpen}
+        onOpenChange={setBulkImportOpen}
+        type="categories"
+        templateHeaders={['Name', 'Description', 'Status']}
+        sampleData={[
+          ['Electronics', 'Electronic devices and gadgets', 'active'],
+          ['Clothing', 'Apparel and accessories', 'active']
+        ]}
       />
     </div>
   );

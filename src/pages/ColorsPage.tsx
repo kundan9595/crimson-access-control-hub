@@ -5,10 +5,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Edit, Trash2, Search, Plus, ArrowLeft } from 'lucide-react';
+import { Edit, Trash2, Search, Plus, ArrowLeft, Download, Upload } from 'lucide-react';
 import { useColors, useDeleteColor } from '@/hooks/useMasters';
 import { Link, useSearchParams } from 'react-router-dom';
 import ColorDialog from '@/components/masters/ColorDialog';
+import BulkImportDialog from '@/components/masters/BulkImportDialog';
 import type { Color } from '@/services/mastersService';
 
 const ColorsPage = () => {
@@ -17,6 +18,7 @@ const ColorsPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [editingColor, setEditingColor] = useState<Color | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [bulkImportOpen, setBulkImportOpen] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
 
   useEffect(() => {
@@ -42,6 +44,30 @@ const ColorsPage = () => {
     setEditingColor(null);
   };
 
+  const handleExport = () => {
+    if (!colors || colors.length === 0) return;
+
+    const csvContent = [
+      ['Name', 'Hex Code', 'Status', 'Created At'].join(','),
+      ...colors.map(color => [
+        `"${color.name}"`,
+        color.hex_code,
+        color.status,
+        new Date(color.created_at).toLocaleDateString()
+      ].join(','))
+    ].join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `colors-${new Date().toISOString().split('T')[0]}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
   const filteredColors = colors?.filter(color =>
     color.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     color.hex_code.toLowerCase().includes(searchTerm.toLowerCase())
@@ -63,13 +89,23 @@ const ColorsPage = () => {
           </Button>
           <div>
             <h1 className="text-3xl font-bold">Colors</h1>
-            <p className="text-muted-foreground">Define color variations for your products</p>
+            <p className="text-muted-foreground">Manage your color palette</p>
           </div>
         </div>
-        <Button onClick={() => setDialogOpen(true)}>
-          <Plus className="h-4 w-4 mr-2" />
-          Add Color
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={handleExport} disabled={!colors?.length}>
+            <Download className="h-4 w-4 mr-2" />
+            Export
+          </Button>
+          <Button variant="outline" onClick={() => setBulkImportOpen(true)}>
+            <Upload className="h-4 w-4 mr-2" />
+            Import
+          </Button>
+          <Button onClick={() => setDialogOpen(true)}>
+            <Plus className="h-4 w-4 mr-2" />
+            Add Color
+          </Button>
+        </div>
       </div>
 
       <Card>
@@ -106,13 +142,13 @@ const ColorsPage = () => {
                 {filteredColors.map((color) => (
                   <TableRow key={color.id}>
                     <TableCell>
-                      <div
-                        className="w-8 h-8 rounded-full border border-gray-200"
+                      <div 
+                        className="w-8 h-8 rounded border"
                         style={{ backgroundColor: color.hex_code }}
                       />
                     </TableCell>
                     <TableCell className="font-medium">{color.name}</TableCell>
-                    <TableCell className="font-mono text-sm">{color.hex_code}</TableCell>
+                    <TableCell className="font-mono">{color.hex_code}</TableCell>
                     <TableCell>
                       <Badge variant={color.status === 'active' ? 'default' : 'secondary'}>
                         {color.status}
@@ -155,6 +191,17 @@ const ColorsPage = () => {
         open={dialogOpen}
         onOpenChange={handleDialogClose}
         color={editingColor}
+      />
+
+      <BulkImportDialog
+        open={bulkImportOpen}
+        onOpenChange={setBulkImportOpen}
+        type="colors"
+        templateHeaders={['Name', 'Hex Code', 'Status']}
+        sampleData={[
+          ['Red', '#FF0000', 'active'],
+          ['Blue', '#0000FF', 'active']
+        ]}
       />
     </div>
   );
