@@ -4,6 +4,7 @@ export interface Brand {
   id: string;
   name: string;
   description: string | null;
+  logo_url: string | null;
   status: 'active' | 'inactive';
   created_at: string;
   updated_at: string;
@@ -25,7 +26,7 @@ export interface Category {
 export interface Color {
   id: string;
   name: string;
-  code: string;
+  hex_code: string;
   status: 'active' | 'inactive';
   created_at: string;
   updated_at: string;
@@ -47,7 +48,9 @@ export interface SizeGroup {
 export interface Size {
   id: string;
   name: string;
+  code: string;
   size_group_id: string;
+  sort_order: number | null;
   status: 'active' | 'inactive';
   created_at: string;
   updated_at: string;
@@ -56,15 +59,29 @@ export interface Size {
   size_group?: SizeGroup;
 }
 
-export interface Zone {
+export interface ZoneLocation {
   id: string;
-  name: string;
-  description: string | null;
-  status: 'active' | 'inactive';
+  zone_id: string;
+  state: string;
+  city: string;
   created_at: string;
   updated_at: string;
   created_by: string | null;
   updated_by: string | null;
+}
+
+export interface Zone {
+  id: string;
+  name: string;
+  code: string | null;
+  description: string | null;
+  status: 'active' | 'inactive';
+  warehouse_assignments: any[];
+  created_at: string;
+  updated_at: string;
+  created_by: string | null;
+  updated_by: string | null;
+  locations?: ZoneLocation[];
 }
 
 export interface PriceType {
@@ -81,7 +98,14 @@ export interface PriceType {
 export interface Vendor {
   id: string;
   name: string;
+  code: string;
   description: string | null;
+  contact_person: string | null;
+  email: string | null;
+  phone: string | null;
+  address: string | null;
+  tax_id: string | null;
+  payment_terms: string | null;
   status: 'active' | 'inactive';
   created_at: string;
   updated_at: string;
@@ -326,14 +350,17 @@ export const deleteSize = async (id: string): Promise<void> => {
 export const fetchZones = async (): Promise<Zone[]> => {
   const { data, error } = await supabase
     .from('zones')
-    .select('*')
+    .select(`
+      *,
+      locations:zone_locations(*)
+    `)
     .order('created_at', { ascending: false });
 
   if (error) throw error;
   return data || [];
 };
 
-export const createZone = async (zoneData: Omit<Zone, 'id' | 'created_at' | 'updated_at' | 'created_by' | 'updated_by'>): Promise<Zone> => {
+export const createZone = async (zoneData: Omit<Zone, 'id' | 'created_at' | 'updated_at' | 'created_by' | 'updated_by' | 'locations'>): Promise<Zone> => {
   const { data, error } = await supabase
     .from('zones')
     .insert([zoneData])
@@ -359,6 +386,27 @@ export const updateZone = async (id: string, updates: Partial<Zone>): Promise<Zo
 export const deleteZone = async (id: string): Promise<void> => {
   const { error } = await supabase
     .from('zones')
+    .delete()
+    .eq('id', id);
+
+  if (error) throw error;
+};
+
+// Zone Locations API
+export const createZoneLocation = async (locationData: Omit<ZoneLocation, 'id' | 'created_at' | 'updated_at' | 'created_by' | 'updated_by'>): Promise<ZoneLocation> => {
+  const { data, error } = await supabase
+    .from('zone_locations')
+    .insert([locationData])
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+};
+
+export const deleteZoneLocation = async (id: string): Promise<void> => {
+  const { error } = await supabase
+    .from('zone_locations')
     .delete()
     .eq('id', id);
 
