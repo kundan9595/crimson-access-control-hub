@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useForm } from 'react-hook-form';
 import { useCreateBrand, useUpdateBrand } from '@/hooks/useMasters';
+import ImageUpload from '@/components/ui/ImageUpload';
 import type { Brand } from '@/services/mastersService';
 
 type BrandDialogProps = {
@@ -91,10 +92,11 @@ const BrandDialog: React.FC<BrandDialogProps> = ({ open, onOpenChange, brand }) 
   };
 
   const statusValue = watch('status');
+  const logoUrl = watch('logo_url');
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{isEditing ? 'Edit Brand' : 'Create Brand'}</DialogTitle>
         </DialogHeader>
@@ -123,12 +125,12 @@ const BrandDialog: React.FC<BrandDialogProps> = ({ open, onOpenChange, brand }) 
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="logo_url">Logo URL</Label>
-            <Input
-              id="logo_url"
-              {...register('logo_url')}
-              placeholder="Enter logo URL"
-              type="url"
+            <Label>Brand Logo</Label>
+            <ImageUpload
+              value={logoUrl}
+              onChange={(url) => setValue('logo_url', url)}
+              onRemove={() => setValue('logo_url', '')}
+              placeholder="Upload brand logo"
             />
           </div>
 

@@ -11,6 +11,9 @@ import Dashboard from "./pages/Dashboard";
 import RolesPermissions from "./pages/RolesPermissions";
 import Users from "./pages/Users";
 import Masters from "./pages/Masters";
+import BrandsPage from "./pages/BrandsPage";
+import CategoriesPage from "./pages/CategoriesPage";
+import ColorsPage from "./pages/ColorsPage";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 
@@ -34,6 +37,9 @@ const App = () => (
               <Route path="roles-permissions" element={<RolesPermissions />} />
               <Route path="users" element={<Users />} />
               <Route path="masters" element={<Masters />} />
+              <Route path="masters/brands" element={<BrandsPage />} />
+              <Route path="masters/categories" element={<CategoriesPage />} />
+              <Route path="masters/colors" element={<ColorsPage />} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>

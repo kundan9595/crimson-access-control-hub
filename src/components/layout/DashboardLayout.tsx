@@ -2,7 +2,7 @@
 import React from 'react';
 import { Outlet, useLocation, Link } from 'react-router-dom';
 import { SidebarProvider, Sidebar, SidebarContent, SidebarHeader, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
-import { Users, Settings, Shield, Building, Package, ShoppingCart, LogOut } from 'lucide-react';
+import { Users, Settings, Shield, Building, Package, ShoppingCart, LogOut, Palette } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 
@@ -20,6 +20,7 @@ const DashboardLayout = () => {
     { icon: Building, label: 'Warehouses', path: '/warehouses' },
     { icon: Package, label: 'Inventory', path: '/inventory' },
     { icon: ShoppingCart, label: 'Orders', path: '/orders' },
+    { icon: Palette, label: 'Masters', path: '/masters' },
     { icon: Settings, label: 'Settings', path: '/settings' },
   ];
 
