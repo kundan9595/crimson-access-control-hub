@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useCallback } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -14,14 +13,15 @@ import {
   useCreateSizeGroup, 
   useCreateZone, 
   useCreatePriceType, 
-  useCreateVendor 
+  useCreateVendor,
+  useCreateStyle
 } from '@/hooks/useMasters';
 import { useToast } from '@/hooks/use-toast';
 
 type BulkImportDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  type: 'brands' | 'categories' | 'colors' | 'sizeGroups' | 'zones' | 'priceTypes' | 'vendors';
+  type: 'brands' | 'categories' | 'colors' | 'sizeGroups' | 'zones' | 'priceTypes' | 'vendors' | 'styles';
   templateHeaders: string[];
   sampleData: string[][];
 };
@@ -60,6 +60,7 @@ const BulkImportDialog: React.FC<BulkImportDialogProps> = ({
   const createZoneMutation = useCreateZone();
   const createPriceTypeMutation = useCreatePriceType();
   const createVendorMutation = useCreateVendor();
+  const createStyleMutation = useCreateStyle();
   const { toast } = useToast();
 
   const downloadTemplate = () => {
@@ -172,6 +173,20 @@ const BulkImportDialog: React.FC<BulkImportDialogProps> = ({
           errors.push('Status must be "active" or "inactive"');
         }
         break;
+        
+      case 'styles':
+        if (row.length < 2) errors.push('Missing required fields');
+        // Brand ID and Category ID are optional but should be valid UUIDs if provided
+        if (row[2] && row[2].trim() && !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(row[2])) {
+          errors.push('Invalid Brand ID format (must be UUID)');
+        }
+        if (row[3] && row[3].trim() && !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(row[3])) {
+          errors.push('Invalid Category ID format (must be UUID)');
+        }
+        if (row[4] && !['active', 'inactive'].includes(row[4].toLowerCase())) {
+          errors.push('Status must be "active" or "inactive"');
+        }
+        break;
     }
 
     if (errors.length > 0) {
@@ -241,6 +256,16 @@ const BulkImportDialog: React.FC<BulkImportDialogProps> = ({
           email: row[4]?.trim() || null,
           phone: row[5]?.trim() || null,
           status: (row[6]?.toLowerCase() || 'active') as 'active' | 'inactive'
+        };
+        break;
+        
+      case 'styles':
+        data = {
+          name: row[0].trim(),
+          description: row[1]?.trim() || null,
+          brand_id: row[2]?.trim() || null,
+          category_id: row[3]?.trim() || null,
+          status: (row[4]?.toLowerCase() || 'active') as 'active' | 'inactive'
         };
         break;
     }
@@ -356,6 +381,9 @@ const BulkImportDialog: React.FC<BulkImportDialogProps> = ({
               break;
             case 'vendors':
               await createVendorMutation.mutateAsync(record);
+              break;
+            case 'styles':
+              await createStyleMutation.mutateAsync(record);
               break;
           }
           successCount++;
