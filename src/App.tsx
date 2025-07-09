@@ -14,6 +14,10 @@ import Masters from "./pages/Masters";
 import BrandsPage from "./pages/BrandsPage";
 import CategoriesPage from "./pages/CategoriesPage";
 import ColorsPage from "./pages/ColorsPage";
+import SizeGroupsPage from "./pages/SizeGroupsPage";
+import ZonesPage from "./pages/ZonesPage";
+import PriceTypesPage from "./pages/PriceTypesPage";
+import VendorsPage from "./pages/VendorsPage";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 
@@ -40,6 +44,10 @@ const App = () => (
               <Route path="masters/brands" element={<BrandsPage />} />
               <Route path="masters/categories" element={<CategoriesPage />} />
               <Route path="masters/colors" element={<ColorsPage />} />
+              <Route path="masters/size-groups" element={<SizeGroupsPage />} />
+              <Route path="masters/zones" element={<ZonesPage />} />
+              <Route path="masters/price-types" element={<PriceTypesPage />} />
+              <Route path="masters/vendors" element={<VendorsPage />} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>

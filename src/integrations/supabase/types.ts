@@ -148,6 +148,48 @@ export type Database = {
         }
         Relationships: []
       }
+      price_types: {
+        Row: {
+          code: string
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          is_default: boolean | null
+          multiplier: number | null
+          name: string
+          status: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_default?: boolean | null
+          multiplier?: number | null
+          name: string
+          status?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_default?: boolean | null
+          multiplier?: number | null
+          name?: string
+          status?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -250,6 +292,86 @@ export type Database = {
         }
         Relationships: []
       }
+      size_groups: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          name: string
+          status: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          name: string
+          status?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          name?: string
+          status?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
+      sizes: {
+        Row: {
+          code: string
+          created_at: string
+          created_by: string | null
+          id: string
+          name: string
+          size_group_id: string
+          sort_order: number | null
+          status: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          name: string
+          size_group_id: string
+          sort_order?: number | null
+          status?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          name?: string
+          size_group_id?: string
+          sort_order?: number | null
+          status?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sizes_size_group_id_fkey"
+            columns: ["size_group_id"]
+            isOneToOne: false
+            referencedRelation: "size_groups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           assigned_at: string
@@ -295,6 +417,99 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      vendors: {
+        Row: {
+          address: string | null
+          code: string
+          contact_person: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          email: string | null
+          id: string
+          name: string
+          payment_terms: string | null
+          phone: string | null
+          status: string
+          tax_id: string | null
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          address?: string | null
+          code: string
+          contact_person?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          email?: string | null
+          id?: string
+          name: string
+          payment_terms?: string | null
+          phone?: string | null
+          status?: string
+          tax_id?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          address?: string | null
+          code?: string
+          contact_person?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          email?: string | null
+          id?: string
+          name?: string
+          payment_terms?: string | null
+          phone?: string | null
+          status?: string
+          tax_id?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
+      zones: {
+        Row: {
+          code: string
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          name: string
+          status: string
+          updated_at: string
+          updated_by: string | null
+          warehouse_assignments: Json | null
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          name: string
+          status?: string
+          updated_at?: string
+          updated_by?: string | null
+          warehouse_assignments?: Json | null
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          name?: string
+          status?: string
+          updated_at?: string
+          updated_by?: string | null
+          warehouse_assignments?: Json | null
+        }
+        Relationships: []
       }
     }
     Views: {

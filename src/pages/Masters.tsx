@@ -3,14 +3,26 @@ import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Plus, ArrowRight, Package, Tag, Palette } from 'lucide-react';
-import { useBrands, useCategories, useColors } from '@/hooks/useMasters';
+import { Plus, ArrowRight, Package, Tag, Palette, Ruler, MapPin, DollarSign, Users } from 'lucide-react';
+import { 
+  useBrands, 
+  useCategories, 
+  useColors, 
+  useSizeGroups, 
+  useZones, 
+  usePriceTypes, 
+  useVendors 
+} from '@/hooks/useMasters';
 import { Link } from 'react-router-dom';
 
 const Masters = () => {
   const { data: brands } = useBrands();
   const { data: categories } = useCategories();
   const { data: colors } = useColors();
+  const { data: sizeGroups } = useSizeGroups();
+  const { data: zones } = useZones();
+  const { data: priceTypes } = usePriceTypes();
+  const { data: vendors } = useVendors();
 
   const masterSections = [
     {
@@ -92,6 +104,102 @@ const Masters = () => {
           </Badge>
         </div>
       )
+    },
+    {
+      title: 'Size Groups',
+      description: 'Manage size groupings and individual sizes',
+      icon: Ruler,
+      data: sizeGroups?.slice(0, 5) || [],
+      total: sizeGroups?.length || 0,
+      viewMorePath: '/masters/size-groups',
+      addNewPath: '/masters/size-groups?add=true',
+      renderItem: (sizeGroup: any) => (
+        <div key={sizeGroup.id} className="flex items-center justify-between p-3 border rounded-lg">
+          <div>
+            <h4 className="font-medium">{sizeGroup.name}</h4>
+            {sizeGroup.description && (
+              <p className="text-sm text-muted-foreground">{sizeGroup.description}</p>
+            )}
+          </div>
+          <Badge variant={sizeGroup.status === 'active' ? 'default' : 'secondary'}>
+            {sizeGroup.status}
+          </Badge>
+        </div>
+      )
+    },
+    {
+      title: 'Zones',
+      description: 'Manage geographical zones and warehouse assignments',
+      icon: MapPin,
+      data: zones?.slice(0, 5) || [],
+      total: zones?.length || 0,
+      viewMorePath: '/masters/zones',
+      addNewPath: '/masters/zones?add=true',
+      renderItem: (zone: any) => (
+        <div key={zone.id} className="flex items-center justify-between p-3 border rounded-lg">
+          <div>
+            <h4 className="font-medium">{zone.name}</h4>
+            <p className="text-sm text-muted-foreground">Code: {zone.code}</p>
+            {zone.description && (
+              <p className="text-sm text-muted-foreground">{zone.description}</p>
+            )}
+          </div>
+          <Badge variant={zone.status === 'active' ? 'default' : 'secondary'}>
+            {zone.status}
+          </Badge>
+        </div>
+      )
+    },
+    {
+      title: 'Price Types',
+      description: 'Configure pricing structures and multipliers',
+      icon: DollarSign,
+      data: priceTypes?.slice(0, 5) || [],
+      total: priceTypes?.length || 0,
+      viewMorePath: '/masters/price-types',
+      addNewPath: '/masters/price-types?add=true',
+      renderItem: (priceType: any) => (
+        <div key={priceType.id} className="flex items-center justify-between p-3 border rounded-lg">
+          <div>
+            <h4 className="font-medium">{priceType.name}</h4>
+            <p className="text-sm text-muted-foreground">Code: {priceType.code}</p>
+            {priceType.multiplier && (
+              <p className="text-sm text-muted-foreground">Multiplier: {priceType.multiplier}x</p>
+            )}
+          </div>
+          <div className="flex items-center gap-2">
+            {priceType.is_default && (
+              <Badge variant="outline" className="text-xs">Default</Badge>
+            )}
+            <Badge variant={priceType.status === 'active' ? 'default' : 'secondary'}>
+              {priceType.status}
+            </Badge>
+          </div>
+        </div>
+      )
+    },
+    {
+      title: 'Vendors',
+      description: 'Manage supplier and vendor information',
+      icon: Users,
+      data: vendors?.slice(0, 5) || [],
+      total: vendors?.length || 0,
+      viewMorePath: '/masters/vendors',
+      addNewPath: '/masters/vendors?add=true',
+      renderItem: (vendor: any) => (
+        <div key={vendor.id} className="flex items-center justify-between p-3 border rounded-lg">
+          <div>
+            <h4 className="font-medium">{vendor.name}</h4>
+            <p className="text-sm text-muted-foreground">Code: {vendor.code}</p>
+            {vendor.contact_person && (
+              <p className="text-sm text-muted-foreground">Contact: {vendor.contact_person}</p>
+            )}
+          </div>
+          <Badge variant={vendor.status === 'active' ? 'default' : 'secondary'}>
+            {vendor.status}
+          </Badge>
+        </div>
+      )
     }
   ];
 
@@ -99,7 +207,7 @@ const Masters = () => {
     <div className="container mx-auto p-6 space-y-6">
       <div>
         <h1 className="text-3xl font-bold">Masters</h1>
-        <p className="text-muted-foreground">Manage brands, categories, and colors for your products</p>
+        <p className="text-muted-foreground">Manage brands, categories, colors, sizes, zones, price types, and vendors for your products</p>
       </div>
 
       <div className="grid gap-6">

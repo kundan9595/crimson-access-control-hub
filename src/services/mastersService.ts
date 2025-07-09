@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 
 // Define the types based on the actual database schema
@@ -30,6 +29,75 @@ export type Color = {
   id: string;
   name: string;
   hex_code: string;
+  status: 'active' | 'inactive';
+  created_at: string;
+  updated_at: string;
+  created_by: string | null;
+  updated_by: string | null;
+};
+
+export type SizeGroup = {
+  id: string;
+  name: string;
+  description: string | null;
+  status: 'active' | 'inactive';
+  created_at: string;
+  updated_at: string;
+  created_by: string | null;
+  updated_by: string | null;
+};
+
+export type Size = {
+  id: string;
+  size_group_id: string;
+  name: string;
+  code: string;
+  sort_order: number | null;
+  status: 'active' | 'inactive';
+  created_at: string;
+  updated_at: string;
+  created_by: string | null;
+  updated_by: string | null;
+};
+
+export type Zone = {
+  id: string;
+  name: string;
+  code: string;
+  description: string | null;
+  warehouse_assignments: any[] | null;
+  status: 'active' | 'inactive';
+  created_at: string;
+  updated_at: string;
+  created_by: string | null;
+  updated_by: string | null;
+};
+
+export type PriceType = {
+  id: string;
+  name: string;
+  code: string;
+  description: string | null;
+  is_default: boolean | null;
+  multiplier: number | null;
+  status: 'active' | 'inactive';
+  created_at: string;
+  updated_at: string;
+  created_by: string | null;
+  updated_by: string | null;
+};
+
+export type Vendor = {
+  id: string;
+  name: string;
+  code: string;
+  description: string | null;
+  contact_person: string | null;
+  email: string | null;
+  phone: string | null;
+  address: string | null;
+  tax_id: string | null;
+  payment_terms: string | null;
   status: 'active' | 'inactive';
   created_at: string;
   updated_at: string;
@@ -149,6 +217,201 @@ export async function updateColor(id: string, updates: Partial<Color>): Promise<
 export async function deleteColor(id: string): Promise<void> {
   const { error } = await supabase
     .from('colors')
+    .delete()
+    .eq('id', id);
+  if (error) throw error;
+}
+
+// Size Group services
+export async function fetchSizeGroups(): Promise<SizeGroup[]> {
+  const { data, error } = await supabase
+    .from('size_groups')
+    .select('*')
+    .order('created_at', { ascending: false });
+  if (error) throw error;
+  return (data || []) as SizeGroup[];
+}
+
+export async function createSizeGroup(sizeGroup: Omit<SizeGroup, 'id' | 'created_at' | 'updated_at' | 'created_by' | 'updated_by'>): Promise<SizeGroup> {
+  const { data, error } = await supabase
+    .from('size_groups')
+    .insert(sizeGroup)
+    .select()
+    .single();
+  if (error) throw error;
+  return data as SizeGroup;
+}
+
+export async function updateSizeGroup(id: string, updates: Partial<SizeGroup>): Promise<SizeGroup> {
+  const { data, error } = await supabase
+    .from('size_groups')
+    .update(updates)
+    .eq('id', id)
+    .select()
+    .single();
+  if (error) throw error;
+  return data as SizeGroup;
+}
+
+export async function deleteSizeGroup(id: string): Promise<void> {
+  const { error } = await supabase
+    .from('size_groups')
+    .delete()
+    .eq('id', id);
+  if (error) throw error;
+}
+
+// Size services
+export async function fetchSizes(): Promise<Size[]> {
+  const { data, error } = await supabase
+    .from('sizes')
+    .select('*')
+    .order('created_at', { ascending: false });
+  if (error) throw error;
+  return (data || []) as Size[];
+}
+
+export async function createSize(size: Omit<Size, 'id' | 'created_at' | 'updated_at' | 'created_by' | 'updated_by'>): Promise<Size> {
+  const { data, error } = await supabase
+    .from('sizes')
+    .insert(size)
+    .select()
+    .single();
+  if (error) throw error;
+  return data as Size;
+}
+
+export async function updateSize(id: string, updates: Partial<Size>): Promise<Size> {
+  const { data, error } = await supabase
+    .from('sizes')
+    .update(updates)
+    .eq('id', id)
+    .select()
+    .single();
+  if (error) throw error;
+  return data as Size;
+}
+
+export async function deleteSize(id: string): Promise<void> {
+  const { error } = await supabase
+    .from('sizes')
+    .delete()
+    .eq('id', id);
+  if (error) throw error;
+}
+
+// Zone services
+export async function fetchZones(): Promise<Zone[]> {
+  const { data, error } = await supabase
+    .from('zones')
+    .select('*')
+    .order('created_at', { ascending: false });
+  if (error) throw error;
+  return (data || []) as Zone[];
+}
+
+export async function createZone(zone: Omit<Zone, 'id' | 'created_at' | 'updated_at' | 'created_by' | 'updated_by'>): Promise<Zone> {
+  const { data, error } = await supabase
+    .from('zones')
+    .insert(zone)
+    .select()
+    .single();
+  if (error) throw error;
+  return data as Zone;
+}
+
+export async function updateZone(id: string, updates: Partial<Zone>): Promise<Zone> {
+  const { data, error } = await supabase
+    .from('zones')
+    .update(updates)
+    .eq('id', id)
+    .select()
+    .single();
+  if (error) throw error;
+  return data as Zone;
+}
+
+export async function deleteZone(id: string): Promise<void> {
+  const { error } = await supabase
+    .from('zones')
+    .delete()
+    .eq('id', id);
+  if (error) throw error;
+}
+
+// Price Type services
+export async function fetchPriceTypes(): Promise<PriceType[]> {
+  const { data, error } = await supabase
+    .from('price_types')
+    .select('*')
+    .order('created_at', { ascending: false });
+  if (error) throw error;
+  return (data || []) as PriceType[];
+}
+
+export async function createPriceType(priceType: Omit<PriceType, 'id' | 'created_at' | 'updated_at' | 'created_by' | 'updated_by'>): Promise<PriceType> {
+  const { data, error } = await supabase
+    .from('price_types')
+    .insert(priceType)
+    .select()
+    .single();
+  if (error) throw error;
+  return data as PriceType;
+}
+
+export async function updatePriceType(id: string, updates: Partial<PriceType>): Promise<PriceType> {
+  const { data, error } = await supabase
+    .from('price_types')
+    .update(updates)
+    .eq('id', id)
+    .select()
+    .single();
+  if (error) throw error;
+  return data as PriceType;
+}
+
+export async function deletePriceType(id: string): Promise<void> {
+  const { error } = await supabase
+    .from('price_types')
+    .delete()
+    .eq('id', id);
+  if (error) throw error;
+}
+
+// Vendor services
+export async function fetchVendors(): Promise<Vendor[]> {
+  const { data, error } = await supabase
+    .from('vendors')
+    .select('*')
+    .order('created_at', { ascending: false });
+  if (error) throw error;
+  return (data || []) as Vendor[];
+}
+
+export async function createVendor(vendor: Omit<Vendor, 'id' | 'created_at' | 'updated_at' | 'created_by' | 'updated_by'>): Promise<Vendor> {
+  const { data, error } = await supabase
+    .from('vendors')
+    .insert(vendor)
+    .select()
+    .single();
+  if (error) throw error;
+  return data as Vendor;
+}
+
+export async function updateVendor(id: string, updates: Partial<Vendor>): Promise<Vendor> {
+  const { data, error } = await supabase
+    .from('vendors')
+    .update(updates)
+    .eq('id', id)
+    .select()
+    .single();
+  if (error) throw error;
+  return data as Vendor;
+}
+
+export async function deleteVendor(id: string): Promise<void> {
+  const { error } = await supabase
+    .from('vendors')
     .delete()
     .eq('id', id);
   if (error) throw error;
