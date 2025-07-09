@@ -157,7 +157,6 @@ const ZonesPage = () => {
 
       <ZoneDialog
         zone={editingZone}
-        zone={editingZone}
         open={isDialogOpen}
         onOpenChange={handleCloseDialog}
       />
