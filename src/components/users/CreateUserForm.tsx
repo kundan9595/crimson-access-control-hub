@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
@@ -35,18 +34,28 @@ const CreateUserForm: React.FC<CreateUserFormProps> = ({ roles, onSuccess }) => 
     mutationFn: async (userData: typeof formData & { selectedRoles: string[] }) => {
       setIsLoading(true);
       
-      // Create user via Supabase Auth (this would typically be done via an admin API)
-      // For now, we'll simulate this by creating a profile entry
-      // In a real app, you'd use the Supabase Admin API to create users
-      
-      // Create profile entry
+      // Generate a UUID for the new profile
+      const { data: { user }, error: signUpError } = await supabase.auth.admin.createUser({
+        email: userData.email,
+        email_confirm: true,
+        user_metadata: {
+          first_name: userData.firstName,
+          last_name: userData.lastName,
+        }
+      });
+
+      if (signUpError) throw signUpError;
+      if (!user) throw new Error('Failed to create user');
+
+      // Create profile entry with the user's ID
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
-        .insert([{
+        .insert({
+          id: user.id,
           email: userData.email,
           first_name: userData.firstName,
           last_name: userData.lastName,
-        }])
+        })
         .select()
         .single();
       
@@ -55,7 +64,7 @@ const CreateUserForm: React.FC<CreateUserFormProps> = ({ roles, onSuccess }) => 
       // Assign roles to the user
       if (userData.selectedRoles.length > 0) {
         const userRoles = userData.selectedRoles.map(roleId => ({
-          user_id: profile.id,
+          user_id: user.id,
           role_id: roleId,
         }));
 
@@ -72,7 +81,7 @@ const CreateUserForm: React.FC<CreateUserFormProps> = ({ roles, onSuccess }) => 
       queryClient.invalidateQueries({ queryKey: ['users'] });
       toast({
         title: "Success",
-        description: "User created successfully. They will need to sign up with their email to activate their account.",
+        description: "User created successfully. They will receive an email to set up their account.",
       });
       onSuccess();
     },
