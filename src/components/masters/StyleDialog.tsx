@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -76,10 +75,16 @@ export const StyleDialog: React.FC<StyleDialogProps> = ({
 
   const onSubmit = async (data: FormData) => {
     try {
+      // Add the missing color_variants property with default value
+      const styleData = {
+        ...data,
+        color_variants: style?.color_variants || [],
+      };
+
       if (style) {
-        await updateMutation.mutateAsync({ id: style.id, updates: data });
+        await updateMutation.mutateAsync({ id: style.id, updates: styleData });
       } else {
-        await createMutation.mutateAsync(data);
+        await createMutation.mutateAsync(styleData);
       }
       onOpenChange(false);
       form.reset();
