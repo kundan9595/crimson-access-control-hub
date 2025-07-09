@@ -21,8 +21,10 @@ const ZonesPage = () => {
 
   const filteredZones = zones?.filter(zone =>
     zone.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    zone.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    zone.description?.toLowerCase().includes(searchTerm.toLowerCase())
+    zone.locations?.some(location => 
+      location.state.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      location.city.toLowerCase().includes(searchTerm.toLowerCase())
+    )
   );
 
   const handleEdit = (zone: Zone) => {
@@ -54,7 +56,7 @@ const ZonesPage = () => {
             <MapPin className="h-8 w-8" />
             Zones
           </h1>
-          <p className="text-muted-foreground">Manage geographical zones and warehouse assignments</p>
+          <p className="text-muted-foreground">Manage geographical zones and their locations</p>
         </div>
         <Button onClick={() => setIsDialogOpen(true)}>
           <Plus className="h-4 w-4 mr-2" />
@@ -65,7 +67,7 @@ const ZonesPage = () => {
       <Card>
         <CardHeader>
           <CardTitle>Search Zones</CardTitle>
-          <CardDescription>Find zones by name, code, or description</CardDescription>
+          <CardDescription>Find zones by name or location</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="relative">
@@ -84,18 +86,30 @@ const ZonesPage = () => {
         {filteredZones?.map((zone) => (
           <Card key={zone.id}>
             <CardContent className="p-6">
-              <div className="flex items-center justify-between">
+              <div className="flex items-start justify-between">
                 <div className="flex-1">
-                  <div className="flex items-center gap-3 mb-2">
+                  <div className="flex items-center gap-3 mb-3">
                     <h3 className="text-lg font-semibold">{zone.name}</h3>
-                    <Badge variant="outline">Code: {zone.code}</Badge>
                     <Badge variant={zone.status === 'active' ? 'default' : 'secondary'}>
                       {zone.status}
                     </Badge>
                   </div>
-                  {zone.description && (
-                    <p className="text-muted-foreground mb-2">{zone.description}</p>
+                  
+                  {zone.locations && zone.locations.length > 0 ? (
+                    <div className="mb-3">
+                      <h4 className="text-sm font-medium text-muted-foreground mb-2">Locations:</h4>
+                      <div className="flex flex-wrap gap-2">
+                        {zone.locations.map((location, index) => (
+                          <Badge key={index} variant="outline" className="text-xs">
+                            {location.state}, {location.city}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="text-sm text-muted-foreground mb-3">No locations assigned</p>
                   )}
+                  
                   <div className="text-sm text-muted-foreground">
                     Created: {new Date(zone.created_at).toLocaleDateString()}
                   </div>
@@ -142,6 +156,7 @@ const ZonesPage = () => {
       )}
 
       <ZoneDialog
+        zone={editingZone}
         zone={editingZone}
         open={isDialogOpen}
         onOpenChange={handleCloseDialog}

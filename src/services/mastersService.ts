@@ -60,10 +60,19 @@ export type Size = {
   updated_by: string | null;
 };
 
+export type ZoneLocation = {
+  id: string;
+  zone_id: string;
+  state: string;
+  city: string;
+  created_at: string;
+  created_by: string | null;
+};
+
 export type Zone = {
   id: string;
   name: string;
-  code: string;
+  code: string | null;
   description: string | null;
   warehouse_assignments: any[] | null;
   status: 'active' | 'inactive';
@@ -71,6 +80,7 @@ export type Zone = {
   updated_at: string;
   created_by: string | null;
   updated_by: string | null;
+  locations?: ZoneLocation[];
 };
 
 export type PriceType = {
@@ -300,17 +310,49 @@ export async function deleteSize(id: string): Promise<void> {
   if (error) throw error;
 }
 
+// Zone Location services
+export async function fetchZoneLocations(zoneId: string): Promise<ZoneLocation[]> {
+  const { data, error } = await supabase
+    .from('zone_locations')
+    .select('*')
+    .eq('zone_id', zoneId)
+    .order('state', { ascending: true });
+  if (error) throw error;
+  return (data || []) as ZoneLocation[];
+}
+
+export async function createZoneLocation(location: Omit<ZoneLocation, 'id' | 'created_at' | 'created_by'>): Promise<ZoneLocation> {
+  const { data, error } = await supabase
+    .from('zone_locations')
+    .insert(location)
+    .select()
+    .single();
+  if (error) throw error;
+  return data as ZoneLocation;
+}
+
+export async function deleteZoneLocation(id: string): Promise<void> {
+  const { error } = await supabase
+    .from('zone_locations')
+    .delete()
+    .eq('id', id);
+  if (error) throw error;
+}
+
 // Zone services
 export async function fetchZones(): Promise<Zone[]> {
   const { data, error } = await supabase
     .from('zones')
-    .select('*')
+    .select(`
+      *,
+      locations:zone_locations(*)
+    `)
     .order('created_at', { ascending: false });
   if (error) throw error;
   return (data || []) as Zone[];
 }
 
-export async function createZone(zone: Omit<Zone, 'id' | 'created_at' | 'updated_at' | 'created_by' | 'updated_by'>): Promise<Zone> {
+export async function createZone(zone: Omit<Zone, 'id' | 'created_at' | 'updated_at' | 'created_by' | 'updated_by' | 'locations'>): Promise<Zone> {
   const { data, error } = await supabase
     .from('zones')
     .insert(zone)

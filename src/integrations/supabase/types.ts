@@ -472,9 +472,44 @@ export type Database = {
         }
         Relationships: []
       }
+      zone_locations: {
+        Row: {
+          city: string
+          created_at: string
+          created_by: string | null
+          id: string
+          state: string
+          zone_id: string
+        }
+        Insert: {
+          city: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          state: string
+          zone_id: string
+        }
+        Update: {
+          city?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          state?: string
+          zone_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "zone_locations_zone_id_fkey"
+            columns: ["zone_id"]
+            isOneToOne: false
+            referencedRelation: "zones"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       zones: {
         Row: {
-          code: string
+          code: string | null
           created_at: string
           created_by: string | null
           description: string | null
@@ -486,7 +521,7 @@ export type Database = {
           warehouse_assignments: Json | null
         }
         Insert: {
-          code: string
+          code?: string | null
           created_at?: string
           created_by?: string | null
           description?: string | null
@@ -498,7 +533,7 @@ export type Database = {
           warehouse_assignments?: Json | null
         }
         Update: {
-          code?: string
+          code?: string | null
           created_at?: string
           created_by?: string | null
           description?: string | null
