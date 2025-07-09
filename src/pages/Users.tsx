@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -34,8 +33,33 @@ const Users = () => {
   // Mutation for updating user activation status
   const updateUserStatusMutation = useMutation({
     mutationFn: async ({ userId, isActive }: { userId: string; isActive: boolean }) => {
-      console.log('Updating user status:', { userId, isActive });
+      console.log('=== Starting user status update ===');
+      console.log('User ID:', userId);
+      console.log('New active status:', isActive);
+      console.log('Current user (auth.uid()):', (await supabase.auth.getUser()).data.user?.id);
       
+      // First, let's check the current user's permissions
+      const { data: currentUser } = await supabase.auth.getUser();
+      console.log('Current authenticated user:', currentUser.user?.id);
+      
+      // Check if current user has admin permissions
+      const { data: adminCheck, error: adminError } = await supabase
+        .rpc('user_is_admin', { _user_id: currentUser.user?.id });
+      
+      console.log('Admin check result:', adminCheck);
+      console.log('Admin check error:', adminError);
+      
+      // Try to fetch the user first to see current state
+      const { data: beforeUpdate, error: fetchError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .single();
+        
+      console.log('User before update:', beforeUpdate);
+      console.log('Fetch error:', fetchError);
+      
+      // Now attempt the update
       const { data, error } = await supabase
         .from('profiles')
         .update({ 
@@ -45,15 +69,35 @@ const Users = () => {
         .eq('id', userId)
         .select();
 
+      console.log('Update result:', data);
+      console.log('Update error:', error);
+      
+      // Check the user after update to verify the change
+      const { data: afterUpdate, error: afterError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .single();
+        
+      console.log('User after update:', afterUpdate);
+      console.log('After fetch error:', afterError);
+
       if (error) {
-        console.error('Error updating user status:', error);
+        console.error('=== Update failed ===');
+        console.error('Error details:', error);
         throw error;
       }
       
-      console.log('User status updated successfully:', data);
+      if (!data || data.length === 0) {
+        console.error('=== No rows were updated ===');
+        throw new Error('No user was updated. This might be due to insufficient permissions.');
+      }
+      
+      console.log('=== Update completed successfully ===');
       return data;
     },
     onSuccess: (data, { isActive }) => {
+      console.log('Mutation succeeded, invalidating queries');
       queryClient.invalidateQueries({ queryKey: ['users'] });
       toast({
         title: "Success",
@@ -61,7 +105,11 @@ const Users = () => {
       });
     },
     onError: (error: any) => {
-      console.error('Mutation error:', error);
+      console.error('=== Mutation error ===');
+      console.error('Error object:', error);
+      console.error('Error message:', error.message);
+      console.error('Error details:', error.details);
+      console.error('Error hint:', error.hint);
       toast({
         title: "Error",
         description: error.message || "Failed to update user status",
@@ -184,6 +232,11 @@ const Users = () => {
   };
 
   const handleUserAction = async (action: string, userId: string, isActive?: boolean) => {
+    console.log('=== Handle user action called ===');
+    console.log('Action:', action);
+    console.log('User ID:', userId);
+    console.log('Is Active:', isActive);
+    
     try {
       switch (action) {
         case 'reset-password':
@@ -194,9 +247,11 @@ const Users = () => {
           });
           break;
         case 'activate':
+          console.log('Calling activate mutation...');
           updateUserStatusMutation.mutate({ userId, isActive: true });
           break;
         case 'deactivate':
+          console.log('Calling deactivate mutation...');
           updateUserStatusMutation.mutate({ userId, isActive: false });
           break;
         case 'delete':
@@ -209,6 +264,7 @@ const Users = () => {
           break;
       }
     } catch (error) {
+      console.error('Error in handleUserAction:', error);
       toast({
         title: "Error",
         description: "Failed to perform action. Please try again.",
