@@ -1,12 +1,12 @@
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useCallback } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Progress } from '@/components/ui/progress';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Download, Upload, AlertCircle, CheckCircle, FileText, X } from 'lucide-react';
+import { Download, Upload, AlertCircle, CheckCircle, FileText, X, CloudUpload } from 'lucide-react';
 import { useCreateBrand, useCreateCategory, useCreateColor } from '@/hooks/useMasters';
 import { useToast } from '@/hooks/use-toast';
 
@@ -42,6 +42,7 @@ const BulkImportDialog: React.FC<BulkImportDialogProps> = ({
   const [processingResult, setProcessingResult] = useState<ProcessingResult | null>(null);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [step, setStep] = useState<'upload' | 'review' | 'complete'>('upload');
+  const [isDragOver, setIsDragOver] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   const createBrandMutation = useCreateBrand();
@@ -164,27 +165,12 @@ const BulkImportDialog: React.FC<BulkImportDialogProps> = ({
     return { valid: true, errors: [], data };
   };
 
-  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file && file.type === 'text/csv') {
-      setSelectedFile(file);
-    } else {
-      toast({
-        title: "Invalid file type",
-        description: "Please select a CSV file",
-        variant: "destructive"
-      });
-    }
-  };
-
-  const processFile = async () => {
-    if (!selectedFile) return;
-
+  const processFile = async (file: File) => {
     setIsProcessing(true);
     setUploadProgress(0);
 
     try {
-      const fileContent = await selectedFile.text();
+      const fileContent = await file.text();
       const rows = parseCSV(fileContent);
       const dataRows = rows.slice(1); // Skip header row
 
@@ -223,6 +209,39 @@ const BulkImportDialog: React.FC<BulkImportDialogProps> = ({
       setIsProcessing(false);
     }
   };
+
+  const handleFileSelect = (file: File) => {
+    if (file && file.type === 'text/csv') {
+      setSelectedFile(file);
+      processFile(file);
+    } else {
+      toast({
+        title: "Invalid file type",
+        description: "Please select a CSV file",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(true);
+  }, []);
+
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(false);
+  }, []);
+
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(false);
+    
+    const files = Array.from(e.dataTransfer.files);
+    if (files.length > 0) {
+      handleFileSelect(files[0]);
+    }
+  }, []);
 
   const confirmImport = async () => {
     if (!processingResult?.validRecords.length) return;
@@ -268,6 +287,7 @@ const BulkImportDialog: React.FC<BulkImportDialogProps> = ({
     setProcessingResult(null);
     setUploadProgress(0);
     setStep('upload');
+    setIsDragOver(false);
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
@@ -299,30 +319,49 @@ const BulkImportDialog: React.FC<BulkImportDialogProps> = ({
               </div>
 
               <div className="space-y-4">
-                <Label htmlFor="csvFile">Select CSV File</Label>
-                <div className="flex items-center gap-4">
+                <Label>Drop CSV File or Click to Select</Label>
+                <div
+                  className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors ${
+                    isDragOver
+                      ? 'border-primary bg-primary/5'
+                      : 'border-muted-foreground/25 hover:border-primary/50'
+                  }`}
+                  onDragOver={handleDragOver}
+                  onDragLeave={handleDragLeave}
+                  onDrop={handleDrop}
+                  onClick={() => fileInputRef.current?.click()}
+                >
                   <input
                     ref={fileInputRef}
-                    id="csvFile"
                     type="file"
                     accept=".csv"
-                    onChange={handleFileSelect}
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) handleFileSelect(file);
+                    }}
                     className="hidden"
                   />
-                  <Button
-                    variant="outline"
-                    onClick={() => fileInputRef.current?.click()}
-                    className="flex items-center gap-2"
-                  >
-                    <FileText className="h-4 w-4" />
-                    Choose File
-                  </Button>
-                  {selectedFile && (
-                    <span className="text-sm text-muted-foreground">
-                      {selectedFile.name} ({(selectedFile.size / 1024).toFixed(1)} KB)
-                    </span>
-                  )}
+                  
+                  <div className="flex flex-col items-center gap-4">
+                    <CloudUpload className={`h-12 w-12 ${isDragOver ? 'text-primary' : 'text-muted-foreground'}`} />
+                    <div>
+                      <p className="text-lg font-medium">
+                        {isDragOver ? 'Drop your CSV file here' : 'Drop CSV file here or click to browse'}
+                      </p>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        File will be processed automatically after selection
+                      </p>
+                    </div>
+                  </div>
                 </div>
+
+                {selectedFile && (
+                  <div className="text-center">
+                    <p className="text-sm text-muted-foreground">
+                      Selected: {selectedFile.name} ({(selectedFile.size / 1024).toFixed(1)} KB)
+                    </p>
+                  </div>
+                )}
 
                 {isProcessing && (
                   <div className="space-y-2">
@@ -334,16 +373,9 @@ const BulkImportDialog: React.FC<BulkImportDialogProps> = ({
                 )}
               </div>
 
-              <div className="flex justify-end gap-2">
+              <div className="flex justify-end">
                 <Button variant="outline" onClick={handleClose}>
                   Cancel
-                </Button>
-                <Button
-                  onClick={processFile}
-                  disabled={!selectedFile || isProcessing}
-                >
-                  <Upload className="h-4 w-4 mr-2" />
-                  {isProcessing ? 'Processing...' : 'Process File'}
                 </Button>
               </div>
             </>
@@ -363,9 +395,29 @@ const BulkImportDialog: React.FC<BulkImportDialogProps> = ({
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold text-green-700">
+                    <div className="text-2xl font-bold text-green-700 mb-4">
                       {processingResult.validRecords.length}
                     </div>
+                    {processingResult.validRecords.length > 0 && (
+                      <div className="space-y-2">
+                        <p className="text-sm font-medium">Preview (top 5):</p>
+                        <div className="space-y-1 max-h-32 overflow-y-auto">
+                          {processingResult.validRecords.slice(0, 5).map((record, index) => (
+                            <div key={index} className="text-xs p-2 bg-green-50 rounded border">
+                              {type === 'colors' 
+                                ? `${record.name} (${record.hex_code})`
+                                : `${record.name} - ${record.description || 'No description'}`
+                              }
+                            </div>
+                          ))}
+                          {processingResult.validRecords.length > 5 && (
+                            <div className="text-xs text-muted-foreground">
+                              ...and {processingResult.validRecords.length - 5} more
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
 
@@ -380,46 +432,40 @@ const BulkImportDialog: React.FC<BulkImportDialogProps> = ({
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold text-red-700">
+                    <div className="text-2xl font-bold text-red-700 mb-4">
                       {processingResult.invalidRecords.length}
                     </div>
                     {processingResult.invalidRecords.length > 0 && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={downloadInvalidRecords}
-                        className="mt-2"
-                      >
-                        <Download className="h-4 w-4 mr-2" />
-                        Download Errors
-                      </Button>
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <p className="text-sm font-medium">Preview (top 5):</p>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={downloadInvalidRecords}
+                          >
+                            <Download className="h-4 w-4 mr-2" />
+                            Download with Comments
+                          </Button>
+                        </div>
+                        <div className="space-y-1 max-h-32 overflow-y-auto">
+                          {processingResult.invalidRecords.slice(0, 5).map((record, index) => (
+                            <div key={index} className="text-xs p-2 bg-red-50 rounded border">
+                              <div className="font-medium">Row {record.row}: {record.data.join(', ')}</div>
+                              <div className="text-red-600 mt-1">{record.errors.join('; ')}</div>
+                            </div>
+                          ))}
+                          {processingResult.invalidRecords.length > 5 && (
+                            <div className="text-xs text-muted-foreground">
+                              ...and {processingResult.invalidRecords.length - 5} more errors
+                            </div>
+                          )}
+                        </div>
+                      </div>
                     )}
                   </CardContent>
                 </Card>
               </div>
-
-              {processingResult.invalidRecords.length > 0 && (
-                <Alert variant="destructive">
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertDescription>
-                    <div className="space-y-2">
-                      <p>Found {processingResult.invalidRecords.length} records with errors:</p>
-                      <div className="max-h-32 overflow-y-auto space-y-1">
-                        {processingResult.invalidRecords.slice(0, 5).map((record, index) => (
-                          <div key={index} className="text-sm">
-                            Row {record.row}: {record.errors.join(', ')}
-                          </div>
-                        ))}
-                        {processingResult.invalidRecords.length > 5 && (
-                          <div className="text-sm font-medium">
-                            ...and {processingResult.invalidRecords.length - 5} more errors
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </AlertDescription>
-                </Alert>
-              )}
 
               <div className="flex justify-end gap-2">
                 <Button variant="outline" onClick={resetDialog}>
