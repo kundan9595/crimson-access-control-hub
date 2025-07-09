@@ -529,6 +529,8 @@ export type Database = {
           created_by: string | null
           id: string
           state: string
+          updated_at: string
+          updated_by: string | null
           zone_id: string
         }
         Insert: {
@@ -537,6 +539,8 @@ export type Database = {
           created_by?: string | null
           id?: string
           state: string
+          updated_at?: string
+          updated_by?: string | null
           zone_id: string
         }
         Update: {
@@ -545,6 +549,8 @@ export type Database = {
           created_by?: string | null
           id?: string
           state?: string
+          updated_at?: string
+          updated_by?: string | null
           zone_id?: string
         }
         Relationships: [
