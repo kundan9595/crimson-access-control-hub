@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
@@ -47,51 +46,35 @@ const CreateUserForm: React.FC<CreateUserFormProps> = ({ roles, onSuccess }) => 
     mutationFn: async (userData: typeof formData & { selectedRoles: string[] }) => {
       setIsLoading(true);
       
-      // Generate a UUID for the new profile
-      const { data: { user }, error: signUpError } = await supabase.auth.admin.createUser({
-        email: userData.email,
-        email_confirm: true,
-        user_metadata: {
-          first_name: userData.firstName,
-          last_name: userData.lastName,
-        }
+      // Get the current session
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error('You must be logged in to create users');
+      }
+
+      // Call the Edge Function to create the user
+      const { data, error } = await supabase.functions.invoke('create-user', {
+        body: {
+          firstName: userData.firstName,
+          lastName: userData.lastName,
+          email: userData.email,
+          phoneNumber: userData.phoneNumber,
+          department: userData.department,
+          designation: userData.designation,
+          selectedRoles: userData.selectedRoles,
+        },
       });
 
-      if (signUpError) throw signUpError;
-      if (!user) throw new Error('Failed to create user');
+      if (error) {
+        console.error('Edge function error:', error);
+        throw new Error(error.message || 'Failed to create user');
+      }
 
-      // Create profile entry with the user's ID - fix TypeScript issues
-      const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .insert({
-          id: user.id,
-          email: userData.email,
-          first_name: userData.firstName,
-          last_name: userData.lastName,
-          phone_number: userData.phoneNumber || null,
-          department: userData.department ? userData.department as DepartmentType : null,
-          designation: userData.designation || null,
-        })
-        .select()
-        .single();
-      
-      if (profileError) throw profileError;
-      
-      // Assign roles to the user
-      if (userData.selectedRoles.length > 0) {
-        const userRoles = userData.selectedRoles.map(roleId => ({
-          user_id: user.id,
-          role_id: roleId,
-        }));
-
-        const { error: rolesError } = await supabase
-          .from('user_roles')
-          .insert(userRoles);
-        
-        if (rolesError) throw rolesError;
+      if (data?.error) {
+        throw new Error(data.error);
       }
       
-      return profile;
+      return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['users'] });
@@ -101,10 +84,11 @@ const CreateUserForm: React.FC<CreateUserFormProps> = ({ roles, onSuccess }) => 
       });
       onSuccess();
     },
-    onError: (error) => {
+    onError: (error: any) => {
+      console.error('Create user error:', error);
       toast({
         title: "Error",
-        description: error.message,
+        description: error.message || "Failed to create user",
         variant: "destructive",
       });
     },
