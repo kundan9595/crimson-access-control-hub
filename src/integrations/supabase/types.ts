@@ -104,6 +104,8 @@ export type Database = {
           images: Json | null
           name: string
           primary_image_url: string | null
+          selected_sizes: Json | null
+          size_group_id: string | null
           status: string
           style_id: string | null
           tax_percentage: number | null
@@ -119,6 +121,8 @@ export type Database = {
           images?: Json | null
           name: string
           primary_image_url?: string | null
+          selected_sizes?: Json | null
+          size_group_id?: string | null
           status?: string
           style_id?: string | null
           tax_percentage?: number | null
@@ -134,6 +138,8 @@ export type Database = {
           images?: Json | null
           name?: string
           primary_image_url?: string | null
+          selected_sizes?: Json | null
+          size_group_id?: string | null
           status?: string
           style_id?: string | null
           tax_percentage?: number | null
@@ -146,6 +152,13 @@ export type Database = {
             columns: ["color_id"]
             isOneToOne: false
             referencedRelation: "colors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "classes_size_group_id_fkey"
+            columns: ["size_group_id"]
+            isOneToOne: false
+            referencedRelation: "size_groups"
             referencedColumns: ["id"]
           },
           {

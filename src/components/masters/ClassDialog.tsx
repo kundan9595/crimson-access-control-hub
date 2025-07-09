@@ -20,9 +20,9 @@ const ClassDialog: React.FC<ClassDialogProps> = ({ classItem, trigger }) => {
   const [open, setOpen] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
-    style_id: 'none',
-    color_id: 'none',
-    size_group_id: 'none',
+    style_id: null as string | null,
+    color_id: null as string | null,
+    size_group_id: null as string | null,
     selected_sizes: [] as string[],
     description: '',
     status: 'active' as 'active' | 'inactive',
@@ -39,7 +39,7 @@ const ClassDialog: React.FC<ClassDialogProps> = ({ classItem, trigger }) => {
   const updateMutation = useUpdateClass();
 
   // Filter sizes based on selected size group
-  const availableSizes = formData.size_group_id !== 'none' 
+  const availableSizes = formData.size_group_id 
     ? allSizes.filter(size => size.size_group_id === formData.size_group_id && size.status === 'active')
     : [];
 
@@ -47,10 +47,10 @@ const ClassDialog: React.FC<ClassDialogProps> = ({ classItem, trigger }) => {
     if (classItem) {
       setFormData({
         name: classItem.name,
-        style_id: classItem.style_id || 'none',
-        color_id: classItem.color_id || 'none',
-        size_group_id: 'none', // Will be set based on class data if available
-        selected_sizes: [], // Will be populated based on class data if available
+        style_id: classItem.style_id,
+        color_id: classItem.color_id,
+        size_group_id: classItem.size_group_id,
+        selected_sizes: Array.isArray(classItem.selected_sizes) ? classItem.selected_sizes : [],
         description: classItem.description || '',
         status: classItem.status,
         tax_percentage: classItem.tax_percentage || 0,
@@ -64,16 +64,16 @@ const ClassDialog: React.FC<ClassDialogProps> = ({ classItem, trigger }) => {
     e.preventDefault();
     
     const submitData = {
-      ...formData,
-      style_id: formData.style_id === 'none' ? null : formData.style_id,
-      color_id: formData.color_id === 'none' ? null : formData.color_id,
+      name: formData.name,
+      style_id: formData.style_id,
+      color_id: formData.color_id,
+      size_group_id: formData.size_group_id,
+      selected_sizes: formData.selected_sizes.length > 0 ? formData.selected_sizes : null,
       description: formData.description || null,
+      status: formData.status,
       tax_percentage: formData.tax_percentage || null,
       primary_image_url: formData.primary_image_url || null,
       images: formData.images.length > 0 ? formData.images : null,
-      // Store size group and selected sizes in metadata for now
-      size_group_id: formData.size_group_id === 'none' ? null : formData.size_group_id,
-      selected_sizes: formData.selected_sizes.length > 0 ? formData.selected_sizes : null,
     };
 
     try {
@@ -92,9 +92,9 @@ const ClassDialog: React.FC<ClassDialogProps> = ({ classItem, trigger }) => {
   const resetForm = () => {
     setFormData({
       name: '',
-      style_id: 'none',
-      color_id: 'none',
-      size_group_id: 'none',
+      style_id: null,
+      color_id: null,
+      size_group_id: null,
       selected_sizes: [],
       description: '',
       status: 'active',
@@ -110,9 +110,10 @@ const ClassDialog: React.FC<ClassDialogProps> = ({ classItem, trigger }) => {
   };
 
   const handleSizeGroupChange = (value: string) => {
+    const newValue = value === 'none' ? null : value;
     setFormData(prev => ({
       ...prev,
-      size_group_id: value,
+      size_group_id: newValue,
       selected_sizes: [] // Clear selected sizes when group changes
     }));
   };
@@ -178,7 +179,7 @@ const ClassDialog: React.FC<ClassDialogProps> = ({ classItem, trigger }) => {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="style">Style</Label>
-                <Select value={formData.style_id} onValueChange={(value) => setFormData(prev => ({ ...prev, style_id: value }))}>
+                <Select value={formData.style_id || 'none'} onValueChange={(value) => setFormData(prev => ({ ...prev, style_id: value === 'none' ? null : value }))}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select style" />
                   </SelectTrigger>
@@ -195,7 +196,7 @@ const ClassDialog: React.FC<ClassDialogProps> = ({ classItem, trigger }) => {
 
               <div>
                 <Label htmlFor="color">Color</Label>
-                <Select value={formData.color_id} onValueChange={(value) => setFormData(prev => ({ ...prev, color_id: value }))}>
+                <Select value={formData.color_id || 'none'} onValueChange={(value) => setFormData(prev => ({ ...prev, color_id: value === 'none' ? null : value }))}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select color" />
                   </SelectTrigger>
@@ -219,7 +220,7 @@ const ClassDialog: React.FC<ClassDialogProps> = ({ classItem, trigger }) => {
 
             <div>
               <Label htmlFor="sizeGroup">Size Group</Label>
-              <Select value={formData.size_group_id} onValueChange={handleSizeGroupChange}>
+              <Select value={formData.size_group_id || 'none'} onValueChange={handleSizeGroupChange}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select size group" />
                 </SelectTrigger>
@@ -234,7 +235,7 @@ const ClassDialog: React.FC<ClassDialogProps> = ({ classItem, trigger }) => {
               </Select>
             </div>
 
-            {formData.size_group_id !== 'none' && availableSizes.length > 0 && (
+            {formData.size_group_id && availableSizes.length > 0 && (
               <div>
                 <Label>Available Sizes</Label>
                 <div className="border rounded-md p-3 space-y-2 max-h-32 overflow-y-auto">
