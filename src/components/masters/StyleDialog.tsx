@@ -28,18 +28,14 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
-import { useCreateStyle, useUpdateStyle } from '@/hooks/useMasters';
+import { useCreateStyle, useUpdateStyle, useBrands, useCategories } from '@/hooks/useMasters';
 import { Style } from '@/services/mastersService';
 
 const formSchema = z.object({
   name: z.string().min(1, 'Name is required'),
-  code: z.string().min(1, 'Code is required'),
   description: z.string().optional(),
-  size_category: z.string().optional(),
-  fabric_composition: z.string().optional(),
-  care_instructions: z.string().optional(),
-  season: z.string().optional(),
-  gender: z.string().optional(),
+  brand_id: z.string().optional(),
+  category_id: z.string().optional(),
   status: z.enum(['active', 'inactive']),
 });
 
@@ -58,36 +54,28 @@ export const StyleDialog: React.FC<StyleDialogProps> = ({
 }) => {
   const createMutation = useCreateStyle();
   const updateMutation = useUpdateStyle();
+  const { data: brands } = useBrands();
+  const { data: categories } = useCategories();
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: style?.name || '',
-      code: style?.code || '',
       description: style?.description || '',
-      size_category: style?.size_category || '',
-      fabric_composition: style?.fabric_composition || '',
-      care_instructions: style?.care_instructions || '',
-      season: style?.season || '',
-      gender: style?.gender || '',
+      brand_id: style?.brand_id || '',
+      category_id: style?.category_id || '',
       status: style?.status || 'active',
     },
   });
 
   const onSubmit = async (data: FormData) => {
     try {
-      // Ensure all required fields are present and properly typed
       const styleData = {
         name: data.name,
-        code: data.code,
         description: data.description || null,
-        size_category: data.size_category || null,
-        fabric_composition: data.fabric_composition || null,
-        care_instructions: data.care_instructions || null,
-        season: data.season || null,
-        gender: data.gender || null,
+        brand_id: data.brand_id || null,
+        category_id: data.category_id || null,
         status: data.status,
-        color_variants: style?.color_variants || [],
       };
 
       if (style) {
@@ -106,7 +94,7 @@ export const StyleDialog: React.FC<StyleDialogProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px]">
+      <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>{style ? 'Edit Style' : 'Add New Style'}</DialogTitle>
           <DialogDescription>
@@ -116,35 +104,19 @@ export const StyleDialog: React.FC<StyleDialogProps> = ({
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Name *</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Enter style name" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="code"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Code *</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Enter style code" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
+            <FormField
+              control={form.control}
+              name="name"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Name *</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Enter style name" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
             <FormField
               control={form.control}
@@ -167,119 +139,74 @@ export const StyleDialog: React.FC<StyleDialogProps> = ({
             <div className="grid grid-cols-2 gap-4">
               <FormField
                 control={form.control}
-                name="size_category"
+                name="brand_id"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Size Category</FormLabel>
+                    <FormLabel>Brand</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select brand" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="">No Brand</SelectItem>
+                        {brands?.filter(brand => brand.status === 'active').map((brand) => (
+                          <SelectItem key={brand.id} value={brand.id}>
+                            {brand.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="category_id"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Category</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select category" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="">No Category</SelectItem>
+                        {categories?.filter(category => category.status === 'active').map((category) => (
+                          <SelectItem key={category.id} value={category.id}>
+                            {category.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <FormField
+              control={form.control}
+              name="status"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Status</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl>
-                      <Input placeholder="e.g., S, M, L, XL" {...field} />
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select status" />
+                      </SelectTrigger>
                     </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="season"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Season</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select season" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="spring">Spring</SelectItem>
-                        <SelectItem value="summer">Summer</SelectItem>
-                        <SelectItem value="autumn">Autumn</SelectItem>
-                        <SelectItem value="winter">Winter</SelectItem>
-                        <SelectItem value="all_season">All Season</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="gender"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Gender</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select gender" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="men">Men</SelectItem>
-                        <SelectItem value="women">Women</SelectItem>
-                        <SelectItem value="unisex">Unisex</SelectItem>
-                        <SelectItem value="kids">Kids</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="status"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Status</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select status" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="active">Active</SelectItem>
-                        <SelectItem value="inactive">Inactive</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            <FormField
-              control={form.control}
-              name="fabric_composition"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Fabric Composition</FormLabel>
-                  <FormControl>
-                    <Input placeholder="e.g., 100% Cotton, 50% Polyester 50% Cotton" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="care_instructions"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Care Instructions</FormLabel>
-                  <FormControl>
-                    <Textarea
-                      placeholder="Enter care instructions"
-                      className="resize-none"
-                      {...field}
-                    />
-                  </FormControl>
+                    <SelectContent>
+                      <SelectItem value="active">Active</SelectItem>
+                      <SelectItem value="inactive">Inactive</SelectItem>
+                    </SelectContent>
+                  </Select>
                   <FormMessage />
                 </FormItem>
               )}

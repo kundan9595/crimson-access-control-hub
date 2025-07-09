@@ -71,11 +71,9 @@ export const StylesList: React.FC = () => {
           <TableHeader>
             <TableRow>
               <TableHead>Name</TableHead>
-              <TableHead>Code</TableHead>
               <TableHead>Description</TableHead>
-              <TableHead>Season</TableHead>
-              <TableHead>Gender</TableHead>
-              <TableHead>Fabric</TableHead>
+              <TableHead>Brand</TableHead>
+              <TableHead>Category</TableHead>
               <TableHead>Status</TableHead>
               <TableHead className="w-[70px]">Actions</TableHead>
             </TableRow>
@@ -84,30 +82,26 @@ export const StylesList: React.FC = () => {
             {styles?.map((style) => (
               <TableRow key={style.id}>
                 <TableCell className="font-medium">{style.name}</TableCell>
-                <TableCell>{style.code}</TableCell>
                 <TableCell className="max-w-[200px] truncate">
                   {style.description || '-'}
                 </TableCell>
                 <TableCell>
-                  {style.season ? (
-                    <Badge variant="outline" className="capitalize">
-                      {style.season.replace('_', ' ')}
+                  {style.brand?.name ? (
+                    <Badge variant="outline">
+                      {style.brand.name}
                     </Badge>
                   ) : (
                     '-'
                   )}
                 </TableCell>
                 <TableCell>
-                  {style.gender ? (
-                    <Badge variant="outline" className="capitalize">
-                      {style.gender}
+                  {style.category?.name ? (
+                    <Badge variant="outline">
+                      {style.category.name}
                     </Badge>
                   ) : (
                     '-'
                   )}
-                </TableCell>
-                <TableCell className="max-w-[150px] truncate">
-                  {style.fabric_composition || '-'}
                 </TableCell>
                 <TableCell>
                   <Badge variant={style.status === 'active' ? 'default' : 'secondary'}>

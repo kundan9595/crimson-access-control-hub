@@ -112,22 +112,21 @@ export type Vendor = {
   updated_by: string | null;
 };
 
+// Updated Style type for simplified structure
 export type Style = {
   id: string;
   name: string;
-  code: string;
   description: string | null;
-  color_variants: any[] | null;
-  size_category: string | null;
-  fabric_composition: string | null;
-  care_instructions: string | null;
-  season: string | null;
-  gender: string | null;
+  brand_id: string | null;
+  category_id: string | null;
   status: 'active' | 'inactive';
   created_at: string;
   updated_at: string;
   created_by: string | null;
   updated_by: string | null;
+  // Virtual fields for joins
+  brand?: Brand;
+  category?: Category;
 };
 
 // Brand services
@@ -474,17 +473,21 @@ export async function deleteVendor(id: string): Promise<void> {
   if (error) throw error;
 }
 
-// Style services
+// Updated Style services for simplified structure
 export async function fetchStyles(): Promise<Style[]> {
   const { data, error } = await supabase
     .from('styles')
-    .select('*')
+    .select(`
+      *,
+      brand:brands(id, name),
+      category:categories(id, name)
+    `)
     .order('created_at', { ascending: false });
   if (error) throw error;
   return (data || []) as Style[];
 }
 
-export async function createStyle(style: Omit<Style, 'id' | 'created_at' | 'updated_at' | 'created_by' | 'updated_by'>): Promise<Style> {
+export async function createStyle(style: Omit<Style, 'id' | 'created_at' | 'updated_at' | 'created_by' | 'updated_by' | 'brand' | 'category'>): Promise<Style> {
   const { data, error } = await supabase
     .from('styles')
     .insert(style)
