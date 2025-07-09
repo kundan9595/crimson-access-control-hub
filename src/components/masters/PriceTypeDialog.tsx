@@ -70,13 +70,22 @@ const PriceTypeDialog = ({ priceType, open, onOpenChange }: PriceTypeDialogProps
 
   const onSubmit = async (data: PriceTypeFormData) => {
     try {
+      const priceTypeData = {
+        name: data.name,
+        code: data.code,
+        description: data.description || null,
+        is_default: data.is_default || null,
+        multiplier: data.multiplier || null,
+        status: data.status,
+      };
+
       if (priceType) {
         await updatePriceType.mutateAsync({
           id: priceType.id,
-          updates: data,
+          updates: priceTypeData,
         });
       } else {
-        await createPriceType.mutateAsync(data);
+        await createPriceType.mutateAsync(priceTypeData);
       }
       onOpenChange(false);
       form.reset();

@@ -57,13 +57,19 @@ const SizeGroupDialog = ({ sizeGroup, open, onOpenChange }: SizeGroupDialogProps
 
   const onSubmit = async (data: SizeGroupFormData) => {
     try {
+      const sizeGroupData = {
+        name: data.name,
+        description: data.description || null,
+        status: data.status,
+      };
+
       if (sizeGroup) {
         await updateSizeGroup.mutateAsync({
           id: sizeGroup.id,
-          updates: data,
+          updates: sizeGroupData,
         });
       } else {
-        await createSizeGroup.mutateAsync(data);
+        await createSizeGroup.mutateAsync(sizeGroupData);
       }
       onOpenChange(false);
       form.reset();

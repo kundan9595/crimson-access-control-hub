@@ -85,9 +85,9 @@ const VendorDialog = ({ vendor, open, onOpenChange }: VendorDialogProps) => {
 
   const onSubmit = async (data: VendorFormData) => {
     try {
-      // Convert empty strings to null for optional fields
       const vendorData = {
-        ...data,
+        name: data.name,
+        code: data.code,
         description: data.description || null,
         contact_person: data.contact_person || null,
         email: data.email || null,
@@ -95,6 +95,7 @@ const VendorDialog = ({ vendor, open, onOpenChange }: VendorDialogProps) => {
         address: data.address || null,
         tax_id: data.tax_id || null,
         payment_terms: data.payment_terms || null,
+        status: data.status,
       };
 
       if (vendor) {

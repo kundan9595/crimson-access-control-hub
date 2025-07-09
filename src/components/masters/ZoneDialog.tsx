@@ -62,7 +62,10 @@ const ZoneDialog = ({ zone, open, onOpenChange }: ZoneDialogProps) => {
   const onSubmit = async (data: ZoneFormData) => {
     try {
       const zoneData = {
-        ...data,
+        name: data.name,
+        code: data.code,
+        description: data.description || null,
+        status: data.status,
         warehouse_assignments: zone?.warehouse_assignments || [],
       };
 
