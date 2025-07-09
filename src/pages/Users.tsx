@@ -10,6 +10,7 @@ import { UserPlus, Edit2, Shield, Mail, Calendar } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import UserRoleForm from '@/components/users/UserRoleForm';
+import CreateUserForm from '@/components/users/CreateUserForm';
 import type { Tables } from '@/integrations/supabase/types';
 
 type Profile = Tables<'profiles'>;
@@ -17,6 +18,7 @@ type Role = Tables<'roles'>;
 
 const Users = () => {
   const [selectedUser, setSelectedUser] = useState<Profile | null>(null);
+  const [isCreateUserOpen, setIsCreateUserOpen] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -83,6 +85,26 @@ const Users = () => {
             Manage system users and their roles
           </p>
         </div>
+        <Dialog open={isCreateUserOpen} onOpenChange={setIsCreateUserOpen}>
+          <DialogTrigger asChild>
+            <Button>
+              <UserPlus className="w-4 h-4 mr-2" />
+              Create User
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Create New User</DialogTitle>
+              <DialogDescription>
+                Add a new user to the system and assign roles
+              </DialogDescription>
+            </DialogHeader>
+            <CreateUserForm 
+              roles={roles || []}
+              onSuccess={() => setIsCreateUserOpen(false)}
+            />
+          </DialogContent>
+        </Dialog>
       </div>
 
       {usersLoading ? (

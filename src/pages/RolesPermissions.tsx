@@ -125,7 +125,7 @@ const RolesPermissions = () => {
                   Create Role
                 </Button>
               </DialogTrigger>
-              <DialogContent>
+              <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
                 <DialogHeader>
                   <DialogTitle>Create New Role</DialogTitle>
                   <DialogDescription>
@@ -170,25 +170,10 @@ const RolesPermissions = () => {
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-2">
-                      <div className="flex items-center gap-2">
-                        <Badge variant={role.is_warehouse_admin ? "default" : "secondary"}>
-                          {role.is_warehouse_admin ? "Warehouse Admin" : "Standard Role"}
-                        </Badge>
-                      </div>
                       <div>
-                        <p className="text-sm font-medium mb-2">Permissions:</p>
-                        <div className="flex flex-wrap gap-1">
-                          {role.role_permissions?.slice(0, 3).map((rp: any) => (
-                            <Badge key={rp.permission_id} variant="outline" className="text-xs">
-                              {rp.permissions.name.replace(/_/g, ' ')}
-                            </Badge>
-                          ))}
-                          {role.role_permissions && role.role_permissions.length > 3 && (
-                            <Badge variant="outline" className="text-xs">
-                              +{role.role_permissions.length - 3} more
-                            </Badge>
-                          )}
-                        </div>
+                        <Badge variant="secondary">
+                          {role.role_permissions?.length || 0} permissions
+                        </Badge>
                       </div>
                     </div>
                   </CardContent>
@@ -199,13 +184,13 @@ const RolesPermissions = () => {
 
           {/* Edit Role Dialog */}
           <Dialog open={!!editingRole} onOpenChange={() => setEditingRole(null)}>
-            <DialogContent>
+            <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>Edit Role</DialogTitle>
                 <DialogDescription>
                   Modify role details and permissions
                 </DialogDescription>
-              </DialogHeader>
+            </DialogHeader>
               {editingRole && (
                 <RoleForm 
                   role={editingRole}

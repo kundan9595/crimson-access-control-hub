@@ -5,10 +5,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Switch } from '@/components/ui/switch';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import PermissionSelector from './PermissionSelector';
 import type { Tables } from '@/integrations/supabase/types';
 
 type Role = Tables<'roles'>;
@@ -24,7 +23,6 @@ const RoleForm: React.FC<RoleFormProps> = ({ role, onSuccess, permissions }) => 
   const [formData, setFormData] = useState({
     name: role?.name || '',
     description: role?.description || '',
-    is_warehouse_admin: role?.is_warehouse_admin || false,
   });
   const [selectedPermissions, setSelectedPermissions] = useState<string[]>([]);
   const { toast } = useToast();
@@ -51,7 +49,7 @@ const RoleForm: React.FC<RoleFormProps> = ({ role, onSuccess, permissions }) => 
     mutationFn: async (data: typeof formData) => {
       const { data: newRole, error } = await supabase
         .from('roles')
-        .insert([data])
+        .insert([{ ...data, is_warehouse_admin: false }])
         .select()
         .single();
       
@@ -153,7 +151,7 @@ const RoleForm: React.FC<RoleFormProps> = ({ role, onSuccess, permissions }) => 
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={handleSubmit} className="space-y-6">
       <div className="space-y-2">
         <Label htmlFor="name">Role Name</Label>
         <Input
@@ -174,34 +172,11 @@ const RoleForm: React.FC<RoleFormProps> = ({ role, onSuccess, permissions }) => 
         />
       </div>
 
-      <div className="flex items-center space-x-2">
-        <Switch
-          id="warehouse-admin"
-          checked={formData.is_warehouse_admin}
-          onCheckedChange={(checked) => setFormData(prev => ({ ...prev, is_warehouse_admin: checked }))}
-        />
-        <Label htmlFor="warehouse-admin">Warehouse Admin Role</Label>
-      </div>
-
-      <div className="space-y-2">
-        <Label>Permissions</Label>
-        <div className="grid grid-cols-2 gap-2 max-h-40 overflow-y-auto">
-          {permissions.map((permission) => (
-            <div key={permission.id} className="flex items-center space-x-2">
-              <Checkbox
-                id={permission.id}
-                checked={selectedPermissions.includes(permission.id)}
-                onCheckedChange={(checked) => 
-                  handlePermissionChange(permission.id, checked as boolean)
-                }
-              />
-              <Label htmlFor={permission.id} className="text-sm">
-                {permission.name.replace(/_/g, ' ')}
-              </Label>
-            </div>
-          ))}
-        </div>
-      </div>
+      <PermissionSelector
+        permissions={permissions}
+        selectedPermissions={selectedPermissions}
+        onPermissionChange={handlePermissionChange}
+      />
 
       <div className="flex justify-end space-x-2">
         <Button type="button" variant="outline" onClick={onSuccess}>
