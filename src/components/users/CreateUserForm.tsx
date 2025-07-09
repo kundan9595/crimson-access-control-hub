@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
@@ -52,6 +53,8 @@ const CreateUserForm: React.FC<CreateUserFormProps> = ({ roles, onSuccess }) => 
         throw new Error('You must be logged in to create users');
       }
 
+      console.log('Sending user data to edge function:', userData);
+
       // Call the Edge Function to create the user
       const { data, error } = await supabase.functions.invoke('create-user', {
         body: {
@@ -76,12 +79,25 @@ const CreateUserForm: React.FC<CreateUserFormProps> = ({ roles, onSuccess }) => 
       
       return data;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      console.log('User created successfully:', data);
       queryClient.invalidateQueries({ queryKey: ['users'] });
       toast({
         title: "Success",
         description: "User created successfully. They will receive an email to set up their account.",
       });
+      
+      // Reset form
+      setFormData({
+        firstName: '',
+        lastName: '',
+        email: '',
+        phoneNumber: '',
+        department: '',
+        designation: '',
+      });
+      setSelectedRoles([]);
+      
       onSuccess();
     },
     onError: (error: any) => {
@@ -118,10 +134,12 @@ const CreateUserForm: React.FC<CreateUserFormProps> = ({ roles, onSuccess }) => 
       return;
     }
 
+    console.log('Submitting form with roles:', selectedRoles);
     createUserMutation.mutate({ ...formData, selectedRoles });
   };
 
   const handleRoleChange = (roleId: string, checked: boolean) => {
+    console.log('Role change:', roleId, checked);
     if (checked) {
       setSelectedRoles(prev => [...prev, roleId]);
     } else {
@@ -203,7 +221,7 @@ const CreateUserForm: React.FC<CreateUserFormProps> = ({ roles, onSuccess }) => 
 
       <div className="space-y-4">
         <Label className="text-base font-medium">Assign Roles *</Label>
-        <div className="space-y-3">
+        <div className="space-y-3 max-h-60 overflow-y-auto">
           {roles.map((role) => (
             <div key={role.id} className="flex items-start space-x-3 p-3 border rounded-lg">
               <Checkbox
@@ -214,8 +232,13 @@ const CreateUserForm: React.FC<CreateUserFormProps> = ({ roles, onSuccess }) => 
                 }
               />
               <div className="space-y-1">
-                <Label htmlFor={role.id} className="font-medium">
+                <Label htmlFor={role.id} className="font-medium cursor-pointer">
                   {role.name}
+                  {role.is_warehouse_admin && (
+                    <span className="ml-2 text-xs bg-red-100 text-red-800 px-2 py-1 rounded">
+                      Admin
+                    </span>
+                  )}
                 </Label>
                 {role.description && (
                   <p className="text-sm text-muted-foreground">
@@ -226,6 +249,11 @@ const CreateUserForm: React.FC<CreateUserFormProps> = ({ roles, onSuccess }) => 
             </div>
           ))}
         </div>
+        {selectedRoles.length > 0 && (
+          <p className="text-sm text-muted-foreground">
+            Selected {selectedRoles.length} role{selectedRoles.length !== 1 ? 's' : ''}
+          </p>
+        )}
       </div>
 
       <div className="flex justify-end space-x-2">
@@ -233,7 +261,7 @@ const CreateUserForm: React.FC<CreateUserFormProps> = ({ roles, onSuccess }) => 
           Cancel
         </Button>
         <Button type="submit" disabled={isLoading}>
-          Create User
+          {isLoading ? 'Creating User...' : 'Create User'}
         </Button>
       </div>
     </form>
