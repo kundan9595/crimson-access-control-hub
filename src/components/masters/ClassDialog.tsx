@@ -7,8 +7,8 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { Plus, Edit2 } from 'lucide-react';
-import { useCreateClass, useUpdateClass, useStyles, useColors, Class } from '@/hooks/masters';
+import { Plus, Edit2, X } from 'lucide-react';
+import { useCreateClass, useUpdateClass, useStyles, useColors, useSizeGroups, useSizes, Class } from '@/hooks/masters';
 import ImageUpload from '@/components/ui/ImageUpload';
 
 interface ClassDialogProps {
@@ -22,6 +22,8 @@ const ClassDialog: React.FC<ClassDialogProps> = ({ classItem, trigger }) => {
     name: '',
     style_id: 'none',
     color_id: 'none',
+    size_group_id: 'none',
+    selected_sizes: [] as string[],
     description: '',
     status: 'active' as 'active' | 'inactive',
     tax_percentage: 0,
@@ -31,8 +33,15 @@ const ClassDialog: React.FC<ClassDialogProps> = ({ classItem, trigger }) => {
 
   const { data: styles = [] } = useStyles();
   const { data: colors = [] } = useColors();
+  const { data: sizeGroups = [] } = useSizeGroups();
+  const { data: allSizes = [] } = useSizes();
   const createMutation = useCreateClass();
   const updateMutation = useUpdateClass();
+
+  // Filter sizes based on selected size group
+  const availableSizes = formData.size_group_id !== 'none' 
+    ? allSizes.filter(size => size.size_group_id === formData.size_group_id && size.status === 'active')
+    : [];
 
   useEffect(() => {
     if (classItem) {
@@ -40,6 +49,8 @@ const ClassDialog: React.FC<ClassDialogProps> = ({ classItem, trigger }) => {
         name: classItem.name,
         style_id: classItem.style_id || 'none',
         color_id: classItem.color_id || 'none',
+        size_group_id: 'none', // Will be set based on class data if available
+        selected_sizes: [], // Will be populated based on class data if available
         description: classItem.description || '',
         status: classItem.status,
         tax_percentage: classItem.tax_percentage || 0,
@@ -60,6 +71,9 @@ const ClassDialog: React.FC<ClassDialogProps> = ({ classItem, trigger }) => {
       tax_percentage: formData.tax_percentage || null,
       primary_image_url: formData.primary_image_url || null,
       images: formData.images.length > 0 ? formData.images : null,
+      // Store size group and selected sizes in metadata for now
+      size_group_id: formData.size_group_id === 'none' ? null : formData.size_group_id,
+      selected_sizes: formData.selected_sizes.length > 0 ? formData.selected_sizes : null,
     };
 
     try {
@@ -80,6 +94,8 @@ const ClassDialog: React.FC<ClassDialogProps> = ({ classItem, trigger }) => {
       name: '',
       style_id: 'none',
       color_id: 'none',
+      size_group_id: 'none',
+      selected_sizes: [],
       description: '',
       status: 'active',
       tax_percentage: 0,
@@ -91,6 +107,23 @@ const ClassDialog: React.FC<ClassDialogProps> = ({ classItem, trigger }) => {
   const handleClose = () => {
     setOpen(false);
     if (!classItem) resetForm();
+  };
+
+  const handleSizeGroupChange = (value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      size_group_id: value,
+      selected_sizes: [] // Clear selected sizes when group changes
+    }));
+  };
+
+  const toggleSizeSelection = (sizeId: string) => {
+    setFormData(prev => ({
+      ...prev,
+      selected_sizes: prev.selected_sizes.includes(sizeId)
+        ? prev.selected_sizes.filter(id => id !== sizeId)
+        : [...prev.selected_sizes, sizeId]
+    }));
   };
 
   const addImage = (url: string) => {
@@ -126,7 +159,7 @@ const ClassDialog: React.FC<ClassDialogProps> = ({ classItem, trigger }) => {
           </Button>
         )}
       </DialogTrigger>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{classItem ? 'Edit Class' : 'Add New Class'}</DialogTitle>
         </DialogHeader>
@@ -183,6 +216,52 @@ const ClassDialog: React.FC<ClassDialogProps> = ({ classItem, trigger }) => {
                 </Select>
               </div>
             </div>
+
+            <div>
+              <Label htmlFor="sizeGroup">Size Group</Label>
+              <Select value={formData.size_group_id} onValueChange={handleSizeGroupChange}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select size group" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">No Size Group</SelectItem>
+                  {sizeGroups.filter(group => group.status === 'active').map((group) => (
+                    <SelectItem key={group.id} value={group.id}>
+                      {group.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {formData.size_group_id !== 'none' && availableSizes.length > 0 && (
+              <div>
+                <Label>Available Sizes</Label>
+                <div className="border rounded-md p-3 space-y-2 max-h-32 overflow-y-auto">
+                  {availableSizes.map((size) => (
+                    <div key={size.id} className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        id={`size-${size.id}`}
+                        checked={formData.selected_sizes.includes(size.id)}
+                        onChange={() => toggleSizeSelection(size.id)}
+                        className="rounded border-gray-300"
+                      />
+                      <Label htmlFor={`size-${size.id}`} className="text-sm">
+                        {size.name} ({size.code})
+                      </Label>
+                    </div>
+                  ))}
+                </div>
+                {formData.selected_sizes.length > 0 && (
+                  <div className="mt-2">
+                    <Label className="text-sm text-muted-foreground">
+                      Selected: {formData.selected_sizes.length} size(s)
+                    </Label>
+                  </div>
+                )}
+              </div>
+            )}
 
             <div>
               <Label htmlFor="description">Description</Label>
@@ -242,7 +321,7 @@ const ClassDialog: React.FC<ClassDialogProps> = ({ classItem, trigger }) => {
                         className="absolute -top-2 -right-2 rounded-full p-1 h-6 w-6"
                         onClick={() => removeImage(index)}
                       >
-                        ×
+                        <X className="h-3 w-3" />
                       </Button>
                     </div>
                   ))}

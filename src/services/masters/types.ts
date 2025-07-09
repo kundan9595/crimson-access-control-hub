@@ -131,6 +131,8 @@ export interface Class {
   name: string;
   style_id: string | null;
   color_id: string | null;
+  size_group_id: string | null;
+  selected_sizes: string[] | null;
   description: string | null;
   status: 'active' | 'inactive';
   tax_percentage: number | null;
