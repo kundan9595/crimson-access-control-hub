@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Upload, X, Image as ImageIcon } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 
 interface ImageUploadProps {
   value?: string;
@@ -69,9 +70,27 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
     setUploading(true);
     
     try {
-      // Create a local URL for preview
-      const url = URL.createObjectURL(file);
-      onChange(url);
+      // Generate a unique filename
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
+      
+      // Upload to Supabase storage
+      const { data, error } = await supabase.storage
+        .from('master-images')
+        .upload(fileName, file);
+
+      if (error) {
+        console.error('Upload error:', error);
+        alert('Error uploading file. Please try again.');
+        return;
+      }
+
+      // Get the public URL
+      const { data: urlData } = supabase.storage
+        .from('master-images')
+        .getPublicUrl(data.path);
+
+      onChange(urlData.publicUrl);
     } catch (error) {
       console.error('Error uploading file:', error);
       alert('Error uploading file. Please try again.');
@@ -84,10 +103,27 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
     onChange(e.target.value);
   };
 
-  const handleRemove = () => {
+  const handleRemove = async () => {
+    // If it's a Supabase URL, try to delete it from storage
+    if (value && value.includes('supabase')) {
+      try {
+        // Extract filename from URL
+        const urlParts = value.split('/');
+        const fileName = urlParts[urlParts.length - 1];
+        
+        await supabase.storage
+          .from('master-images')
+          .remove([fileName]);
+      } catch (error) {
+        console.error('Error deleting file:', error);
+      }
+    }
+    
+    // Clean up blob URLs
     if (value && value.startsWith('blob:')) {
       URL.revokeObjectURL(value);
     }
+    
     onRemove();
     if (inputRef.current) {
       inputRef.current.value = '';
@@ -157,7 +193,6 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
               alt="Preview"
               className="w-32 h-32 object-cover rounded-lg border"
               onError={() => {
-                // If image fails to load, show placeholder
                 console.error('Failed to load image:', value);
               }}
             />
