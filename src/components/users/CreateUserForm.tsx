@@ -11,6 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import type { Tables } from '@/integrations/supabase/types';
 
 type Role = Tables<'roles'>;
+type DepartmentType = 'operations' | 'logistics' | 'warehouse' | 'customer_service' | 'administration' | 'finance' | 'it' | 'human_resources';
 
 interface CreateUserFormProps {
   roles: Role[];
@@ -59,7 +60,7 @@ const CreateUserForm: React.FC<CreateUserFormProps> = ({ roles, onSuccess }) => 
       if (signUpError) throw signUpError;
       if (!user) throw new Error('Failed to create user');
 
-      // Create profile entry with the user's ID
+      // Create profile entry with the user's ID - fix TypeScript issues
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .insert({
@@ -68,7 +69,7 @@ const CreateUserForm: React.FC<CreateUserFormProps> = ({ roles, onSuccess }) => 
           first_name: userData.firstName,
           last_name: userData.lastName,
           phone_number: userData.phoneNumber || null,
-          department: userData.department || null,
+          department: userData.department ? userData.department as DepartmentType : null,
           designation: userData.designation || null,
         })
         .select()
