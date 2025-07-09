@@ -1,18 +1,22 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
 import {
+  // Brand services
   fetchBrands,
   createBrand,
   updateBrand,
   deleteBrand,
+  // Category services
   fetchCategories,
   createCategory,
   updateCategory,
   deleteCategory,
+  // Color services
   fetchColors,
   createColor,
   updateColor,
   deleteColor,
+  // Size services
   fetchSizeGroups,
   createSizeGroup,
   updateSizeGroup,
@@ -21,22 +25,27 @@ import {
   createSize,
   updateSize,
   deleteSize,
+  // Zone services
   fetchZones,
   createZone,
   updateZone,
   deleteZone,
+  // Price type services
   fetchPriceTypes,
   createPriceType,
   updatePriceType,
   deletePriceType,
+  // Vendor services
   fetchVendors,
   createVendor,
   updateVendor,
   deleteVendor,
+  // Style services
   fetchStyles,
   createStyle,
   updateStyle,
   deleteStyle,
+  // Types
   Brand,
   Category,
   Color,
