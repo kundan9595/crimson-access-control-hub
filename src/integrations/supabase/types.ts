@@ -415,57 +415,57 @@ export type Database = {
       }
       styles: {
         Row: {
-          care_instructions: string | null
-          code: string
-          color_variants: Json | null
+          brand_id: string | null
+          category_id: string | null
           created_at: string
           created_by: string | null
           description: string | null
-          fabric_composition: string | null
-          gender: string | null
           id: string
           name: string
-          season: string | null
-          size_category: string | null
           status: string
           updated_at: string
           updated_by: string | null
         }
         Insert: {
-          care_instructions?: string | null
-          code: string
-          color_variants?: Json | null
+          brand_id?: string | null
+          category_id?: string | null
           created_at?: string
           created_by?: string | null
           description?: string | null
-          fabric_composition?: string | null
-          gender?: string | null
           id?: string
           name: string
-          season?: string | null
-          size_category?: string | null
           status?: string
           updated_at?: string
           updated_by?: string | null
         }
         Update: {
-          care_instructions?: string | null
-          code?: string
-          color_variants?: Json | null
+          brand_id?: string | null
+          category_id?: string | null
           created_at?: string
           created_by?: string | null
           description?: string | null
-          fabric_composition?: string | null
-          gender?: string | null
           id?: string
           name?: string
-          season?: string | null
-          size_category?: string | null
           status?: string
           updated_at?: string
           updated_by?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "styles_brand_id_fkey"
+            columns: ["brand_id"]
+            isOneToOne: false
+            referencedRelation: "brands"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "styles_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_roles: {
         Row: {
