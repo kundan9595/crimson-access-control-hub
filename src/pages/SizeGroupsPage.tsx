@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -8,7 +7,7 @@ import { Plus, Search, Edit, Trash2, Ruler, ChevronDown, ChevronRight } from 'lu
 import { useSizeGroups, useDeleteSizeGroup } from '@/hooks/useMasters';
 import { SizeGroup } from '@/services/mastersService';
 import { useSearchParams } from 'react-router-dom';
-import SizeGroupDialog from '@/components/masters/SizeGroupDialog';
+import SizeGroupWithSizesDialog from '@/components/masters/SizeGroupWithSizesDialog';
 import SizeGroupSizes from '@/components/masters/SizeGroupSizes';
 
 const SizeGroupsPage = () => {
@@ -172,7 +171,7 @@ const SizeGroupsPage = () => {
         </Card>
       )}
 
-      <SizeGroupDialog
+      <SizeGroupWithSizesDialog
         sizeGroup={editingSizeGroup}
         open={isDialogOpen}
         onOpenChange={handleCloseDialog}

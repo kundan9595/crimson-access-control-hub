@@ -8,13 +8,12 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useCreateSize, useUpdateSize } from '@/hooks/useMasters';
+import { useCreateSize, useUpdateSize, useSizes } from '@/hooks/useMasters';
 import { Size } from '@/services/mastersService';
 
 const sizeSchema = z.object({
   name: z.string().min(1, 'Name is required'),
   code: z.string().min(1, 'Code is required'),
-  sort_order: z.number().min(0).optional(),
   status: z.enum(['active', 'inactive']),
 });
 
@@ -30,13 +29,13 @@ interface SizeDialogProps {
 const SizeDialog = ({ size, sizeGroupId, open, onOpenChange }: SizeDialogProps) => {
   const createSize = useCreateSize();
   const updateSize = useUpdateSize();
+  const { data: allSizes } = useSizes();
 
   const form = useForm<SizeFormData>({
     resolver: zodResolver(sizeSchema),
     defaultValues: {
       name: size?.name || '',
       code: size?.code || '',
-      sort_order: size?.sort_order || 0,
       status: size?.status || 'active',
     },
   });
@@ -46,14 +45,12 @@ const SizeDialog = ({ size, sizeGroupId, open, onOpenChange }: SizeDialogProps) 
       form.reset({
         name: size.name,
         code: size.code,
-        sort_order: size.sort_order || 0,
         status: size.status,
       });
     } else {
       form.reset({
         name: '',
         code: '',
-        sort_order: 0,
         status: 'active',
       });
     }
@@ -61,11 +58,15 @@ const SizeDialog = ({ size, sizeGroupId, open, onOpenChange }: SizeDialogProps) 
 
   const onSubmit = async (data: SizeFormData) => {
     try {
+      // Get the current max sort order for new sizes
+      const groupSizes = allSizes?.filter(s => s.size_group_id === sizeGroupId) || [];
+      const maxSortOrder = groupSizes.length > 0 ? Math.max(...groupSizes.map(s => s.sort_order || 0)) : -1;
+
       const sizeData = {
         name: data.name,
         code: data.code,
         size_group_id: sizeGroupId,
-        sort_order: data.sort_order || null,
+        sort_order: size ? size.sort_order : maxSortOrder + 1,
         status: data.status,
       };
 
@@ -117,25 +118,6 @@ const SizeDialog = ({ size, sizeGroupId, open, onOpenChange }: SizeDialogProps) 
                   <FormLabel>Size Code</FormLabel>
                   <FormControl>
                     <Input {...field} placeholder="Enter size code (e.g., xs, s, m, l)" />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="sort_order"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Sort Order</FormLabel>
-                  <FormControl>
-                    <Input 
-                      {...field} 
-                      type="number" 
-                      placeholder="Enter sort order (0, 1, 2...)"
-                      onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
-                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
