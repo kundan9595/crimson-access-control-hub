@@ -20,8 +20,8 @@ const ClassDialog: React.FC<ClassDialogProps> = ({ classItem, trigger }) => {
   const [open, setOpen] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
-    style_id: '',
-    color_id: '',
+    style_id: 'none',
+    color_id: 'none',
     description: '',
     status: 'active' as 'active' | 'inactive',
     tax_percentage: 0,
@@ -38,8 +38,8 @@ const ClassDialog: React.FC<ClassDialogProps> = ({ classItem, trigger }) => {
     if (classItem) {
       setFormData({
         name: classItem.name,
-        style_id: classItem.style_id || '',
-        color_id: classItem.color_id || '',
+        style_id: classItem.style_id || 'none',
+        color_id: classItem.color_id || 'none',
         description: classItem.description || '',
         status: classItem.status,
         tax_percentage: classItem.tax_percentage || 0,
@@ -54,8 +54,8 @@ const ClassDialog: React.FC<ClassDialogProps> = ({ classItem, trigger }) => {
     
     const submitData = {
       ...formData,
-      style_id: formData.style_id || null,
-      color_id: formData.color_id || null,
+      style_id: formData.style_id === 'none' ? null : formData.style_id,
+      color_id: formData.color_id === 'none' ? null : formData.color_id,
       description: formData.description || null,
       tax_percentage: formData.tax_percentage || null,
       primary_image_url: formData.primary_image_url || null,
@@ -78,8 +78,8 @@ const ClassDialog: React.FC<ClassDialogProps> = ({ classItem, trigger }) => {
   const resetForm = () => {
     setFormData({
       name: '',
-      style_id: '',
-      color_id: '',
+      style_id: 'none',
+      color_id: 'none',
       description: '',
       status: 'active',
       tax_percentage: 0,
@@ -150,7 +150,7 @@ const ClassDialog: React.FC<ClassDialogProps> = ({ classItem, trigger }) => {
                     <SelectValue placeholder="Select style" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">No Style</SelectItem>
+                    <SelectItem value="none">No Style</SelectItem>
                     {styles.filter(style => style.status === 'active').map((style) => (
                       <SelectItem key={style.id} value={style.id}>
                         {style.name}
@@ -167,7 +167,7 @@ const ClassDialog: React.FC<ClassDialogProps> = ({ classItem, trigger }) => {
                     <SelectValue placeholder="Select color" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">No Color</SelectItem>
+                    <SelectItem value="none">No Color</SelectItem>
                     {colors.filter(color => color.status === 'active').map((color) => (
                       <SelectItem key={color.id} value={color.id}>
                         <div className="flex items-center gap-2">
