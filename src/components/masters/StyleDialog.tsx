@@ -62,8 +62,8 @@ export const StyleDialog: React.FC<StyleDialogProps> = ({
     defaultValues: {
       name: '',
       description: '',
-      brand_id: '',
-      category_id: '',
+      brand_id: undefined,
+      category_id: undefined,
       status: 'active',
     },
   });
@@ -74,16 +74,16 @@ export const StyleDialog: React.FC<StyleDialogProps> = ({
       form.reset({
         name: style.name || '',
         description: style.description || '',
-        brand_id: style.brand_id || '',
-        category_id: style.category_id || '',
+        brand_id: style.brand_id || undefined,
+        category_id: style.category_id || undefined,
         status: style.status || 'active',
       });
     } else {
       form.reset({
         name: '',
         description: '',
-        brand_id: '',
-        category_id: '',
+        brand_id: undefined,
+        category_id: undefined,
         status: 'active',
       });
     }
@@ -164,14 +164,17 @@ export const StyleDialog: React.FC<StyleDialogProps> = ({
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Brand</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
+                    <Select 
+                      onValueChange={(value) => field.onChange(value === 'no-brand' ? undefined : value)} 
+                      value={field.value || 'no-brand'}
+                    >
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Select brand" />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="">No Brand</SelectItem>
+                        <SelectItem value="no-brand">No Brand</SelectItem>
                         {brands?.filter(brand => brand.status === 'active').map((brand) => (
                           <SelectItem key={brand.id} value={brand.id}>
                             {brand.name}
@@ -190,14 +193,17 @@ export const StyleDialog: React.FC<StyleDialogProps> = ({
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Category</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
+                    <Select 
+                      onValueChange={(value) => field.onChange(value === 'no-category' ? undefined : value)} 
+                      value={field.value || 'no-category'}
+                    >
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Select category" />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="">No Category</SelectItem>
+                        <SelectItem value="no-category">No Category</SelectItem>
                         {categories?.filter(category => category.status === 'active').map((category) => (
                           <SelectItem key={category.id} value={category.id}>
                             {category.name}

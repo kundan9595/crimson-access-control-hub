@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
 import { StylesList } from '@/components/masters/StylesList';
 import { StyleDialog } from '@/components/masters/StyleDialog';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
 
 const StylesPage = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -33,10 +34,12 @@ const StylesPage = () => {
         </CardContent>
       </Card>
 
-      <StyleDialog
-        open={isDialogOpen}
-        onOpenChange={setIsDialogOpen}
-      />
+      <ErrorBoundary>
+        <StyleDialog
+          open={isDialogOpen}
+          onOpenChange={setIsDialogOpen}
+        />
+      </ErrorBoundary>
     </div>
   );
 };
