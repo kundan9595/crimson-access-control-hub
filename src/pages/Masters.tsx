@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -74,6 +73,13 @@ const Masters = () => {
       icon: Shirt,
       path: '/masters/styles',
       color: 'text-pink-600',
+    },
+    {
+      title: 'Classes',
+      description: 'Manage product classes with styles, colors, and detailed specifications',
+      icon: Shirt,
+      path: '/masters/classes',
+      color: 'text-cyan-600',
     },
   ];
 

@@ -1,4 +1,3 @@
-
 // Export all brand hooks
 export * from './useBrands';
 
@@ -23,6 +22,9 @@ export * from './useVendors';
 // Export all style hooks
 export * from './useStyles';
 
+// Export all class hooks
+export * from './useClasses';
+
 // Re-export types for convenience
 export type {
   Brand,
@@ -34,4 +36,5 @@ export type {
   PriceType,
   Vendor,
   Style,
+  Class,
 } from '@/services/mastersService';

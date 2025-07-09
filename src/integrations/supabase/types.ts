@@ -94,6 +94,69 @@ export type Database = {
           },
         ]
       }
+      classes: {
+        Row: {
+          color_id: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          images: Json | null
+          name: string
+          primary_image_url: string | null
+          status: string
+          style_id: string | null
+          tax_percentage: number | null
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          color_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          images?: Json | null
+          name: string
+          primary_image_url?: string | null
+          status?: string
+          style_id?: string | null
+          tax_percentage?: number | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          color_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          images?: Json | null
+          name?: string
+          primary_image_url?: string | null
+          status?: string
+          style_id?: string | null
+          tax_percentage?: number | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "classes_color_id_fkey"
+            columns: ["color_id"]
+            isOneToOne: false
+            referencedRelation: "colors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "classes_style_id_fkey"
+            columns: ["style_id"]
+            isOneToOne: false
+            referencedRelation: "styles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       colors: {
         Row: {
           created_at: string

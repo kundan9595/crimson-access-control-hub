@@ -1,4 +1,3 @@
-
 // Export all types
 export * from './types';
 
@@ -25,3 +24,6 @@ export * from './vendorsService';
 
 // Export style services
 export * from './stylesService';
+
+// Export class services
+export * from './classesService';
