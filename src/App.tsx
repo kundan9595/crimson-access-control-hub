@@ -10,6 +10,7 @@ import DashboardLayout from "@/components/layout/DashboardLayout";
 import Dashboard from "./pages/Dashboard";
 import RolesPermissions from "./pages/RolesPermissions";
 import Users from "./pages/Users";
+import Masters from "./pages/Masters";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 
@@ -32,6 +33,7 @@ const App = () => (
               <Route index element={<Dashboard />} />
               <Route path="roles-permissions" element={<RolesPermissions />} />
               <Route path="users" element={<Users />} />
+              <Route path="masters" element={<Masters />} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>
