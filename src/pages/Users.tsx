@@ -15,6 +15,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import UserRoleForm from '@/components/users/UserRoleForm';
 import CreateUserForm from '@/components/users/CreateUserForm';
+import UserProfileEditor from '@/components/users/UserProfileEditor';
 import type { Tables } from '@/integrations/supabase/types';
 
 type Profile = Tables<'profiles'>;
@@ -24,10 +25,43 @@ const Users = () => {
   const [selectedUser, setSelectedUser] = useState<Profile | null>(null);
   const [isCreateUserOpen, setIsCreateUserOpen] = useState(false);
   const [isRoleFormOpen, setIsRoleFormOpen] = useState(false);
+  const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const [viewMode, setViewMode] = useState<'cards' | 'table'>('cards');
+  const [viewMode, setViewMode] = useState<'cards' | 'table'>('table'); // Changed default to table
   const { toast } = useToast();
   const queryClient = useQueryClient();
+
+  // Mutation for updating user activation status
+  const updateUserStatusMutation = useMutation({
+    mutationFn: async ({ userId, isActive }: { userId: string; isActive: boolean }) => {
+      const { data, error } = await supabase
+        .from('profiles')
+        .update({ 
+          is_active: isActive,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', userId)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (data, { isActive }) => {
+      queryClient.invalidateQueries({ queryKey: ['users'] });
+      toast({
+        title: "Success",
+        description: `User ${isActive ? 'activated' : 'deactivated'} successfully`,
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update user status",
+        variant: "destructive",
+      });
+    },
+  });
 
   // Fetch users with their roles
   const { data: users, isLoading: usersLoading, error: usersError } = useQuery({
@@ -134,7 +168,15 @@ const Users = () => {
     ));
   };
 
-  const handleUserAction = async (action: string, userId: string) => {
+  const getUserStatusBadge = (isActive: boolean) => {
+    return (
+      <Badge variant={isActive ? "default" : "destructive"}>
+        {isActive ? "Active" : "Inactive"}
+      </Badge>
+    );
+  };
+
+  const handleUserAction = async (action: string, userId: string, isActive?: boolean) => {
     try {
       switch (action) {
         case 'reset-password':
@@ -145,16 +187,10 @@ const Users = () => {
           });
           break;
         case 'activate':
-          toast({
-            title: "User Activated",
-            description: "User account has been activated.",
-          });
+          updateUserStatusMutation.mutate({ userId, isActive: true });
           break;
         case 'deactivate':
-          toast({
-            title: "User Deactivated",
-            description: "User account has been deactivated.",
-          });
+          updateUserStatusMutation.mutate({ userId, isActive: false });
           break;
         case 'delete':
           // This would require admin confirmation
@@ -262,6 +298,7 @@ const Users = () => {
                     <div>
                       <CardTitle className="flex items-center gap-2">
                         {user.first_name} {user.last_name}
+                        {getUserStatusBadge(user.is_active)}
                       </CardTitle>
                       <CardDescription className="space-y-1">
                         <div className="flex items-center gap-1">
@@ -292,6 +329,16 @@ const Users = () => {
                       variant="outline" 
                       onClick={() => {
                         setSelectedUser(user);
+                        setIsEditProfileOpen(true);
+                      }}
+                    >
+                      <Edit2 className="w-4 h-4 mr-2" />
+                      Edit Profile
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      onClick={() => {
+                        setSelectedUser(user);
                         setIsRoleFormOpen(true);
                       }}
                     >
@@ -309,14 +356,18 @@ const Users = () => {
                           <Key className="w-4 h-4 mr-2" />
                           Reset Password
                         </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleUserAction('activate', user.id)}>
-                          <UserCheck className="w-4 h-4 mr-2" />
-                          Activate User
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleUserAction('deactivate', user.id)}>
-                          <UserX className="w-4 h-4 mr-2" />
-                          Deactivate User
-                        </DropdownMenuItem>
+                        {!user.is_active && (
+                          <DropdownMenuItem onClick={() => handleUserAction('activate', user.id)}>
+                            <UserCheck className="w-4 h-4 mr-2" />
+                            Activate User
+                          </DropdownMenuItem>
+                        )}
+                        {user.is_active && (
+                          <DropdownMenuItem onClick={() => handleUserAction('deactivate', user.id)}>
+                            <UserX className="w-4 h-4 mr-2" />
+                            Deactivate User
+                          </DropdownMenuItem>
+                        )}
                         <DropdownMenuItem 
                           onClick={() => handleUserAction('delete', user.id)}
                           className="text-destructive"
@@ -349,6 +400,7 @@ const Users = () => {
               <TableRow>
                 <TableHead>User</TableHead>
                 <TableHead>Email</TableHead>
+                <TableHead>Status</TableHead>
                 <TableHead>Department</TableHead>
                 <TableHead>Roles</TableHead>
                 <TableHead>Joined</TableHead>
@@ -375,6 +427,7 @@ const Users = () => {
                     </div>
                   </TableCell>
                   <TableCell>{user.email}</TableCell>
+                  <TableCell>{getUserStatusBadge(user.is_active)}</TableCell>
                   <TableCell>
                     {user.department && (
                       <Badge variant="outline">{user.department}</Badge>
@@ -393,10 +446,20 @@ const Users = () => {
                         size="sm"
                         onClick={() => {
                           setSelectedUser(user);
-                          setIsRoleFormOpen(true);
+                          setIsEditProfileOpen(true);
                         }}
                       >
                         <Edit2 className="w-4 h-4" />
+                      </Button>
+                      <Button 
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setSelectedUser(user);
+                          setIsRoleFormOpen(true);
+                        }}
+                      >
+                        Manage Roles
                       </Button>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
@@ -409,14 +472,18 @@ const Users = () => {
                             <Key className="w-4 h-4 mr-2" />
                             Reset Password
                           </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleUserAction('activate', user.id)}>
-                            <UserCheck className="w-4 h-4 mr-2" />
-                            Activate
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleUserAction('deactivate', user.id)}>
-                            <UserX className="w-4 h-4 mr-2" />
-                            Deactivate
-                          </DropdownMenuItem>
+                          {!user.is_active && (
+                            <DropdownMenuItem onClick={() => handleUserAction('activate', user.id)}>
+                              <UserCheck className="w-4 h-4 mr-2" />
+                              Activate
+                            </DropdownMenuItem>
+                          )}
+                          {user.is_active && (
+                            <DropdownMenuItem onClick={() => handleUserAction('deactivate', user.id)}>
+                              <UserX className="w-4 h-4 mr-2" />
+                              Deactivate
+                            </DropdownMenuItem>
+                          )}
                           <DropdownMenuItem 
                             onClick={() => handleUserAction('delete', user.id)}
                             className="text-destructive"
@@ -434,6 +501,28 @@ const Users = () => {
           </Table>
         </Card>
       )}
+
+      {/* Profile Edit Dialog */}
+      <Dialog open={isEditProfileOpen} onOpenChange={setIsEditProfileOpen}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Edit User Profile</DialogTitle>
+            <DialogDescription>
+              Update user information for {selectedUser?.first_name} {selectedUser?.last_name}
+            </DialogDescription>
+          </DialogHeader>
+          {selectedUser && (
+            <UserProfileEditor 
+              user={selectedUser}
+              onSuccess={() => {
+                queryClient.invalidateQueries({ queryKey: ['users'] });
+                setIsEditProfileOpen(false);
+                setSelectedUser(null);
+              }}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* Role Management Dialog */}
       <Dialog open={isRoleFormOpen} onOpenChange={setIsRoleFormOpen}>
