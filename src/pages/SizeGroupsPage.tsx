@@ -1,14 +1,16 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { Plus, Search, Edit, Trash2, Ruler, ChevronDown, ChevronRight } from 'lucide-react';
+import { Plus, Search, Edit, Trash2, Ruler, ChevronDown, ChevronRight, ArrowLeft, Download, Upload } from 'lucide-react';
 import { useSizeGroups, useDeleteSizeGroup } from '@/hooks/useMasters';
 import { SizeGroup } from '@/services/mastersService';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, Link } from 'react-router-dom';
 import SizeGroupWithSizesDialog from '@/components/masters/SizeGroupWithSizesDialog';
 import SizeGroupSizes from '@/components/masters/SizeGroupSizes';
+import BulkImportDialog from '@/components/masters/BulkImportDialog';
 
 const SizeGroupsPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -16,6 +18,7 @@ const SizeGroupsPage = () => {
   const [editingSizeGroup, setEditingSizeGroup] = useState<SizeGroup | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(searchParams.get('add') === 'true');
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
+  const [isBulkImportOpen, setIsBulkImportOpen] = useState(false);
   
   const { data: sizeGroups, isLoading } = useSizeGroups();
   const deleteSizeGroup = useDeleteSizeGroup();
@@ -52,6 +55,36 @@ const SizeGroupsPage = () => {
     setExpandedGroups(newExpanded);
   };
 
+  const handleExport = () => {
+    if (!filteredSizeGroups?.length) return;
+
+    const csvContent = [
+      ['Name', 'Description', 'Status', 'Created Date'].join(','),
+      ...filteredSizeGroups.map(group => [
+        `"${group.name}"`,
+        `"${group.description || ''}"`,
+        group.status,
+        new Date(group.created_at).toLocaleDateString()
+      ].join(','))
+    ].join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `size-groups-${new Date().toISOString().split('T')[0]}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  const templateHeaders = ['Name', 'Description', 'Status'];
+  const sampleData = [
+    ['XS-XL', 'Standard clothing sizes', 'active'],
+    ['Shoe Sizes', 'Footwear sizing', 'active']
+  ];
+
   if (isLoading) {
     return <div className="container mx-auto p-6">Loading...</div>;
   }
@@ -59,17 +92,35 @@ const SizeGroupsPage = () => {
   return (
     <div className="container mx-auto p-6 space-y-6">
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold flex items-center gap-2">
-            <Ruler className="h-8 w-8" />
-            Size Groups
-          </h1>
-          <p className="text-muted-foreground">Manage size groupings and individual sizes</p>
+        <div className="flex items-center gap-4">
+          <Button variant="outline" size="sm" asChild>
+            <Link to="/masters">
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back to Masters
+            </Link>
+          </Button>
+          <div>
+            <h1 className="text-3xl font-bold flex items-center gap-2">
+              <Ruler className="h-8 w-8" />
+              Size Groups
+            </h1>
+            <p className="text-muted-foreground">Manage size groupings and individual sizes</p>
+          </div>
         </div>
-        <Button onClick={() => setIsDialogOpen(true)}>
-          <Plus className="h-4 w-4 mr-2" />
-          Add Size Group
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={handleExport} disabled={!filteredSizeGroups?.length}>
+            <Download className="h-4 w-4 mr-2" />
+            Export CSV
+          </Button>
+          <Button variant="outline" onClick={() => setIsBulkImportOpen(true)}>
+            <Upload className="h-4 w-4 mr-2" />
+            Bulk Import
+          </Button>
+          <Button onClick={() => setIsDialogOpen(true)}>
+            <Plus className="h-4 w-4 mr-2" />
+            Add Size Group
+          </Button>
+        </div>
       </div>
 
       <Card>
@@ -175,6 +226,14 @@ const SizeGroupsPage = () => {
         sizeGroup={editingSizeGroup}
         open={isDialogOpen}
         onOpenChange={handleCloseDialog}
+      />
+
+      <BulkImportDialog
+        open={isBulkImportOpen}
+        onOpenChange={setIsBulkImportOpen}
+        type="sizeGroups"
+        templateHeaders={templateHeaders}
+        sampleData={sampleData}
       />
     </div>
   );

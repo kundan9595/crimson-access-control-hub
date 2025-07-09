@@ -4,17 +4,19 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { Plus, Search, Edit, Trash2, MapPin } from 'lucide-react';
+import { Plus, Search, Edit, Trash2, MapPin, ArrowLeft, Download, Upload } from 'lucide-react';
 import { useZones, useDeleteZone } from '@/hooks/useMasters';
 import { Zone } from '@/services/mastersService';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, Link } from 'react-router-dom';
 import ZoneDialog from '@/components/masters/ZoneDialog';
+import BulkImportDialog from '@/components/masters/BulkImportDialog';
 
 const ZonesPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [searchTerm, setSearchTerm] = useState('');
   const [editingZone, setEditingZone] = useState<Zone | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(searchParams.get('add') === 'true');
+  const [isBulkImportOpen, setIsBulkImportOpen] = useState(false);
   
   const { data: zones, isLoading } = useZones();
   const deleteZone = useDeleteZone();
@@ -44,6 +46,38 @@ const ZonesPage = () => {
     setSearchParams({});
   };
 
+  const handleExport = () => {
+    if (!filteredZones?.length) return;
+
+    const csvContent = [
+      ['Name', 'Code', 'Description', 'Status', 'Locations', 'Created Date'].join(','),
+      ...filteredZones.map(zone => [
+        `"${zone.name}"`,
+        `"${zone.code || ''}"`,
+        `"${zone.description || ''}"`,
+        zone.status,
+        `"${zone.locations?.map(loc => `${loc.state}, ${loc.city}`).join('; ') || ''}"`,
+        new Date(zone.created_at).toLocaleDateString()
+      ].join(','))
+    ].join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `zones-${new Date().toISOString().split('T')[0]}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  const templateHeaders = ['Name', 'Code', 'Description', 'Status'];
+  const sampleData = [
+    ['North Zone', 'NZ001', 'Northern region coverage', 'active'],
+    ['South Zone', 'SZ001', 'Southern region coverage', 'active']
+  ];
+
   if (isLoading) {
     return <div className="container mx-auto p-6">Loading...</div>;
   }
@@ -51,17 +85,35 @@ const ZonesPage = () => {
   return (
     <div className="container mx-auto p-6 space-y-6">
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold flex items-center gap-2">
-            <MapPin className="h-8 w-8" />
-            Zones
-          </h1>
-          <p className="text-muted-foreground">Manage geographical zones and their locations</p>
+        <div className="flex items-center gap-4">
+          <Button variant="outline" size="sm" asChild>
+            <Link to="/masters">
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back to Masters
+            </Link>
+          </Button>
+          <div>
+            <h1 className="text-3xl font-bold flex items-center gap-2">
+              <MapPin className="h-8 w-8" />
+              Zones
+            </h1>
+            <p className="text-muted-foreground">Manage geographical zones and their locations</p>
+          </div>
         </div>
-        <Button onClick={() => setIsDialogOpen(true)}>
-          <Plus className="h-4 w-4 mr-2" />
-          Add Zone
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={handleExport} disabled={!filteredZones?.length}>
+            <Download className="h-4 w-4 mr-2" />
+            Export CSV
+          </Button>
+          <Button variant="outline" onClick={() => setIsBulkImportOpen(true)}>
+            <Upload className="h-4 w-4 mr-2" />
+            Bulk Import
+          </Button>
+          <Button onClick={() => setIsDialogOpen(true)}>
+            <Plus className="h-4 w-4 mr-2" />
+            Add Zone
+          </Button>
+        </div>
       </div>
 
       <Card>
@@ -159,6 +211,14 @@ const ZonesPage = () => {
         zone={editingZone}
         open={isDialogOpen}
         onOpenChange={handleCloseDialog}
+      />
+
+      <BulkImportDialog
+        open={isBulkImportOpen}
+        onOpenChange={setIsBulkImportOpen}
+        type="zones"
+        templateHeaders={templateHeaders}
+        sampleData={sampleData}
       />
     </div>
   );

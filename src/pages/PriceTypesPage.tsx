@@ -4,17 +4,19 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { Plus, Search, Edit, Trash2, DollarSign } from 'lucide-react';
+import { Plus, Search, Edit, Trash2, DollarSign, ArrowLeft, Download, Upload } from 'lucide-react';
 import { usePriceTypes, useDeletePriceType } from '@/hooks/useMasters';
 import { PriceType } from '@/services/mastersService';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, Link } from 'react-router-dom';
 import PriceTypeDialog from '@/components/masters/PriceTypeDialog';
+import BulkImportDialog from '@/components/masters/BulkImportDialog';
 
 const PriceTypesPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [searchTerm, setSearchTerm] = useState('');
   const [editingPriceType, setEditingPriceType] = useState<PriceType | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(searchParams.get('add') === 'true');
+  const [isBulkImportOpen, setIsBulkImportOpen] = useState(false);
   
   const { data: priceTypes, isLoading } = usePriceTypes();
   const deletePriceType = useDeletePriceType();
@@ -41,6 +43,36 @@ const PriceTypesPage = () => {
     setSearchParams({});
   };
 
+  const handleExport = () => {
+    if (!filteredPriceTypes?.length) return;
+
+    const csvContent = [
+      ['Name', 'Description', 'Status', 'Created Date'].join(','),
+      ...filteredPriceTypes.map(priceType => [
+        `"${priceType.name}"`,
+        `"${priceType.description || ''}"`,
+        priceType.status,
+        new Date(priceType.created_at).toLocaleDateString()
+      ].join(','))
+    ].join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `price-types-${new Date().toISOString().split('T')[0]}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  const templateHeaders = ['Name', 'Description', 'Status'];
+  const sampleData = [
+    ['Wholesale', 'Bulk pricing for wholesale customers', 'active'],
+    ['Retail', 'Standard retail pricing', 'active']
+  ];
+
   if (isLoading) {
     return <div className="container mx-auto p-6">Loading...</div>;
   }
@@ -48,17 +80,35 @@ const PriceTypesPage = () => {
   return (
     <div className="container mx-auto p-6 space-y-6">
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold flex items-center gap-2">
-            <DollarSign className="h-8 w-8" />
-            Price Types
-          </h1>
-          <p className="text-muted-foreground">Configure pricing structures</p>
+        <div className="flex items-center gap-4">
+          <Button variant="outline" size="sm" asChild>
+            <Link to="/masters">
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back to Masters
+            </Link>
+          </Button>
+          <div>
+            <h1 className="text-3xl font-bold flex items-center gap-2">
+              <DollarSign className="h-8 w-8" />
+              Price Types
+            </h1>
+            <p className="text-muted-foreground">Configure pricing structures</p>
+          </div>
         </div>
-        <Button onClick={() => setIsDialogOpen(true)}>
-          <Plus className="h-4 w-4 mr-2" />
-          Add Price Type
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={handleExport} disabled={!filteredPriceTypes?.length}>
+            <Download className="h-4 w-4 mr-2" />
+            Export CSV
+          </Button>
+          <Button variant="outline" onClick={() => setIsBulkImportOpen(true)}>
+            <Upload className="h-4 w-4 mr-2" />
+            Bulk Import
+          </Button>
+          <Button onClick={() => setIsDialogOpen(true)}>
+            <Plus className="h-4 w-4 mr-2" />
+            Add Price Type
+          </Button>
+        </div>
       </div>
 
       <Card>
@@ -143,6 +193,14 @@ const PriceTypesPage = () => {
         priceType={editingPriceType}
         open={isDialogOpen}
         onOpenChange={handleCloseDialog}
+      />
+
+      <BulkImportDialog
+        open={isBulkImportOpen}
+        onOpenChange={setIsBulkImportOpen}
+        type="priceTypes"
+        templateHeaders={templateHeaders}
+        sampleData={sampleData}
       />
     </div>
   );

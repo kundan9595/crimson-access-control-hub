@@ -4,17 +4,19 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { Plus, Search, Edit, Trash2, Users } from 'lucide-react';
+import { Plus, Search, Edit, Trash2, Users, ArrowLeft, Download, Upload } from 'lucide-react';
 import { useVendors, useDeleteVendor } from '@/hooks/useMasters';
 import { Vendor } from '@/services/mastersService';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, Link } from 'react-router-dom';
 import VendorDialog from '@/components/masters/VendorDialog';
+import BulkImportDialog from '@/components/masters/BulkImportDialog';
 
 const VendorsPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [searchTerm, setSearchTerm] = useState('');
   const [editingVendor, setEditingVendor] = useState<Vendor | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(searchParams.get('add') === 'true');
+  const [isBulkImportOpen, setIsBulkImportOpen] = useState(false);
   
   const { data: vendors, isLoading } = useVendors();
   const deleteVendor = useDeleteVendor();
@@ -43,6 +45,40 @@ const VendorsPage = () => {
     setSearchParams({});
   };
 
+  const handleExport = () => {
+    if (!filteredVendors?.length) return;
+
+    const csvContent = [
+      ['Name', 'Code', 'Description', 'Contact Person', 'Email', 'Phone', 'Status', 'Created Date'].join(','),
+      ...filteredVendors.map(vendor => [
+        `"${vendor.name}"`,
+        `"${vendor.code}"`,
+        `"${vendor.description || ''}"`,
+        `"${vendor.contact_person || ''}"`,
+        `"${vendor.email || ''}"`,
+        `"${vendor.phone || ''}"`,
+        vendor.status,
+        new Date(vendor.created_at).toLocaleDateString()
+      ].join(','))
+    ].join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `vendors-${new Date().toISOString().split('T')[0]}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  const templateHeaders = ['Name', 'Code', 'Description', 'Contact Person', 'Email', 'Phone', 'Status'];
+  const sampleData = [
+    ['ABC Suppliers', 'ABC001', 'General merchandise supplier', 'John Doe', 'john@abc.com', '+1234567890', 'active'],
+    ['XYZ Trading', 'XYZ001', 'Electronics supplier', 'Jane Smith', 'jane@xyz.com', '+0987654321', 'active']
+  ];
+
   if (isLoading) {
     return <div className="container mx-auto p-6">Loading...</div>;
   }
@@ -50,17 +86,35 @@ const VendorsPage = () => {
   return (
     <div className="container mx-auto p-6 space-y-6">
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold flex items-center gap-2">
-            <Users className="h-8 w-8" />
-            Vendors
-          </h1>
-          <p className="text-muted-foreground">Manage supplier and vendor information</p>
+        <div className="flex items-center gap-4">
+          <Button variant="outline" size="sm" asChild>
+            <Link to="/masters">
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back to Masters
+            </Link>
+          </Button>
+          <div>
+            <h1 className="text-3xl font-bold flex items-center gap-2">
+              <Users className="h-8 w-8" />
+              Vendors
+            </h1>
+            <p className="text-muted-foreground">Manage supplier and vendor information</p>
+          </div>
         </div>
-        <Button onClick={() => setIsDialogOpen(true)}>
-          <Plus className="h-4 w-4 mr-2" />
-          Add Vendor
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={handleExport} disabled={!filteredVendors?.length}>
+            <Download className="h-4 w-4 mr-2" />
+            Export CSV
+          </Button>
+          <Button variant="outline" onClick={() => setIsBulkImportOpen(true)}>
+            <Upload className="h-4 w-4 mr-2" />
+            Bulk Import
+          </Button>
+          <Button onClick={() => setIsDialogOpen(true)}>
+            <Plus className="h-4 w-4 mr-2" />
+            Add Vendor
+          </Button>
+        </div>
       </div>
 
       <Card>
@@ -160,6 +214,14 @@ const VendorsPage = () => {
         vendor={editingVendor}
         open={isDialogOpen}
         onOpenChange={handleCloseDialog}
+      />
+
+      <BulkImportDialog
+        open={isBulkImportOpen}
+        onOpenChange={setIsBulkImportOpen}
+        type="vendors"
+        templateHeaders={templateHeaders}
+        sampleData={sampleData}
       />
     </div>
   );

@@ -7,13 +7,21 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Progress } from '@/components/ui/progress';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Download, Upload, AlertCircle, CheckCircle, FileText, X, CloudUpload } from 'lucide-react';
-import { useCreateBrand, useCreateCategory, useCreateColor } from '@/hooks/useMasters';
+import { 
+  useCreateBrand, 
+  useCreateCategory, 
+  useCreateColor, 
+  useCreateSizeGroup, 
+  useCreateZone, 
+  useCreatePriceType, 
+  useCreateVendor 
+} from '@/hooks/useMasters';
 import { useToast } from '@/hooks/use-toast';
 
 type BulkImportDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  type: 'brands' | 'categories' | 'colors';
+  type: 'brands' | 'categories' | 'colors' | 'sizeGroups' | 'zones' | 'priceTypes' | 'vendors';
   templateHeaders: string[];
   sampleData: string[][];
 };
@@ -48,6 +56,10 @@ const BulkImportDialog: React.FC<BulkImportDialogProps> = ({
   const createBrandMutation = useCreateBrand();
   const createCategoryMutation = useCreateCategory();
   const createColorMutation = useCreateColor();
+  const createSizeGroupMutation = useCreateSizeGroup();
+  const createZoneMutation = useCreateZone();
+  const createPriceTypeMutation = useCreatePriceType();
+  const createVendorMutation = useCreateVendor();
   const { toast } = useToast();
 
   const downloadTemplate = () => {
@@ -117,24 +129,49 @@ const BulkImportDialog: React.FC<BulkImportDialogProps> = ({
   const validateRow = (row: string[], index: number): ValidationResult => {
     const errors: string[] = [];
 
-    if (type === 'brands' || type === 'categories') {
-      if (row.length < 2) errors.push('Missing required fields');
-      if (!row[0]?.trim()) errors.push('Name is required');
-      if (row[2] && !['active', 'inactive'].includes(row[2].toLowerCase())) {
-        errors.push('Status must be "active" or "inactive"');
-      }
-    }
-    
-    if (type === 'colors') {
-      if (row.length < 2) errors.push('Missing required fields');
-      if (!row[0]?.trim()) errors.push('Name is required');
-      if (!row[1]?.trim()) errors.push('Hex code is required');
-      if (!/^#[0-9A-Fa-f]{6}$/.test(row[1])) {
-        errors.push('Invalid hex code format');
-      }
-      if (row[2] && !['active', 'inactive'].includes(row[2].toLowerCase())) {
-        errors.push('Status must be "active" or "inactive"');
-      }
+    // Basic validation for all types
+    if (!row[0]?.trim()) errors.push('Name is required');
+
+    // Type-specific validation
+    switch (type) {
+      case 'brands':
+      case 'categories':
+      case 'sizeGroups':
+      case 'priceTypes':
+        if (row.length < 2) errors.push('Missing required fields');
+        if (row[2] && !['active', 'inactive'].includes(row[2].toLowerCase())) {
+          errors.push('Status must be "active" or "inactive"');
+        }
+        break;
+        
+      case 'colors':
+        if (row.length < 2) errors.push('Missing required fields');
+        if (!row[1]?.trim()) errors.push('Hex code is required');
+        if (!/^#[0-9A-Fa-f]{6}$/.test(row[1])) {
+          errors.push('Invalid hex code format');
+        }
+        if (row[2] && !['active', 'inactive'].includes(row[2].toLowerCase())) {
+          errors.push('Status must be "active" or "inactive"');
+        }
+        break;
+        
+      case 'zones':
+        if (row.length < 2) errors.push('Missing required fields');
+        if (row[3] && !['active', 'inactive'].includes(row[3].toLowerCase())) {
+          errors.push('Status must be "active" or "inactive"');
+        }
+        break;
+        
+      case 'vendors':
+        if (row.length < 2) errors.push('Missing required fields');
+        if (!row[1]?.trim()) errors.push('Code is required');
+        if (row[4] && row[4].trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(row[4])) {
+          errors.push('Invalid email format');
+        }
+        if (row[6] && !['active', 'inactive'].includes(row[6].toLowerCase())) {
+          errors.push('Status must be "active" or "inactive"');
+        }
+        break;
     }
 
     if (errors.length > 0) {
@@ -143,23 +180,69 @@ const BulkImportDialog: React.FC<BulkImportDialogProps> = ({
 
     // Create data object for valid records
     let data;
-    if (type === 'brands' || type === 'categories') {
-      data = {
-        name: row[0].trim(),
-        description: row[1]?.trim() || null,
-        status: (row[2]?.toLowerCase() || 'active') as 'active' | 'inactive'
-      };
-      if (type === 'categories') {
-        (data as any).parent_id = null;
-      } else {
-        (data as any).logo_url = null;
-      }
-    } else if (type === 'colors') {
-      data = {
-        name: row[0].trim(),
-        hex_code: row[1].trim(),
-        status: (row[2]?.toLowerCase() || 'active') as 'active' | 'inactive'
-      };
+    switch (type) {
+      case 'brands':
+        data = {
+          name: row[0].trim(),
+          description: row[1]?.trim() || null,
+          status: (row[2]?.toLowerCase() || 'active') as 'active' | 'inactive',
+          logo_url: null
+        };
+        break;
+        
+      case 'categories':
+        data = {
+          name: row[0].trim(),
+          description: row[1]?.trim() || null,
+          status: (row[2]?.toLowerCase() || 'active') as 'active' | 'inactive',
+          parent_id: null
+        };
+        break;
+        
+      case 'colors':
+        data = {
+          name: row[0].trim(),
+          hex_code: row[1].trim(),
+          status: (row[2]?.toLowerCase() || 'active') as 'active' | 'inactive'
+        };
+        break;
+        
+      case 'sizeGroups':
+        data = {
+          name: row[0].trim(),
+          description: row[1]?.trim() || null,
+          status: (row[2]?.toLowerCase() || 'active') as 'active' | 'inactive'
+        };
+        break;
+        
+      case 'zones':
+        data = {
+          name: row[0].trim(),
+          code: row[1]?.trim() || null,
+          description: row[2]?.trim() || null,
+          status: (row[3]?.toLowerCase() || 'active') as 'active' | 'inactive'
+        };
+        break;
+        
+      case 'priceTypes':
+        data = {
+          name: row[0].trim(),
+          description: row[1]?.trim() || null,
+          status: (row[2]?.toLowerCase() || 'active') as 'active' | 'inactive'
+        };
+        break;
+        
+      case 'vendors':
+        data = {
+          name: row[0].trim(),
+          code: row[1].trim(),
+          description: row[2]?.trim() || null,
+          contact_person: row[3]?.trim() || null,
+          email: row[4]?.trim() || null,
+          phone: row[5]?.trim() || null,
+          status: (row[6]?.toLowerCase() || 'active') as 'active' | 'inactive'
+        };
+        break;
     }
 
     return { valid: true, errors: [], data };
@@ -252,12 +335,28 @@ const BulkImportDialog: React.FC<BulkImportDialogProps> = ({
     try {
       for (const record of processingResult.validRecords) {
         try {
-          if (type === 'brands') {
-            await createBrandMutation.mutateAsync(record);
-          } else if (type === 'categories') {
-            await createCategoryMutation.mutateAsync(record);
-          } else if (type === 'colors') {
-            await createColorMutation.mutateAsync(record);
+          switch (type) {
+            case 'brands':
+              await createBrandMutation.mutateAsync(record);
+              break;
+            case 'categories':
+              await createCategoryMutation.mutateAsync(record);
+              break;
+            case 'colors':
+              await createColorMutation.mutateAsync(record);
+              break;
+            case 'sizeGroups':
+              await createSizeGroupMutation.mutateAsync(record);
+              break;
+            case 'zones':
+              await createZoneMutation.mutateAsync(record);
+              break;
+            case 'priceTypes':
+              await createPriceTypeMutation.mutateAsync(record);
+              break;
+            case 'vendors':
+              await createVendorMutation.mutateAsync(record);
+              break;
           }
           successCount++;
         } catch (error) {
@@ -406,6 +505,8 @@ const BulkImportDialog: React.FC<BulkImportDialogProps> = ({
                             <div key={index} className="text-xs p-2 bg-green-50 rounded border">
                               {type === 'colors' 
                                 ? `${record.name} (${record.hex_code})`
+                                : type === 'vendors'
+                                ? `${record.name} (${record.code})`
                                 : `${record.name} - ${record.description || 'No description'}`
                               }
                             </div>
