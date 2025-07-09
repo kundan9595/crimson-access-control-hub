@@ -1,9 +1,11 @@
+
 import React, { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import type { Tables } from '@/integrations/supabase/types';
@@ -23,12 +25,22 @@ const CreateUserForm: React.FC<CreateUserFormProps> = ({ roles, onSuccess }) => 
     phoneNumber: '',
     department: '',
     designation: '',
-    warehouseAssignment: '',
   });
   const [selectedRoles, setSelectedRoles] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+
+  const departmentOptions = [
+    { value: 'operations', label: 'Operations' },
+    { value: 'logistics', label: 'Logistics' },
+    { value: 'warehouse', label: 'Warehouse' },
+    { value: 'customer_service', label: 'Customer Service' },
+    { value: 'administration', label: 'Administration' },
+    { value: 'finance', label: 'Finance' },
+    { value: 'it', label: 'IT' },
+    { value: 'human_resources', label: 'Human Resources' },
+  ];
 
   const createUserMutation = useMutation({
     mutationFn: async (userData: typeof formData & { selectedRoles: string[] }) => {
@@ -55,6 +67,9 @@ const CreateUserForm: React.FC<CreateUserFormProps> = ({ roles, onSuccess }) => 
           email: userData.email,
           first_name: userData.firstName,
           last_name: userData.lastName,
+          phone_number: userData.phoneNumber || null,
+          department: userData.department || null,
+          designation: userData.designation || null,
         })
         .select()
         .single();
@@ -177,11 +192,18 @@ const CreateUserForm: React.FC<CreateUserFormProps> = ({ roles, onSuccess }) => 
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label htmlFor="department">Department</Label>
-          <Input
-            id="department"
-            value={formData.department}
-            onChange={(e) => setFormData(prev => ({ ...prev, department: e.target.value }))}
-          />
+          <Select value={formData.department} onValueChange={(value) => setFormData(prev => ({ ...prev, department: value }))}>
+            <SelectTrigger>
+              <SelectValue placeholder="Select department" />
+            </SelectTrigger>
+            <SelectContent>
+              {departmentOptions.map((dept) => (
+                <SelectItem key={dept.value} value={dept.value}>
+                  {dept.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
         
         <div className="space-y-2">
@@ -192,15 +214,6 @@ const CreateUserForm: React.FC<CreateUserFormProps> = ({ roles, onSuccess }) => 
             onChange={(e) => setFormData(prev => ({ ...prev, designation: e.target.value }))}
           />
         </div>
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="warehouseAssignment">Warehouse Assignment</Label>
-        <Input
-          id="warehouseAssignment"
-          value={formData.warehouseAssignment}
-          onChange={(e) => setFormData(prev => ({ ...prev, warehouseAssignment: e.target.value }))}
-        />
       </div>
 
       <div className="space-y-4">

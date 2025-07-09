@@ -39,28 +39,37 @@ export type Database = {
         Row: {
           avatar_url: string | null
           created_at: string
+          department: Database["public"]["Enums"]["department_type"] | null
+          designation: string | null
           email: string
           first_name: string | null
           id: string
           last_name: string | null
+          phone_number: string | null
           updated_at: string
         }
         Insert: {
           avatar_url?: string | null
           created_at?: string
+          department?: Database["public"]["Enums"]["department_type"] | null
+          designation?: string | null
           email: string
           first_name?: string | null
           id: string
           last_name?: string | null
+          phone_number?: string | null
           updated_at?: string
         }
         Update: {
           avatar_url?: string | null
           created_at?: string
+          department?: Database["public"]["Enums"]["department_type"] | null
+          designation?: string | null
           email?: string
           first_name?: string | null
           id?: string
           last_name?: string | null
+          phone_number?: string | null
           updated_at?: string
         }
         Relationships: []
@@ -189,6 +198,15 @@ export type Database = {
       }
     }
     Enums: {
+      department_type:
+        | "operations"
+        | "logistics"
+        | "warehouse"
+        | "customer_service"
+        | "administration"
+        | "finance"
+        | "it"
+        | "human_resources"
       permission_type:
         | "view_clients"
         | "edit_clients"
@@ -342,6 +360,16 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      department_type: [
+        "operations",
+        "logistics",
+        "warehouse",
+        "customer_service",
+        "administration",
+        "finance",
+        "it",
+        "human_resources",
+      ],
       permission_type: [
         "view_clients",
         "edit_clients",
