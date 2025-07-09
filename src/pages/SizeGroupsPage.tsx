@@ -4,17 +4,19 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { Plus, Search, Edit, Trash2, Ruler } from 'lucide-react';
+import { Plus, Search, Edit, Trash2, Ruler, ChevronDown, ChevronRight } from 'lucide-react';
 import { useSizeGroups, useDeleteSizeGroup } from '@/hooks/useMasters';
 import { SizeGroup } from '@/services/mastersService';
 import { useSearchParams } from 'react-router-dom';
 import SizeGroupDialog from '@/components/masters/SizeGroupDialog';
+import SizeGroupSizes from '@/components/masters/SizeGroupSizes';
 
 const SizeGroupsPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [searchTerm, setSearchTerm] = useState('');
   const [editingSizeGroup, setEditingSizeGroup] = useState<SizeGroup | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(searchParams.get('add') === 'true');
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
   
   const { data: sizeGroups, isLoading } = useSizeGroups();
   const deleteSizeGroup = useDeleteSizeGroup();
@@ -39,6 +41,16 @@ const SizeGroupsPage = () => {
     setIsDialogOpen(false);
     setEditingSizeGroup(null);
     setSearchParams({});
+  };
+
+  const toggleGroupExpansion = (groupId: string) => {
+    const newExpanded = new Set(expandedGroups);
+    if (newExpanded.has(groupId)) {
+      newExpanded.delete(groupId);
+    } else {
+      newExpanded.add(groupId);
+    }
+    setExpandedGroups(newExpanded);
   };
 
   if (isLoading) {
@@ -83,18 +95,30 @@ const SizeGroupsPage = () => {
         {filteredSizeGroups?.map((sizeGroup) => (
           <Card key={sizeGroup.id}>
             <CardContent className="p-6">
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between mb-4">
                 <div className="flex-1">
                   <div className="flex items-center gap-3 mb-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => toggleGroupExpansion(sizeGroup.id)}
+                      className="p-1"
+                    >
+                      {expandedGroups.has(sizeGroup.id) ? (
+                        <ChevronDown className="h-4 w-4" />
+                      ) : (
+                        <ChevronRight className="h-4 w-4" />
+                      )}
+                    </Button>
                     <h3 className="text-lg font-semibold">{sizeGroup.name}</h3>
                     <Badge variant={sizeGroup.status === 'active' ? 'default' : 'secondary'}>
                       {sizeGroup.status}
                     </Badge>
                   </div>
                   {sizeGroup.description && (
-                    <p className="text-muted-foreground mb-2">{sizeGroup.description}</p>
+                    <p className="text-muted-foreground mb-2 ml-10">{sizeGroup.description}</p>
                   )}
-                  <div className="text-sm text-muted-foreground">
+                  <div className="text-sm text-muted-foreground ml-10">
                     Created: {new Date(sizeGroup.created_at).toLocaleDateString()}
                   </div>
                 </div>
@@ -116,6 +140,15 @@ const SizeGroupsPage = () => {
                   </Button>
                 </div>
               </div>
+              
+              {expandedGroups.has(sizeGroup.id) && (
+                <div className="ml-10">
+                  <SizeGroupSizes 
+                    sizeGroupId={sizeGroup.id}
+                    sizeGroupName={sizeGroup.name}
+                  />
+                </div>
+              )}
             </CardContent>
           </Card>
         ))}
