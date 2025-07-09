@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -60,13 +60,34 @@ export const StyleDialog: React.FC<StyleDialogProps> = ({
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      name: style?.name || '',
-      description: style?.description || '',
-      brand_id: style?.brand_id || '',
-      category_id: style?.category_id || '',
-      status: style?.status || 'active',
+      name: '',
+      description: '',
+      brand_id: '',
+      category_id: '',
+      status: 'active',
     },
   });
+
+  // Reset form when style prop changes
+  useEffect(() => {
+    if (style) {
+      form.reset({
+        name: style.name || '',
+        description: style.description || '',
+        brand_id: style.brand_id || '',
+        category_id: style.category_id || '',
+        status: style.status || 'active',
+      });
+    } else {
+      form.reset({
+        name: '',
+        description: '',
+        brand_id: '',
+        category_id: '',
+        status: 'active',
+      });
+    }
+  }, [style, form]);
 
   const onSubmit = async (data: FormData) => {
     try {
