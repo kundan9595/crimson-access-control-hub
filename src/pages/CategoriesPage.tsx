@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Edit, Trash2, Search, Plus, ArrowLeft } from 'lucide-react';
 import { useCategories, useDeleteCategory } from '@/hooks/useMasters';
 import { Link, useSearchParams } from 'react-router-dom';
@@ -90,47 +91,57 @@ const CategoriesPage = () => {
         </CardHeader>
         <CardContent>
           {filteredCategories.length > 0 ? (
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {filteredCategories.map((category) => (
-                <Card key={category.id}>
-                  <CardHeader>
-                    <div className="flex items-center justify-between">
-                      <CardTitle className="text-lg">{category.name}</CardTitle>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Name</TableHead>
+                  <TableHead>Description</TableHead>
+                  <TableHead>Parent Category</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Created At</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredCategories.map((category) => (
+                  <TableRow key={category.id}>
+                    <TableCell className="font-medium">{category.name}</TableCell>
+                    <TableCell className="max-w-xs truncate">{category.description || '-'}</TableCell>
+                    <TableCell>
+                      {category.parent_id 
+                        ? categories?.find(c => c.id === category.parent_id)?.name || 'Unknown'
+                        : '-'
+                      }
+                    </TableCell>
+                    <TableCell>
                       <Badge variant={category.status === 'active' ? 'default' : 'secondary'}>
                         {category.status}
                       </Badge>
-                    </div>
-                    {category.description && (
-                      <CardDescription>{category.description}</CardDescription>
-                    )}
-                    {category.parent_id && (
-                      <div className="text-xs text-muted-foreground">
-                        Parent: {categories?.find(c => c.id === category.parent_id)?.name}
+                    </TableCell>
+                    <TableCell>{new Date(category.created_at).toLocaleDateString()}</TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex items-center justify-end gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleEdit(category)}
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleDelete(category.id)}
+                          disabled={deleteCategoryMutation.isPending}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
                       </div>
-                    )}
-                  </CardHeader>
-                  <CardContent>
-                    <div className="flex items-center justify-end gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleEdit(category)}
-                      >
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleDelete(category.id)}
-                        disabled={deleteCategoryMutation.isPending}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
           ) : (
             <div className="text-center py-8 text-muted-foreground">
               <p>No categories found</p>

@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Edit, Trash2, Search, Plus, ArrowLeft } from 'lucide-react';
 import { useColors, useDeleteColor } from '@/hooks/useMasters';
 import { Link, useSearchParams } from 'react-router-dom';
@@ -90,48 +91,57 @@ const ColorsPage = () => {
         </CardHeader>
         <CardContent>
           {filteredColors.length > 0 ? (
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {filteredColors.map((color) => (
-                <Card key={color.id}>
-                  <CardHeader>
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <div
-                          className="w-8 h-8 rounded-full border border-gray-200"
-                          style={{ backgroundColor: color.hex_code }}
-                        />
-                        <div>
-                          <CardTitle className="text-lg">{color.name}</CardTitle>
-                          <Badge variant={color.status === 'active' ? 'default' : 'secondary'}>
-                            {color.status}
-                          </Badge>
-                        </div>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Color</TableHead>
+                  <TableHead>Name</TableHead>
+                  <TableHead>Hex Code</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Created At</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredColors.map((color) => (
+                  <TableRow key={color.id}>
+                    <TableCell>
+                      <div
+                        className="w-8 h-8 rounded-full border border-gray-200"
+                        style={{ backgroundColor: color.hex_code }}
+                      />
+                    </TableCell>
+                    <TableCell className="font-medium">{color.name}</TableCell>
+                    <TableCell className="font-mono text-sm">{color.hex_code}</TableCell>
+                    <TableCell>
+                      <Badge variant={color.status === 'active' ? 'default' : 'secondary'}>
+                        {color.status}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>{new Date(color.created_at).toLocaleDateString()}</TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex items-center justify-end gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleEdit(color)}
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleDelete(color.id)}
+                          disabled={deleteColorMutation.isPending}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
                       </div>
-                    </div>
-                    <CardDescription>{color.hex_code}</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="flex items-center justify-end gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleEdit(color)}
-                      >
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleDelete(color.id)}
-                        disabled={deleteColorMutation.isPending}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
           ) : (
             <div className="text-center py-8 text-muted-foreground">
               <p>No colors found</p>

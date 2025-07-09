@@ -132,12 +132,12 @@ const CategoryDialog: React.FC<CategoryDialogProps> = ({ open, onOpenChange, cat
               name="parent_id"
               control={control}
               render={({ field }) => (
-                <Select value={field.value || ""} onValueChange={(value) => field.onChange(value === "" ? null : value)}>
+                <Select value={field.value || "none"} onValueChange={(value) => field.onChange(value === "none" ? null : value)}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select parent category (optional)" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">None</SelectItem>
+                    <SelectItem value="none">None</SelectItem>
                     {availableParentCategories.map((cat) => (
                       <SelectItem key={cat.id} value={cat.id}>
                         {cat.name}

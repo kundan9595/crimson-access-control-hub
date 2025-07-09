@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Edit, Trash2, Search, Plus, ArrowLeft } from 'lucide-react';
 import { useBrands, useDeleteBrand } from '@/hooks/useMasters';
 import { Link, useSearchParams } from 'react-router-dom';
@@ -90,49 +91,60 @@ const BrandsPage = () => {
         </CardHeader>
         <CardContent>
           {filteredBrands.length > 0 ? (
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {filteredBrands.map((brand) => (
-                <Card key={brand.id}>
-                  <CardHeader>
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        {brand.logo_url && (
-                          <img src={brand.logo_url} alt={brand.name} className="w-10 h-10 rounded object-cover" />
-                        )}
-                        <div>
-                          <CardTitle className="text-lg">{brand.name}</CardTitle>
-                          <Badge variant={brand.status === 'active' ? 'default' : 'secondary'}>
-                            {brand.status}
-                          </Badge>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Logo</TableHead>
+                  <TableHead>Name</TableHead>
+                  <TableHead>Description</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Created At</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredBrands.map((brand) => (
+                  <TableRow key={brand.id}>
+                    <TableCell>
+                      {brand.logo_url ? (
+                        <img src={brand.logo_url} alt={brand.name} className="w-10 h-10 rounded object-cover" />
+                      ) : (
+                        <div className="w-10 h-10 bg-muted rounded flex items-center justify-center text-xs">
+                          No Logo
                         </div>
+                      )}
+                    </TableCell>
+                    <TableCell className="font-medium">{brand.name}</TableCell>
+                    <TableCell className="max-w-xs truncate">{brand.description || '-'}</TableCell>
+                    <TableCell>
+                      <Badge variant={brand.status === 'active' ? 'default' : 'secondary'}>
+                        {brand.status}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>{new Date(brand.created_at).toLocaleDateString()}</TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex items-center justify-end gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleEdit(brand)}
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleDelete(brand.id)}
+                          disabled={deleteBrandMutation.isPending}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
                       </div>
-                    </div>
-                    {brand.description && (
-                      <CardDescription>{brand.description}</CardDescription>
-                    )}
-                  </CardHeader>
-                  <CardContent>
-                    <div className="flex items-center justify-end gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleEdit(brand)}
-                      >
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleDelete(brand.id)}
-                        disabled={deleteBrandMutation.isPending}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
           ) : (
             <div className="text-center py-8 text-muted-foreground">
               <p>No brands found</p>
