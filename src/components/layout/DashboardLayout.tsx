@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Outlet } from 'react-router-dom';
+import { Outlet, useLocation, Link } from 'react-router-dom';
 import { SidebarProvider, Sidebar, SidebarContent, SidebarHeader, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
 import { Users, Settings, Shield, Building, Package, ShoppingCart, LogOut } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
@@ -8,10 +8,20 @@ import { Button } from '@/components/ui/button';
 
 const DashboardLayout = () => {
   const { signOut } = useAuth();
+  const location = useLocation();
 
   const handleSignOut = async () => {
     await signOut();
   };
+
+  const menuItems = [
+    { icon: Shield, label: 'Roles & Permissions', path: '/roles-permissions' },
+    { icon: Users, label: 'Users', path: '/users' },
+    { icon: Building, label: 'Warehouses', path: '/warehouses' },
+    { icon: Package, label: 'Inventory', path: '/inventory' },
+    { icon: ShoppingCart, label: 'Orders', path: '/orders' },
+    { icon: Settings, label: 'Settings', path: '/settings' },
+  ];
 
   return (
     <SidebarProvider>
@@ -31,42 +41,16 @@ const DashboardLayout = () => {
           
           <SidebarContent>
             <SidebarMenu>
-              <SidebarMenuItem>
-                <SidebarMenuButton>
-                  <Shield className="w-4 h-4" />
-                  <span>Roles & Permissions</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton>
-                  <Users className="w-4 h-4" />
-                  <span>Users</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton>
-                  <Building className="w-4 h-4" />
-                  <span>Warehouses</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton>
-                  <Package className="w-4 h-4" />
-                  <span>Inventory</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton>
-                  <ShoppingCart className="w-4 h-4" />
-                  <span>Orders</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton>
-                  <Settings className="w-4 h-4" />
-                  <span>Settings</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
+              {menuItems.map((item) => (
+                <SidebarMenuItem key={item.path}>
+                  <SidebarMenuButton asChild isActive={location.pathname === item.path}>
+                    <Link to={item.path}>
+                      <item.icon className="w-4 h-4" />
+                      <span>{item.label}</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
             </SidebarMenu>
 
             <div className="mt-auto p-4 border-t">
