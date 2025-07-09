@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 
 export interface Brand {
@@ -136,7 +137,7 @@ export const fetchBrands = async (): Promise<Brand[]> => {
     .order('created_at', { ascending: false });
 
   if (error) throw error;
-  return data || [];
+  return (data || []) as Brand[];
 };
 
 export const createBrand = async (brandData: Omit<Brand, 'id' | 'created_at' | 'updated_at' | 'created_by' | 'updated_by'>): Promise<Brand> => {
@@ -147,7 +148,7 @@ export const createBrand = async (brandData: Omit<Brand, 'id' | 'created_at' | '
     .single();
 
   if (error) throw error;
-  return data;
+  return data as Brand;
 };
 
 export const updateBrand = async (id: string, updates: Partial<Brand>): Promise<Brand> => {
@@ -159,7 +160,7 @@ export const updateBrand = async (id: string, updates: Partial<Brand>): Promise<
     .single();
 
   if (error) throw error;
-  return data;
+  return data as Brand;
 };
 
 export const deleteBrand = async (id: string): Promise<void> => {
@@ -179,7 +180,7 @@ export const fetchCategories = async (): Promise<Category[]> => {
     .order('created_at', { ascending: false });
 
   if (error) throw error;
-  return data || [];
+  return (data || []) as Category[];
 };
 
 export const createCategory = async (categoryData: Omit<Category, 'id' | 'created_at' | 'updated_at' | 'created_by' | 'updated_by'>): Promise<Category> => {
@@ -190,7 +191,7 @@ export const createCategory = async (categoryData: Omit<Category, 'id' | 'create
     .single();
 
   if (error) throw error;
-  return data;
+  return data as Category;
 };
 
 export const updateCategory = async (id: string, updates: Partial<Category>): Promise<Category> => {
@@ -202,7 +203,7 @@ export const updateCategory = async (id: string, updates: Partial<Category>): Pr
     .single();
 
   if (error) throw error;
-  return data;
+  return data as Category;
 };
 
 export const deleteCategory = async (id: string): Promise<void> => {
@@ -222,7 +223,7 @@ export const fetchColors = async (): Promise<Color[]> => {
     .order('created_at', { ascending: false });
 
   if (error) throw error;
-  return data || [];
+  return (data || []) as Color[];
 };
 
 export const createColor = async (colorData: Omit<Color, 'id' | 'created_at' | 'updated_at' | 'created_by' | 'updated_by'>): Promise<Color> => {
@@ -233,7 +234,7 @@ export const createColor = async (colorData: Omit<Color, 'id' | 'created_at' | '
     .single();
 
   if (error) throw error;
-  return data;
+  return data as Color;
 };
 
 export const updateColor = async (id: string, updates: Partial<Color>): Promise<Color> => {
@@ -245,7 +246,7 @@ export const updateColor = async (id: string, updates: Partial<Color>): Promise<
     .single();
 
   if (error) throw error;
-  return data;
+  return data as Color;
 };
 
 export const deleteColor = async (id: string): Promise<void> => {
@@ -265,7 +266,7 @@ export const fetchSizeGroups = async (): Promise<SizeGroup[]> => {
     .order('created_at', { ascending: false });
 
   if (error) throw error;
-  return data || [];
+  return (data || []) as SizeGroup[];
 };
 
 export const createSizeGroup = async (sizeGroupData: Omit<SizeGroup, 'id' | 'created_at' | 'updated_at' | 'created_by' | 'updated_by'>): Promise<SizeGroup> => {
@@ -276,7 +277,7 @@ export const createSizeGroup = async (sizeGroupData: Omit<SizeGroup, 'id' | 'cre
     .single();
 
   if (error) throw error;
-  return data;
+  return data as SizeGroup;
 };
 
 export const updateSizeGroup = async (id: string, updates: Partial<SizeGroup>): Promise<SizeGroup> => {
@@ -288,7 +289,7 @@ export const updateSizeGroup = async (id: string, updates: Partial<SizeGroup>): 
     .single();
 
   if (error) throw error;
-  return data;
+  return data as SizeGroup;
 };
 
 export const deleteSizeGroup = async (id: string): Promise<void> => {
@@ -311,7 +312,7 @@ export const fetchSizes = async (): Promise<Size[]> => {
     .order('created_at', { ascending: false });
 
   if (error) throw error;
-  return data || [];
+  return (data || []) as Size[];
 };
 
 export const createSize = async (sizeData: Omit<Size, 'id' | 'created_at' | 'updated_at' | 'created_by' | 'updated_by' | 'size_group'>): Promise<Size> => {
@@ -322,7 +323,7 @@ export const createSize = async (sizeData: Omit<Size, 'id' | 'created_at' | 'upd
     .single();
 
   if (error) throw error;
-  return data;
+  return data as Size;
 };
 
 export const updateSize = async (id: string, updates: Partial<Size>): Promise<Size> => {
@@ -334,7 +335,7 @@ export const updateSize = async (id: string, updates: Partial<Size>): Promise<Si
     .single();
 
   if (error) throw error;
-  return data;
+  return data as Size;
 };
 
 export const deleteSize = async (id: string): Promise<void> => {
@@ -357,7 +358,7 @@ export const fetchZones = async (): Promise<Zone[]> => {
     .order('created_at', { ascending: false });
 
   if (error) throw error;
-  return data || [];
+  return (data || []) as Zone[];
 };
 
 export const createZone = async (zoneData: Omit<Zone, 'id' | 'created_at' | 'updated_at' | 'created_by' | 'updated_by' | 'locations'>): Promise<Zone> => {
@@ -368,7 +369,7 @@ export const createZone = async (zoneData: Omit<Zone, 'id' | 'created_at' | 'upd
     .single();
 
   if (error) throw error;
-  return data;
+  return data as Zone;
 };
 
 export const updateZone = async (id: string, updates: Partial<Zone>): Promise<Zone> => {
@@ -380,7 +381,7 @@ export const updateZone = async (id: string, updates: Partial<Zone>): Promise<Zo
     .single();
 
   if (error) throw error;
-  return data;
+  return data as Zone;
 };
 
 export const deleteZone = async (id: string): Promise<void> => {
@@ -401,7 +402,7 @@ export const createZoneLocation = async (locationData: Omit<ZoneLocation, 'id' |
     .single();
 
   if (error) throw error;
-  return data;
+  return data as ZoneLocation;
 };
 
 export const deleteZoneLocation = async (id: string): Promise<void> => {
@@ -421,7 +422,7 @@ export const fetchPriceTypes = async (): Promise<PriceType[]> => {
     .order('created_at', { ascending: false });
 
   if (error) throw error;
-  return data || [];
+  return (data || []) as PriceType[];
 };
 
 export const createPriceType = async (priceTypeData: Omit<PriceType, 'id' | 'created_at' | 'updated_at' | 'created_by' | 'updated_by'>): Promise<PriceType> => {
@@ -432,7 +433,7 @@ export const createPriceType = async (priceTypeData: Omit<PriceType, 'id' | 'cre
     .single();
 
   if (error) throw error;
-  return data;
+  return data as PriceType;
 };
 
 export const updatePriceType = async (id: string, updates: Partial<PriceType>): Promise<PriceType> => {
@@ -444,7 +445,7 @@ export const updatePriceType = async (id: string, updates: Partial<PriceType>): 
     .single();
 
   if (error) throw error;
-  return data;
+  return data as PriceType;
 };
 
 export const deletePriceType = async (id: string): Promise<void> => {
@@ -464,7 +465,7 @@ export const fetchVendors = async (): Promise<Vendor[]> => {
     .order('created_at', { ascending: false });
 
   if (error) throw error;
-  return data || [];
+  return (data || []) as Vendor[];
 };
 
 export const createVendor = async (vendorData: Omit<Vendor, 'id' | 'created_at' | 'updated_at' | 'created_by' | 'updated_by'>): Promise<Vendor> => {
@@ -475,7 +476,7 @@ export const createVendor = async (vendorData: Omit<Vendor, 'id' | 'created_at' 
     .single();
 
   if (error) throw error;
-  return data;
+  return data as Vendor;
 };
 
 export const updateVendor = async (id: string, updates: Partial<Vendor>): Promise<Vendor> => {
@@ -487,7 +488,7 @@ export const updateVendor = async (id: string, updates: Partial<Vendor>): Promis
     .single();
 
   if (error) throw error;
-  return data;
+  return data as Vendor;
 };
 
 export const deleteVendor = async (id: string): Promise<void> => {
@@ -511,7 +512,7 @@ export const fetchStyles = async (): Promise<Style[]> => {
     .order('created_at', { ascending: false });
 
   if (error) throw error;
-  return data || [];
+  return (data || []) as Style[];
 };
 
 export const createStyle = async (styleData: Omit<Style, 'id' | 'created_at' | 'updated_at' | 'created_by' | 'updated_by' | 'brand' | 'category'>): Promise<Style> => {
@@ -522,7 +523,7 @@ export const createStyle = async (styleData: Omit<Style, 'id' | 'created_at' | '
     .single();
 
   if (error) throw error;
-  return data;
+  return data as Style;
 };
 
 export const updateStyle = async (id: string, updates: Partial<Style>): Promise<Style> => {
@@ -534,7 +535,7 @@ export const updateStyle = async (id: string, updates: Partial<Style>): Promise<
     .single();
 
   if (error) throw error;
-  return data;
+  return data as Style;
 };
 
 export const deleteStyle = async (id: string): Promise<void> => {
