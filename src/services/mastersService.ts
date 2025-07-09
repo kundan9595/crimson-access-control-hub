@@ -44,7 +44,7 @@ export async function fetchBrands(): Promise<Brand[]> {
     .select('*')
     .order('created_at', { ascending: false });
   if (error) throw error;
-  return data || [];
+  return (data || []) as Brand[];
 }
 
 export async function createBrand(brand: Omit<Brand, 'id' | 'created_at' | 'updated_at' | 'created_by' | 'updated_by'>): Promise<Brand> {
@@ -54,7 +54,7 @@ export async function createBrand(brand: Omit<Brand, 'id' | 'created_at' | 'upda
     .select()
     .single();
   if (error) throw error;
-  return data;
+  return data as Brand;
 }
 
 export async function updateBrand(id: string, updates: Partial<Brand>): Promise<Brand> {
@@ -65,7 +65,7 @@ export async function updateBrand(id: string, updates: Partial<Brand>): Promise<
     .select()
     .single();
   if (error) throw error;
-  return data;
+  return data as Brand;
 }
 
 export async function deleteBrand(id: string): Promise<void> {
@@ -83,7 +83,7 @@ export async function fetchCategories(): Promise<Category[]> {
     .select('*')
     .order('created_at', { ascending: false });
   if (error) throw error;
-  return data || [];
+  return (data || []) as Category[];
 }
 
 export async function createCategory(category: Omit<Category, 'id' | 'created_at' | 'updated_at' | 'created_by' | 'updated_by'>): Promise<Category> {
@@ -93,7 +93,7 @@ export async function createCategory(category: Omit<Category, 'id' | 'created_at
     .select()
     .single();
   if (error) throw error;
-  return data;
+  return data as Category;
 }
 
 export async function updateCategory(id: string, updates: Partial<Category>): Promise<Category> {
@@ -104,7 +104,7 @@ export async function updateCategory(id: string, updates: Partial<Category>): Pr
     .select()
     .single();
   if (error) throw error;
-  return data;
+  return data as Category;
 }
 
 export async function deleteCategory(id: string): Promise<void> {
@@ -122,7 +122,7 @@ export async function fetchColors(): Promise<Color[]> {
     .select('*')
     .order('created_at', { ascending: false });
   if (error) throw error;
-  return data || [];
+  return (data || []) as Color[];
 }
 
 export async function createColor(color: Omit<Color, 'id' | 'created_at' | 'updated_at' | 'created_by' | 'updated_by'>): Promise<Color> {
@@ -132,7 +132,7 @@ export async function createColor(color: Omit<Color, 'id' | 'created_at' | 'upda
     .select()
     .single();
   if (error) throw error;
-  return data;
+  return data as Color;
 }
 
 export async function updateColor(id: string, updates: Partial<Color>): Promise<Color> {
@@ -143,7 +143,7 @@ export async function updateColor(id: string, updates: Partial<Color>): Promise<
     .select()
     .single();
   if (error) throw error;
-  return data;
+  return data as Color;
 }
 
 export async function deleteColor(id: string): Promise<void> {
