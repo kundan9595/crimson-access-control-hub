@@ -27,13 +27,15 @@ const Users = () => {
   const [isRoleFormOpen, setIsRoleFormOpen] = useState(false);
   const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const [viewMode, setViewMode] = useState<'cards' | 'table'>('table'); // Changed default to table
+  const [viewMode, setViewMode] = useState<'cards' | 'table'>('table');
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
   // Mutation for updating user activation status
   const updateUserStatusMutation = useMutation({
     mutationFn: async ({ userId, isActive }: { userId: string; isActive: boolean }) => {
+      console.log('Updating user status:', { userId, isActive });
+      
       const { data, error } = await supabase
         .from('profiles')
         .update({ 
@@ -41,10 +43,14 @@ const Users = () => {
           updated_at: new Date().toISOString()
         })
         .eq('id', userId)
-        .select()
-        .single();
+        .select();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error updating user status:', error);
+        throw error;
+      }
+      
+      console.log('User status updated successfully:', data);
       return data;
     },
     onSuccess: (data, { isActive }) => {
@@ -55,6 +61,7 @@ const Users = () => {
       });
     },
     onError: (error: any) => {
+      console.error('Mutation error:', error);
       toast({
         title: "Error",
         description: error.message || "Failed to update user status",
