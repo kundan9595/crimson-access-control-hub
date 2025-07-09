@@ -1,6 +1,6 @@
 
-import React, { useState } from 'react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import React from 'react';
+import { useUserProfileForm } from '@/hooks/useUserProfileForm';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import type { Tables } from '@/integrations/supabase/types';
+import { departmentOptions } from '@/lib/userConstants';
 
 type Profile = Tables<'profiles'>;
 type DepartmentType = 'operations' | 'logistics' | 'warehouse' | 'customer_service' | 'administration' | 'finance' | 'it' | 'human_resources';
@@ -18,68 +19,12 @@ interface UserProfileEditorProps {
 }
 
 const UserProfileEditor: React.FC<UserProfileEditorProps> = ({ user, onSuccess }) => {
-  const [formData, setFormData] = useState({
-    first_name: user.first_name || '',
-    last_name: user.last_name || '',
-    email: user.email || '',
-    phone_number: user.phone_number || '',
-    department: user.department || '',
-    designation: user.designation || '',
-  });
+  const { formData, setFormData, updateUser, isLoading } = useUserProfileForm(user, onSuccess);
   const { toast } = useToast();
-  const queryClient = useQueryClient();
-
-  const departmentOptions = [
-    { value: 'operations', label: 'Operations' },
-    { value: 'logistics', label: 'Logistics' },
-    { value: 'warehouse', label: 'Warehouse' },
-    { value: 'customer_service', label: 'Customer Service' },
-    { value: 'administration', label: 'Administration' },
-    { value: 'finance', label: 'Finance' },
-    { value: 'it', label: 'IT' },
-    { value: 'human_resources', label: 'Human Resources' },
-  ];
-
-  const updateUserMutation = useMutation({
-    mutationFn: async (userData: typeof formData) => {
-      const { data, error } = await supabase
-        .from('profiles')
-        .update({
-          first_name: userData.first_name,
-          last_name: userData.last_name,
-          email: userData.email,
-          phone_number: userData.phone_number || null,
-          department: userData.department as DepartmentType || null,
-          designation: userData.designation || null,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', user.id)
-        .select()
-        .single();
-
-      if (error) throw error;
-      return data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['users'] });
-      toast({
-        title: "Success",
-        description: "User profile updated successfully",
-      });
-      onSuccess();
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to update user profile",
-        variant: "destructive",
-      });
-    },
-  });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    updateUserMutation.mutate(formData);
+    updateUser(formData);
   };
 
   return (
@@ -160,9 +105,9 @@ const UserProfileEditor: React.FC<UserProfileEditorProps> = ({ user, onSuccess }
         </Button>
         <Button 
           type="submit" 
-          disabled={updateUserMutation.isPending}
+          disabled={isLoading}
         >
-          {updateUserMutation.isPending ? 'Updating...' : 'Update Profile'}
+          {isLoading ? 'Updating...' : 'Update Profile'}
         </Button>
       </div>
     </form>

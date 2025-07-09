@@ -1,6 +1,6 @@
 
-import React, { useState } from 'react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import React from 'react';
+import { useCreateUserForm } from '@/hooks/useCreateUserForm';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import type { Tables } from '@/integrations/supabase/types';
+import { departmentOptions } from '@/lib/userConstants';
 
 type Role = Tables<'roles'>;
 type DepartmentType = 'operations' | 'logistics' | 'warehouse' | 'customer_service' | 'administration' | 'finance' | 'it' | 'human_resources';
@@ -19,99 +20,8 @@ interface CreateUserFormProps {
 }
 
 const CreateUserForm: React.FC<CreateUserFormProps> = ({ roles, onSuccess }) => {
-  const [formData, setFormData] = useState({
-    firstName: '',
-    lastName: '',
-    email: '',
-    phoneNumber: '',
-    department: '',
-    designation: '',
-  });
-  const [selectedRoles, setSelectedRoles] = useState<string[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const { formData, setFormData, selectedRoles, setSelectedRoles, createUser, isLoading } = useCreateUserForm(onSuccess);
   const { toast } = useToast();
-  const queryClient = useQueryClient();
-
-  const departmentOptions = [
-    { value: 'operations', label: 'Operations' },
-    { value: 'logistics', label: 'Logistics' },
-    { value: 'warehouse', label: 'Warehouse' },
-    { value: 'customer_service', label: 'Customer Service' },
-    { value: 'administration', label: 'Administration' },
-    { value: 'finance', label: 'Finance' },
-    { value: 'it', label: 'IT' },
-    { value: 'human_resources', label: 'Human Resources' },
-  ];
-
-  const createUserMutation = useMutation({
-    mutationFn: async (userData: typeof formData & { selectedRoles: string[] }) => {
-      setIsLoading(true);
-      
-      // Get the current session
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        throw new Error('You must be logged in to create users');
-      }
-
-      console.log('Sending user data to edge function:', userData);
-
-      // Call the Edge Function to create the user
-      const { data, error } = await supabase.functions.invoke('create-user', {
-        body: {
-          firstName: userData.firstName,
-          lastName: userData.lastName,
-          email: userData.email,
-          phoneNumber: userData.phoneNumber,
-          department: userData.department,
-          designation: userData.designation,
-          selectedRoles: userData.selectedRoles,
-        },
-      });
-
-      if (error) {
-        console.error('Edge function error:', error);
-        throw new Error(error.message || 'Failed to create user');
-      }
-
-      if (data?.error) {
-        throw new Error(data.error);
-      }
-      
-      return data;
-    },
-    onSuccess: (data) => {
-      console.log('User created successfully:', data);
-      queryClient.invalidateQueries({ queryKey: ['users'] });
-      toast({
-        title: "Success",
-        description: "User created successfully. They will receive an email to set up their account.",
-      });
-      
-      // Reset form
-      setFormData({
-        firstName: '',
-        lastName: '',
-        email: '',
-        phoneNumber: '',
-        department: '',
-        designation: '',
-      });
-      setSelectedRoles([]);
-      
-      onSuccess();
-    },
-    onError: (error: any) => {
-      console.error('Create user error:', error);
-      toast({
-        title: "Error",
-        description: error.message || "Failed to create user",
-        variant: "destructive",
-      });
-    },
-    onSettled: () => {
-      setIsLoading(false);
-    },
-  });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -135,7 +45,7 @@ const CreateUserForm: React.FC<CreateUserFormProps> = ({ roles, onSuccess }) => 
     }
 
     console.log('Submitting form with roles:', selectedRoles);
-    createUserMutation.mutate({ ...formData, selectedRoles });
+    createUser({ ...formData, selectedRoles });
   };
 
   const handleRoleChange = (roleId: string, checked: boolean) => {

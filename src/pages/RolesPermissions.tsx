@@ -12,6 +12,11 @@ import { useToast } from '@/hooks/use-toast';
 import RoleForm from '@/components/roles/RoleForm';
 import PermissionsList from '@/components/roles/PermissionsList';
 import type { Tables } from '@/integrations/supabase/types';
+import RoleList from '@/components/roles/RoleList';
+import RoleDialog from '@/components/roles/RoleDialog';
+import { Skeleton } from '@/components/ui/skeleton';
+import { useRoles } from '@/hooks/useRoles';
+import { usePermissions } from '@/hooks/usePermissions';
 
 type Role = Tables<'roles'>;
 type Permission = Tables<'permissions'>;
@@ -23,42 +28,8 @@ const RolesPermissions = () => {
   const queryClient = useQueryClient();
 
   // Fetch roles
-  const { data: roles, isLoading: rolesLoading } = useQuery({
-    queryKey: ['roles'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('roles')
-        .select(`
-          *,
-          role_permissions (
-            permission_id,
-            permissions (
-              id,
-              name,
-              description
-            )
-          )
-        `)
-        .order('name');
-      
-      if (error) throw error;
-      return data;
-    },
-  });
-
-  // Fetch permissions
-  const { data: permissions, isLoading: permissionsLoading } = useQuery({
-    queryKey: ['permissions'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('permissions')
-        .select('*')
-        .order('name');
-      
-      if (error) throw error;
-      return data;
-    },
-  });
+  const { data: roles, isLoading: rolesLoading } = useRoles();
+  const { data: permissions, isLoading: permissionsLoading } = usePermissions();
 
   // Delete role mutation
   const deleteRoleMutation = useMutation({
@@ -118,95 +89,51 @@ const RolesPermissions = () => {
         <TabsContent value="roles" className="space-y-4">
           <div className="flex justify-between items-center">
             <h2 className="text-xl font-semibold">System Roles</h2>
-            <Dialog open={isCreateRoleOpen} onOpenChange={setIsCreateRoleOpen}>
-              <DialogTrigger asChild>
-                <Button>
-                  <Plus className="w-4 h-4 mr-2" />
-                  Create Role
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
-                <DialogHeader>
-                  <DialogTitle>Create New Role</DialogTitle>
-                  <DialogDescription>
-                    Define a new role with specific permissions
-                  </DialogDescription>
-                </DialogHeader>
-                <RoleForm 
-                  onSuccess={() => setIsCreateRoleOpen(false)}
-                  permissions={permissions || []}
-                />
-              </DialogContent>
-            </Dialog>
+            <Button onClick={() => setIsCreateRoleOpen(true)}>
+              <Plus className="w-4 h-4 mr-2" />
+              Create Role
+            </Button>
+            <RoleDialog
+              open={isCreateRoleOpen}
+              onOpenChange={setIsCreateRoleOpen}
+              permissions={permissions || []}
+              onSuccess={() => setIsCreateRoleOpen(false)}
+            />
           </div>
 
           {rolesLoading ? (
-            <div className="text-center py-8">Loading roles...</div>
-          ) : (
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {roles?.map((role) => (
-                <Card key={role.id}>
-                  <CardHeader className="pb-3">
-                    <div className="flex items-center justify-between">
-                      <CardTitle className="text-lg">{role.name}</CardTitle>
-                      <div className="flex gap-2">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => setEditingRole(role)}
-                        >
-                          <Edit2 className="w-4 h-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleDeleteRole(role.id)}
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </div>
-                    <CardDescription>{role.description}</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-2">
-                      <div>
-                        <Badge variant="secondary">
-                          {role.role_permissions?.length || 0} permissions
-                        </Badge>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
+              {[...Array(6)].map((_, i) => (
+                <Skeleton key={i} className="h-32 w-full rounded-lg" />
               ))}
             </div>
+          ) : (
+            <RoleList
+              roles={roles || []}
+              onEdit={setEditingRole}
+              onDelete={handleDeleteRole}
+            />
           )}
 
           {/* Edit Role Dialog */}
-          <Dialog open={!!editingRole} onOpenChange={() => setEditingRole(null)}>
-            <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
-              <DialogHeader>
-                <DialogTitle>Edit Role</DialogTitle>
-                <DialogDescription>
-                  Modify role details and permissions
-                </DialogDescription>
-            </DialogHeader>
-              {editingRole && (
-                <RoleForm 
-                  role={editingRole}
-                  onSuccess={() => setEditingRole(null)}
-                  permissions={permissions || []}
-                />
-              )}
-            </DialogContent>
-          </Dialog>
+          <RoleDialog
+            open={!!editingRole}
+            onOpenChange={() => setEditingRole(null)}
+            role={editingRole}
+            permissions={permissions || []}
+            onSuccess={() => setEditingRole(null)}
+          />
         </TabsContent>
 
         <TabsContent value="permissions" className="space-y-4">
           <div>
             <h2 className="text-xl font-semibold mb-4">System Permissions</h2>
             {permissionsLoading ? (
-              <div className="text-center py-8">Loading permissions...</div>
+              <div className="space-y-2">
+                {[...Array(8)].map((_, i) => (
+                  <Skeleton key={i} className="h-6 w-1/2 rounded" />
+                ))}
+              </div>
             ) : (
               <PermissionsList permissions={permissions || []} />
             )}

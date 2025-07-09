@@ -16,6 +16,15 @@ import UserRoleForm from '@/components/users/UserRoleForm';
 import CreateUserForm from '@/components/users/CreateUserForm';
 import UserProfileEditor from '@/components/users/UserProfileEditor';
 import type { Tables } from '@/integrations/supabase/types';
+import { formatDate, getUserInitials, getUserRoleBadges, getUserStatusBadge } from '@/lib/userUtils.tsx';
+import UserCard from '@/components/users/UserCard';
+import UserTableRow from '@/components/users/UserTableRow';
+import UserProfileEditDialog from '@/components/users/UserProfileEditDialog';
+import UserRoleDialog from '@/components/users/UserRoleDialog';
+import CreateUserDialog from '@/components/users/CreateUserDialog';
+import { Skeleton } from '@/components/ui/skeleton';
+import { useUsers, UserWithRoles } from '@/hooks/useUsers';
+import { useRoles } from '@/hooks/useRoles';
 
 type Profile = Tables<'profiles'>;
 type Role = Tables<'roles'>;
@@ -29,6 +38,8 @@ const Users = () => {
   const [viewMode, setViewMode] = useState<'cards' | 'table'>('table');
   const { toast } = useToast();
   const queryClient = useQueryClient();
+
+  const { data: roles } = useRoles();
 
   // Mutation for updating user activation status
   const updateUserStatusMutation = useMutation({
@@ -119,70 +130,7 @@ const Users = () => {
   });
 
   // Fetch users with their roles
-  const { data: users, isLoading: usersLoading, error: usersError } = useQuery({
-    queryKey: ['users'],
-    queryFn: async () => {
-      console.log('Fetching users...');
-      
-      // First, get all profiles
-      const { data: profiles, error: profilesError } = await supabase
-        .from('profiles')
-        .select('*')
-        .order('created_at', { ascending: false });
-      
-      if (profilesError) {
-        console.error('Error fetching profiles:', profilesError);
-        throw profilesError;
-      }
-
-      console.log('Profiles fetched:', profiles?.length);
-
-      // Then, get user roles for all users
-      const { data: userRoles, error: rolesError } = await supabase
-        .from('user_roles')
-        .select(`
-          user_id,
-          role_id,
-          assigned_at,
-          roles (
-            id,
-            name,
-            description,
-            is_warehouse_admin
-          )
-        `);
-      
-      if (rolesError) {
-        console.error('Error fetching user roles:', rolesError);
-        throw rolesError;
-      }
-
-      console.log('User roles fetched:', userRoles?.length);
-
-      // Combine profiles with their roles
-      const usersWithRoles = profiles?.map(profile => ({
-        ...profile,
-        user_roles: userRoles?.filter(ur => ur.user_id === profile.id) || []
-      })) || [];
-
-      console.log('Users with roles:', usersWithRoles);
-      return usersWithRoles;
-    },
-  });
-
-  // Fetch available roles
-  const { data: roles } = useQuery({
-    queryKey: ['roles'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('roles')
-        .select('*')
-        .order('name');
-      
-      if (error) throw error;
-      return data;
-    },
-  });
+  const { data: users, isLoading: usersLoading, error: usersError } = useUsers();
 
   // Filter users based on search term
   const filteredUsers = users?.filter(user => 
@@ -191,45 +139,6 @@ const Users = () => {
     user.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     user.department?.toLowerCase().includes(searchTerm.toLowerCase())
   ) || [];
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-    });
-  };
-
-  const getUserInitials = (firstName?: string, lastName?: string) => {
-    const first = firstName?.charAt(0) || '';
-    const last = lastName?.charAt(0) || '';
-    return (first + last).toUpperCase() || '??';
-  };
-
-  const getUserRoleBadges = (userRoles: any[]) => {
-    if (!userRoles || userRoles.length === 0) {
-      return <Badge variant="outline">No roles assigned</Badge>;
-    }
-
-    return userRoles.map((userRole: any) => (
-      <Badge 
-        key={userRole.role_id} 
-        variant={userRole.roles?.is_warehouse_admin ? "default" : "secondary"}
-        className="mr-1"
-      >
-        {userRole.roles?.is_warehouse_admin && <Shield className="w-3 h-3 mr-1" />}
-        {userRole.roles?.name}
-      </Badge>
-    ));
-  };
-
-  const getUserStatusBadge = (isActive: boolean) => {
-    return (
-      <Badge variant={isActive ? "default" : "destructive"}>
-        {isActive ? "Active" : "Inactive"}
-      </Badge>
-    );
-  };
 
   const handleUserAction = async (action: string, userId: string, isActive?: boolean) => {
     console.log('=== Handle user action called ===');
@@ -344,116 +253,58 @@ const Users = () => {
       </div>
 
       {usersLoading ? (
-        <div className="text-center py-8">Loading users...</div>
+        viewMode === 'cards' ? (
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {[...Array(6)].map((_, i) => (
+              <div key={i} className="space-y-2">
+                <Skeleton className="h-40 w-full rounded-lg" />
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="min-w-full">
+              <thead>
+                <tr>
+                  <th className="px-4 py-2">User</th>
+                  <th className="px-4 py-2">Email</th>
+                  <th className="px-4 py-2">Status</th>
+                  <th className="px-4 py-2">Department</th>
+                  <th className="px-4 py-2">Roles</th>
+                  <th className="px-4 py-2">Joined</th>
+                  <th className="px-4 py-2">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {[...Array(6)].map((_, i) => (
+                  <tr key={i}>
+                    {[...Array(7)].map((_, j) => (
+                      <td key={j} className="px-4 py-2">
+                        <Skeleton className="h-6 w-full rounded" />
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )
       ) : viewMode === 'cards' ? (
         <div className="grid gap-6">
           {filteredUsers.map((user) => (
-            <Card key={user.id}>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-4">
-                    <Avatar className="h-12 w-12">
-                      <AvatarImage src={user.avatar_url || ''} />
-                      <AvatarFallback>
-                        {getUserInitials(user.first_name || '', user.last_name || '')}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <CardTitle className="flex items-center gap-2">
-                        {user.first_name} {user.last_name}
-                        {getUserStatusBadge(user.is_active)}
-                      </CardTitle>
-                      <CardDescription className="space-y-1">
-                        <div className="flex items-center gap-1">
-                          <Mail className="w-4 h-4" />
-                          {user.email}
-                        </div>
-                        <div className="flex items-center gap-4">
-                          <span className="flex items-center gap-1">
-                            <Calendar className="w-4 h-4" />
-                            Joined {formatDate(user.created_at)}
-                          </span>
-                          {user.department && (
-                            <span className="text-sm bg-muted px-2 py-1 rounded">
-                              {user.department}
-                            </span>
-                          )}
-                          {user.designation && (
-                            <span className="text-sm text-muted-foreground">
-                              {user.designation}
-                            </span>
-                          )}
-                        </div>
-                      </CardDescription>
-                    </div>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Button 
-                      variant="outline" 
-                      onClick={() => {
-                        setSelectedUser(user);
-                        setIsEditProfileOpen(true);
-                      }}
-                    >
-                      <Edit2 className="w-4 h-4 mr-2" />
-                      Edit Profile
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      onClick={() => {
-                        setSelectedUser(user);
-                        setIsRoleFormOpen(true);
-                      }}
-                    >
-                      <Edit2 className="w-4 h-4 mr-2" />
-                      Manage Roles
-                    </Button>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="outline" size="sm">
-                          <MoreVertical className="w-4 h-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => handleUserAction('reset-password', user.id)}>
-                          <Key className="w-4 h-4 mr-2" />
-                          Reset Password
-                        </DropdownMenuItem>
-                        {!user.is_active && (
-                          <DropdownMenuItem onClick={() => handleUserAction('activate', user.id)}>
-                            <UserCheck className="w-4 h-4 mr-2" />
-                            Activate User
-                          </DropdownMenuItem>
-                        )}
-                        {user.is_active && (
-                          <DropdownMenuItem onClick={() => handleUserAction('deactivate', user.id)}>
-                            <UserX className="w-4 h-4 mr-2" />
-                            Deactivate User
-                          </DropdownMenuItem>
-                        )}
-                        <DropdownMenuItem 
-                          onClick={() => handleUserAction('delete', user.id)}
-                          className="text-destructive"
-                        >
-                          <Trash2 className="w-4 h-4 mr-2" />
-                          Delete User
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  <div>
-                    <p className="text-sm font-medium mb-2">Current Roles:</p>
-                    <div className="flex flex-wrap gap-2">
-                      {getUserRoleBadges(user.user_roles)}
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+            <UserCard
+              key={user.id}
+              user={user}
+              onEditProfile={() => {
+                setSelectedUser(user);
+                setIsEditProfileOpen(true);
+              }}
+              onManageRoles={() => {
+                setSelectedUser(user);
+                setIsRoleFormOpen(true);
+              }}
+              onUserAction={handleUserAction}
+            />
           ))}
         </div>
       ) : (
@@ -472,93 +323,19 @@ const Users = () => {
             </TableHeader>
             <TableBody>
               {filteredUsers.map((user) => (
-                <TableRow key={user.id}>
-                  <TableCell>
-                    <div className="flex items-center space-x-3">
-                      <Avatar className="h-8 w-8">
-                        <AvatarImage src={user.avatar_url || ''} />
-                        <AvatarFallback>
-                          {getUserInitials(user.first_name || '', user.last_name || '')}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <p className="font-medium">{user.first_name} {user.last_name}</p>
-                        {user.designation && (
-                          <p className="text-sm text-muted-foreground">{user.designation}</p>
-                        )}
-                      </div>
-                    </div>
-                  </TableCell>
-                  <TableCell>{user.email}</TableCell>
-                  <TableCell>{getUserStatusBadge(user.is_active)}</TableCell>
-                  <TableCell>
-                    {user.department && (
-                      <Badge variant="outline">{user.department}</Badge>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex flex-wrap gap-1">
-                      {getUserRoleBadges(user.user_roles)}
-                    </div>
-                  </TableCell>
-                  <TableCell>{formatDate(user.created_at)}</TableCell>
-                  <TableCell>
-                    <div className="flex items-center space-x-2">
-                      <Button 
-                        variant="outline"
-                        size="sm"
-                        onClick={() => {
-                          setSelectedUser(user);
-                          setIsEditProfileOpen(true);
-                        }}
-                      >
-                        <Edit2 className="w-4 h-4" />
-                      </Button>
-                      <Button 
-                        variant="outline"
-                        size="sm"
-                        onClick={() => {
-                          setSelectedUser(user);
-                          setIsRoleFormOpen(true);
-                        }}
-                      >
-                        Manage Roles
-                      </Button>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="outline" size="sm">
-                            <MoreVertical className="w-4 h-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => handleUserAction('reset-password', user.id)}>
-                            <Key className="w-4 h-4 mr-2" />
-                            Reset Password
-                          </DropdownMenuItem>
-                          {!user.is_active && (
-                            <DropdownMenuItem onClick={() => handleUserAction('activate', user.id)}>
-                              <UserCheck className="w-4 h-4 mr-2" />
-                              Activate
-                            </DropdownMenuItem>
-                          )}
-                          {user.is_active && (
-                            <DropdownMenuItem onClick={() => handleUserAction('deactivate', user.id)}>
-                              <UserX className="w-4 h-4 mr-2" />
-                              Deactivate
-                            </DropdownMenuItem>
-                          )}
-                          <DropdownMenuItem 
-                            onClick={() => handleUserAction('delete', user.id)}
-                            className="text-destructive"
-                          >
-                            <Trash2 className="w-4 h-4 mr-2" />
-                            Delete
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </div>
-                  </TableCell>
-                </TableRow>
+                <UserTableRow
+                  key={user.id}
+                  user={user}
+                  onEditProfile={() => {
+                    setSelectedUser(user);
+                    setIsEditProfileOpen(true);
+                  }}
+                  onManageRoles={() => {
+                    setSelectedUser(user);
+                    setIsRoleFormOpen(true);
+                  }}
+                  onUserAction={handleUserAction}
+                />
               ))}
             </TableBody>
           </Table>
