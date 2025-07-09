@@ -112,6 +112,24 @@ export type Vendor = {
   updated_by: string | null;
 };
 
+export type Style = {
+  id: string;
+  name: string;
+  code: string;
+  description: string | null;
+  color_variants: any[] | null;
+  size_category: string | null;
+  fabric_composition: string | null;
+  care_instructions: string | null;
+  season: string | null;
+  gender: string | null;
+  status: 'active' | 'inactive';
+  created_at: string;
+  updated_at: string;
+  created_by: string | null;
+  updated_by: string | null;
+};
+
 // Brand services
 export async function fetchBrands(): Promise<Brand[]> {
   const { data, error } = await supabase
@@ -451,6 +469,45 @@ export async function updateVendor(id: string, updates: Partial<Vendor>): Promis
 export async function deleteVendor(id: string): Promise<void> {
   const { error } = await supabase
     .from('vendors')
+    .delete()
+    .eq('id', id);
+  if (error) throw error;
+}
+
+// Style services
+export async function fetchStyles(): Promise<Style[]> {
+  const { data, error } = await supabase
+    .from('styles')
+    .select('*')
+    .order('created_at', { ascending: false });
+  if (error) throw error;
+  return (data || []) as Style[];
+}
+
+export async function createStyle(style: Omit<Style, 'id' | 'created_at' | 'updated_at' | 'created_by' | 'updated_by'>): Promise<Style> {
+  const { data, error } = await supabase
+    .from('styles')
+    .insert(style)
+    .select()
+    .single();
+  if (error) throw error;
+  return data as Style;
+}
+
+export async function updateStyle(id: string, updates: Partial<Style>): Promise<Style> {
+  const { data, error } = await supabase
+    .from('styles')
+    .update(updates)
+    .eq('id', id)
+    .select()
+    .single();
+  if (error) throw error;
+  return data as Style;
+}
+
+export async function deleteStyle(id: string): Promise<void> {
+  const { error } = await supabase
+    .from('styles')
     .delete()
     .eq('id', id);
   if (error) throw error;

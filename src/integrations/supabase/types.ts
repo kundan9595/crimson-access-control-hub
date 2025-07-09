@@ -413,6 +413,60 @@ export type Database = {
           },
         ]
       }
+      styles: {
+        Row: {
+          care_instructions: string | null
+          code: string
+          color_variants: Json | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          fabric_composition: string | null
+          gender: string | null
+          id: string
+          name: string
+          season: string | null
+          size_category: string | null
+          status: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          care_instructions?: string | null
+          code: string
+          color_variants?: Json | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          fabric_composition?: string | null
+          gender?: string | null
+          id?: string
+          name: string
+          season?: string | null
+          size_category?: string | null
+          status?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          care_instructions?: string | null
+          code?: string
+          color_variants?: Json | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          fabric_composition?: string | null
+          gender?: string | null
+          id?: string
+          name?: string
+          season?: string | null
+          size_category?: string | null
+          status?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           assigned_at: string

@@ -1,9 +1,8 @@
-
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Plus, ArrowRight, Package, Tag, Palette, Ruler, MapPin, DollarSign, Users } from 'lucide-react';
+import { Plus, ArrowRight, Package, Tag, Palette, Ruler, MapPin, DollarSign, Users, Shirt } from 'lucide-react';
 import { 
   useBrands, 
   useCategories, 
@@ -11,7 +10,8 @@ import {
   useSizeGroups, 
   useZones, 
   usePriceTypes, 
-  useVendors 
+  useVendors,
+  useStyles
 } from '@/hooks/useMasters';
 import { Link } from 'react-router-dom';
 
@@ -23,8 +23,44 @@ const Masters = () => {
   const { data: zones } = useZones();
   const { data: priceTypes } = usePriceTypes();
   const { data: vendors } = useVendors();
+  const { data: styles } = useStyles();
 
   const masterSections = [
+    {
+      title: 'Styles',
+      description: 'Manage product styles and their variations',
+      icon: Shirt,
+      data: styles?.slice(0, 5) || [],
+      total: styles?.length || 0,
+      viewMorePath: '/masters/styles',
+      addNewPath: '/masters/styles?add=true',
+      renderItem: (style: any) => (
+        <div key={style.id} className="flex items-center justify-between p-3 border rounded-lg">
+          <div>
+            <h4 className="font-medium">{style.name}</h4>
+            <p className="text-sm text-muted-foreground">Code: {style.code}</p>
+            {style.description && (
+              <p className="text-sm text-muted-foreground">{style.description}</p>
+            )}
+            <div className="flex gap-2 mt-1">
+              {style.season && (
+                <Badge variant="outline" className="text-xs capitalize">
+                  {style.season.replace('_', ' ')}
+                </Badge>
+              )}
+              {style.gender && (
+                <Badge variant="outline" className="text-xs capitalize">
+                  {style.gender}
+                </Badge>
+              )}
+            </div>
+          </div>
+          <Badge variant={style.status === 'active' ? 'default' : 'secondary'}>
+            {style.status}
+          </Badge>
+        </div>
+      )
+    },
     {
       title: 'Brands',
       description: 'Manage product brands and their details',
@@ -207,7 +243,7 @@ const Masters = () => {
     <div className="container mx-auto p-6 space-y-6">
       <div>
         <h1 className="text-3xl font-bold">Masters</h1>
-        <p className="text-muted-foreground">Manage brands, categories, colors, sizes, zones, price types, and vendors for your products</p>
+        <p className="text-muted-foreground">Manage styles, brands, categories, colors, sizes, zones, price types, and vendors for your products</p>
       </div>
 
       <div className="grid gap-6">

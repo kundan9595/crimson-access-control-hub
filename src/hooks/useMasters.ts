@@ -33,6 +33,10 @@ import {
   createVendor,
   updateVendor,
   deleteVendor,
+  fetchStyles,
+  createStyle,
+  updateStyle,
+  deleteStyle,
   Brand,
   Category,
   Color,
@@ -41,6 +45,7 @@ import {
   Zone,
   PriceType,
   Vendor,
+  Style,
 } from '@/services/mastersService';
 
 // Brand hooks
@@ -685,6 +690,87 @@ export const useDeleteVendor = () => {
       toast({
         title: "Error",
         description: "Failed to delete vendor",
+        variant: "destructive",
+      });
+    },
+  });
+};
+
+// Style hooks
+export const useStyles = () => {
+  return useQuery({
+    queryKey: ['styles'],
+    queryFn: fetchStyles,
+  });
+};
+
+export const useCreateStyle = () => {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: createStyle,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['styles'] });
+      toast({
+        title: "Success",
+        description: "Style created successfully",
+      });
+    },
+    onError: (error) => {
+      console.error('Error creating style:', error);
+      toast({
+        title: "Error",
+        description: "Failed to create style",
+        variant: "destructive",
+      });
+    },
+  });
+};
+
+export const useUpdateStyle = () => {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: ({ id, updates }: { id: string; updates: Partial<Style> }) =>
+      updateStyle(id, updates),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['styles'] });
+      toast({
+        title: "Success",
+        description: "Style updated successfully",
+      });
+    },
+    onError: (error) => {
+      console.error('Error updating style:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update style",
+        variant: "destructive",
+      });
+    },
+  });
+};
+
+export const useDeleteStyle = () => {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: deleteStyle,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['styles'] });
+      toast({
+        title: "Success",
+        description: "Style deleted successfully",
+      });
+    },
+    onError: (error) => {
+      console.error('Error deleting style:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete style",
         variant: "destructive",
       });
     },
