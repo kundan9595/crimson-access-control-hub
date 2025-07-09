@@ -127,6 +127,56 @@ export type Database = {
         }
         Relationships: []
       }
+      indian_cities: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          state_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          state_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          state_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "indian_cities_state_id_fkey"
+            columns: ["state_id"]
+            isOneToOne: false
+            referencedRelation: "indian_states"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      indian_states: {
+        Row: {
+          code: string
+          created_at: string
+          id: string
+          name: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          id?: string
+          name: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
       permissions: {
         Row: {
           created_at: string

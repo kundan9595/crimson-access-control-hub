@@ -8,6 +8,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useCreateZone, useUpdateZone } from '@/hooks/useMasters';
+import { useStates, useCitiesByState } from '@/hooks/useStates';
 import { Zone } from '@/services/mastersService';
 import { createZoneLocation, deleteZoneLocation } from '@/services/mastersService';
 import { Plus, X } from 'lucide-react';
@@ -40,7 +41,11 @@ const ZoneDialog = ({ zone, open, onOpenChange }: ZoneDialogProps) => {
   const [locations, setLocations] = useState<Location[]>(
     zone?.locations?.map(loc => ({ id: loc.id, state: loc.state, city: loc.city })) || []
   );
-  const [newLocation, setNewLocation] = useState<Location>({ state: '', city: '' });
+  const [selectedStateId, setSelectedStateId] = useState<string>('');
+  const [selectedCityId, setSelectedCityId] = useState<string>('');
+
+  const { data: states, isLoading: statesLoading } = useStates();
+  const { data: cities, isLoading: citiesLoading } = useCitiesByState(selectedStateId);
 
   const form = useForm<ZoneFormData>({
     resolver: zodResolver(zoneSchema),
@@ -64,12 +69,38 @@ const ZoneDialog = ({ zone, open, onOpenChange }: ZoneDialogProps) => {
       });
       setLocations([]);
     }
+    setSelectedStateId('');
+    setSelectedCityId('');
   }, [zone, form]);
 
   const addLocation = () => {
-    if (newLocation.state && newLocation.city) {
-      setLocations([...locations, { ...newLocation }]);
-      setNewLocation({ state: '', city: '' });
+    if (selectedStateId && selectedCityId) {
+      const selectedState = states?.find(s => s.id === selectedStateId);
+      const selectedCity = cities?.find(c => c.id === selectedCityId);
+      
+      if (selectedState && selectedCity) {
+        const newLocation = {
+          state: selectedState.name,
+          city: selectedCity.name,
+        };
+        
+        // Check if this location combination already exists
+        const exists = locations.some(loc => 
+          loc.state === newLocation.state && loc.city === newLocation.city
+        );
+        
+        if (!exists) {
+          setLocations([...locations, newLocation]);
+          setSelectedStateId('');
+          setSelectedCityId('');
+        } else {
+          toast({
+            title: "Location already exists",
+            description: "This state and city combination is already added.",
+            variant: "destructive",
+          });
+        }
+      }
     }
   };
 
@@ -127,6 +158,8 @@ const ZoneDialog = ({ zone, open, onOpenChange }: ZoneDialogProps) => {
       onOpenChange(false);
       form.reset();
       setLocations([]);
+      setSelectedStateId('');
+      setSelectedCityId('');
     } catch (error) {
       console.error('Error saving zone:', error);
     }
@@ -183,37 +216,71 @@ const ZoneDialog = ({ zone, open, onOpenChange }: ZoneDialogProps) => {
               <h3 className="text-lg font-medium">Locations</h3>
               
               {/* Add New Location */}
-              <div className="flex gap-2 items-end">
-                <div className="flex-1">
-                  <label className="text-sm font-medium">State</label>
-                  <Input
-                    value={newLocation.state}
-                    onChange={(e) => setNewLocation({ ...newLocation, state: e.target.value })}
-                    placeholder="Enter state"
-                  />
-                </div>
-                <div className="flex-1">
-                  <label className="text-sm font-medium">City</label>
-                  <Input
-                    value={newLocation.city}
-                    onChange={(e) => setNewLocation({ ...newLocation, city: e.target.value })}
-                    placeholder="Enter city"
-                  />
+              <div className="space-y-4 p-4 border rounded-lg">
+                <h4 className="font-medium">Add Location</h4>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-sm font-medium">State</label>
+                    <Select 
+                      value={selectedStateId} 
+                      onValueChange={(value) => {
+                        setSelectedStateId(value);
+                        setSelectedCityId(''); // Reset city when state changes
+                      }}
+                      disabled={statesLoading}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder={statesLoading ? "Loading states..." : "Select state"} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {states?.map((state) => (
+                          <SelectItem key={state.id} value={state.id}>
+                            {state.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium">City</label>
+                    <Select 
+                      value={selectedCityId} 
+                      onValueChange={setSelectedCityId}
+                      disabled={!selectedStateId || citiesLoading}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder={
+                          !selectedStateId ? "Select state first" : 
+                          citiesLoading ? "Loading cities..." : 
+                          "Select city"
+                        } />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {cities?.map((city) => (
+                          <SelectItem key={city.id} value={city.id}>
+                            {city.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
                 <Button
                   type="button"
                   onClick={addLocation}
-                  disabled={!newLocation.state || !newLocation.city}
+                  disabled={!selectedStateId || !selectedCityId}
                   size="sm"
+                  className="w-full"
                 >
-                  <Plus className="h-4 w-4" />
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Location
                 </Button>
               </div>
 
               {/* Existing Locations */}
               <div className="space-y-2">
                 {locations.map((location, index) => (
-                  <div key={index} className="flex items-center gap-2 p-2 border rounded">
+                  <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
                     <span className="flex-1">{location.state}, {location.city}</span>
                     <Button
                       type="button"
@@ -228,7 +295,7 @@ const ZoneDialog = ({ zone, open, onOpenChange }: ZoneDialogProps) => {
               </div>
 
               {locations.length === 0 && (
-                <p className="text-sm text-muted-foreground">No locations added yet.</p>
+                <p className="text-sm text-muted-foreground text-center py-4">No locations added yet.</p>
               )}
             </div>
 
