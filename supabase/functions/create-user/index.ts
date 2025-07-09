@@ -32,6 +32,7 @@ serve(async (req) => {
     
     const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token)
     if (authError || !user) {
+      console.error('Auth error:', authError)
       return new Response(
         JSON.stringify({ error: 'Unauthorized' }),
         { 
@@ -46,6 +47,7 @@ serve(async (req) => {
       .rpc('user_is_admin', { _user_id: user.id })
     
     if (!hasPermission) {
+      console.error('User lacks admin permissions:', user.id)
       return new Response(
         JSON.stringify({ error: 'Insufficient permissions' }),
         { 
@@ -65,6 +67,8 @@ serve(async (req) => {
       designation, 
       selectedRoles 
     } = await req.json()
+
+    console.log('Creating user with data:', { firstName, lastName, email, department, designation })
 
     // Create user with admin client
     const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
@@ -88,6 +92,7 @@ serve(async (req) => {
     }
 
     if (!newUser.user) {
+      console.error('No user returned from creation')
       return new Response(
         JSON.stringify({ error: 'Failed to create user' }),
         { 
@@ -97,10 +102,12 @@ serve(async (req) => {
       )
     }
 
-    // Create profile entry
+    console.log('User created successfully:', newUser.user.id)
+
+    // Create or update profile entry using upsert to handle duplicates
     const { data: profile, error: profileError } = await supabaseAdmin
       .from('profiles')
-      .insert({
+      .upsert({
         id: newUser.user.id,
         email,
         first_name: firstName,
@@ -108,12 +115,15 @@ serve(async (req) => {
         phone_number: phoneNumber || null,
         department: department || null,
         designation: designation || null,
+        updated_at: new Date().toISOString(),
+      }, {
+        onConflict: 'id'
       })
       .select()
       .single()
     
     if (profileError) {
-      console.error('Error creating profile:', profileError)
+      console.error('Error creating/updating profile:', profileError)
       return new Response(
         JSON.stringify({ error: profileError.message }),
         { 
@@ -122,9 +132,13 @@ serve(async (req) => {
         }
       )
     }
+
+    console.log('Profile created/updated successfully:', profile?.id)
     
     // Assign roles to the user
     if (selectedRoles && selectedRoles.length > 0) {
+      console.log('Assigning roles:', selectedRoles)
+      
       const userRoles = selectedRoles.map((roleId: string) => ({
         user_id: newUser.user.id,
         role_id: roleId,
@@ -145,7 +159,11 @@ serve(async (req) => {
           }
         )
       }
+
+      console.log('Roles assigned successfully')
     }
+    
+    console.log('User creation process completed successfully')
     
     return new Response(
       JSON.stringify({ 
