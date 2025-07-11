@@ -1,5 +1,6 @@
+
 import React, { useEffect, useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { BaseFormDialog } from '@/components/masters/shared/BaseFormDialog';
@@ -8,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
+import { TagsInput } from '@/components/ui/tags-input';
 import { Upload, X, AlertCircle } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { MediaItem } from '@/services/masters/mediaService';
@@ -17,7 +19,7 @@ const itemSchema = z.object({
   name: z.string().min(1, 'Name is required'),
   alt_text: z.string().optional(),
   folder_id: z.string().optional(),
-  tags: z.string().optional(),
+  tags: z.array(z.string()).optional(),
   status: z.enum(['active', 'inactive']),
 });
 
@@ -67,7 +69,7 @@ export const MediaItemDialog: React.FC<MediaItemDialogProps> = ({
       name: '',
       alt_text: '',
       folder_id: currentFolderId || '',
-      tags: '',
+      tags: [],
       status: 'active',
     },
   });
@@ -78,7 +80,7 @@ export const MediaItemDialog: React.FC<MediaItemDialogProps> = ({
         name: item.name,
         alt_text: item.alt_text || '',
         folder_id: item.folder_id || '',
-        tags: item.tags?.join(', ') || '',
+        tags: item.tags || [],
         status: item.status,
       });
       setPreviewUrl(item.file_url);
@@ -87,7 +89,7 @@ export const MediaItemDialog: React.FC<MediaItemDialogProps> = ({
         name: '',
         alt_text: '',
         folder_id: currentFolderId || '',
-        tags: '',
+        tags: [],
         status: 'active',
       });
       setPreviewUrl('');
@@ -168,16 +170,11 @@ export const MediaItemDialog: React.FC<MediaItemDialogProps> = ({
         }
       }
 
-      // Parse tags
-      const tags = data.tags 
-        ? data.tags.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0)
-        : [];
-
       const submitData = {
         name: data.name,
         alt_text: data.alt_text,
         folder_id: data.folder_id && data.folder_id !== 'root' ? data.folder_id : undefined,
-        tags: tags.length > 0 ? tags : undefined,
+        tags: data.tags && data.tags.length > 0 ? data.tags : undefined,
         status: data.status,
         file_url: fileUrl,
         file_size: fileSize,
@@ -357,14 +354,19 @@ export const MediaItemDialog: React.FC<MediaItemDialogProps> = ({
           )}
         />
 
-        <FormField
+        <Controller
           control={form.control}
           name="tags"
           render={({ field }) => (
             <FormItem>
               <FormLabel>Tags</FormLabel>
               <FormControl>
-                <Input {...field} placeholder="Enter tags separated by commas" />
+                <TagsInput
+                  value={field.value || []}
+                  onChange={field.onChange}
+                  placeholder="Enter tags and press Enter or comma"
+                  disabled={isSubmitting || uploadFile.isPending}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
