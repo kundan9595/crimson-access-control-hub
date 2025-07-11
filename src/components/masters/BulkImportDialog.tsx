@@ -14,14 +14,15 @@ import {
   useCreateZone, 
   useCreatePriceType, 
   useCreateVendor,
-  useCreateStyle
-} from '@/hooks/useMasters';
+  useCreateStyle,
+  useCreateClass
+} from '@/hooks/masters';
 import { useToast } from '@/hooks/use-toast';
 
 type BulkImportDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  type: 'brands' | 'categories' | 'colors' | 'sizeGroups' | 'zones' | 'priceTypes' | 'vendors' | 'styles';
+  type: 'brands' | 'categories' | 'colors' | 'sizeGroups' | 'zones' | 'priceTypes' | 'vendors' | 'styles' | 'classes';
   templateHeaders: string[];
   sampleData: string[][];
 };
@@ -61,6 +62,7 @@ const BulkImportDialog: React.FC<BulkImportDialogProps> = ({
   const createPriceTypeMutation = useCreatePriceType();
   const createVendorMutation = useCreateVendor();
   const createStyleMutation = useCreateStyle();
+  const createClassMutation = useCreateClass();
   const { toast } = useToast();
 
   const downloadTemplate = () => {
@@ -187,6 +189,26 @@ const BulkImportDialog: React.FC<BulkImportDialogProps> = ({
           errors.push('Status must be "active" or "inactive"');
         }
         break;
+        
+      case 'classes':
+        if (row.length < 2) errors.push('Missing required fields');
+        // Style ID, Color ID, Size Group ID are optional but should be valid UUIDs if provided
+        if (row[2] && row[2].trim() && !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(row[2])) {
+          errors.push('Invalid Style ID format (must be UUID)');
+        }
+        if (row[3] && row[3].trim() && !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(row[3])) {
+          errors.push('Invalid Color ID format (must be UUID)');
+        }
+        if (row[4] && row[4].trim() && !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(row[4])) {
+          errors.push('Invalid Size Group ID format (must be UUID)');
+        }
+        if (row[5] && row[5].trim() && (isNaN(parseFloat(row[5])) || parseFloat(row[5]) < 0 || parseFloat(row[5]) > 100)) {
+          errors.push('Tax percentage must be a number between 0 and 100');
+        }
+        if (row[6] && !['active', 'inactive'].includes(row[6].toLowerCase())) {
+          errors.push('Status must be "active" or "inactive"');
+        }
+        break;
     }
 
     if (errors.length > 0) {
@@ -266,6 +288,21 @@ const BulkImportDialog: React.FC<BulkImportDialogProps> = ({
           brand_id: row[2]?.trim() || null,
           category_id: row[3]?.trim() || null,
           status: (row[4]?.toLowerCase() || 'active') as 'active' | 'inactive'
+        };
+        break;
+        
+      case 'classes':
+        data = {
+          name: row[0].trim(),
+          description: row[1]?.trim() || null,
+          style_id: row[2]?.trim() || null,
+          color_id: row[3]?.trim() || null,
+          size_group_id: row[4]?.trim() || null,
+          tax_percentage: row[5]?.trim() ? parseFloat(row[5]) : 0,
+          status: (row[6]?.toLowerCase() || 'active') as 'active' | 'inactive',
+          selected_sizes: [],
+          primary_image_url: null,
+          images: []
         };
         break;
     }
@@ -384,6 +421,9 @@ const BulkImportDialog: React.FC<BulkImportDialogProps> = ({
               break;
             case 'styles':
               await createStyleMutation.mutateAsync(record);
+              break;
+            case 'classes':
+              await createClassMutation.mutateAsync(record);
               break;
           }
           successCount++;
@@ -535,6 +575,8 @@ const BulkImportDialog: React.FC<BulkImportDialogProps> = ({
                                 ? `${record.name} (${record.hex_code})`
                                 : type === 'vendors'
                                 ? `${record.name} (${record.code})`
+                                : type === 'classes'
+                                ? `${record.name} - Tax: ${record.tax_percentage}%`
                                 : `${record.name} - ${record.description || 'No description'}`
                               }
                             </div>
