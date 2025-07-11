@@ -9,7 +9,11 @@ export const fetchSkus = async (): Promise<Sku[]> => {
       *,
       class:classes(
         *,
-        style:styles(*),
+        style:styles(
+          *,
+          brand:brands(*),
+          category:categories(*)
+        ),
         color:colors(*)
       ),
       size:sizes(*)

@@ -55,11 +55,6 @@ export const SkusList = () => {
     return `₹${price.toFixed(2)}`;
   };
 
-  const formatDimension = (value: number | null) => {
-    if (value === null) return '-';
-    return value.toString();
-  };
-
   if (isLoading) {
     return <div>Loading SKUs...</div>;
   }
@@ -71,13 +66,13 @@ export const SkusList = () => {
           <TableHeader>
             <TableRow>
               <TableHead>SKU Code</TableHead>
+              <TableHead>Brand</TableHead>
+              <TableHead>Category</TableHead>
+              <TableHead>Style</TableHead>
+              <TableHead>Color</TableHead>
               <TableHead>Class</TableHead>
               <TableHead>Size</TableHead>
-              <TableHead>HSN Code</TableHead>
               <TableHead>Base MRP</TableHead>
-              <TableHead>Cost Price</TableHead>
-              <TableHead>Dimensions (L×B×H)</TableHead>
-              <TableHead>Weight</TableHead>
               <TableHead>Status</TableHead>
               <TableHead className="w-[50px]"></TableHead>
             </TableRow>
@@ -94,12 +89,30 @@ export const SkusList = () => {
                 <TableRow key={sku.id}>
                   <TableCell className="font-medium">{sku.sku_code}</TableCell>
                   <TableCell>
+                    {sku.class?.style?.brand?.name || '-'}
+                  </TableCell>
+                  <TableCell>
+                    {sku.class?.style?.category?.name || '-'}
+                  </TableCell>
+                  <TableCell>
+                    {sku.class?.style?.name || '-'}
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-2">
+                      {sku.class?.color && (
+                        <>
+                          <div 
+                            className="w-4 h-4 rounded-full border border-gray-300" 
+                            style={{ backgroundColor: sku.class.color.hex_code }}
+                          />
+                          <span>{sku.class.color.name}</span>
+                        </>
+                      )}
+                      {!sku.class?.color && '-'}
+                    </div>
+                  </TableCell>
+                  <TableCell>
                     {sku.class?.name || '-'}
-                    {sku.class?.style?.name && (
-                      <div className="text-xs text-muted-foreground">
-                        {sku.class.style.name}
-                      </div>
-                    )}
                   </TableCell>
                   <TableCell>
                     {sku.size?.name || '-'}
@@ -109,19 +122,7 @@ export const SkusList = () => {
                       </div>
                     )}
                   </TableCell>
-                  <TableCell>{sku.hsn_code || '-'}</TableCell>
                   <TableCell>{formatPrice(sku.base_mrp)}</TableCell>
-                  <TableCell>{formatPrice(sku.cost_price)}</TableCell>
-                  <TableCell>
-                    {sku.length_cm || sku.breadth_cm || sku.height_cm ? (
-                      `${formatDimension(sku.length_cm)}×${formatDimension(sku.breadth_cm)}×${formatDimension(sku.height_cm)} cm`
-                    ) : (
-                      '-'
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    {sku.weight_grams ? `${sku.weight_grams}g` : '-'}
-                  </TableCell>
                   <TableCell>
                     <Badge variant={sku.status === 'active' ? 'default' : 'secondary'}>
                       {sku.status}
