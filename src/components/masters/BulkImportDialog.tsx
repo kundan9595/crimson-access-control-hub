@@ -15,14 +15,15 @@ import {
   useCreatePriceType, 
   useCreateVendor,
   useCreateStyle,
-  useCreateClass
+  useCreateClass,
+  useCreateSku
 } from '@/hooks/masters';
 import { useToast } from '@/hooks/use-toast';
 
 type BulkImportDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  type: 'brands' | 'categories' | 'colors' | 'sizeGroups' | 'zones' | 'priceTypes' | 'vendors' | 'styles' | 'classes';
+  type: 'brands' | 'categories' | 'colors' | 'sizeGroups' | 'zones' | 'priceTypes' | 'vendors' | 'styles' | 'classes' | 'skus';
   templateHeaders: string[];
   sampleData: string[][];
 };
@@ -63,6 +64,7 @@ const BulkImportDialog: React.FC<BulkImportDialogProps> = ({
   const createVendorMutation = useCreateVendor();
   const createStyleMutation = useCreateStyle();
   const createClassMutation = useCreateClass();
+  const createSkuMutation = useCreateSku();
   const { toast } = useToast();
 
   const downloadTemplate = () => {
@@ -133,7 +135,7 @@ const BulkImportDialog: React.FC<BulkImportDialogProps> = ({
     const errors: string[] = [];
 
     // Basic validation for all types
-    if (!row[0]?.trim()) errors.push('Name is required');
+    if (!row[0]?.trim()) errors.push('First field is required');
 
     // Type-specific validation
     switch (type) {
@@ -206,6 +208,45 @@ const BulkImportDialog: React.FC<BulkImportDialogProps> = ({
           errors.push('Tax percentage must be a number between 0 and 100');
         }
         if (row[6] && !['active', 'inactive'].includes(row[6].toLowerCase())) {
+          errors.push('Status must be "active" or "inactive"');
+        }
+        break;
+        
+      case 'skus':
+        if (row.length < 3) errors.push('Missing required fields (SKU Code, Class ID, Size ID)');
+        if (!row[0]?.trim()) errors.push('SKU Code is required');
+        if (!row[1]?.trim()) errors.push('Class ID is required');
+        if (!row[2]?.trim()) errors.push('Size ID is required');
+        
+        // Validate UUIDs
+        if (row[1] && row[1].trim() && !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(row[1])) {
+          errors.push('Invalid Class ID format (must be UUID)');
+        }
+        if (row[2] && row[2].trim() && !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(row[2])) {
+          errors.push('Invalid Size ID format (must be UUID)');
+        }
+        
+        // Validate numeric fields
+        if (row[3] && row[3].trim() && (isNaN(parseFloat(row[3])) || parseFloat(row[3]) < 0)) {
+          errors.push('Base MRP must be a positive number');
+        }
+        if (row[4] && row[4].trim() && (isNaN(parseFloat(row[4])) || parseFloat(row[4]) < 0)) {
+          errors.push('Cost Price must be a positive number');
+        }
+        if (row[7] && row[7].trim() && (isNaN(parseFloat(row[7])) || parseFloat(row[7]) < 0)) {
+          errors.push('Length must be a positive number');
+        }
+        if (row[8] && row[8].trim() && (isNaN(parseFloat(row[8])) || parseFloat(row[8]) < 0)) {
+          errors.push('Breadth must be a positive number');
+        }
+        if (row[9] && row[9].trim() && (isNaN(parseFloat(row[9])) || parseFloat(row[9]) < 0)) {
+          errors.push('Height must be a positive number');
+        }
+        if (row[10] && row[10].trim() && (isNaN(parseFloat(row[10])) || parseFloat(row[10]) < 0)) {
+          errors.push('Weight must be a positive number');
+        }
+        
+        if (row[11] && !['active', 'inactive'].includes(row[11].toLowerCase())) {
           errors.push('Status must be "active" or "inactive"');
         }
         break;
@@ -303,6 +344,24 @@ const BulkImportDialog: React.FC<BulkImportDialogProps> = ({
           selected_sizes: [],
           primary_image_url: null,
           images: []
+        };
+        break;
+        
+      case 'skus':
+        data = {
+          sku_code: row[0].trim(),
+          class_id: row[1].trim(),
+          size_id: row[2].trim(),
+          base_mrp: row[3]?.trim() ? parseFloat(row[3]) : null,
+          cost_price: row[4]?.trim() ? parseFloat(row[4]) : null,
+          hsn_code: row[5]?.trim() || null,
+          description: row[6]?.trim() || null,
+          length_cm: row[7]?.trim() ? parseFloat(row[7]) : null,
+          breadth_cm: row[8]?.trim() ? parseFloat(row[8]) : null,
+          height_cm: row[9]?.trim() ? parseFloat(row[9]) : null,
+          weight_grams: row[10]?.trim() ? parseFloat(row[10]) : null,
+          status: (row[11]?.toLowerCase() || 'active') as 'active' | 'inactive',
+          price_type_prices: {}
         };
         break;
     }
@@ -424,6 +483,9 @@ const BulkImportDialog: React.FC<BulkImportDialogProps> = ({
               break;
             case 'classes':
               await createClassMutation.mutateAsync(record);
+              break;
+            case 'skus':
+              await createSkuMutation.mutateAsync(record);
               break;
           }
           successCount++;
@@ -577,6 +639,8 @@ const BulkImportDialog: React.FC<BulkImportDialogProps> = ({
                                 ? `${record.name} (${record.code})`
                                 : type === 'classes'
                                 ? `${record.name} - Tax: ${record.tax_percentage}%`
+                                : type === 'skus'
+                                ? `${record.sku_code} - MRP: ₹${record.base_mrp || 0}`
                                 : `${record.name} - ${record.description || 'No description'}`
                               }
                             </div>
