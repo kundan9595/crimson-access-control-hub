@@ -1,13 +1,22 @@
 
 import React from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
 import { useForm } from 'react-hook-form';
-import { useCreateColor, useUpdateColor } from '@/hooks/useMasters';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import { useCreateColor, useUpdateColor } from '@/hooks/masters/useColors';
+import { BaseFormDialog } from './shared/BaseFormDialog';
 import type { Color } from '@/services/mastersService';
+
+const colorSchema = z.object({
+  name: z.string().min(1, 'Name is required'),
+  hex_code: z.string().regex(/^#[0-9A-Fa-f]{6}$/, 'Please enter a valid hex code (e.g., #FF0000)'),
+  status: z.enum(['active', 'inactive']),
+});
+
+type ColorFormData = z.infer<typeof colorSchema>;
 
 type ColorDialogProps = {
   open: boolean;
@@ -15,25 +24,13 @@ type ColorDialogProps = {
   color?: Color | null;
 };
 
-type ColorFormData = {
-  name: string;
-  hex_code: string;
-  status: 'active' | 'inactive';
-};
-
 const ColorDialog: React.FC<ColorDialogProps> = ({ open, onOpenChange, color }) => {
   const createColorMutation = useCreateColor();
   const updateColorMutation = useUpdateColor();
   const isEditing = !!color;
 
-  const {
-    register,
-    handleSubmit,
-    reset,
-    setValue,
-    watch,
-    formState: { errors }
-  } = useForm<ColorFormData>({
+  const form = useForm<ColorFormData>({
+    resolver: zodResolver(colorSchema),
     defaultValues: {
       name: color?.name || '',
       hex_code: color?.hex_code || '#000000',
@@ -43,19 +40,19 @@ const ColorDialog: React.FC<ColorDialogProps> = ({ open, onOpenChange, color }) 
 
   React.useEffect(() => {
     if (color && open) {
-      reset({
+      form.reset({
         name: color.name,
         hex_code: color.hex_code,
         status: color.status,
       });
     } else if (!color && open) {
-      reset({
+      form.reset({
         name: '',
         hex_code: '#000000',
         status: 'active',
       });
     }
-  }, [color, open, reset]);
+  }, [color, open, form]);
 
   const onSubmit = (data: ColorFormData) => {
     const colorData = {
@@ -70,7 +67,7 @@ const ColorDialog: React.FC<ColorDialogProps> = ({ open, onOpenChange, color }) 
         {
           onSuccess: () => {
             onOpenChange(false);
-            reset();
+            form.reset();
           }
         }
       );
@@ -78,94 +75,89 @@ const ColorDialog: React.FC<ColorDialogProps> = ({ open, onOpenChange, color }) 
       createColorMutation.mutate(colorData, {
         onSuccess: () => {
           onOpenChange(false);
-          reset();
+          form.reset();
         }
       });
     }
   };
 
-  const statusValue = watch('status');
-  const hexValue = watch('hex_code');
-
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
-        <DialogHeader>
-          <DialogTitle>{isEditing ? 'Edit Color' : 'Create Color'}</DialogTitle>
-        </DialogHeader>
+    <BaseFormDialog
+      open={open}
+      onOpenChange={onOpenChange}
+      title={isEditing ? 'Edit Color' : 'Create Color'}
+      form={form}
+      onSubmit={onSubmit}
+      isSubmitting={createColorMutation.isPending || updateColorMutation.isPending}
+      isEditing={isEditing}
+    >
+      <FormField
+        control={form.control}
+        name="name"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>Name *</FormLabel>
+            <FormControl>
+              <Input {...field} placeholder="Enter color name" />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="name">Name *</Label>
-            <Input
-              id="name"
-              {...register('name', { required: 'Name is required' })}
-              placeholder="Enter color name"
-            />
-            {errors.name && (
-              <p className="text-sm text-destructive">{errors.name.message}</p>
-            )}
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="hex_code">Hex Code *</Label>
-            <div className="flex items-center gap-2">
-              <Input
-                id="hex_code"
-                {...register('hex_code', { 
-                  required: 'Hex code is required',
-                  pattern: {
-                    value: /^#[0-9A-Fa-f]{6}$/,
-                    message: 'Please enter a valid hex code (e.g., #FF0000)'
-                  }
-                })}
-                placeholder="#000000"
-              />
-              <div
-                className="w-10 h-10 rounded border border-gray-200 flex-shrink-0"
-                style={{ backgroundColor: hexValue }}
-              />
-            </div>
-            {errors.hex_code && (
-              <p className="text-sm text-destructive">{errors.hex_code.message}</p>
-            )}
-          </div>
-
-          <div className="space-y-2">
-            <Label>Status</Label>
-            <RadioGroup
-              value={statusValue}
-              onValueChange={(value) => setValue('status', value as 'active' | 'inactive')}
-            >
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="active" id="active" />
-                <Label htmlFor="active">Active</Label>
+      <FormField
+        control={form.control}
+        name="hex_code"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>Hex Code *</FormLabel>
+            <FormControl>
+              <div className="flex items-center gap-2">
+                <Input {...field} placeholder="#000000" />
+                <div
+                  className="w-10 h-10 rounded border border-gray-200 flex-shrink-0"
+                  style={{ backgroundColor: field.value }}
+                />
               </div>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="inactive" id="inactive" />
-                <Label htmlFor="inactive">Inactive</Label>
-              </div>
-            </RadioGroup>
-          </div>
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
 
-          <div className="flex justify-end gap-2 pt-4">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-            >
-              Cancel
-            </Button>
-            <Button
-              type="submit"
-              disabled={createColorMutation.isPending || updateColorMutation.isPending}
-            >
-              {isEditing ? 'Update' : 'Create'}
-            </Button>
-          </div>
-        </form>
-      </DialogContent>
-    </Dialog>
+      <FormField
+        control={form.control}
+        name="status"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>Status</FormLabel>
+            <FormControl>
+              <div className="flex items-center space-x-4">
+                <Label className="flex items-center space-x-2">
+                  <input
+                    type="radio"
+                    value="active"
+                    checked={field.value === 'active'}
+                    onChange={() => field.onChange('active')}
+                  />
+                  <span>Active</span>
+                </Label>
+                <Label className="flex items-center space-x-2">
+                  <input
+                    type="radio"
+                    value="inactive"
+                    checked={field.value === 'inactive'}
+                    onChange={() => field.onChange('inactive')}
+                  />
+                  <span>Inactive</span>
+                </Label>
+              </div>
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+    </BaseFormDialog>
   );
 };
 
