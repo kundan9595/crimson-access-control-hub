@@ -7,7 +7,9 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { Plus, Edit2, X } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Plus, Edit2, X, Calculator, AlertTriangle, CheckCircle } from 'lucide-react';
 import { useCreateClass, useUpdateClass, useStyles, useColors, useSizeGroups, useSizes, Class } from '@/hooks/masters';
 import ImageUpload from '@/components/ui/ImageUpload';
 import { calculateCapacityAllocation, validateSizeRatios, getTotalRatioPercentage } from '@/utils/capacityUtils';
@@ -49,6 +51,7 @@ const ClassDialog: React.FC<ClassDialogProps> = ({ classItem, trigger }) => {
 
   useEffect(() => {
     if (classItem) {
+      console.log('Loading class item for editing:', classItem);
       setFormData({
         name: classItem.name,
         style_id: classItem.style_id,
@@ -71,12 +74,15 @@ const ClassDialog: React.FC<ClassDialogProps> = ({ classItem, trigger }) => {
   useEffect(() => {
     if (formData.total_capacity && Object.keys(formData.size_ratios).length > 0) {
       const allocation = calculateCapacityAllocation(formData.total_capacity, formData.size_ratios);
+      console.log('Updating capacity allocation:', { totalCapacity: formData.total_capacity, ratios: formData.size_ratios, allocation });
       setFormData(prev => ({ ...prev, capacity_allocation: allocation }));
     }
   }, [formData.total_capacity, formData.size_ratios]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    console.log('Submitting class data:', formData);
     
     const submitData = {
       name: formData.name,
@@ -132,6 +138,7 @@ const ClassDialog: React.FC<ClassDialogProps> = ({ classItem, trigger }) => {
 
   const handleSizeGroupChange = (value: string) => {
     const newValue = value === 'none' ? null : value;
+    console.log('Size group changed:', newValue);
     setFormData(prev => ({
       ...prev,
       size_group_id: newValue,
@@ -142,6 +149,7 @@ const ClassDialog: React.FC<ClassDialogProps> = ({ classItem, trigger }) => {
   };
 
   const toggleSizeSelection = (sizeId: string) => {
+    console.log('Toggling size selection:', sizeId);
     setFormData(prev => {
       const newSelectedSizes = prev.selected_sizes.includes(sizeId)
         ? prev.selected_sizes.filter(id => id !== sizeId)
@@ -153,6 +161,7 @@ const ClassDialog: React.FC<ClassDialogProps> = ({ classItem, trigger }) => {
         delete newSizeRatios[sizeId];
       }
       
+      console.log('Updated selected sizes:', newSelectedSizes);
       return {
         ...prev,
         selected_sizes: newSelectedSizes,
@@ -162,6 +171,7 @@ const ClassDialog: React.FC<ClassDialogProps> = ({ classItem, trigger }) => {
   };
 
   const updateSizeRatio = (sizeId: string, ratio: number) => {
+    console.log('Updating size ratio:', sizeId, ratio);
     setFormData(prev => ({
       ...prev,
       size_ratios: {
@@ -196,6 +206,7 @@ const ClassDialog: React.FC<ClassDialogProps> = ({ classItem, trigger }) => {
 
   const totalRatioPercentage = getTotalRatioPercentage(formData.size_ratios);
   const isRatioValid = validateSizeRatios(formData.size_ratios);
+  const hasCapacityData = formData.total_capacity && formData.selected_sizes.length > 0;
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -207,160 +218,241 @@ const ClassDialog: React.FC<ClassDialogProps> = ({ classItem, trigger }) => {
           </Button>
         )}
       </DialogTrigger>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-6xl max-h-[95vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{classItem ? 'Edit Class' : 'Add New Class'}</DialogTitle>
-        </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid gap-4">
-            <div>
-              <Label htmlFor="name">Name *</Label>
-              <Input
-                id="name"
-                value={formData.name}
-                onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                required
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="style">Style</Label>
-                <Select value={formData.style_id || 'none'} onValueChange={(value) => setFormData(prev => ({ ...prev, style_id: value === 'none' ? null : value }))}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select style" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">No Style</SelectItem>
-                    {styles.filter(style => style.status === 'active').map((style) => (
-                      <SelectItem key={style.id} value={style.id}>
-                        {style.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <Label htmlFor="color">Color</Label>
-                <Select value={formData.color_id || 'none'} onValueChange={(value) => setFormData(prev => ({ ...prev, color_id: value === 'none' ? null : value }))}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select color" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">No Color</SelectItem>
-                    {colors.filter(color => color.status === 'active').map((color) => (
-                      <SelectItem key={color.id} value={color.id}>
-                        <div className="flex items-center gap-2">
-                          <div 
-                            className="w-4 h-4 rounded border border-gray-300" 
-                            style={{ backgroundColor: color.hex_code }}
-                          />
-                          {color.name}
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            <div>
-              <Label htmlFor="sizeGroup">Size Group</Label>
-              <Select value={formData.size_group_id || 'none'} onValueChange={handleSizeGroupChange}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select size group" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">No Size Group</SelectItem>
-                  {sizeGroups.filter(group => group.status === 'active').map((group) => (
-                    <SelectItem key={group.id} value={group.id}>
-                      {group.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {formData.size_group_id && availableSizes.length > 0 && (
-              <div>
-                <Label>Available Sizes</Label>
-                <div className="border rounded-md p-3 space-y-2 max-h-32 overflow-y-auto">
-                  {availableSizes.map((size) => (
-                    <div key={size.id} className="flex items-center space-x-2">
-                      <input
-                        type="checkbox"
-                        id={`size-${size.id}`}
-                        checked={formData.selected_sizes.includes(size.id)}
-                        onChange={() => toggleSizeSelection(size.id)}
-                        className="rounded border-gray-300"
-                      />
-                      <Label htmlFor={`size-${size.id}`} className="text-sm">
-                        {size.name} ({size.code})
-                      </Label>
-                    </div>
-                  ))}
-                </div>
-                {formData.selected_sizes.length > 0 && (
-                  <div className="mt-2">
-                    <Label className="text-sm text-muted-foreground">
-                      Selected: {formData.selected_sizes.length} size(s)
-                    </Label>
-                  </div>
-                )}
-              </div>
+          <DialogTitle className="flex items-center gap-2">
+            {classItem ? 'Edit Class' : 'Add New Class'}
+            {hasCapacityData && (
+              <Calculator className="h-5 w-5 text-blue-600" />
             )}
+          </DialogTitle>
+        </DialogHeader>
+        <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Basic Information */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Basic Information</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <Label htmlFor="name">Name *</Label>
+                <Input
+                  id="name"
+                  value={formData.name}
+                  onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                  required
+                />
+              </div>
 
-            {/* Capacity Management Section */}
-            {formData.selected_sizes.length > 0 && (
-              <div className="border rounded-lg p-4 space-y-4">
-                <h3 className="text-lg font-semibold">Capacity Management</h3>
-                
+              <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="total_capacity">Total Production Capacity</Label>
+                  <Label htmlFor="style">Style</Label>
+                  <Select value={formData.style_id || 'none'} onValueChange={(value) => setFormData(prev => ({ ...prev, style_id: value === 'none' ? null : value }))}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select style" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">No Style</SelectItem>
+                      {styles.filter(style => style.status === 'active').map((style) => (
+                        <SelectItem key={style.id} value={style.id}>
+                          {style.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label htmlFor="color">Color</Label>
+                  <Select value={formData.color_id || 'none'} onValueChange={(value) => setFormData(prev => ({ ...prev, color_id: value === 'none' ? null : value }))}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select color" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">No Color</SelectItem>
+                      {colors.filter(color => color.status === 'active').map((color) => (
+                        <SelectItem key={color.id} value={color.id}>
+                          <div className="flex items-center gap-2">
+                            <div 
+                              className="w-4 h-4 rounded border border-gray-300" 
+                              style={{ backgroundColor: color.hex_code }}
+                            />
+                            {color.name}
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div>
+                <Label htmlFor="description">Description</Label>
+                <Textarea
+                  id="description"
+                  value={formData.description}
+                  onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+                  rows={3}
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="tax_percentage">Tax Percentage (%)</Label>
+                <Input
+                  id="tax_percentage"
+                  type="number"
+                  min="0"
+                  max="100"
+                  step="0.01"
+                  value={formData.tax_percentage}
+                  onChange={(e) => setFormData(prev => ({ ...prev, tax_percentage: parseFloat(e.target.value) || 0 }))}
+                />
+              </div>
+
+              <div className="flex items-center space-x-2">
+                <Switch
+                  id="status"
+                  checked={formData.status === 'active'}
+                  onCheckedChange={(checked) => setFormData(prev => ({ ...prev, status: checked ? 'active' : 'inactive' }))}
+                />
+                <Label htmlFor="status">Active</Label>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Size Management */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Size Management</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <Label htmlFor="sizeGroup">Size Group</Label>
+                <Select value={formData.size_group_id || 'none'} onValueChange={handleSizeGroupChange}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select size group" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">No Size Group</SelectItem>
+                    {sizeGroups.filter(group => group.status === 'active').map((group) => (
+                      <SelectItem key={group.id} value={group.id}>
+                        {group.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {formData.size_group_id && availableSizes.length > 0 && (
+                <div>
+                  <Label>Available Sizes</Label>
+                  <div className="border rounded-md p-3 space-y-2 max-h-32 overflow-y-auto bg-gray-50">
+                    {availableSizes.map((size) => (
+                      <div key={size.id} className="flex items-center space-x-2">
+                        <input
+                          type="checkbox"
+                          id={`size-${size.id}`}
+                          checked={formData.selected_sizes.includes(size.id)}
+                          onChange={() => toggleSizeSelection(size.id)}
+                          className="rounded border-gray-300"
+                        />
+                        <Label htmlFor={`size-${size.id}`} className="text-sm font-medium">
+                          {size.name} ({size.code})
+                        </Label>
+                      </div>
+                    ))}
+                  </div>
+                  {formData.selected_sizes.length > 0 && (
+                    <Alert>
+                      <CheckCircle className="h-4 w-4" />
+                      <AlertDescription>
+                        Selected: {formData.selected_sizes.length} size(s)
+                      </AlertDescription>
+                    </Alert>
+                  )}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Capacity Management Section - Only show if sizes are selected */}
+          {formData.selected_sizes.length > 0 && (
+            <Card className="border-2 border-blue-200 bg-blue-50/30">
+              <CardHeader>
+                <CardTitle className="text-lg flex items-center gap-2 text-blue-800">
+                  <Calculator className="h-5 w-5" />
+                  Production Capacity Management
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div>
+                  <Label htmlFor="total_capacity" className="text-base font-semibold">Total Production Capacity *</Label>
                   <Input
                     id="total_capacity"
                     type="number"
-                    min="0"
+                    min="1"
                     value={formData.total_capacity || ''}
                     onChange={(e) => setFormData(prev => ({ 
                       ...prev, 
                       total_capacity: e.target.value ? parseInt(e.target.value) : null 
                     }))}
-                    placeholder="Enter total capacity"
+                    placeholder="Enter total capacity (e.g., 1000)"
+                    className="text-lg"
                   />
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Total number of units you can produce for this class
+                  </p>
                 </div>
 
                 <div>
-                  <Label>Size Distribution Ratios (%)</Label>
-                  <div className="grid grid-cols-2 gap-4 mt-2">
+                  <Label className="text-base font-semibold">Size Distribution Ratios (%)</Label>
+                  <p className="text-sm text-muted-foreground mb-3">
+                    Set the percentage split for each size. Total should equal 100%.
+                  </p>
+                  <div className="grid grid-cols-2 gap-4">
                     {availableSizes
                       .filter(size => formData.selected_sizes.includes(size.id))
                       .map((size) => (
-                        <div key={size.id} className="flex items-center space-x-2">
-                          <Label className="w-16 text-sm">{size.code}:</Label>
+                        <div key={size.id} className="flex items-center space-x-3 p-3 bg-white rounded border">
+                          <Label className="w-20 text-sm font-medium">{size.code}:</Label>
                           <Input
                             type="number"
                             min="0"
                             max="100"
+                            step="0.1"
                             value={formData.size_ratios[size.id] || ''}
                             onChange={(e) => updateSizeRatio(size.id, parseFloat(e.target.value) || 0)}
                             placeholder="0"
                             className="flex-1"
                           />
-                          <span className="text-sm text-muted-foreground">%</span>
+                          <span className="text-sm text-muted-foreground w-8">%</span>
                         </div>
                       ))}
                   </div>
                   
-                  <div className="mt-2 flex justify-between text-sm">
-                    <span className={`${totalRatioPercentage === 100 ? 'text-green-600' : 'text-orange-600'}`}>
-                      Total: {totalRatioPercentage}%
-                    </span>
-                    {totalRatioPercentage !== 100 && (
-                      <span className="text-orange-600">
-                        Should equal 100%
+                  <div className="mt-4 p-3 bg-white rounded border">
+                    <div className="flex justify-between items-center">
+                      <span className="font-medium">Total Percentage:</span>
+                      <span className={`text-lg font-bold ${
+                        totalRatioPercentage === 100 
+                          ? 'text-green-600' 
+                          : totalRatioPercentage > 100 
+                            ? 'text-red-600' 
+                            : 'text-orange-600'
+                      }`}>
+                        {totalRatioPercentage}%
                       </span>
+                    </div>
+                    {totalRatioPercentage !== 100 && (
+                      <Alert className="mt-2">
+                        <AlertTriangle className="h-4 w-4" />
+                        <AlertDescription>
+                          {totalRatioPercentage > 100 
+                            ? 'Total percentage exceeds 100%. Please adjust the ratios.'
+                            : `You need ${100 - totalRatioPercentage}% more to reach 100%.`
+                          }
+                        </AlertDescription>
+                      </Alert>
                     )}
                   </div>
                 </div>
@@ -368,109 +460,95 @@ const ClassDialog: React.FC<ClassDialogProps> = ({ classItem, trigger }) => {
                 {/* Capacity Allocation Display */}
                 {formData.total_capacity && Object.keys(formData.capacity_allocation).length > 0 && (
                   <div>
-                    <Label>Calculated Capacity Allocation</Label>
-                    <div className="grid grid-cols-2 gap-2 mt-2 p-3 bg-gray-50 rounded">
+                    <Label className="text-base font-semibold">Calculated Capacity Allocation</Label>
+                    <div className="grid grid-cols-2 gap-3 mt-3">
                       {availableSizes
                         .filter(size => formData.selected_sizes.includes(size.id))
                         .map((size) => (
-                          <div key={size.id} className="flex justify-between text-sm">
-                            <span>{size.code}:</span>
-                            <span className="font-medium">
+                          <div key={size.id} className="flex justify-between items-center p-3 bg-green-50 rounded border border-green-200">
+                            <span className="font-medium">{size.code} ({size.name}):</span>
+                            <span className="text-lg font-bold text-green-700">
                               {formData.capacity_allocation[size.id] || 0} units
                             </span>
                           </div>
                         ))}
                     </div>
+                    
+                    <div className="mt-3 p-3 bg-blue-50 rounded border border-blue-200">
+                      <div className="flex justify-between items-center">
+                        <span className="font-semibold">Total Allocated:</span>
+                        <span className="text-lg font-bold text-blue-700">
+                          {Object.values(formData.capacity_allocation).reduce((sum, val) => sum + val, 0)} units
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Image Management */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Images</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <Label>Primary Image</Label>
+                <ImageUpload
+                  value={formData.primary_image_url}
+                  onChange={setPrimaryImage}
+                  onRemove={() => setPrimaryImage('')}
+                  placeholder="Upload primary image"
+                />
+              </div>
+
+              <div>
+                <Label>Additional Images</Label>
+                <ImageUpload
+                  value=""
+                  onChange={addImage}
+                  onRemove={() => {}}
+                  placeholder="Upload additional images"
+                />
+                
+                {formData.images.length > 0 && (
+                  <div className="mt-4 grid grid-cols-4 gap-2">
+                    {formData.images.map((image, index) => (
+                      <div key={index} className="relative">
+                        <img
+                          src={image}
+                          alt={`Additional ${index + 1}`}
+                          className="w-full h-20 object-cover rounded border"
+                        />
+                        <Button
+                          type="button"
+                          variant="destructive"
+                          size="sm"
+                          className="absolute -top-2 -right-2 rounded-full p-1 h-6 w-6"
+                          onClick={() => removeImage(index)}
+                        >
+                          <X className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    ))}
                   </div>
                 )}
               </div>
-            )}
+            </CardContent>
+          </Card>
 
-            <div>
-              <Label htmlFor="description">Description</Label>
-              <Textarea
-                id="description"
-                value={formData.description}
-                onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                rows={3}
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="tax_percentage">Tax Percentage (%)</Label>
-              <Input
-                id="tax_percentage"
-                type="number"
-                min="0"
-                max="100"
-                step="0.01"
-                value={formData.tax_percentage}
-                onChange={(e) => setFormData(prev => ({ ...prev, tax_percentage: parseFloat(e.target.value) || 0 }))}
-              />
-            </div>
-
-            <div>
-              <Label>Primary Image</Label>
-              <ImageUpload
-                value={formData.primary_image_url}
-                onChange={setPrimaryImage}
-                onRemove={() => setPrimaryImage('')}
-                placeholder="Upload primary image"
-              />
-            </div>
-
-            <div>
-              <Label>Additional Images</Label>
-              <ImageUpload
-                value=""
-                onChange={addImage}
-                onRemove={() => {}}
-                placeholder="Upload additional images"
-              />
-              
-              {formData.images.length > 0 && (
-                <div className="mt-4 grid grid-cols-4 gap-2">
-                  {formData.images.map((image, index) => (
-                    <div key={index} className="relative">
-                      <img
-                        src={image}
-                        alt={`Additional ${index + 1}`}
-                        className="w-full h-20 object-cover rounded border"
-                      />
-                      <Button
-                        type="button"
-                        variant="destructive"
-                        size="sm"
-                        className="absolute -top-2 -right-2 rounded-full p-1 h-6 w-6"
-                        onClick={() => removeImage(index)}
-                      >
-                        <X className="h-3 w-3" />
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            <div className="flex items-center space-x-2">
-              <Switch
-                id="status"
-                checked={formData.status === 'active'}
-                onCheckedChange={(checked) => setFormData(prev => ({ ...prev, status: checked ? 'active' : 'inactive' }))}
-              />
-              <Label htmlFor="status">Active</Label>
-            </div>
-          </div>
-
-          <div className="flex justify-end space-x-2 pt-4">
+          <div className="flex justify-end space-x-2 pt-4 border-t">
             <Button type="button" variant="outline" onClick={handleClose}>
               Cancel
             </Button>
             <Button 
               type="submit" 
               disabled={createMutation.isPending || updateMutation.isPending}
+              className="min-w-24"
             >
-              {createMutation.isPending || updateMutation.isPending ? 'Saving...' : 'Save'}
+              {createMutation.isPending || updateMutation.isPending ? 'Saving...' : 'Save Class'}
             </Button>
           </div>
         </form>
