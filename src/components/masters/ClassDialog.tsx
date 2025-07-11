@@ -10,10 +10,10 @@ import { Switch } from '@/components/ui/switch';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Plus, Edit2, X, AlertTriangle, CheckCircle, Package, TrendingUp, Calendar } from 'lucide-react';
+import { Plus, Edit2, X, AlertTriangle, CheckCircle, Package, TrendingUp, Calendar, BarChart3 } from 'lucide-react';
 import { useCreateClass, useUpdateClass, useStyles, useColors, useSizeGroups, useSizes, Class } from '@/hooks/masters';
 import ImageUpload from '@/components/ui/ImageUpload';
-import { validateSizeRatios, getTotalRatioPercentage, getDefaultStockLevels, validateMonthlyStockLevels, StockLevelsBySize } from '@/utils/stockUtils';
+import { validateSizeRatios, getSizeRatioDisplay, getDefaultMonthlyStockLevels, validateMonthlyStockLevels, StockLevelsByMonth } from '@/utils/stockUtils';
 
 interface ClassDialogProps {
   classItem?: Class;
@@ -34,7 +34,10 @@ const ClassDialog: React.FC<ClassDialogProps> = ({ classItem, trigger }) => {
     primary_image_url: '',
     images: [] as string[],
     size_ratios: {} as Record<string, number>,
-    monthly_stock_levels: {} as StockLevelsBySize,
+    stock_management_type: 'overall' as 'overall' | 'monthly',
+    overall_min_stock: 0,
+    overall_max_stock: 0,
+    monthly_stock_levels: {} as StockLevelsByMonth,
   });
 
   const { data: styles = [] } = useStyles();
@@ -64,6 +67,9 @@ const ClassDialog: React.FC<ClassDialogProps> = ({ classItem, trigger }) => {
         primary_image_url: classItem.primary_image_url || '',
         images: Array.isArray(classItem.images) ? classItem.images : [],
         size_ratios: classItem.size_ratios || {},
+        stock_management_type: classItem.stock_management_type || 'overall',
+        overall_min_stock: classItem.overall_min_stock || 0,
+        overall_max_stock: classItem.overall_max_stock || 0,
         monthly_stock_levels: classItem.monthly_stock_levels || {},
       });
     }
@@ -86,7 +92,10 @@ const ClassDialog: React.FC<ClassDialogProps> = ({ classItem, trigger }) => {
       primary_image_url: formData.primary_image_url || null,
       images: formData.images.length > 0 ? formData.images : null,
       size_ratios: Object.keys(formData.size_ratios).length > 0 ? formData.size_ratios : null,
-      monthly_stock_levels: Object.keys(formData.monthly_stock_levels).length > 0 ? formData.monthly_stock_levels : null,
+      stock_management_type: formData.stock_management_type,
+      overall_min_stock: formData.stock_management_type === 'overall' ? formData.overall_min_stock : null,
+      overall_max_stock: formData.stock_management_type === 'overall' ? formData.overall_max_stock : null,
+      monthly_stock_levels: formData.stock_management_type === 'monthly' && Object.keys(formData.monthly_stock_levels).length > 0 ? formData.monthly_stock_levels : null,
     };
 
     try {
@@ -115,6 +124,9 @@ const ClassDialog: React.FC<ClassDialogProps> = ({ classItem, trigger }) => {
       primary_image_url: '',
       images: [],
       size_ratios: {},
+      stock_management_type: 'overall',
+      overall_min_stock: 0,
+      overall_max_stock: 0,
       monthly_stock_levels: {},
     });
   };
@@ -132,7 +144,6 @@ const ClassDialog: React.FC<ClassDialogProps> = ({ classItem, trigger }) => {
       size_group_id: newValue,
       selected_sizes: [], // Clear selected sizes when group changes
       size_ratios: {}, // Clear size ratios when group changes
-      monthly_stock_levels: {} // Clear stock levels when group changes
     }));
   };
 
@@ -143,24 +154,10 @@ const ClassDialog: React.FC<ClassDialogProps> = ({ classItem, trigger }) => {
         ? prev.selected_sizes.filter(id => id !== sizeId)
         : [...prev.selected_sizes, sizeId];
       
-      // Remove ratio and stock levels for unselected sizes
+      // Remove ratio for unselected sizes
       const newSizeRatios = { ...prev.size_ratios };
-      const newStockLevels = { ...prev.monthly_stock_levels };
-      
       if (!newSelectedSizes.includes(sizeId)) {
         delete newSizeRatios[sizeId];
-        delete newStockLevels[sizeId];
-      } else {
-        // Initialize stock levels for newly selected size
-        if (!newStockLevels[sizeId]) {
-          const currentYear = new Date().getFullYear();
-          newStockLevels[sizeId] = Array.from({ length: 12 }, (_, index) => ({
-            month: index + 1,
-            year: currentYear,
-            minStock: 0,
-            maxStock: 0,
-          }));
-        }
       }
       
       console.log('Updated selected sizes:', newSelectedSizes);
@@ -168,7 +165,6 @@ const ClassDialog: React.FC<ClassDialogProps> = ({ classItem, trigger }) => {
         ...prev,
         selected_sizes: newSelectedSizes,
         size_ratios: newSizeRatios,
-        monthly_stock_levels: newStockLevels
       };
     });
   };
@@ -184,16 +180,25 @@ const ClassDialog: React.FC<ClassDialogProps> = ({ classItem, trigger }) => {
     }));
   };
 
-  const updateStockLevel = (sizeId: string, month: number, field: 'minStock' | 'maxStock', value: number) => {
+  const handleStockManagementTypeChange = (type: 'overall' | 'monthly') => {
+    setFormData(prev => ({
+      ...prev,
+      stock_management_type: type,
+      monthly_stock_levels: type === 'monthly' && Object.keys(prev.monthly_stock_levels).length === 0 
+        ? getDefaultMonthlyStockLevels() 
+        : prev.monthly_stock_levels
+    }));
+  };
+
+  const updateMonthlyStock = (month: number, field: 'minStock' | 'maxStock', value: number) => {
     setFormData(prev => ({
       ...prev,
       monthly_stock_levels: {
         ...prev.monthly_stock_levels,
-        [sizeId]: prev.monthly_stock_levels[sizeId]?.map(level => 
-          level.month === month 
-            ? { ...level, [field]: value }
-            : level
-        ) || []
+        [month.toString()]: {
+          ...prev.monthly_stock_levels[month.toString()],
+          [field]: value
+        }
       }
     }));
   };
@@ -221,10 +226,11 @@ const ClassDialog: React.FC<ClassDialogProps> = ({ classItem, trigger }) => {
     }));
   };
 
-  const totalRatioPercentage = getTotalRatioPercentage(formData.size_ratios);
   const isRatioValid = validateSizeRatios(formData.size_ratios);
-  const hasStockData = Object.keys(formData.monthly_stock_levels).length > 0;
   const hasRatioData = Object.keys(formData.size_ratios).length > 0;
+  const hasStockData = formData.stock_management_type === 'overall' 
+    ? (formData.overall_min_stock > 0 || formData.overall_max_stock > 0)
+    : Object.keys(formData.monthly_stock_levels).length > 0;
 
   const monthNames = [
     'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
@@ -247,7 +253,7 @@ const ClassDialog: React.FC<ClassDialogProps> = ({ classItem, trigger }) => {
             {classItem ? 'Edit Class' : 'Add New Class'}
             {(hasStockData || hasRatioData) && (
               <div className="flex gap-1">
-                {hasStockData && <Calendar className="h-5 w-5 text-green-600" />}
+                {hasStockData && <BarChart3 className="h-5 w-5 text-green-600" />}
                 {hasRatioData && <TrendingUp className="h-5 w-5 text-blue-600" />}
               </div>
             )}
@@ -414,9 +420,9 @@ const ClassDialog: React.FC<ClassDialogProps> = ({ classItem, trigger }) => {
 
                   {formData.selected_sizes.length > 0 && (
                     <div className="border-t pt-4">
-                      <Label className="text-base font-semibold">Size Distribution Ratios (%)</Label>
+                      <Label className="text-base font-semibold">Size Distribution Ratios</Label>
                       <p className="text-sm text-muted-foreground mb-3">
-                        Set the percentage split for each size. Total should equal 100%.
+                        Set simple ratio numbers for each size (e.g., 1:2:3 means size A gets 1 part, size B gets 2 parts, size C gets 3 parts).
                       </p>
                       
                       <div className="grid grid-cols-2 gap-4">
@@ -427,44 +433,35 @@ const ClassDialog: React.FC<ClassDialogProps> = ({ classItem, trigger }) => {
                               <Label className="w-20 text-sm font-medium">{size.code}:</Label>
                               <Input
                                 type="number"
-                                min="0"
-                                max="100"
-                                step="0.1"
+                                min="1"
+                                step="1"
                                 value={formData.size_ratios[size.id] || ''}
-                                onChange={(e) => updateSizeRatio(size.id, parseFloat(e.target.value) || 0)}
-                                placeholder="0"
+                                onChange={(e) => updateSizeRatio(size.id, parseInt(e.target.value) || 0)}
+                                placeholder="1"
                                 className="flex-1"
                               />
-                              <span className="text-sm text-muted-foreground w-8">%</span>
                             </div>
                           ))}
                       </div>
                       
-                      <div className="mt-4 p-3 bg-white rounded border">
-                        <div className="flex justify-between items-center">
-                          <span className="font-medium">Total Percentage:</span>
-                          <span className={`text-lg font-bold ${
-                            totalRatioPercentage === 100 
-                              ? 'text-green-600' 
-                              : totalRatioPercentage > 100 
-                                ? 'text-red-600' 
-                                : 'text-orange-600'
-                          }`}>
-                            {totalRatioPercentage}%
-                          </span>
+                      {hasRatioData && (
+                        <div className="mt-4 p-3 bg-white rounded border">
+                          <div className="flex justify-between items-center">
+                            <span className="font-medium">Ratio Display:</span>
+                            <span className="text-lg font-bold text-blue-600">
+                              {getSizeRatioDisplay(formData.size_ratios)}
+                            </span>
+                          </div>
+                          {!isRatioValid && (
+                            <Alert className="mt-2">
+                              <AlertTriangle className="h-4 w-4" />
+                              <AlertDescription>
+                                All ratio values must be positive numbers.
+                              </AlertDescription>
+                            </Alert>
+                          )}
                         </div>
-                        {totalRatioPercentage !== 100 && (
-                          <Alert className="mt-2">
-                            <AlertTriangle className="h-4 w-4" />
-                            <AlertDescription>
-                              {totalRatioPercentage > 100 
-                                ? 'Total percentage exceeds 100%. Please adjust the ratios.'
-                                : `You need ${100 - totalRatioPercentage}% more to reach 100%.`
-                              }
-                            </AlertDescription>
-                          </Alert>
-                        )}
-                      </div>
+                      )}
                     </div>
                   )}
                 </CardContent>
@@ -475,65 +472,85 @@ const ClassDialog: React.FC<ClassDialogProps> = ({ classItem, trigger }) => {
               <Card className="border-2 border-green-200 bg-green-50/30">
                 <CardHeader>
                   <CardTitle className="text-lg flex items-center gap-2 text-green-800">
-                    <Calendar className="h-5 w-5" />
-                    Monthly Stock Level Management
+                    <BarChart3 className="h-5 w-5" />
+                    Stock Level Management
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  {formData.selected_sizes.length === 0 ? (
-                    <Alert>
-                      <AlertTriangle className="h-4 w-4" />
-                      <AlertDescription>
-                        Please select sizes in the "Sizes & Ratios" tab to manage stock levels.
-                      </AlertDescription>
-                    </Alert>
-                  ) : (
-                    <div className="space-y-6">
-                      {availableSizes
-                        .filter(size => formData.selected_sizes.includes(size.id))
-                        .map((size) => (
-                          <div key={size.id} className="border rounded-lg p-4 bg-white">
-                            <h4 className="font-semibold mb-3 flex items-center gap-2">
-                              <Package className="h-4 w-4" />
-                              {size.name} ({size.code}) - Monthly Stock Levels
-                            </h4>
-                            
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                              {monthNames.map((monthName, index) => {
-                                const month = index + 1;
-                                const stockLevel = formData.monthly_stock_levels[size.id]?.find(level => level.month === month);
-                                
-                                return (
-                                  <div key={month} className="border rounded p-3 bg-gray-50">
-                                    <Label className="text-sm font-medium mb-2 block">{monthName}</Label>
-                                    <div className="grid grid-cols-2 gap-2">
-                                      <div>
-                                        <Label className="text-xs text-muted-foreground">Min Stock</Label>
-                                        <Input
-                                          type="number"
-                                          min="0"
-                                          value={stockLevel?.minStock || 0}
-                                          onChange={(e) => updateStockLevel(size.id, month, 'minStock', parseInt(e.target.value) || 0)}
-                                          className="text-sm"
-                                        />
-                                      </div>
-                                      <div>
-                                        <Label className="text-xs text-muted-foreground">Max Stock</Label>
-                                        <Input
-                                          type="number"
-                                          min="0"
-                                          value={stockLevel?.maxStock || 0}
-                                          onChange={(e) => updateStockLevel(size.id, month, 'maxStock', parseInt(e.target.value) || 0)}
-                                          className="text-sm"
-                                        />
-                                      </div>
-                                    </div>
-                                  </div>
-                                );
-                              })}
+                  <div>
+                    <Label>Stock Management Type</Label>
+                    <Select value={formData.stock_management_type} onValueChange={handleStockManagementTypeChange}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="overall">Overall Min/Max Stock</SelectItem>
+                        <SelectItem value="monthly">Monthly Min/Max Stock</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {formData.stock_management_type === 'overall' && (
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="overall_min_stock">Minimum Stock Level</Label>
+                        <Input
+                          id="overall_min_stock"
+                          type="number"
+                          min="0"
+                          value={formData.overall_min_stock}
+                          onChange={(e) => setFormData(prev => ({ ...prev, overall_min_stock: parseInt(e.target.value) || 0 }))}
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="overall_max_stock">Maximum Stock Level</Label>
+                        <Input
+                          id="overall_max_stock"
+                          type="number"
+                          min="0"
+                          value={formData.overall_max_stock}
+                          onChange={(e) => setFormData(prev => ({ ...prev, overall_max_stock: parseInt(e.target.value) || 0 }))}
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {formData.stock_management_type === 'monthly' && (
+                    <div className="space-y-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {monthNames.map((monthName, index) => {
+                          const month = index + 1;
+                          const stockLevel = formData.monthly_stock_levels[month.toString()] || { minStock: 0, maxStock: 0 };
+                          
+                          return (
+                            <div key={month} className="border rounded p-3 bg-white">
+                              <Label className="text-sm font-medium mb-2 block">{monthName}</Label>
+                              <div className="grid grid-cols-2 gap-2">
+                                <div>
+                                  <Label className="text-xs text-muted-foreground">Min Stock</Label>
+                                  <Input
+                                    type="number"
+                                    min="0"
+                                    value={stockLevel.minStock || 0}
+                                    onChange={(e) => updateMonthlyStock(month, 'minStock', parseInt(e.target.value) || 0)}
+                                    className="text-sm"
+                                  />
+                                </div>
+                                <div>
+                                  <Label className="text-xs text-muted-foreground">Max Stock</Label>
+                                  <Input
+                                    type="number"
+                                    min="0"
+                                    value={stockLevel.maxStock || 0}
+                                    onChange={(e) => updateMonthlyStock(month, 'maxStock', parseInt(e.target.value) || 0)}
+                                    className="text-sm"
+                                  />
+                                </div>
+                              </div>
                             </div>
-                          </div>
-                        ))}
+                          );
+                        })}
+                      </div>
                     </div>
                   )}
                 </CardContent>

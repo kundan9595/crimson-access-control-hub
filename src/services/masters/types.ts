@@ -139,6 +139,9 @@ export interface Class {
   primary_image_url: string | null;
   images: string[] | null;
   size_ratios: Record<string, number> | null;
+  stock_management_type: 'overall' | 'monthly' | null;
+  overall_min_stock: number | null;
+  overall_max_stock: number | null;
   monthly_stock_levels: Record<string, any> | null;
   created_at: string;
   updated_at: string;

@@ -4,9 +4,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Search, Edit2, Trash2, Package, TrendingUp, Calendar } from 'lucide-react';
+import { Search, Edit2, Trash2, Package, TrendingUp, Calendar, BarChart3 } from 'lucide-react';
 import { useClasses, useDeleteClass, Class } from '@/hooks/masters';
 import ClassDialog from './ClassDialog';
+import { getSizeRatioDisplay } from '@/utils/stockUtils';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -59,8 +60,6 @@ const ClassesList: React.FC = () => {
     );
   }
 
-  const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row gap-4 justify-between">
@@ -89,7 +88,9 @@ const ClassesList: React.FC = () => {
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {filteredClasses.map((classItem) => {
-          const hasStockData = classItem.monthly_stock_levels && Object.keys(classItem.monthly_stock_levels).length > 0;
+          const hasStockData = classItem.stock_management_type === 'overall' 
+            ? (classItem.overall_min_stock && classItem.overall_min_stock > 0) || (classItem.overall_max_stock && classItem.overall_max_stock > 0)
+            : classItem.monthly_stock_levels && Object.keys(classItem.monthly_stock_levels).length > 0;
           const hasRatioData = classItem.size_ratios && Object.keys(classItem.size_ratios).length > 0;
           
           return (
@@ -101,7 +102,7 @@ const ClassesList: React.FC = () => {
                       {classItem.name}
                       <div className="flex gap-1">
                         {hasStockData && (
-                          <Calendar className="h-4 w-4 text-green-600" />
+                          <BarChart3 className="h-4 w-4 text-green-600" />
                         )}
                         {hasRatioData && (
                           <TrendingUp className="h-4 w-4 text-blue-600" />
@@ -119,14 +120,14 @@ const ClassesList: React.FC = () => {
                       )}
                       {hasStockData && (
                         <Badge variant="outline" className="flex items-center gap-1 bg-green-50 text-green-700 border-green-200">
-                          <Calendar className="h-3 w-3" />
-                          Stock Managed
+                          <BarChart3 className="h-3 w-3" />
+                          {classItem.stock_management_type === 'overall' ? 'Overall Stock' : 'Monthly Stock'}
                         </Badge>
                       )}
                       {hasRatioData && (
                         <Badge variant="outline" className="flex items-center gap-1 bg-blue-50 text-blue-700 border-blue-200">
                           <TrendingUp className="h-3 w-3" />
-                          Ratios Set
+                          Ratios: {getSizeRatioDisplay(classItem.size_ratios)}
                         </Badge>
                       )}
                     </div>
@@ -171,47 +172,27 @@ const ClassesList: React.FC = () => {
                     </div>
                   )}
                   
-                  {/* Size Ratios Display */}
-                  {hasRatioData && (
-                    <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
-                      <div className="font-medium text-blue-800 mb-2 flex items-center gap-1">
-                        <TrendingUp className="h-3 w-3" />
-                        Size Distribution Ratios
-                      </div>
-                      
-                      <div className="space-y-1 text-xs">
-                        {Object.entries(classItem.size_ratios).map(([sizeId, ratio]) => (
-                          <div key={sizeId} className="flex justify-between items-center">
-                            <span>Size {sizeId.slice(-4)}:</span>
-                            <span className="font-medium">{ratio}%</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
                   {/* Stock Management Display */}
                   {hasStockData && (
                     <div className="p-3 bg-green-50 rounded-lg border border-green-200">
                       <div className="font-medium text-green-800 mb-2 flex items-center gap-1">
-                        <Calendar className="h-3 w-3" />
-                        Stock Management Active
+                        <BarChart3 className="h-3 w-3" />
+                        {classItem.stock_management_type === 'overall' ? 'Overall Stock Levels' : 'Monthly Stock Management'}
                       </div>
                       
                       <div className="text-xs">
-                        <div className="grid grid-cols-2 gap-2">
-                          {Object.entries(classItem.monthly_stock_levels).map(([sizeId, levels]) => {
-                            const totalMinStock = Array.isArray(levels) ? levels.reduce((sum: number, level: any) => sum + (level.minStock || 0), 0) : 0;
-                            const totalMaxStock = Array.isArray(levels) ? levels.reduce((sum: number, level: any) => sum + (level.maxStock || 0), 0) : 0;
-                            
-                            return (
-                              <div key={sizeId} className="flex justify-between items-center">
-                                <span>Size {sizeId.slice(-4)}:</span>
-                                <span className="font-medium">{totalMinStock}-{totalMaxStock}</span>
-                              </div>
-                            );
-                          })}
-                        </div>
+                        {classItem.stock_management_type === 'overall' ? (
+                          <div className="flex justify-between items-center">
+                            <span>Min/Max:</span>
+                            <span className="font-medium">
+                              {classItem.overall_min_stock || 0} - {classItem.overall_max_stock || 0}
+                            </span>
+                          </div>
+                        ) : (
+                          <div>
+                            <span>Monthly levels configured for {Object.keys(classItem.monthly_stock_levels || {}).length} months</span>
+                          </div>
+                        )}
                       </div>
                     </div>
                   )}

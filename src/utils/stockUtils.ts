@@ -1,50 +1,45 @@
 
 export interface MonthlyStockLevel {
   month: number;
-  year: number;
   minStock: number;
   maxStock: number;
 }
 
-export interface StockLevelsBySize {
-  [sizeId: string]: MonthlyStockLevel[];
+export interface StockLevelsByMonth {
+  [month: string]: {
+    minStock: number;
+    maxStock: number;
+  };
 }
 
 export const validateMonthlyStockLevels = (stockLevels: Record<string, any>): boolean => {
   if (!stockLevels || typeof stockLevels !== 'object') return false;
   
-  for (const [sizeId, levels] of Object.entries(stockLevels)) {
-    if (!Array.isArray(levels)) return false;
+  for (const [month, levels] of Object.entries(stockLevels)) {
+    const monthNum = parseInt(month);
+    if (isNaN(monthNum) || monthNum < 1 || monthNum > 12) return false;
     
-    for (const level of levels) {
-      if (typeof level !== 'object' || 
-          typeof level.month !== 'number' ||
-          typeof level.year !== 'number' ||
-          typeof level.minStock !== 'number' ||
-          typeof level.maxStock !== 'number' ||
-          level.month < 1 || level.month > 12 ||
-          level.minStock < 0 || level.maxStock < 0 ||
-          level.minStock > level.maxStock) {
-        return false;
-      }
+    if (typeof levels !== 'object' || 
+        typeof levels.minStock !== 'number' ||
+        typeof levels.maxStock !== 'number' ||
+        levels.minStock < 0 || levels.maxStock < 0 ||
+        levels.minStock > levels.maxStock) {
+      return false;
     }
   }
   
   return true;
 };
 
-export const getDefaultStockLevels = (selectedSizes: string[]): StockLevelsBySize => {
-  const currentYear = new Date().getFullYear();
-  const stockLevels: StockLevelsBySize = {};
+export const getDefaultMonthlyStockLevels = (): StockLevelsByMonth => {
+  const stockLevels: StockLevelsByMonth = {};
   
-  selectedSizes.forEach(sizeId => {
-    stockLevels[sizeId] = Array.from({ length: 12 }, (_, index) => ({
-      month: index + 1,
-      year: currentYear,
+  for (let month = 1; month <= 12; month++) {
+    stockLevels[month.toString()] = {
       minStock: 0,
       maxStock: 0,
-    }));
-  });
+    };
+  }
   
   return stockLevels;
 };
@@ -52,10 +47,15 @@ export const getDefaultStockLevels = (selectedSizes: string[]): StockLevelsBySiz
 export const validateSizeRatios = (ratios: Record<string, number>): boolean => {
   if (!ratios || typeof ratios !== 'object') return false;
   
-  const total = Object.values(ratios).reduce((sum, ratio) => sum + (ratio || 0), 0);
-  return Math.abs(total - 100) < 0.01; // Allow for small floating point errors
+  // Check if all values are positive numbers
+  return Object.values(ratios).every(ratio => 
+    typeof ratio === 'number' && ratio > 0
+  );
 };
 
-export const getTotalRatioPercentage = (ratios: Record<string, number>): number => {
-  return Object.values(ratios).reduce((sum, ratio) => sum + (ratio || 0), 0);
+export const getSizeRatioDisplay = (ratios: Record<string, number>): string => {
+  if (!ratios || Object.keys(ratios).length === 0) return '';
+  
+  const values = Object.values(ratios);
+  return values.join(':');
 };

@@ -104,11 +104,14 @@ export type Database = {
           images: Json | null
           monthly_stock_levels: Json | null
           name: string
+          overall_max_stock: number | null
+          overall_min_stock: number | null
           primary_image_url: string | null
           selected_sizes: Json | null
           size_group_id: string | null
           size_ratios: Json | null
           status: string
+          stock_management_type: string | null
           style_id: string | null
           tax_percentage: number | null
           updated_at: string
@@ -123,11 +126,14 @@ export type Database = {
           images?: Json | null
           monthly_stock_levels?: Json | null
           name: string
+          overall_max_stock?: number | null
+          overall_min_stock?: number | null
           primary_image_url?: string | null
           selected_sizes?: Json | null
           size_group_id?: string | null
           size_ratios?: Json | null
           status?: string
+          stock_management_type?: string | null
           style_id?: string | null
           tax_percentage?: number | null
           updated_at?: string
@@ -142,11 +148,14 @@ export type Database = {
           images?: Json | null
           monthly_stock_levels?: Json | null
           name?: string
+          overall_max_stock?: number | null
+          overall_min_stock?: number | null
           primary_image_url?: string | null
           selected_sizes?: Json | null
           size_group_id?: string | null
           size_ratios?: Json | null
           status?: string
+          stock_management_type?: string | null
           style_id?: string | null
           tax_percentage?: number | null
           updated_at?: string
