@@ -1,9 +1,10 @@
+
 export interface Brand {
   id: string;
   name: string;
   description: string | null;
   logo_url: string | null;
-  status: 'active' | 'inactive';
+  status: string;
   created_at: string;
   updated_at: string;
   created_by: string | null;
@@ -14,7 +15,7 @@ export interface Category {
   id: string;
   name: string;
   description: string | null;
-  status: 'active' | 'inactive';
+  status: string;
   created_at: string;
   updated_at: string;
   created_by: string | null;
@@ -25,7 +26,7 @@ export interface Color {
   id: string;
   name: string;
   hex_code: string;
-  status: 'active' | 'inactive';
+  status: string;
   created_at: string;
   updated_at: string;
   created_by: string | null;
@@ -36,7 +37,7 @@ export interface SizeGroup {
   id: string;
   name: string;
   description: string | null;
-  status: 'active' | 'inactive';
+  status: string;
   created_at: string;
   updated_at: string;
   created_by: string | null;
@@ -49,7 +50,7 @@ export interface Size {
   code: string;
   size_group_id: string;
   sort_order: number | null;
-  status: 'active' | 'inactive';
+  status: string;
   created_at: string;
   updated_at: string;
   created_by: string | null;
@@ -73,7 +74,7 @@ export interface Zone {
   name: string;
   code: string | null;
   description: string | null;
-  status: 'active' | 'inactive';
+  status: string;
   warehouse_assignments: any[];
   created_at: string;
   updated_at: string;
@@ -86,7 +87,7 @@ export interface PriceType {
   id: string;
   name: string;
   description: string | null;
-  status: 'active' | 'inactive';
+  status: string;
   created_at: string;
   updated_at: string;
   created_by: string | null;
@@ -104,7 +105,7 @@ export interface Vendor {
   address: string | null;
   tax_id: string | null;
   payment_terms: string | null;
-  status: 'active' | 'inactive';
+  status: string;
   created_at: string;
   updated_at: string;
   created_by: string | null;
@@ -117,7 +118,7 @@ export interface Style {
   description: string | null;
   brand_id: string | null;
   category_id: string | null;
-  status: 'active' | 'inactive';
+  status: string;
   created_at: string;
   updated_at: string;
   created_by: string | null;
@@ -134,7 +135,7 @@ export interface Class {
   size_group_id: string | null;
   selected_sizes: string[] | null;
   description: string | null;
-  status: 'active' | 'inactive';
+  status: string;
   tax_percentage: number | null;
   primary_image_url: string | null;
   images: string[] | null;
@@ -160,7 +161,7 @@ export interface Sku {
   base_mrp: number | null;
   cost_price: number | null;
   price_type_prices: any | null;
-  status: 'active' | 'inactive';
+  status: string;
   created_at: string;
   updated_at: string;
   created_by: string | null;
