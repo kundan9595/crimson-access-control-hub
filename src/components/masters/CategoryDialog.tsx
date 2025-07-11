@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -14,7 +13,7 @@ import type { Category } from '@/services/mastersService';
 const categorySchema = z.object({
   name: z.string().min(1, 'Name is required'),
   description: z.string().optional(),
-  status: z.enum(['active', 'inactive']),
+  status: z.string(),
 });
 
 type CategoryFormData = z.infer<typeof categorySchema>;

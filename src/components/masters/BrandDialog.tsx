@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -17,7 +16,7 @@ const brandSchema = z.object({
   name: z.string().min(1, 'Name is required'),
   description: z.string().optional(),
   logo_url: z.string().optional(),
-  status: z.enum(['active', 'inactive']),
+  status: z.string(),
 });
 
 type BrandFormData = z.infer<typeof brandSchema>;

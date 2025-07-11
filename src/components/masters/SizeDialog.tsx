@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -14,7 +13,7 @@ import { Size } from '@/services/mastersService';
 const sizeSchema = z.object({
   name: z.string().min(1, 'Name is required'),
   code: z.string().min(1, 'Code is required'),
-  status: z.enum(['active', 'inactive']),
+  status: z.string(),
 });
 
 type SizeFormData = z.infer<typeof sizeSchema>;

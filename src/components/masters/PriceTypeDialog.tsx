@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -15,7 +14,7 @@ import { PriceType } from '@/services/mastersService';
 const priceTypeSchema = z.object({
   name: z.string().min(1, 'Name is required'),
   description: z.string().optional(),
-  status: z.enum(['active', 'inactive']),
+  status: z.string(),
 });
 
 type PriceTypeFormData = z.infer<typeof priceTypeSchema>;

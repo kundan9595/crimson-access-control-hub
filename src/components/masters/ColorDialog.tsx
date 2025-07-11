@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -13,7 +12,7 @@ import type { Color } from '@/services/mastersService';
 const colorSchema = z.object({
   name: z.string().min(1, 'Name is required'),
   hex_code: z.string().regex(/^#[0-9A-Fa-f]{6}$/, 'Please enter a valid hex code (e.g., #FF0000)'),
-  status: z.enum(['active', 'inactive']),
+  status: z.string(),
 });
 
 type ColorFormData = z.infer<typeof colorSchema>;
