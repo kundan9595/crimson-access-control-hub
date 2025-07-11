@@ -489,6 +489,84 @@ export type Database = {
           },
         ]
       }
+      skus: {
+        Row: {
+          base_mrp: number | null
+          breadth_cm: number | null
+          class_id: string
+          cost_price: number | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          height_cm: number | null
+          hsn_code: string | null
+          id: string
+          length_cm: number | null
+          price_type_prices: Json | null
+          size_id: string
+          sku_code: string
+          status: string
+          updated_at: string
+          updated_by: string | null
+          weight_grams: number | null
+        }
+        Insert: {
+          base_mrp?: number | null
+          breadth_cm?: number | null
+          class_id: string
+          cost_price?: number | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          height_cm?: number | null
+          hsn_code?: string | null
+          id?: string
+          length_cm?: number | null
+          price_type_prices?: Json | null
+          size_id: string
+          sku_code: string
+          status?: string
+          updated_at?: string
+          updated_by?: string | null
+          weight_grams?: number | null
+        }
+        Update: {
+          base_mrp?: number | null
+          breadth_cm?: number | null
+          class_id?: string
+          cost_price?: number | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          height_cm?: number | null
+          hsn_code?: string | null
+          id?: string
+          length_cm?: number | null
+          price_type_prices?: Json | null
+          size_id?: string
+          sku_code?: string
+          status?: string
+          updated_at?: string
+          updated_by?: string | null
+          weight_grams?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "skus_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "skus_size_id_fkey"
+            columns: ["size_id"]
+            isOneToOne: false
+            referencedRelation: "sizes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       styles: {
         Row: {
           brand_id: string | null

@@ -145,3 +145,26 @@ export interface Class {
   style?: Style;
   color?: Color;
 }
+
+export interface Sku {
+  id: string;
+  sku_code: string;
+  class_id: string;
+  size_id: string;
+  hsn_code: string | null;
+  description: string | null;
+  length_cm: number | null;
+  breadth_cm: number | null;
+  height_cm: number | null;
+  weight_grams: number | null;
+  base_mrp: number | null;
+  cost_price: number | null;
+  price_type_prices: any | null;
+  status: 'active' | 'inactive';
+  created_at: string;
+  updated_at: string;
+  created_by: string | null;
+  updated_by: string | null;
+  class?: Class;
+  size?: Size;
+}

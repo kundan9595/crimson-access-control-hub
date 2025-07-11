@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -10,7 +11,8 @@ import {
   DollarSign, 
   Users, 
   Shirt,
-  ArrowRight 
+  ArrowRight,
+  Package2
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
@@ -80,6 +82,13 @@ const Masters = () => {
       icon: Shirt,
       path: '/masters/classes',
       color: 'text-cyan-600',
+    },
+    {
+      title: 'SKUs',
+      description: 'Manage individual product SKUs with pricing, dimensions, and specifications',
+      icon: Package2,
+      path: '/masters/skus',
+      color: 'text-emerald-600',
     },
   ];
 

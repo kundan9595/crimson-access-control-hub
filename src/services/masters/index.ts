@@ -27,3 +27,6 @@ export * from './stylesService';
 
 // Export class services
 export * from './classesService';
+
+// Export SKU services
+export * from './skusService';
