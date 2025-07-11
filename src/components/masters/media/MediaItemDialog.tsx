@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -157,7 +156,7 @@ export const MediaItemDialog: React.FC<MediaItemDialogProps> = ({
         try {
           fileUrl = await uploadFile.mutateAsync({ 
             file: selectedFile, 
-            folder: data.folder_id 
+            folder: data.folder_id && data.folder_id !== 'root' ? data.folder_id : undefined
           });
           fileSize = selectedFile.size;
           mimeType = selectedFile.type;
@@ -177,7 +176,7 @@ export const MediaItemDialog: React.FC<MediaItemDialogProps> = ({
       const submitData = {
         name: data.name,
         alt_text: data.alt_text,
-        folder_id: data.folder_id || undefined,
+        folder_id: data.folder_id && data.folder_id !== 'root' ? data.folder_id : undefined,
         tags: tags.length > 0 ? tags : undefined,
         status: data.status,
         file_url: fileUrl,
@@ -335,14 +334,17 @@ export const MediaItemDialog: React.FC<MediaItemDialogProps> = ({
           render={({ field }) => (
             <FormItem>
               <FormLabel>Folder</FormLabel>
-              <Select onValueChange={(value) => field.onChange(value || undefined)} value={field.value || ''}>
+              <Select 
+                onValueChange={(value) => field.onChange(value === 'root' ? '' : value)} 
+                value={field.value || 'root'}
+              >
                 <FormControl>
                   <SelectTrigger>
                     <SelectValue placeholder="Select folder (optional)" />
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  <SelectItem value="">No Folder (Root Level)</SelectItem>
+                  <SelectItem value="root">No Folder (Root Level)</SelectItem>
                   {folders.map((folder) => (
                     <SelectItem key={folder.id} value={folder.id}>
                       {folder.path}

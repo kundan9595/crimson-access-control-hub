@@ -67,13 +67,21 @@ export const MediaFolderDialog: React.FC<MediaFolderDialogProps> = ({
 
   const availableParents = allFolders.filter(f => f.id !== folder?.id);
 
+  const handleSubmit = (data: FolderFormData) => {
+    const submitData = {
+      ...data,
+      parent_id: data.parent_id === 'root' ? undefined : data.parent_id,
+    };
+    onSubmit(submitData);
+  };
+
   return (
     <BaseFormDialog
       open={open}
       onOpenChange={onOpenChange}
       title={folder ? 'Edit Folder' : 'Create New Folder'}
       form={form}
-      onSubmit={onSubmit}
+      onSubmit={handleSubmit}
       isSubmitting={isSubmitting}
       isEditing={!!folder}
     >
@@ -115,14 +123,17 @@ export const MediaFolderDialog: React.FC<MediaFolderDialogProps> = ({
         render={({ field }) => (
           <FormItem>
             <FormLabel>Parent Folder</FormLabel>
-            <Select onValueChange={(value) => field.onChange(value || undefined)} value={field.value || ''}>
+            <Select 
+              onValueChange={(value) => field.onChange(value === 'root' ? '' : value)} 
+              value={field.value || 'root'}
+            >
               <FormControl>
                 <SelectTrigger>
                   <SelectValue placeholder="Select parent folder (optional)" />
                 </SelectTrigger>
               </FormControl>
               <SelectContent>
-                <SelectItem value="">No Parent (Root Level)</SelectItem>
+                <SelectItem value="root">No Parent (Root Level)</SelectItem>
                 {availableParents.map((folder) => (
                   <SelectItem key={folder.id} value={folder.id}>
                     {folder.path}
