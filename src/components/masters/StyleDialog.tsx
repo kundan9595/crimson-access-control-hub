@@ -1,4 +1,3 @@
-
 import React, { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -36,7 +35,7 @@ const formSchema = z.object({
   description: z.string().optional(),
   brand_id: z.string().optional(),
   category_id: z.string().optional(),
-  status: z.enum(['active', 'inactive']),
+  status: z.string(),
 });
 
 type FormData = z.infer<typeof formSchema>;

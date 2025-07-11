@@ -25,7 +25,7 @@ const ClassDialog: React.FC<ClassDialogProps> = ({ classItem, trigger }) => {
     size_group_id: null as string | null,
     selected_sizes: [] as string[],
     description: '',
-    status: 'active' as 'active' | 'inactive',
+    status: 'active' as string,
     tax_percentage: 0,
     primary_image_url: '',
     images: [] as string[],

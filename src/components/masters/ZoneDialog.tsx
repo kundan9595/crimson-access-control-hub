@@ -17,7 +17,7 @@ import { useQueryClient } from '@tanstack/react-query';
 
 const zoneSchema = z.object({
   name: z.string().min(1, 'Name is required'),
-  status: z.enum(['active', 'inactive']),
+  status: z.string(),
 });
 
 type ZoneFormData = z.infer<typeof zoneSchema>;

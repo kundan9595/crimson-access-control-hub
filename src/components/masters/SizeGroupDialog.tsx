@@ -15,7 +15,7 @@ import { SizeGroup } from '@/services/mastersService';
 const sizeGroupSchema = z.object({
   name: z.string().min(1, 'Name is required'),
   description: z.string().optional(),
-  status: z.enum(['active', 'inactive']),
+  status: z.string(),
 });
 
 type SizeGroupFormData = z.infer<typeof sizeGroupSchema>;

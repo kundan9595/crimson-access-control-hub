@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -22,7 +21,7 @@ const vendorSchema = z.object({
   address: z.string().optional(),
   tax_id: z.string().optional(),
   payment_terms: z.string().optional(),
-  status: z.enum(['active', 'inactive']),
+  status: z.string(),
 });
 
 type VendorFormData = z.infer<typeof vendorSchema>;
