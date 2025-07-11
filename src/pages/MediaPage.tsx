@@ -9,6 +9,8 @@ import { MediaFolderDialog } from '@/components/masters/media/MediaFolderDialog'
 import { MediaItemDialog } from '@/components/masters/media/MediaItemDialog';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { AlertCircle, Info } from 'lucide-react';
 import {
   useMediaFolders,
   useMediaItemsByFolder,
@@ -32,8 +34,8 @@ const MediaPage = () => {
   const [showItemDialog, setShowItemDialog] = useState(false);
   const [showItemView, setShowItemView] = useState(false);
 
-  const { data: allFolders = [], isLoading: foldersLoading } = useMediaFolders();
-  const { data: items = [], isLoading: itemsLoading } = useMediaItemsByFolder(currentFolder?.id);
+  const { data: allFolders = [], isLoading: foldersLoading, error: foldersError } = useMediaFolders();
+  const { data: items = [], isLoading: itemsLoading, error: itemsError } = useMediaItemsByFolder(currentFolder?.id);
   const createFolder = useCreateMediaFolder();
   const updateFolder = useUpdateMediaFolder();
   const deleteFolder = useDeleteMediaFolder();
@@ -97,7 +99,11 @@ const MediaPage = () => {
 
   const handleFolderDelete = async (folder: MediaFolder) => {
     if (window.confirm(`Are you sure you want to delete the folder "${folder.name}"? This will also delete all contents.`)) {
-      await deleteFolder.mutateAsync(folder.id);
+      try {
+        await deleteFolder.mutateAsync(folder.id);
+      } catch (error) {
+        console.error('Failed to delete folder:', error);
+      }
     }
   };
 
@@ -108,7 +114,11 @@ const MediaPage = () => {
 
   const handleItemDelete = async (item: MediaItem) => {
     if (window.confirm(`Are you sure you want to delete "${item.name}"?`)) {
-      await deleteItem.mutateAsync(item.id);
+      try {
+        await deleteItem.mutateAsync(item.id);
+      } catch (error) {
+        console.error('Failed to delete item:', error);
+      }
     }
   };
 
@@ -118,36 +128,49 @@ const MediaPage = () => {
   };
 
   const handleFolderSubmit = async (data: any) => {
-    if (selectedFolder) {
-      await updateFolder.mutateAsync({ id: selectedFolder.id, updates: data });
-    } else {
-      await createFolder.mutateAsync({
-        ...data,
-        parent_id: currentFolder?.id,
-      });
+    try {
+      if (selectedFolder) {
+        await updateFolder.mutateAsync({ id: selectedFolder.id, updates: data });
+      } else {
+        await createFolder.mutateAsync({
+          ...data,
+          parent_id: currentFolder?.id,
+        });
+      }
+      setShowFolderDialog(false);
+      setSelectedFolder(undefined);
+    } catch (error) {
+      console.error('Failed to save folder:', error);
     }
-    setShowFolderDialog(false);
-    setSelectedFolder(undefined);
   };
 
   const handleItemSubmit = async (data: any) => {
-    if (selectedItem) {
-      await updateItem.mutateAsync({ id: selectedItem.id, updates: data });
-    } else {
-      await createItem.mutateAsync({
-        ...data,
-        folder_id: currentFolder?.id,
-      });
+    try {
+      if (selectedItem) {
+        await updateItem.mutateAsync({ id: selectedItem.id, updates: data });
+      } else {
+        await createItem.mutateAsync({
+          ...data,
+          folder_id: currentFolder?.id,
+        });
+      }
+      setShowItemDialog(false);
+      setSelectedItem(undefined);
+    } catch (error) {
+      console.error('Failed to save item:', error);
     }
-    setShowItemDialog(false);
-    setSelectedItem(undefined);
   };
 
   const isImage = (mimeType?: string) => {
     return mimeType?.startsWith('image/') || false;
   };
 
+  const isVideo = (mimeType?: string) => {
+    return mimeType?.startsWith('video/') || false;
+  };
+
   const totalCount = filteredFolders.length + filteredItems.length;
+  const hasErrors = foldersError || itemsError;
 
   return (
     <div className="space-y-6">
@@ -159,6 +182,15 @@ const MediaPage = () => {
         canExport={false}
       />
 
+      {hasErrors && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            Failed to load media data. Please check your connection and try again.
+          </AlertDescription>
+        </Alert>
+      )}
+
       <div className="flex items-center justify-between">
         <div className="flex-1">
           <MediaBreadcrumb
@@ -168,11 +200,11 @@ const MediaPage = () => {
           />
         </div>
         <div className="flex gap-2">
-          <Button onClick={handleAddFolder} variant="outline">
+          <Button onClick={handleAddFolder} variant="outline" disabled={foldersLoading}>
             <Plus className="h-4 w-4 mr-2" />
             New Folder
           </Button>
-          <Button onClick={handleAddItem}>
+          <Button onClick={handleAddItem} disabled={foldersLoading}>
             <Upload className="h-4 w-4 mr-2" />
             Upload Media
           </Button>
@@ -232,20 +264,26 @@ const MediaPage = () => {
                     src={viewItem.file_url} 
                     alt={viewItem.alt_text || viewItem.name}
                     className="max-w-full max-h-96 object-contain"
+                    onError={(e) => {
+                      console.error('Image failed to load:', viewItem.file_url);
+                      e.currentTarget.style.display = 'none';
+                    }}
+                  />
+                ) : isVideo(viewItem.mime_type) ? (
+                  <video 
+                    src={viewItem.file_url} 
+                    controls 
+                    className="max-w-full max-h-96"
+                    onError={(e) => {
+                      console.error('Video failed to load:', viewItem.file_url);
+                    }}
                   />
                 ) : (
                   <div className="w-full h-48 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center">
                     <div className="text-center">
                       <div className="text-gray-400 mb-2">
-                        {viewItem.mime_type?.split('/')[0] === 'video' ? (
-                          <video 
-                            src={viewItem.file_url} 
-                            controls 
-                            className="max-w-full max-h-96"
-                          />
-                        ) : (
-                          <p>Preview not available</p>
-                        )}
+                        <Info className="h-12 w-12 mx-auto mb-2" />
+                        <p>Preview not available for this file type</p>
                       </div>
                       <Button
                         onClick={() => window.open(viewItem.file_url, '_blank')}

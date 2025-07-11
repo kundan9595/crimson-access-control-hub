@@ -9,7 +9,8 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
-import { Upload, X } from 'lucide-react';
+import { Upload, X, AlertCircle } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { MediaItem } from '@/services/masters/mediaService';
 import { useMediaFolders, useUploadFile } from '@/hooks/masters/useMedia';
 
@@ -32,6 +33,21 @@ interface MediaItemDialogProps {
   currentFolderId?: string;
 }
 
+const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
+const ALLOWED_FILE_TYPES = [
+  'image/jpeg',
+  'image/png', 
+  'image/gif',
+  'image/webp',
+  'image/svg+xml',
+  'video/mp4',
+  'video/webm',
+  'video/quicktime',
+  'application/pdf',
+  'application/msword',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+];
+
 export const MediaItemDialog: React.FC<MediaItemDialogProps> = ({
   open,
   onOpenChange,
@@ -44,6 +60,7 @@ export const MediaItemDialog: React.FC<MediaItemDialogProps> = ({
   const uploadFile = useUploadFile();
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string>('');
+  const [fileError, setFileError] = useState<string>('');
   
   const form = useForm<ItemFormData>({
     resolver: zodResolver(itemSchema),
@@ -77,12 +94,37 @@ export const MediaItemDialog: React.FC<MediaItemDialogProps> = ({
       setPreviewUrl('');
     }
     setSelectedFile(null);
+    setFileError('');
   }, [item, form, currentFolderId]);
+
+  const validateFile = (file: File): string | null => {
+    if (file.size > MAX_FILE_SIZE) {
+      return `File size must be less than ${MAX_FILE_SIZE / 1024 / 1024}MB`;
+    }
+    
+    if (!ALLOWED_FILE_TYPES.includes(file.type)) {
+      return 'File type not supported. Please upload images, videos, or documents.';
+    }
+    
+    return null;
+  };
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (file) {
-      setSelectedFile(file);
+    setFileError('');
+    
+    if (!file) return;
+    
+    const validationError = validateFile(file);
+    if (validationError) {
+      setFileError(validationError);
+      return;
+    }
+    
+    setSelectedFile(file);
+    
+    // Create preview URL
+    try {
       const url = URL.createObjectURL(file);
       setPreviewUrl(url);
       
@@ -91,58 +133,84 @@ export const MediaItemDialog: React.FC<MediaItemDialogProps> = ({
         const nameWithoutExt = file.name.split('.').slice(0, -1).join('.');
         form.setValue('name', nameWithoutExt);
       }
+    } catch (error) {
+      console.error('Error creating preview URL:', error);
+      setFileError('Failed to create file preview');
     }
   };
 
   const handleSubmit = async (data: ItemFormData) => {
-    let fileUrl = item?.file_url || '';
-    let fileSize = item?.file_size;
-    let mimeType = item?.mime_type;
-    let originalName = item?.original_name || '';
-
-    // Upload new file if selected
-    if (selectedFile) {
-      try {
-        fileUrl = await uploadFile.mutateAsync({ 
-          file: selectedFile, 
-          folder: data.folder_id 
-        });
-        fileSize = selectedFile.size;
-        mimeType = selectedFile.type;
-        originalName = selectedFile.name;
-      } catch (error) {
-        console.error('File upload failed:', error);
+    try {
+      // Validate file is selected for new items
+      if (!item && !selectedFile) {
+        setFileError('Please select a file to upload');
         return;
       }
+
+      let fileUrl = item?.file_url || '';
+      let fileSize = item?.file_size;
+      let mimeType = item?.mime_type;
+      let originalName = item?.original_name || '';
+
+      // Upload new file if selected
+      if (selectedFile) {
+        try {
+          fileUrl = await uploadFile.mutateAsync({ 
+            file: selectedFile, 
+            folder: data.folder_id 
+          });
+          fileSize = selectedFile.size;
+          mimeType = selectedFile.type;
+          originalName = selectedFile.name;
+        } catch (error) {
+          console.error('File upload failed:', error);
+          setFileError('Failed to upload file. Please try again.');
+          return;
+        }
+      }
+
+      // Parse tags
+      const tags = data.tags 
+        ? data.tags.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0)
+        : [];
+
+      const submitData = {
+        name: data.name,
+        alt_text: data.alt_text,
+        folder_id: data.folder_id || undefined,
+        tags: tags.length > 0 ? tags : undefined,
+        status: data.status,
+        file_url: fileUrl,
+        file_size: fileSize,
+        mime_type: mimeType,
+        original_name: originalName,
+      };
+
+      await onSubmit(submitData);
+    } catch (error) {
+      console.error('Submit error:', error);
+      setFileError('Failed to save media item. Please try again.');
     }
-
-    // Parse tags
-    const tags = data.tags 
-      ? data.tags.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0)
-      : [];
-
-    const submitData = {
-      name: data.name,
-      alt_text: data.alt_text,
-      folder_id: data.folder_id || undefined,
-      tags: tags.length > 0 ? tags : undefined,
-      status: data.status,
-      file_url: fileUrl,
-      file_size: fileSize,
-      mime_type: mimeType,
-      original_name: originalName,
-    };
-
-    onSubmit(submitData);
   };
 
   const removeFile = () => {
     setSelectedFile(null);
     setPreviewUrl(item?.file_url || '');
+    setFileError('');
+    
+    // Clear the file input
+    const fileInput = document.getElementById('file-upload') as HTMLInputElement;
+    if (fileInput) {
+      fileInput.value = '';
+    }
   };
 
   const isImage = (url: string) => {
-    return /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(url);
+    return /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(url) || url.includes('image/');
+  };
+
+  const isVideo = (url: string) => {
+    return /\.(mp4|webm|mov)$/i.test(url) || url.includes('video/');
   };
 
   return (
@@ -173,6 +241,13 @@ export const MediaItemDialog: React.FC<MediaItemDialogProps> = ({
         <div>
           <FormLabel>File</FormLabel>
           <div className="mt-2">
+            {fileError && (
+              <Alert variant="destructive" className="mb-4">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>{fileError}</AlertDescription>
+              </Alert>
+            )}
+            
             {previewUrl && (
               <div className="mb-4 relative">
                 {isImage(previewUrl) ? (
@@ -180,11 +255,19 @@ export const MediaItemDialog: React.FC<MediaItemDialogProps> = ({
                     src={previewUrl} 
                     alt="Preview" 
                     className="max-w-full h-32 object-contain border rounded"
+                    onError={() => setFileError('Failed to load image preview')}
+                  />
+                ) : isVideo(previewUrl) ? (
+                  <video 
+                    src={previewUrl} 
+                    controls 
+                    className="max-w-full h-32 border rounded"
+                    onError={() => setFileError('Failed to load video preview')}
                   />
                 ) : (
                   <div className="w-full h-32 border rounded flex items-center justify-center bg-gray-50">
                     <span className="text-sm text-gray-500">
-                      {previewUrl.split('/').pop()}
+                      {previewUrl.split('/').pop() || 'File preview'}
                     </span>
                   </div>
                 )}
@@ -207,6 +290,7 @@ export const MediaItemDialog: React.FC<MediaItemDialogProps> = ({
                 type="button"
                 variant="outline"
                 onClick={() => document.getElementById('file-upload')?.click()}
+                disabled={isSubmitting || uploadFile.isPending}
               >
                 <Upload className="h-4 w-4 mr-2" />
                 {item ? 'Replace File' : 'Choose File'}
@@ -214,19 +298,20 @@ export const MediaItemDialog: React.FC<MediaItemDialogProps> = ({
               <input
                 id="file-upload"
                 type="file"
-                accept="image/*,video/*,.pdf,.doc,.docx"
+                accept={ALLOWED_FILE_TYPES.join(',')}
                 onChange={handleFileSelect}
                 className="hidden"
               />
               {selectedFile && (
-                <span className="text-sm text-gray-500">
+                <span className="text-sm text-gray-500 truncate">
                   {selectedFile.name}
                 </span>
               )}
             </div>
-            {!item && !selectedFile && (
-              <p className="text-sm text-red-500 mt-1">Please select a file to upload</p>
-            )}
+            
+            <p className="text-xs text-gray-500 mt-1">
+              Supported formats: Images, Videos (MP4, WebM), PDF, Word documents. Max size: 50MB
+            </p>
           </div>
         </div>
 

@@ -18,6 +18,8 @@ export const useMediaFolders = () => {
   return useQuery({
     queryKey: ['media-folders'],
     queryFn: mediaFolderService.getAll,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    retry: 3,
   });
 };
 
@@ -26,6 +28,8 @@ export const useMediaFolder = (id: string) => {
     queryKey: ['media-folder', id],
     queryFn: () => mediaFolderService.getById(id),
     enabled: !!id,
+    staleTime: 5 * 60 * 1000,
+    retry: 3,
   });
 };
 
@@ -33,6 +37,8 @@ export const useMediaSubfolders = (parentId?: string) => {
   return useQuery({
     queryKey: ['media-subfolders', parentId],
     queryFn: () => mediaFolderService.getSubfolders(parentId),
+    staleTime: 5 * 60 * 1000,
+    retry: 3,
   });
 };
 
@@ -54,7 +60,7 @@ export const useCreateMediaFolder = () => {
       console.error('Create folder error:', error);
       toast({
         title: 'Error',
-        description: 'Failed to create folder',
+        description: error?.message || 'Failed to create folder',
         variant: 'destructive',
       });
     },
@@ -80,7 +86,7 @@ export const useUpdateMediaFolder = () => {
       console.error('Update folder error:', error);
       toast({
         title: 'Error',
-        description: 'Failed to update folder',
+        description: error?.message || 'Failed to update folder',
         variant: 'destructive',
       });
     },
@@ -105,7 +111,7 @@ export const useDeleteMediaFolder = () => {
       console.error('Delete folder error:', error);
       toast({
         title: 'Error',
-        description: 'Failed to delete folder',
+        description: error?.message || 'Failed to delete folder',
         variant: 'destructive',
       });
     },
@@ -117,6 +123,8 @@ export const useMediaItems = () => {
   return useQuery({
     queryKey: ['media-items'],
     queryFn: mediaItemService.getAll,
+    staleTime: 5 * 60 * 1000,
+    retry: 3,
   });
 };
 
@@ -124,6 +132,8 @@ export const useMediaItemsByFolder = (folderId?: string) => {
   return useQuery({
     queryKey: ['media-items-folder', folderId],
     queryFn: () => mediaItemService.getByFolder(folderId),
+    staleTime: 5 * 60 * 1000,
+    retry: 3,
   });
 };
 
@@ -132,6 +142,8 @@ export const useMediaItem = (id: string) => {
     queryKey: ['media-item', id],
     queryFn: () => mediaItemService.getById(id),
     enabled: !!id,
+    staleTime: 5 * 60 * 1000,
+    retry: 3,
   });
 };
 
@@ -153,7 +165,7 @@ export const useCreateMediaItem = () => {
       console.error('Create media item error:', error);
       toast({
         title: 'Error',
-        description: 'Failed to create media item',
+        description: error?.message || 'Failed to create media item',
         variant: 'destructive',
       });
     },
@@ -179,7 +191,7 @@ export const useUpdateMediaItem = () => {
       console.error('Update media item error:', error);
       toast({
         title: 'Error',
-        description: 'Failed to update media item',
+        description: error?.message || 'Failed to update media item',
         variant: 'destructive',
       });
     },
@@ -204,7 +216,7 @@ export const useDeleteMediaItem = () => {
       console.error('Delete media item error:', error);
       toast({
         title: 'Error',
-        description: 'Failed to delete media item',
+        description: error?.message || 'Failed to delete media item',
         variant: 'destructive',
       });
     },
@@ -222,7 +234,7 @@ export const useUploadFile = () => {
       console.error('Upload file error:', error);
       toast({
         title: 'Error',
-        description: 'Failed to upload file',
+        description: error?.message || 'Failed to upload file',
         variant: 'destructive',
       });
     },
