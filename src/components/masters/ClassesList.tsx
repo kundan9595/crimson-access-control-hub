@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -113,9 +112,9 @@ const ClassesList: React.FC = () => {
                       <Badge variant={classItem.status === 'active' ? 'default' : 'secondary'}>
                         {classItem.status}
                       </Badge>
-                      {classItem.tax_percentage && classItem.tax_percentage > 0 && (
+                      {classItem.gst_rate && classItem.gst_rate > 0 && (
                         <Badge variant="outline">
-                          Tax: {classItem.tax_percentage}%
+                          GST: {classItem.gst_rate}%
                         </Badge>
                       )}
                       {hasStockData && (

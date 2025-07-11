@@ -10,6 +10,7 @@ export const fetchClasses = async (): Promise<Class[]> => {
       style:styles(*),
       color:colors(*)
     `)
+    .order('sort_order', { ascending: true })
     .order('created_at', { ascending: false });
 
   if (error) throw error;
@@ -26,7 +27,8 @@ export const createClass = async (classData: Omit<Class, 'id' | 'created_at' | '
     selected_sizes: classData.selected_sizes,
     description: classData.description,
     status: classData.status,
-    tax_percentage: classData.tax_percentage,
+    gst_rate: classData.gst_rate,
+    sort_order: classData.sort_order,
     primary_image_url: classData.primary_image_url,
     images: classData.images,
     size_ratios: classData.size_ratios,

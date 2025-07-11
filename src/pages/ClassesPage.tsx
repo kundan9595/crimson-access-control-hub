@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -15,14 +14,15 @@ const ClassesPage = () => {
 
   const handleExport = () => {
     const csvContent = [
-      ['Name', 'Description', 'Style ID', 'Color ID', 'Size Group ID', 'Tax Percentage', 'Status'].join(','),
+      ['Name', 'Description', 'Style ID', 'Color ID', 'Size Group ID', 'GST Rate', 'Sort Order', 'Status'].join(','),
       ...classes.map(cls => [
         `"${cls.name}"`,
         `"${cls.description || ''}"`,
         `"${cls.style_id || ''}"`,
         `"${cls.color_id || ''}"`,
         `"${cls.size_group_id || ''}"`,
-        cls.tax_percentage || 0,
+        cls.gst_rate || 0,
+        cls.sort_order || 0,
         cls.status
       ].join(','))
     ].join('\n');
@@ -38,10 +38,10 @@ const ClassesPage = () => {
     URL.revokeObjectURL(url);
   };
 
-  const templateHeaders = ['Name', 'Description', 'Style ID', 'Color ID', 'Size Group ID', 'Tax Percentage', 'Status'];
+  const templateHeaders = ['Name', 'Description', 'Style ID', 'Color ID', 'Size Group ID', 'GST Rate', 'Sort Order', 'Status'];
   const sampleData = [
-    ['Summer T-Shirt Red', 'Red variant of summer t-shirt', 'style-uuid-1', 'color-uuid-1', 'size-group-uuid-1', '18', 'active'],
-    ['Winter Jacket Blue', 'Blue winter jacket', 'style-uuid-2', 'color-uuid-2', 'size-group-uuid-2', '12', 'active']
+    ['Summer T-Shirt Red', 'Red variant of summer t-shirt', 'style-uuid-1', 'color-uuid-1', 'size-group-uuid-1', '18', '1', 'active'],
+    ['Winter Jacket Blue', 'Blue winter jacket', 'style-uuid-2', 'color-uuid-2', 'size-group-uuid-2', '12', '2', 'active']
   ];
 
   return (

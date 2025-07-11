@@ -22,6 +22,7 @@ export type Database = {
           id: string
           logo_url: string | null
           name: string
+          sort_order: number | null
           status: string
           updated_at: string
           updated_by: string | null
@@ -33,6 +34,7 @@ export type Database = {
           id?: string
           logo_url?: string | null
           name: string
+          sort_order?: number | null
           status?: string
           updated_at?: string
           updated_by?: string | null
@@ -44,6 +46,7 @@ export type Database = {
           id?: string
           logo_url?: string | null
           name?: string
+          sort_order?: number | null
           status?: string
           updated_at?: string
           updated_by?: string | null
@@ -56,8 +59,10 @@ export type Database = {
           created_by: string | null
           description: string | null
           id: string
+          image_url: string | null
           name: string
           parent_id: string | null
+          sort_order: number | null
           status: string
           updated_at: string
           updated_by: string | null
@@ -67,8 +72,10 @@ export type Database = {
           created_by?: string | null
           description?: string | null
           id?: string
+          image_url?: string | null
           name: string
           parent_id?: string | null
+          sort_order?: number | null
           status?: string
           updated_at?: string
           updated_by?: string | null
@@ -78,8 +85,10 @@ export type Database = {
           created_by?: string | null
           description?: string | null
           id?: string
+          image_url?: string | null
           name?: string
           parent_id?: string | null
+          sort_order?: number | null
           status?: string
           updated_at?: string
           updated_by?: string | null
@@ -100,6 +109,7 @@ export type Database = {
           created_at: string
           created_by: string | null
           description: string | null
+          gst_rate: number | null
           id: string
           images: Json | null
           monthly_stock_levels: Json | null
@@ -110,10 +120,10 @@ export type Database = {
           selected_sizes: Json | null
           size_group_id: string | null
           size_ratios: Json | null
+          sort_order: number | null
           status: string
           stock_management_type: string | null
           style_id: string | null
-          tax_percentage: number | null
           updated_at: string
           updated_by: string | null
         }
@@ -122,6 +132,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           description?: string | null
+          gst_rate?: number | null
           id?: string
           images?: Json | null
           monthly_stock_levels?: Json | null
@@ -132,10 +143,10 @@ export type Database = {
           selected_sizes?: Json | null
           size_group_id?: string | null
           size_ratios?: Json | null
+          sort_order?: number | null
           status?: string
           stock_management_type?: string | null
           style_id?: string | null
-          tax_percentage?: number | null
           updated_at?: string
           updated_by?: string | null
         }
@@ -144,6 +155,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           description?: string | null
+          gst_rate?: number | null
           id?: string
           images?: Json | null
           monthly_stock_levels?: Json | null
@@ -154,10 +166,10 @@ export type Database = {
           selected_sizes?: Json | null
           size_group_id?: string | null
           size_ratios?: Json | null
+          sort_order?: number | null
           status?: string
           stock_management_type?: string | null
           style_id?: string | null
-          tax_percentage?: number | null
           updated_at?: string
           updated_by?: string | null
         }
@@ -406,6 +418,7 @@ export type Database = {
       }
       price_types: {
         Row: {
+          category: Database["public"]["Enums"]["price_type_category"] | null
           created_at: string
           created_by: string | null
           description: string | null
@@ -416,6 +429,7 @@ export type Database = {
           updated_by: string | null
         }
         Insert: {
+          category?: Database["public"]["Enums"]["price_type_category"] | null
           created_at?: string
           created_by?: string | null
           description?: string | null
@@ -426,6 +440,7 @@ export type Database = {
           updated_by?: string | null
         }
         Update: {
+          category?: Database["public"]["Enums"]["price_type_category"] | null
           created_at?: string
           created_by?: string | null
           description?: string | null
@@ -628,6 +643,7 @@ export type Database = {
           created_at: string
           created_by: string | null
           description: string | null
+          gst_rate: number | null
           height_cm: number | null
           hsn_code: string | null
           id: string
@@ -648,6 +664,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           description?: string | null
+          gst_rate?: number | null
           height_cm?: number | null
           hsn_code?: string | null
           id?: string
@@ -668,6 +685,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           description?: string | null
+          gst_rate?: number | null
           height_cm?: number | null
           hsn_code?: string | null
           id?: string
@@ -804,11 +822,11 @@ export type Database = {
           contact_person: string | null
           created_at: string
           created_by: string | null
+          credit_terms: string | null
           description: string | null
           email: string | null
           id: string
           name: string
-          payment_terms: string | null
           phone: string | null
           status: string
           tax_id: string | null
@@ -821,11 +839,11 @@ export type Database = {
           contact_person?: string | null
           created_at?: string
           created_by?: string | null
+          credit_terms?: string | null
           description?: string | null
           email?: string | null
           id?: string
           name: string
-          payment_terms?: string | null
           phone?: string | null
           status?: string
           tax_id?: string | null
@@ -838,11 +856,11 @@ export type Database = {
           contact_person?: string | null
           created_at?: string
           created_by?: string | null
+          credit_terms?: string | null
           description?: string | null
           email?: string | null
           id?: string
           name?: string
-          payment_terms?: string | null
           phone?: string | null
           status?: string
           tax_id?: string | null
@@ -984,6 +1002,7 @@ export type Database = {
         | "delete_roles"
         | "manage_roles"
         | "admin_access"
+      price_type_category: "retail" | "wholesale" | "distributor" | "special"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1148,6 +1167,7 @@ export const Constants = {
         "manage_roles",
         "admin_access",
       ],
+      price_type_category: ["retail", "wholesale", "distributor", "special"],
     },
   },
 } as const

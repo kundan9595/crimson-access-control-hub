@@ -1,9 +1,11 @@
+
 export interface Brand {
   id: string;
   name: string;
   description: string | null;
   logo_url: string | null;
   status: string;
+  sort_order: number | null;
   created_at: string;
   updated_at: string;
   created_by: string | null;
@@ -14,6 +16,8 @@ export interface Category {
   id: string;
   name: string;
   description: string | null;
+  image_url: string | null;
+  sort_order: number | null;
   status: string;
   created_at: string;
   updated_at: string;
@@ -86,6 +90,7 @@ export interface PriceType {
   id: string;
   name: string;
   description: string | null;
+  category: 'retail' | 'wholesale' | 'distributor' | 'special';
   status: string;
   created_at: string;
   updated_at: string;
@@ -103,7 +108,7 @@ export interface Vendor {
   phone: string | null;
   address: string | null;
   tax_id: string | null;
-  payment_terms: string | null;
+  credit_terms: string | null;
   status: string;
   created_at: string;
   updated_at: string;
@@ -135,7 +140,8 @@ export interface Class {
   selected_sizes: string[] | null;
   description: string | null;
   status: string;
-  tax_percentage: number | null;
+  gst_rate: number | null;
+  sort_order: number | null;
   primary_image_url: string | null;
   images: string[] | null;
   size_ratios: Record<string, number> | null;
@@ -164,6 +170,7 @@ export interface Sku {
   weight_grams: number | null;
   base_mrp: number | null;
   cost_price: number | null;
+  gst_rate: number | null;
   price_type_prices: any | null;
   status: string;
   created_at: string;

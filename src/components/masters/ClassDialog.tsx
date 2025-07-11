@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -30,7 +29,8 @@ const ClassDialog: React.FC<ClassDialogProps> = ({ classItem, trigger }) => {
     selected_sizes: [] as string[],
     description: '',
     status: 'active' as string,
-    tax_percentage: 0,
+    gst_rate: 0,
+    sort_order: 0,
     primary_image_url: '',
     images: [] as string[],
     size_ratios: {} as Record<string, number>,
@@ -63,7 +63,8 @@ const ClassDialog: React.FC<ClassDialogProps> = ({ classItem, trigger }) => {
         selected_sizes: Array.isArray(classItem.selected_sizes) ? classItem.selected_sizes : [],
         description: classItem.description || '',
         status: classItem.status,
-        tax_percentage: classItem.tax_percentage || 0,
+        gst_rate: classItem.gst_rate || 0,
+        sort_order: classItem.sort_order || 0,
         primary_image_url: classItem.primary_image_url || '',
         images: Array.isArray(classItem.images) ? classItem.images : [],
         size_ratios: classItem.size_ratios || {},
@@ -88,7 +89,8 @@ const ClassDialog: React.FC<ClassDialogProps> = ({ classItem, trigger }) => {
       selected_sizes: formData.selected_sizes.length > 0 ? formData.selected_sizes : null,
       description: formData.description || null,
       status: formData.status,
-      tax_percentage: formData.tax_percentage || null,
+      gst_rate: formData.gst_rate || null,
+      sort_order: formData.sort_order || null,
       primary_image_url: formData.primary_image_url || null,
       images: formData.images.length > 0 ? formData.images : null,
       size_ratios: Object.keys(formData.size_ratios).length > 0 ? formData.size_ratios : null,
@@ -120,7 +122,8 @@ const ClassDialog: React.FC<ClassDialogProps> = ({ classItem, trigger }) => {
       selected_sizes: [],
       description: '',
       status: 'active',
-      tax_percentage: 0,
+      gst_rate: 0,
+      sort_order: 0,
       primary_image_url: '',
       images: [],
       size_ratios: {},
@@ -337,17 +340,30 @@ const ClassDialog: React.FC<ClassDialogProps> = ({ classItem, trigger }) => {
                     />
                   </div>
 
-                  <div>
-                    <Label htmlFor="tax_percentage">Tax Percentage (%)</Label>
-                    <Input
-                      id="tax_percentage"
-                      type="number"
-                      min="0"
-                      max="100"
-                      step="0.01"
-                      value={formData.tax_percentage}
-                      onChange={(e) => setFormData(prev => ({ ...prev, tax_percentage: parseFloat(e.target.value) || 0 }))}
-                    />
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="gst_rate">GST Rate (%)</Label>
+                      <Input
+                        id="gst_rate"
+                        type="number"
+                        min="0"
+                        max="100"
+                        step="0.01"
+                        value={formData.gst_rate}
+                        onChange={(e) => setFormData(prev => ({ ...prev, gst_rate: parseFloat(e.target.value) || 0 }))}
+                      />
+                    </div>
+
+                    <div>
+                      <Label htmlFor="sort_order">Sort Order</Label>
+                      <Input
+                        id="sort_order"
+                        type="number"
+                        min="0"
+                        value={formData.sort_order}
+                        onChange={(e) => setFormData(prev => ({ ...prev, sort_order: parseInt(e.target.value) || 0 }))}
+                      />
+                    </div>
                   </div>
 
                   <div className="flex items-center space-x-2">
