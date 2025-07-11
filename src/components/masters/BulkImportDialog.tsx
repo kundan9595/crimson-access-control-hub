@@ -1,44 +1,14 @@
-import React, { useState, useRef, useCallback } from 'react';
+
+import React, { useState, useCallback } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Progress } from '@/components/ui/progress';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Download, Upload, AlertCircle, CheckCircle, FileText, X, CloudUpload } from 'lucide-react';
-import { 
-  useCreateBrand, 
-  useCreateCategory, 
-  useCreateColor, 
-  useCreateSizeGroup, 
-  useCreateZone, 
-  useCreatePriceType, 
-  useCreateVendor,
-  useCreateStyle,
-  useCreateClass,
-  useCreateSku
-} from '@/hooks/masters';
 import { useToast } from '@/hooks/use-toast';
-
-type BulkImportDialogProps = {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  type: 'brands' | 'categories' | 'colors' | 'sizeGroups' | 'zones' | 'priceTypes' | 'vendors' | 'styles' | 'classes' | 'skus';
-  templateHeaders: string[];
-  sampleData: string[][];
-};
-
-type ValidationResult = {
-  valid: boolean;
-  errors: string[];
-  data?: any;
-};
-
-type ProcessingResult = {
-  validRecords: any[];
-  invalidRecords: Array<{ row: number; data: string[]; errors: string[] }>;
-  totalProcessed: number;
-};
+import { parseCSV } from './bulk-import/csvUtils';
+import { validateRow } from './bulk-import/validation';
+import { useImportMutations } from './bulk-import/useImportMutations';
+import FileUploadStep from './bulk-import/FileUploadStep';
+import ReviewStep from './bulk-import/ReviewStep';
+import CompleteStep from './bulk-import/CompleteStep';
+import { BulkImportDialogProps, ProcessingResult, BulkImportStep } from './bulk-import/types';
 
 const BulkImportDialog: React.FC<BulkImportDialogProps> = ({
   open,
@@ -51,323 +21,11 @@ const BulkImportDialog: React.FC<BulkImportDialogProps> = ({
   const [isProcessing, setIsProcessing] = useState(false);
   const [processingResult, setProcessingResult] = useState<ProcessingResult | null>(null);
   const [uploadProgress, setUploadProgress] = useState(0);
-  const [step, setStep] = useState<'upload' | 'review' | 'complete'>('upload');
+  const [step, setStep] = useState<BulkImportStep>('upload');
   const [isDragOver, setIsDragOver] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
   
-  const createBrandMutation = useCreateBrand();
-  const createCategoryMutation = useCreateCategory();
-  const createColorMutation = useCreateColor();
-  const createSizeGroupMutation = useCreateSizeGroup();
-  const createZoneMutation = useCreateZone();
-  const createPriceTypeMutation = useCreatePriceType();
-  const createVendorMutation = useCreateVendor();
-  const createStyleMutation = useCreateStyle();
-  const createClassMutation = useCreateClass();
-  const createSkuMutation = useCreateSku();
+  const { getMutationForType } = useImportMutations();
   const { toast } = useToast();
-
-  const downloadTemplate = () => {
-    const csvContent = [
-      templateHeaders.join(','),
-      ...sampleData.map(row => row.join(','))
-    ].join('\n');
-
-    const blob = new Blob([csvContent], { type: 'text/csv' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${type}-template.csv`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  };
-
-  const downloadInvalidRecords = () => {
-    if (!processingResult?.invalidRecords.length) return;
-
-    const csvContent = [
-      [...templateHeaders, 'Errors'].join(','),
-      ...processingResult.invalidRecords.map(record => [
-        ...record.data.map(cell => `"${cell}"`),
-        `"${record.errors.join('; ')}"`
-      ].join(','))
-    ].join('\n');
-
-    const blob = new Blob([csvContent], { type: 'text/csv' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${type}-invalid-records.csv`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  };
-
-  const parseCSV = (csv: string): string[][] => {
-    const lines = csv.trim().split('\n');
-    return lines.map(line => {
-      const result = [];
-      let current = '';
-      let inQuotes = false;
-      
-      for (let i = 0; i < line.length; i++) {
-        const char = line[i];
-        
-        if (char === '"') {
-          inQuotes = !inQuotes;
-        } else if (char === ',' && !inQuotes) {
-          result.push(current.trim());
-          current = '';
-        } else {
-          current += char;
-        }
-      }
-      
-      result.push(current.trim());
-      return result.map(cell => cell.replace(/^"|"$/g, ''));
-    });
-  };
-
-  const validateRow = (row: string[], index: number): ValidationResult => {
-    const errors: string[] = [];
-
-    // Basic validation for all types
-    if (!row[0]?.trim()) errors.push('First field is required');
-
-    // Type-specific validation
-    switch (type) {
-      case 'brands':
-      case 'categories':
-      case 'sizeGroups':
-      case 'priceTypes':
-        if (row.length < 2) errors.push('Missing required fields');
-        if (row[2] && !['active', 'inactive'].includes(row[2].toLowerCase())) {
-          errors.push('Status must be "active" or "inactive"');
-        }
-        break;
-        
-      case 'colors':
-        if (row.length < 2) errors.push('Missing required fields');
-        if (!row[1]?.trim()) errors.push('Hex code is required');
-        if (!/^#[0-9A-Fa-f]{6}$/.test(row[1])) {
-          errors.push('Invalid hex code format');
-        }
-        if (row[2] && !['active', 'inactive'].includes(row[2].toLowerCase())) {
-          errors.push('Status must be "active" or "inactive"');
-        }
-        break;
-        
-      case 'zones':
-        if (row.length < 2) errors.push('Missing required fields');
-        if (row[3] && !['active', 'inactive'].includes(row[3].toLowerCase())) {
-          errors.push('Status must be "active" or "inactive"');
-        }
-        break;
-        
-      case 'vendors':
-        if (row.length < 2) errors.push('Missing required fields');
-        if (!row[1]?.trim()) errors.push('Code is required');
-        if (row[4] && row[4].trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(row[4])) {
-          errors.push('Invalid email format');
-        }
-        if (row[6] && !['active', 'inactive'].includes(row[6].toLowerCase())) {
-          errors.push('Status must be "active" or "inactive"');
-        }
-        break;
-        
-      case 'styles':
-        if (row.length < 2) errors.push('Missing required fields');
-        // Brand ID and Category ID are optional but should be valid UUIDs if provided
-        if (row[2] && row[2].trim() && !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(row[2])) {
-          errors.push('Invalid Brand ID format (must be UUID)');
-        }
-        if (row[3] && row[3].trim() && !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(row[3])) {
-          errors.push('Invalid Category ID format (must be UUID)');
-        }
-        if (row[4] && !['active', 'inactive'].includes(row[4].toLowerCase())) {
-          errors.push('Status must be "active" or "inactive"');
-        }
-        break;
-        
-      case 'classes':
-        if (row.length < 2) errors.push('Missing required fields');
-        // Style ID, Color ID, Size Group ID are optional but should be valid UUIDs if provided
-        if (row[2] && row[2].trim() && !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(row[2])) {
-          errors.push('Invalid Style ID format (must be UUID)');
-        }
-        if (row[3] && row[3].trim() && !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(row[3])) {
-          errors.push('Invalid Color ID format (must be UUID)');
-        }
-        if (row[4] && row[4].trim() && !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(row[4])) {
-          errors.push('Invalid Size Group ID format (must be UUID)');
-        }
-        if (row[5] && row[5].trim() && (isNaN(parseFloat(row[5])) || parseFloat(row[5]) < 0 || parseFloat(row[5]) > 100)) {
-          errors.push('Tax percentage must be a number between 0 and 100');
-        }
-        if (row[6] && !['active', 'inactive'].includes(row[6].toLowerCase())) {
-          errors.push('Status must be "active" or "inactive"');
-        }
-        break;
-        
-      case 'skus':
-        if (row.length < 3) errors.push('Missing required fields (SKU Code, Class ID, Size ID)');
-        if (!row[0]?.trim()) errors.push('SKU Code is required');
-        if (!row[1]?.trim()) errors.push('Class ID is required');
-        if (!row[2]?.trim()) errors.push('Size ID is required');
-        
-        // Validate UUIDs
-        if (row[1] && row[1].trim() && !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(row[1])) {
-          errors.push('Invalid Class ID format (must be UUID)');
-        }
-        if (row[2] && row[2].trim() && !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(row[2])) {
-          errors.push('Invalid Size ID format (must be UUID)');
-        }
-        
-        // Validate numeric fields
-        if (row[3] && row[3].trim() && (isNaN(parseFloat(row[3])) || parseFloat(row[3]) < 0)) {
-          errors.push('Base MRP must be a positive number');
-        }
-        if (row[4] && row[4].trim() && (isNaN(parseFloat(row[4])) || parseFloat(row[4]) < 0)) {
-          errors.push('Cost Price must be a positive number');
-        }
-        if (row[7] && row[7].trim() && (isNaN(parseFloat(row[7])) || parseFloat(row[7]) < 0)) {
-          errors.push('Length must be a positive number');
-        }
-        if (row[8] && row[8].trim() && (isNaN(parseFloat(row[8])) || parseFloat(row[8]) < 0)) {
-          errors.push('Breadth must be a positive number');
-        }
-        if (row[9] && row[9].trim() && (isNaN(parseFloat(row[9])) || parseFloat(row[9]) < 0)) {
-          errors.push('Height must be a positive number');
-        }
-        if (row[10] && row[10].trim() && (isNaN(parseFloat(row[10])) || parseFloat(row[10]) < 0)) {
-          errors.push('Weight must be a positive number');
-        }
-        
-        if (row[11] && !['active', 'inactive'].includes(row[11].toLowerCase())) {
-          errors.push('Status must be "active" or "inactive"');
-        }
-        break;
-    }
-
-    if (errors.length > 0) {
-      return { valid: false, errors };
-    }
-
-    // Create data object for valid records
-    let data;
-    switch (type) {
-      case 'brands':
-        data = {
-          name: row[0].trim(),
-          description: row[1]?.trim() || null,
-          status: (row[2]?.toLowerCase() || 'active') as 'active' | 'inactive',
-          logo_url: null
-        };
-        break;
-        
-      case 'categories':
-        data = {
-          name: row[0].trim(),
-          description: row[1]?.trim() || null,
-          status: (row[2]?.toLowerCase() || 'active') as 'active' | 'inactive',
-          parent_id: null
-        };
-        break;
-        
-      case 'colors':
-        data = {
-          name: row[0].trim(),
-          hex_code: row[1].trim(),
-          status: (row[2]?.toLowerCase() || 'active') as 'active' | 'inactive'
-        };
-        break;
-        
-      case 'sizeGroups':
-        data = {
-          name: row[0].trim(),
-          description: row[1]?.trim() || null,
-          status: (row[2]?.toLowerCase() || 'active') as 'active' | 'inactive'
-        };
-        break;
-        
-      case 'zones':
-        data = {
-          name: row[0].trim(),
-          code: row[1]?.trim() || null,
-          description: row[2]?.trim() || null,
-          status: (row[3]?.toLowerCase() || 'active') as 'active' | 'inactive'
-        };
-        break;
-        
-      case 'priceTypes':
-        data = {
-          name: row[0].trim(),
-          description: row[1]?.trim() || null,
-          status: (row[2]?.toLowerCase() || 'active') as 'active' | 'inactive'
-        };
-        break;
-        
-      case 'vendors':
-        data = {
-          name: row[0].trim(),
-          code: row[1].trim(),
-          description: row[2]?.trim() || null,
-          contact_person: row[3]?.trim() || null,
-          email: row[4]?.trim() || null,
-          phone: row[5]?.trim() || null,
-          status: (row[6]?.toLowerCase() || 'active') as 'active' | 'inactive'
-        };
-        break;
-        
-      case 'styles':
-        data = {
-          name: row[0].trim(),
-          description: row[1]?.trim() || null,
-          brand_id: row[2]?.trim() || null,
-          category_id: row[3]?.trim() || null,
-          status: (row[4]?.toLowerCase() || 'active') as 'active' | 'inactive'
-        };
-        break;
-        
-      case 'classes':
-        data = {
-          name: row[0].trim(),
-          description: row[1]?.trim() || null,
-          style_id: row[2]?.trim() || null,
-          color_id: row[3]?.trim() || null,
-          size_group_id: row[4]?.trim() || null,
-          tax_percentage: row[5]?.trim() ? parseFloat(row[5]) : 0,
-          status: (row[6]?.toLowerCase() || 'active') as 'active' | 'inactive',
-          selected_sizes: [],
-          primary_image_url: null,
-          images: []
-        };
-        break;
-        
-      case 'skus':
-        data = {
-          sku_code: row[0].trim(),
-          class_id: row[1].trim(),
-          size_id: row[2].trim(),
-          base_mrp: row[3]?.trim() ? parseFloat(row[3]) : null,
-          cost_price: row[4]?.trim() ? parseFloat(row[4]) : null,
-          hsn_code: row[5]?.trim() || null,
-          description: row[6]?.trim() || null,
-          length_cm: row[7]?.trim() ? parseFloat(row[7]) : null,
-          breadth_cm: row[8]?.trim() ? parseFloat(row[8]) : null,
-          height_cm: row[9]?.trim() ? parseFloat(row[9]) : null,
-          weight_grams: row[10]?.trim() ? parseFloat(row[10]) : null,
-          status: (row[11]?.toLowerCase() || 'active') as 'active' | 'inactive',
-          price_type_prices: {}
-        };
-        break;
-    }
-
-    return { valid: true, errors: [], data };
-  };
 
   const processFile = async (file: File) => {
     setIsProcessing(true);
@@ -383,7 +41,7 @@ const BulkImportDialog: React.FC<BulkImportDialogProps> = ({
 
       // Validate all rows
       dataRows.forEach((row, index) => {
-        const validation = validateRow(row, index);
+        const validation = validateRow(row, index, type);
         if (validation.valid) {
           validRecords.push(validation.data);
         } else {
@@ -429,17 +87,14 @@ const BulkImportDialog: React.FC<BulkImportDialogProps> = ({
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
-    setIsDragOver(true);
   }, []);
 
   const handleDragLeave = useCallback((e: React.DragEvent) => {
     e.preventDefault();
-    setIsDragOver(false);
   }, []);
 
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
-    setIsDragOver(false);
     
     const files = Array.from(e.dataTransfer.files);
     if (files.length > 0) {
@@ -454,40 +109,11 @@ const BulkImportDialog: React.FC<BulkImportDialogProps> = ({
     let successCount = 0;
 
     try {
+      const mutation = getMutationForType(type);
+      
       for (const record of processingResult.validRecords) {
         try {
-          switch (type) {
-            case 'brands':
-              await createBrandMutation.mutateAsync(record);
-              break;
-            case 'categories':
-              await createCategoryMutation.mutateAsync(record);
-              break;
-            case 'colors':
-              await createColorMutation.mutateAsync(record);
-              break;
-            case 'sizeGroups':
-              await createSizeGroupMutation.mutateAsync(record);
-              break;
-            case 'zones':
-              await createZoneMutation.mutateAsync(record);
-              break;
-            case 'priceTypes':
-              await createPriceTypeMutation.mutateAsync(record);
-              break;
-            case 'vendors':
-              await createVendorMutation.mutateAsync(record);
-              break;
-            case 'styles':
-              await createStyleMutation.mutateAsync(record);
-              break;
-            case 'classes':
-              await createClassMutation.mutateAsync(record);
-              break;
-            case 'skus':
-              await createSkuMutation.mutateAsync(record);
-              break;
-          }
+          await mutation.mutateAsync(record);
           successCount++;
         } catch (error) {
           console.error('Import error for record:', record, error);
@@ -517,9 +143,6 @@ const BulkImportDialog: React.FC<BulkImportDialogProps> = ({
     setUploadProgress(0);
     setStep('upload');
     setIsDragOver(false);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
-    }
   };
 
   const handleClose = () => {
@@ -536,199 +159,39 @@ const BulkImportDialog: React.FC<BulkImportDialogProps> = ({
 
         <div className="space-y-6">
           {step === 'upload' && (
-            <>
-              <div>
-                <Button variant="outline" onClick={downloadTemplate} className="mb-4">
-                  <Download className="h-4 w-4 mr-2" />
-                  Download Template
-                </Button>
-                <p className="text-sm text-muted-foreground">
-                  Download the CSV template with the correct format and sample data.
-                </p>
-              </div>
-
-              <div className="space-y-4">
-                <Label>Drop CSV File or Click to Select</Label>
-                <div
-                  className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors ${
-                    isDragOver
-                      ? 'border-primary bg-primary/5'
-                      : 'border-muted-foreground/25 hover:border-primary/50'
-                  }`}
-                  onDragOver={handleDragOver}
-                  onDragLeave={handleDragLeave}
-                  onDrop={handleDrop}
-                  onClick={() => fileInputRef.current?.click()}
-                >
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept=".csv"
-                    onChange={(e) => {
-                      const file = e.target.files?.[0];
-                      if (file) handleFileSelect(file);
-                    }}
-                    className="hidden"
-                  />
-                  
-                  <div className="flex flex-col items-center gap-4">
-                    <CloudUpload className={`h-12 w-12 ${isDragOver ? 'text-primary' : 'text-muted-foreground'}`} />
-                    <div>
-                      <p className="text-lg font-medium">
-                        {isDragOver ? 'Drop your CSV file here' : 'Drop CSV file here or click to browse'}
-                      </p>
-                      <p className="text-sm text-muted-foreground mt-1">
-                        File will be processed automatically after selection
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                {selectedFile && (
-                  <div className="text-center">
-                    <p className="text-sm text-muted-foreground">
-                      Selected: {selectedFile.name} ({(selectedFile.size / 1024).toFixed(1)} KB)
-                    </p>
-                  </div>
-                )}
-
-                {isProcessing && (
-                  <div className="space-y-2">
-                    <Progress value={uploadProgress} className="w-full" />
-                    <p className="text-sm text-muted-foreground text-center">
-                      Processing file... {Math.round(uploadProgress)}%
-                    </p>
-                  </div>
-                )}
-              </div>
-
-              <div className="flex justify-end">
-                <Button variant="outline" onClick={handleClose}>
-                  Cancel
-                </Button>
-              </div>
-            </>
+            <FileUploadStep
+              type={type}
+              templateHeaders={templateHeaders}
+              sampleData={sampleData}
+              selectedFile={selectedFile}
+              isProcessing={isProcessing}
+              uploadProgress={uploadProgress}
+              isDragOver={isDragOver}
+              onFileSelect={handleFileSelect}
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+              onDrop={handleDrop}
+              onCancel={handleClose}
+              setIsDragOver={setIsDragOver}
+            />
           )}
 
           {step === 'review' && processingResult && (
-            <>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-green-700">
-                      <CheckCircle className="h-5 w-5" />
-                      Valid Records
-                    </CardTitle>
-                    <CardDescription>
-                      Records that passed validation and are ready to import
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold text-green-700 mb-4">
-                      {processingResult.validRecords.length}
-                    </div>
-                    {processingResult.validRecords.length > 0 && (
-                      <div className="space-y-2">
-                        <p className="text-sm font-medium">Preview (top 5):</p>
-                        <div className="space-y-1 max-h-32 overflow-y-auto">
-                          {processingResult.validRecords.slice(0, 5).map((record, index) => (
-                            <div key={index} className="text-xs p-2 bg-green-50 rounded border">
-                              {type === 'colors' 
-                                ? `${record.name} (${record.hex_code})`
-                                : type === 'vendors'
-                                ? `${record.name} (${record.code})`
-                                : type === 'classes'
-                                ? `${record.name} - Tax: ${record.tax_percentage}%`
-                                : type === 'skus'
-                                ? `${record.sku_code} - MRP: ₹${record.base_mrp || 0}`
-                                : `${record.name} - ${record.description || 'No description'}`
-                              }
-                            </div>
-                          ))}
-                          {processingResult.validRecords.length > 5 && (
-                            <div className="text-xs text-muted-foreground">
-                              ...and {processingResult.validRecords.length - 5} more
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-red-700">
-                      <AlertCircle className="h-5 w-5" />
-                      Invalid Records
-                    </CardTitle>
-                    <CardDescription>
-                      Records with validation errors
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold text-red-700 mb-4">
-                      {processingResult.invalidRecords.length}
-                    </div>
-                    {processingResult.invalidRecords.length > 0 && (
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between">
-                          <p className="text-sm font-medium">Preview (top 5):</p>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={downloadInvalidRecords}
-                          >
-                            <Download className="h-4 w-4 mr-2" />
-                            Download with Comments
-                          </Button>
-                        </div>
-                        <div className="space-y-1 max-h-32 overflow-y-auto">
-                          {processingResult.invalidRecords.slice(0, 5).map((record, index) => (
-                            <div key={index} className="text-xs p-2 bg-red-50 rounded border">
-                              <div className="font-medium">Row {record.row}: {record.data.join(', ')}</div>
-                              <div className="text-red-600 mt-1">{record.errors.join('; ')}</div>
-                            </div>
-                          ))}
-                          {processingResult.invalidRecords.length > 5 && (
-                            <div className="text-xs text-muted-foreground">
-                              ...and {processingResult.invalidRecords.length - 5} more errors
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              </div>
-
-              <div className="flex justify-end gap-2">
-                <Button variant="outline" onClick={resetDialog}>
-                  Start Over
-                </Button>
-                <Button
-                  onClick={confirmImport}
-                  disabled={processingResult.validRecords.length === 0 || isProcessing}
-                >
-                  {isProcessing ? 'Importing...' : `Import ${processingResult.validRecords.length} Records`}
-                </Button>
-              </div>
-            </>
+            <ReviewStep
+              type={type}
+              processingResult={processingResult}
+              templateHeaders={templateHeaders}
+              isProcessing={isProcessing}
+              onStartOver={resetDialog}
+              onConfirmImport={confirmImport}
+            />
           )}
 
           {step === 'complete' && (
-            <div className="text-center space-y-4">
-              <CheckCircle className="h-16 w-16 text-green-600 mx-auto" />
-              <div>
-                <h3 className="text-lg font-semibold">Import Completed Successfully!</h3>
-                <p className="text-muted-foreground">
-                  Your {type} have been imported and are now available.
-                </p>
-              </div>
-              <Button onClick={handleClose}>
-                Close
-              </Button>
-            </div>
+            <CompleteStep
+              type={type}
+              onClose={handleClose}
+            />
           )}
         </div>
       </DialogContent>
