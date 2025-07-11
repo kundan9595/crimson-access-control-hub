@@ -1,87 +1,109 @@
 
-import { useQueryClient, useMutation } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
 
-export type MutationConfig<T> = {
+export interface CreateMutationConfig<T = any> {
   queryKey: string[];
   successMessage: string;
   errorMessage: string;
   mutationFn: (data: T) => Promise<any>;
-};
+}
 
-export type UpdateMutationConfig<T> = {
+export interface UpdateMutationConfig<T = any> {
   queryKey: string[];
   successMessage: string;
   errorMessage: string;
   mutationFn: (params: { id: string; updates: Partial<T> }) => Promise<any>;
-};
+}
 
-export const useCreateMutation = <T>(config: MutationConfig<T>) => {
+export interface DeleteMutationConfig {
+  queryKey: string[];
+  successMessage: string;
+  errorMessage: string;
+  mutationFn: (id: string) => Promise<any>;
+}
+
+export const useCreateMutation = <T = any>({
+  queryKey,
+  successMessage,
+  errorMessage,
+  mutationFn,
+}: CreateMutationConfig<T>) => {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: config.mutationFn,
+    mutationFn,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: config.queryKey });
+      queryClient.invalidateQueries({ queryKey });
       toast({
         title: "Success",
-        description: config.successMessage,
+        description: successMessage,
       });
     },
-    onError: (error) => {
-      console.error(`Error in ${config.queryKey[0]}:`, error);
+    onError: (error: any) => {
+      console.error('Create mutation error:', error);
       toast({
         title: "Error",
-        description: config.errorMessage,
+        description: errorMessage,
         variant: "destructive",
       });
     },
   });
 };
 
-export const useUpdateMutation = <T>(config: UpdateMutationConfig<T>) => {
+export const useUpdateMutation = <T = any>({
+  queryKey,
+  successMessage,
+  errorMessage,
+  mutationFn,
+}: UpdateMutationConfig<T>) => {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: config.mutationFn,
+    mutationFn,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: config.queryKey });
+      queryClient.invalidateQueries({ queryKey });
       toast({
         title: "Success",
-        description: config.successMessage,
+        description: successMessage,
       });
     },
-    onError: (error) => {
-      console.error(`Error in ${config.queryKey[0]}:`, error);
+    onError: (error: any) => {
+      console.error('Update mutation error:', error);
       toast({
         title: "Error",
-        description: config.errorMessage,
+        description: errorMessage,
         variant: "destructive",
       });
     },
   });
 };
 
-export const useDeleteMutation = (config: MutationConfig<string>) => {
+export const useDeleteMutation = ({
+  queryKey,
+  successMessage,
+  errorMessage,
+  mutationFn,
+}: DeleteMutationConfig) => {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: config.mutationFn,
+    mutationFn,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: config.queryKey });
+      queryClient.invalidateQueries({ queryKey });
       toast({
         title: "Success",
-        description: config.successMessage,
+        description: successMessage,
       });
     },
-    onError: (error) => {
-      console.error(`Error in ${config.queryKey[0]}:`, error);
+    onError: (error: any) => {
+      console.error('Delete mutation error:', error);
       toast({
         title: "Error",
-        description: config.errorMessage,
+        description: errorMessage,
         variant: "destructive",
       });
     },

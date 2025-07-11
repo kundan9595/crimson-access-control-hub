@@ -1,15 +1,26 @@
 
 import React from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
 import { useForm } from 'react-hook-form';
-import { useCreateBrand, useUpdateBrand } from '@/hooks/useMasters';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import { useCreateBrand, useUpdateBrand } from '@/hooks/masters/useBrands';
 import ImageUpload from '@/components/ui/ImageUpload';
+import { BaseFormDialog } from './shared/BaseFormDialog';
 import type { Brand } from '@/services/mastersService';
+
+const brandSchema = z.object({
+  name: z.string().min(1, 'Name is required'),
+  description: z.string().optional(),
+  logo_url: z.string().optional(),
+  status: z.enum(['active', 'inactive']),
+});
+
+type BrandFormData = z.infer<typeof brandSchema>;
 
 type BrandDialogProps = {
   open: boolean;
@@ -17,26 +28,13 @@ type BrandDialogProps = {
   brand?: Brand | null;
 };
 
-type BrandFormData = {
-  name: string;
-  description: string;
-  logo_url: string;
-  status: 'active' | 'inactive';
-};
-
 const BrandDialog: React.FC<BrandDialogProps> = ({ open, onOpenChange, brand }) => {
   const createBrandMutation = useCreateBrand();
   const updateBrandMutation = useUpdateBrand();
   const isEditing = !!brand;
 
-  const {
-    register,
-    handleSubmit,
-    reset,
-    setValue,
-    watch,
-    formState: { errors }
-  } = useForm<BrandFormData>({
+  const form = useForm<BrandFormData>({
+    resolver: zodResolver(brandSchema),
     defaultValues: {
       name: brand?.name || '',
       description: brand?.description || '',
@@ -47,21 +45,21 @@ const BrandDialog: React.FC<BrandDialogProps> = ({ open, onOpenChange, brand }) 
 
   React.useEffect(() => {
     if (brand && open) {
-      reset({
+      form.reset({
         name: brand.name,
         description: brand.description || '',
         logo_url: brand.logo_url || '',
         status: brand.status,
       });
     } else if (!brand && open) {
-      reset({
+      form.reset({
         name: '',
         description: '',
         logo_url: '',
         status: 'active',
       });
     }
-  }, [brand, open, reset]);
+  }, [brand, open, form]);
 
   const onSubmit = (data: BrandFormData) => {
     const brandData = {
@@ -77,7 +75,7 @@ const BrandDialog: React.FC<BrandDialogProps> = ({ open, onOpenChange, brand }) 
         {
           onSuccess: () => {
             onOpenChange(false);
-            reset();
+            form.reset();
           }
         }
       );
@@ -85,90 +83,95 @@ const BrandDialog: React.FC<BrandDialogProps> = ({ open, onOpenChange, brand }) 
       createBrandMutation.mutate(brandData, {
         onSuccess: () => {
           onOpenChange(false);
-          reset();
+          form.reset();
         }
       });
     }
   };
 
-  const statusValue = watch('status');
-  const logoUrl = watch('logo_url');
-
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>{isEditing ? 'Edit Brand' : 'Create Brand'}</DialogTitle>
-        </DialogHeader>
+    <BaseFormDialog
+      open={open}
+      onOpenChange={onOpenChange}
+      title={isEditing ? 'Edit Brand' : 'Create Brand'}
+      form={form}
+      onSubmit={onSubmit}
+      isSubmitting={createBrandMutation.isPending || updateBrandMutation.isPending}
+      isEditing={isEditing}
+    >
+      <FormField
+        control={form.control}
+        name="name"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>Name *</FormLabel>
+            <FormControl>
+              <Input {...field} placeholder="Enter brand name" />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="name">Name *</Label>
-            <Input
-              id="name"
-              {...register('name', { required: 'Name is required' })}
-              placeholder="Enter brand name"
-            />
-            {errors.name && (
-              <p className="text-sm text-destructive">{errors.name.message}</p>
-            )}
-          </div>
+      <FormField
+        control={form.control}
+        name="description"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>Description</FormLabel>
+            <FormControl>
+              <Textarea {...field} placeholder="Enter brand description" rows={3} />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
 
-          <div className="space-y-2">
-            <Label htmlFor="description">Description</Label>
-            <Textarea
-              id="description"
-              {...register('description')}
-              placeholder="Enter brand description"
-              rows={3}
-            />
-          </div>
+      <FormField
+        control={form.control}
+        name="logo_url"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>Brand Logo</FormLabel>
+            <FormControl>
+              <ImageUpload
+                value={field.value || ''}
+                onChange={field.onChange}
+                onRemove={() => field.onChange('')}
+                placeholder="Upload brand logo"
+              />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
 
-          <div className="space-y-2">
-            <Label>Brand Logo</Label>
-            <ImageUpload
-              value={logoUrl}
-              onChange={(url) => setValue('logo_url', url)}
-              onRemove={() => setValue('logo_url', '')}
-              placeholder="Upload brand logo"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label>Status</Label>
-            <RadioGroup
-              value={statusValue}
-              onValueChange={(value) => setValue('status', value as 'active' | 'inactive')}
-            >
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="active" id="active" />
-                <Label htmlFor="active">Active</Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="inactive" id="inactive" />
-                <Label htmlFor="inactive">Inactive</Label>
-              </div>
-            </RadioGroup>
-          </div>
-
-          <div className="flex justify-end gap-2 pt-4">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-            >
-              Cancel
-            </Button>
-            <Button
-              type="submit"
-              disabled={createBrandMutation.isPending || updateBrandMutation.isPending}
-            >
-              {isEditing ? 'Update' : 'Create'}
-            </Button>
-          </div>
-        </form>
-      </DialogContent>
-    </Dialog>
+      <FormField
+        control={form.control}
+        name="status"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>Status</FormLabel>
+            <FormControl>
+              <RadioGroup
+                value={field.value}
+                onValueChange={field.onChange}
+              >
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="active" id="active" />
+                  <Label htmlFor="active">Active</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="inactive" id="inactive" />
+                  <Label htmlFor="inactive">Inactive</Label>
+                </div>
+              </RadioGroup>
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+    </BaseFormDialog>
   );
 };
 
