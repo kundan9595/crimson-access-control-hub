@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Search, Edit2, Trash2, Eye } from 'lucide-react';
+import { Search, Edit2, Trash2, Package } from 'lucide-react';
 import { useClasses, useDeleteClass, Class } from '@/hooks/masters';
 import ClassDialog from './ClassDialog';
 import {
@@ -92,13 +92,19 @@ const ClassesList: React.FC = () => {
               <div className="flex items-start justify-between">
                 <div className="flex-1">
                   <CardTitle className="text-lg">{classItem.name}</CardTitle>
-                  <div className="flex items-center gap-2 mt-2">
+                  <div className="flex items-center gap-2 mt-2 flex-wrap">
                     <Badge variant={classItem.status === 'active' ? 'default' : 'secondary'}>
                       {classItem.status}
                     </Badge>
                     {classItem.tax_percentage && classItem.tax_percentage > 0 && (
                       <Badge variant="outline">
                         Tax: {classItem.tax_percentage}%
+                      </Badge>
+                    )}
+                    {classItem.total_capacity && (
+                      <Badge variant="outline" className="flex items-center gap-1">
+                        <Package className="h-3 w-3" />
+                        {classItem.total_capacity} units
                       </Badge>
                     )}
                   </div>
@@ -140,6 +146,21 @@ const ClassesList: React.FC = () => {
                 {classItem.images && classItem.images.length > 0 && (
                   <div>
                     <span className="font-medium">Images:</span> {classItem.images.length} additional
+                  </div>
+                )}
+                
+                {/* Capacity Allocation Display */}
+                {classItem.capacity_allocation && Object.keys(classItem.capacity_allocation).length > 0 && (
+                  <div>
+                    <span className="font-medium">Capacity Allocation:</span>
+                    <div className="mt-1 text-xs">
+                      {Object.entries(classItem.capacity_allocation).map(([sizeId, allocation]) => (
+                        <div key={sizeId} className="flex justify-between">
+                          <span>Size {sizeId.slice(-4)}:</span>
+                          <span>{allocation} units</span>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 )}
               </div>

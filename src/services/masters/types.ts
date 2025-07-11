@@ -139,6 +139,9 @@ export interface Class {
   tax_percentage: number | null;
   primary_image_url: string | null;
   images: string[] | null;
+  total_capacity: number | null;
+  size_ratios: Record<string, number> | null;
+  capacity_allocation: Record<string, number> | null;
   created_at: string;
   updated_at: string;
   created_by: string | null;

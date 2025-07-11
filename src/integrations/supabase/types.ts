@@ -96,6 +96,7 @@ export type Database = {
       }
       classes: {
         Row: {
+          capacity_allocation: Json | null
           color_id: string | null
           created_at: string
           created_by: string | null
@@ -106,13 +107,16 @@ export type Database = {
           primary_image_url: string | null
           selected_sizes: Json | null
           size_group_id: string | null
+          size_ratios: Json | null
           status: string
           style_id: string | null
           tax_percentage: number | null
+          total_capacity: number | null
           updated_at: string
           updated_by: string | null
         }
         Insert: {
+          capacity_allocation?: Json | null
           color_id?: string | null
           created_at?: string
           created_by?: string | null
@@ -123,13 +127,16 @@ export type Database = {
           primary_image_url?: string | null
           selected_sizes?: Json | null
           size_group_id?: string | null
+          size_ratios?: Json | null
           status?: string
           style_id?: string | null
           tax_percentage?: number | null
+          total_capacity?: number | null
           updated_at?: string
           updated_by?: string | null
         }
         Update: {
+          capacity_allocation?: Json | null
           color_id?: string | null
           created_at?: string
           created_by?: string | null
@@ -140,9 +147,11 @@ export type Database = {
           primary_image_url?: string | null
           selected_sizes?: Json | null
           size_group_id?: string | null
+          size_ratios?: Json | null
           status?: string
           style_id?: string | null
           tax_percentage?: number | null
+          total_capacity?: number | null
           updated_at?: string
           updated_by?: string | null
         }

@@ -10,6 +10,7 @@ import { Switch } from '@/components/ui/switch';
 import { Plus, Edit2, X } from 'lucide-react';
 import { useCreateClass, useUpdateClass, useStyles, useColors, useSizeGroups, useSizes, Class } from '@/hooks/masters';
 import ImageUpload from '@/components/ui/ImageUpload';
+import { calculateCapacityAllocation, validateSizeRatios, getTotalRatioPercentage } from '@/utils/capacityUtils';
 
 interface ClassDialogProps {
   classItem?: Class;
@@ -29,6 +30,9 @@ const ClassDialog: React.FC<ClassDialogProps> = ({ classItem, trigger }) => {
     tax_percentage: 0,
     primary_image_url: '',
     images: [] as string[],
+    total_capacity: null as number | null,
+    size_ratios: {} as Record<string, number>,
+    capacity_allocation: {} as Record<string, number>,
   });
 
   const { data: styles = [] } = useStyles();
@@ -56,9 +60,20 @@ const ClassDialog: React.FC<ClassDialogProps> = ({ classItem, trigger }) => {
         tax_percentage: classItem.tax_percentage || 0,
         primary_image_url: classItem.primary_image_url || '',
         images: Array.isArray(classItem.images) ? classItem.images : [],
+        total_capacity: classItem.total_capacity,
+        size_ratios: classItem.size_ratios || {},
+        capacity_allocation: classItem.capacity_allocation || {},
       });
     }
   }, [classItem]);
+
+  // Update capacity allocation when total capacity or size ratios change
+  useEffect(() => {
+    if (formData.total_capacity && Object.keys(formData.size_ratios).length > 0) {
+      const allocation = calculateCapacityAllocation(formData.total_capacity, formData.size_ratios);
+      setFormData(prev => ({ ...prev, capacity_allocation: allocation }));
+    }
+  }, [formData.total_capacity, formData.size_ratios]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -74,6 +89,9 @@ const ClassDialog: React.FC<ClassDialogProps> = ({ classItem, trigger }) => {
       tax_percentage: formData.tax_percentage || null,
       primary_image_url: formData.primary_image_url || null,
       images: formData.images.length > 0 ? formData.images : null,
+      total_capacity: formData.total_capacity,
+      size_ratios: Object.keys(formData.size_ratios).length > 0 ? formData.size_ratios : null,
+      capacity_allocation: Object.keys(formData.capacity_allocation).length > 0 ? formData.capacity_allocation : null,
     };
 
     try {
@@ -101,6 +119,9 @@ const ClassDialog: React.FC<ClassDialogProps> = ({ classItem, trigger }) => {
       tax_percentage: 0,
       primary_image_url: '',
       images: [],
+      total_capacity: null,
+      size_ratios: {},
+      capacity_allocation: {},
     });
   };
 
@@ -114,16 +135,39 @@ const ClassDialog: React.FC<ClassDialogProps> = ({ classItem, trigger }) => {
     setFormData(prev => ({
       ...prev,
       size_group_id: newValue,
-      selected_sizes: [] // Clear selected sizes when group changes
+      selected_sizes: [], // Clear selected sizes when group changes
+      size_ratios: {}, // Clear size ratios when group changes
+      capacity_allocation: {} // Clear capacity allocation when group changes
     }));
   };
 
   const toggleSizeSelection = (sizeId: string) => {
+    setFormData(prev => {
+      const newSelectedSizes = prev.selected_sizes.includes(sizeId)
+        ? prev.selected_sizes.filter(id => id !== sizeId)
+        : [...prev.selected_sizes, sizeId];
+      
+      // Remove ratio for unselected sizes
+      const newSizeRatios = { ...prev.size_ratios };
+      if (!newSelectedSizes.includes(sizeId)) {
+        delete newSizeRatios[sizeId];
+      }
+      
+      return {
+        ...prev,
+        selected_sizes: newSelectedSizes,
+        size_ratios: newSizeRatios
+      };
+    });
+  };
+
+  const updateSizeRatio = (sizeId: string, ratio: number) => {
     setFormData(prev => ({
       ...prev,
-      selected_sizes: prev.selected_sizes.includes(sizeId)
-        ? prev.selected_sizes.filter(id => id !== sizeId)
-        : [...prev.selected_sizes, sizeId]
+      size_ratios: {
+        ...prev.size_ratios,
+        [sizeId]: ratio
+      }
     }));
   };
 
@@ -150,6 +194,9 @@ const ClassDialog: React.FC<ClassDialogProps> = ({ classItem, trigger }) => {
     }));
   };
 
+  const totalRatioPercentage = getTotalRatioPercentage(formData.size_ratios);
+  const isRatioValid = validateSizeRatios(formData.size_ratios);
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild onClick={(e) => e.stopPropagation()}>
@@ -160,7 +207,7 @@ const ClassDialog: React.FC<ClassDialogProps> = ({ classItem, trigger }) => {
           </Button>
         )}
       </DialogTrigger>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{classItem ? 'Edit Class' : 'Add New Class'}</DialogTitle>
         </DialogHeader>
@@ -259,6 +306,81 @@ const ClassDialog: React.FC<ClassDialogProps> = ({ classItem, trigger }) => {
                     <Label className="text-sm text-muted-foreground">
                       Selected: {formData.selected_sizes.length} size(s)
                     </Label>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Capacity Management Section */}
+            {formData.selected_sizes.length > 0 && (
+              <div className="border rounded-lg p-4 space-y-4">
+                <h3 className="text-lg font-semibold">Capacity Management</h3>
+                
+                <div>
+                  <Label htmlFor="total_capacity">Total Production Capacity</Label>
+                  <Input
+                    id="total_capacity"
+                    type="number"
+                    min="0"
+                    value={formData.total_capacity || ''}
+                    onChange={(e) => setFormData(prev => ({ 
+                      ...prev, 
+                      total_capacity: e.target.value ? parseInt(e.target.value) : null 
+                    }))}
+                    placeholder="Enter total capacity"
+                  />
+                </div>
+
+                <div>
+                  <Label>Size Distribution Ratios (%)</Label>
+                  <div className="grid grid-cols-2 gap-4 mt-2">
+                    {availableSizes
+                      .filter(size => formData.selected_sizes.includes(size.id))
+                      .map((size) => (
+                        <div key={size.id} className="flex items-center space-x-2">
+                          <Label className="w-16 text-sm">{size.code}:</Label>
+                          <Input
+                            type="number"
+                            min="0"
+                            max="100"
+                            value={formData.size_ratios[size.id] || ''}
+                            onChange={(e) => updateSizeRatio(size.id, parseFloat(e.target.value) || 0)}
+                            placeholder="0"
+                            className="flex-1"
+                          />
+                          <span className="text-sm text-muted-foreground">%</span>
+                        </div>
+                      ))}
+                  </div>
+                  
+                  <div className="mt-2 flex justify-between text-sm">
+                    <span className={`${totalRatioPercentage === 100 ? 'text-green-600' : 'text-orange-600'}`}>
+                      Total: {totalRatioPercentage}%
+                    </span>
+                    {totalRatioPercentage !== 100 && (
+                      <span className="text-orange-600">
+                        Should equal 100%
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Capacity Allocation Display */}
+                {formData.total_capacity && Object.keys(formData.capacity_allocation).length > 0 && (
+                  <div>
+                    <Label>Calculated Capacity Allocation</Label>
+                    <div className="grid grid-cols-2 gap-2 mt-2 p-3 bg-gray-50 rounded">
+                      {availableSizes
+                        .filter(size => formData.selected_sizes.includes(size.id))
+                        .map((size) => (
+                          <div key={size.id} className="flex justify-between text-sm">
+                            <span>{size.code}:</span>
+                            <span className="font-medium">
+                              {formData.capacity_allocation[size.id] || 0} units
+                            </span>
+                          </div>
+                        ))}
+                    </div>
                   </div>
                 )}
               </div>
