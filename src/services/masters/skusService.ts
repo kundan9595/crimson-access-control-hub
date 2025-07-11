@@ -47,7 +47,7 @@ export const createSku = async (skuData: Omit<Sku, 'id' | 'created_at' | 'update
   return data as Sku;
 };
 
-export const updateSku = async (id: string, updates: Partial<Sku>): Promise<Sku> => {
+export const updateSku = async ({ id, updates }: { id: string; updates: Partial<Sku> }): Promise<Sku> => {
   const { data, error } = await supabase
     .from('skus')
     .update(updates)
