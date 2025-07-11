@@ -1,3 +1,4 @@
+
 // Export all brand hooks
 export * from './useBrands';
 
@@ -28,6 +29,9 @@ export * from './useClasses';
 // Export all SKU hooks
 export * from './useSkus';
 
+// Export all media hooks
+export * from './useMedia';
+
 // Re-export types for convenience
 export type {
   Brand,
@@ -42,3 +46,9 @@ export type {
   Class,
   Sku,
 } from '@/services/mastersService';
+
+// Re-export media types
+export type {
+  MediaFolder,
+  MediaItem,
+} from '@/services/masters/mediaService';

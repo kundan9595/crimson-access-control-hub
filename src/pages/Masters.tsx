@@ -12,7 +12,8 @@ import {
   Users, 
   Shirt,
   ArrowRight,
-  Package2
+  Package2,
+  FolderOpen
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
@@ -89,6 +90,13 @@ const Masters = () => {
       icon: Package2,
       path: '/masters/skus',
       color: 'text-emerald-600',
+    },
+    {
+      title: 'Media',
+      description: 'Organize and manage media files and folders for your products',
+      icon: FolderOpen,
+      path: '/masters/media',
+      color: 'text-violet-600',
     },
   ];
 

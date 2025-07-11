@@ -1,32 +1,54 @@
-// Export all types
-export * from './types';
 
-// Export brand services
+// Export all brand services
 export * from './brandsService';
 
-// Export category services
+// Export all category services
 export * from './categoriesService';
 
-// Export color services
+// Export all color services
 export * from './colorsService';
 
-// Export size services
+// Export all size services (includes both size groups and sizes)
 export * from './sizesService';
 
-// Export zone services
+// Export all zone services
 export * from './zonesService';
 
-// Export price type services
+// Export all price type services
 export * from './priceTypesService';
 
-// Export vendor services
+// Export all vendor services
 export * from './vendorsService';
 
-// Export style services
+// Export all style services
 export * from './stylesService';
 
-// Export class services
+// Export all class services
 export * from './classesService';
 
-// Export SKU services
+// Export all SKU services
 export * from './skusService';
+
+// Export all media services
+export * from './mediaService';
+
+// Re-export types for convenience
+export type {
+  Brand,
+  Category,
+  Color,
+  SizeGroup,
+  Size,
+  Zone,
+  PriceType,
+  Vendor,
+  Style,
+  Class,
+  Sku,
+} from './types';
+
+// Re-export media types
+export type {
+  MediaFolder,
+  MediaItem,
+} from './mediaService';

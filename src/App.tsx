@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -20,6 +21,7 @@ import VendorsPage from "./pages/VendorsPage";
 import StylesPage from "./pages/StylesPage";
 import ClassesPage from "./pages/ClassesPage";
 import SkusPage from "./pages/SkusPage";
+import MediaPage from "./pages/MediaPage";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 
@@ -53,6 +55,7 @@ const App = () => (
               <Route path="masters/styles" element={<StylesPage />} />
               <Route path="masters/classes" element={<ClassesPage />} />
               <Route path="masters/skus" element={<SkusPage />} />
+              <Route path="masters/media" element={<MediaPage />} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>

@@ -253,6 +253,121 @@ export type Database = {
         }
         Relationships: []
       }
+      media_folders: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          name: string
+          parent_id: string | null
+          path: string
+          status: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          name: string
+          parent_id?: string | null
+          path: string
+          status?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          name?: string
+          parent_id?: string | null
+          path?: string
+          status?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "media_folders_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "media_folders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      media_items: {
+        Row: {
+          alt_text: string | null
+          created_at: string
+          created_by: string | null
+          file_size: number | null
+          file_url: string
+          folder_id: string | null
+          height: number | null
+          id: string
+          mime_type: string | null
+          name: string
+          original_name: string
+          status: string
+          tags: string[] | null
+          updated_at: string
+          updated_by: string | null
+          usage_count: number | null
+          width: number | null
+        }
+        Insert: {
+          alt_text?: string | null
+          created_at?: string
+          created_by?: string | null
+          file_size?: number | null
+          file_url: string
+          folder_id?: string | null
+          height?: number | null
+          id?: string
+          mime_type?: string | null
+          name: string
+          original_name: string
+          status?: string
+          tags?: string[] | null
+          updated_at?: string
+          updated_by?: string | null
+          usage_count?: number | null
+          width?: number | null
+        }
+        Update: {
+          alt_text?: string | null
+          created_at?: string
+          created_by?: string | null
+          file_size?: number | null
+          file_url?: string
+          folder_id?: string | null
+          height?: number | null
+          id?: string
+          mime_type?: string | null
+          name?: string
+          original_name?: string
+          status?: string
+          tags?: string[] | null
+          updated_at?: string
+          updated_by?: string | null
+          usage_count?: number | null
+          width?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "media_items_folder_id_fkey"
+            columns: ["folder_id"]
+            isOneToOne: false
+            referencedRelation: "media_folders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       permissions: {
         Row: {
           created_at: string
