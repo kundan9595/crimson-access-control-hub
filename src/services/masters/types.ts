@@ -1,4 +1,3 @@
-
 export interface Brand {
   id: string;
   name: string;
@@ -139,9 +138,8 @@ export interface Class {
   tax_percentage: number | null;
   primary_image_url: string | null;
   images: string[] | null;
-  total_capacity: number | null;
   size_ratios: Record<string, number> | null;
-  capacity_allocation: Record<string, number> | null;
+  monthly_stock_levels: Record<string, any> | null;
   created_at: string;
   updated_at: string;
   created_by: string | null;

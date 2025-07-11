@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Search, Edit2, Trash2, Package, Calculator, TrendingUp } from 'lucide-react';
+import { Search, Edit2, Trash2, Package, TrendingUp, Calendar } from 'lucide-react';
 import { useClasses, useDeleteClass, Class } from '@/hooks/masters';
 import ClassDialog from './ClassDialog';
 import {
@@ -59,6 +59,8 @@ const ClassesList: React.FC = () => {
     );
   }
 
+  const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row gap-4 justify-between">
@@ -87,19 +89,24 @@ const ClassesList: React.FC = () => {
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {filteredClasses.map((classItem) => {
-          const hasCapacityData = classItem.total_capacity && classItem.capacity_allocation && Object.keys(classItem.capacity_allocation).length > 0;
-          const totalAllocated = hasCapacityData ? Object.values(classItem.capacity_allocation).reduce((sum, val) => sum + (val || 0), 0) : 0;
+          const hasStockData = classItem.monthly_stock_levels && Object.keys(classItem.monthly_stock_levels).length > 0;
+          const hasRatioData = classItem.size_ratios && Object.keys(classItem.size_ratios).length > 0;
           
           return (
-            <Card key={classItem.id} className={`hover:shadow-md transition-shadow ${hasCapacityData ? 'border-l-4 border-l-blue-500' : ''}`}>
+            <Card key={classItem.id} className={`hover:shadow-md transition-shadow ${(hasStockData || hasRatioData) ? 'border-l-4 border-l-green-500' : ''}`}>
               <CardHeader className="pb-3">
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
                     <CardTitle className="text-lg flex items-center gap-2">
                       {classItem.name}
-                      {hasCapacityData && (
-                        <Calculator className="h-4 w-4 text-blue-600" />
-                      )}
+                      <div className="flex gap-1">
+                        {hasStockData && (
+                          <Calendar className="h-4 w-4 text-green-600" />
+                        )}
+                        {hasRatioData && (
+                          <TrendingUp className="h-4 w-4 text-blue-600" />
+                        )}
+                      </div>
                     </CardTitle>
                     <div className="flex items-center gap-2 mt-2 flex-wrap">
                       <Badge variant={classItem.status === 'active' ? 'default' : 'secondary'}>
@@ -110,16 +117,16 @@ const ClassesList: React.FC = () => {
                           Tax: {classItem.tax_percentage}%
                         </Badge>
                       )}
-                      {hasCapacityData && (
-                        <Badge variant="outline" className="flex items-center gap-1 bg-blue-50 text-blue-700 border-blue-200">
-                          <TrendingUp className="h-3 w-3" />
-                          Capacity Managed
+                      {hasStockData && (
+                        <Badge variant="outline" className="flex items-center gap-1 bg-green-50 text-green-700 border-green-200">
+                          <Calendar className="h-3 w-3" />
+                          Stock Managed
                         </Badge>
                       )}
-                      {classItem.total_capacity && (
-                        <Badge variant="outline" className="flex items-center gap-1">
-                          <Package className="h-3 w-3" />
-                          {classItem.total_capacity} units
+                      {hasRatioData && (
+                        <Badge variant="outline" className="flex items-center gap-1 bg-blue-50 text-blue-700 border-blue-200">
+                          <TrendingUp className="h-3 w-3" />
+                          Ratios Set
                         </Badge>
                       )}
                     </div>
@@ -164,56 +171,47 @@ const ClassesList: React.FC = () => {
                     </div>
                   )}
                   
-                  {/* Enhanced Capacity Information Display */}
-                  {hasCapacityData && (
+                  {/* Size Ratios Display */}
+                  {hasRatioData && (
                     <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
                       <div className="font-medium text-blue-800 mb-2 flex items-center gap-1">
-                        <Calculator className="h-3 w-3" />
-                        Production Capacity Plan
+                        <TrendingUp className="h-3 w-3" />
+                        Size Distribution Ratios
                       </div>
                       
-                      <div className="space-y-2 text-xs">
-                        <div className="flex justify-between items-center">
-                          <span className="font-medium">Total Capacity:</span>
-                          <span className="font-bold text-blue-700">{classItem.total_capacity} units</span>
-                        </div>
-                        
-                        <div className="space-y-1">
-                          <span className="font-medium">Size Allocation:</span>
-                          {Object.entries(classItem.capacity_allocation).map(([sizeId, allocation]) => {
-                            const percentage = classItem.size_ratios?.[sizeId] || 0;
+                      <div className="space-y-1 text-xs">
+                        {Object.entries(classItem.size_ratios).map(([sizeId, ratio]) => (
+                          <div key={sizeId} className="flex justify-between items-center">
+                            <span>Size {sizeId.slice(-4)}:</span>
+                            <span className="font-medium">{ratio}%</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Stock Management Display */}
+                  {hasStockData && (
+                    <div className="p-3 bg-green-50 rounded-lg border border-green-200">
+                      <div className="font-medium text-green-800 mb-2 flex items-center gap-1">
+                        <Calendar className="h-3 w-3" />
+                        Stock Management Active
+                      </div>
+                      
+                      <div className="text-xs">
+                        <div className="grid grid-cols-2 gap-2">
+                          {Object.entries(classItem.monthly_stock_levels).map(([sizeId, levels]) => {
+                            const totalMinStock = Array.isArray(levels) ? levels.reduce((sum: number, level: any) => sum + (level.minStock || 0), 0) : 0;
+                            const totalMaxStock = Array.isArray(levels) ? levels.reduce((sum: number, level: any) => sum + (level.maxStock || 0), 0) : 0;
+                            
                             return (
-                              <div key={sizeId} className="flex justify-between items-center pl-2">
+                              <div key={sizeId} className="flex justify-between items-center">
                                 <span>Size {sizeId.slice(-4)}:</span>
-                                <span className="font-medium">
-                                  {allocation} units ({percentage}%)
-                                </span>
+                                <span className="font-medium">{totalMinStock}-{totalMaxStock}</span>
                               </div>
                             );
                           })}
                         </div>
-                        
-                        <div className="pt-1 border-t border-blue-300">
-                          <div className="flex justify-between items-center">
-                            <span className="font-medium">Total Allocated:</span>
-                            <span className="font-bold text-green-700">{totalAllocated} units</span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                  
-                  {/* Show size ratios even without full capacity data */}
-                  {!hasCapacityData && classItem.size_ratios && Object.keys(classItem.size_ratios).length > 0 && (
-                    <div className="p-2 bg-gray-50 rounded border">
-                      <span className="font-medium">Size Ratios:</span>
-                      <div className="mt-1 text-xs space-y-1">
-                        {Object.entries(classItem.size_ratios).map(([sizeId, ratio]) => (
-                          <div key={sizeId} className="flex justify-between">
-                            <span>Size {sizeId.slice(-4)}:</span>
-                            <span>{ratio}%</span>
-                          </div>
-                        ))}
                       </div>
                     </div>
                   )}

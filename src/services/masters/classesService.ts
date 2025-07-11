@@ -29,9 +29,8 @@ export const createClass = async (classData: Omit<Class, 'id' | 'created_at' | '
     tax_percentage: classData.tax_percentage,
     primary_image_url: classData.primary_image_url,
     images: classData.images,
-    total_capacity: classData.total_capacity,
     size_ratios: classData.size_ratios,
-    capacity_allocation: classData.capacity_allocation,
+    monthly_stock_levels: classData.monthly_stock_levels,
   };
 
   const { data, error } = await supabase

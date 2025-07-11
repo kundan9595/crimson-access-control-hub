@@ -96,13 +96,13 @@ export type Database = {
       }
       classes: {
         Row: {
-          capacity_allocation: Json | null
           color_id: string | null
           created_at: string
           created_by: string | null
           description: string | null
           id: string
           images: Json | null
+          monthly_stock_levels: Json | null
           name: string
           primary_image_url: string | null
           selected_sizes: Json | null
@@ -111,18 +111,17 @@ export type Database = {
           status: string
           style_id: string | null
           tax_percentage: number | null
-          total_capacity: number | null
           updated_at: string
           updated_by: string | null
         }
         Insert: {
-          capacity_allocation?: Json | null
           color_id?: string | null
           created_at?: string
           created_by?: string | null
           description?: string | null
           id?: string
           images?: Json | null
+          monthly_stock_levels?: Json | null
           name: string
           primary_image_url?: string | null
           selected_sizes?: Json | null
@@ -131,18 +130,17 @@ export type Database = {
           status?: string
           style_id?: string | null
           tax_percentage?: number | null
-          total_capacity?: number | null
           updated_at?: string
           updated_by?: string | null
         }
         Update: {
-          capacity_allocation?: Json | null
           color_id?: string | null
           created_at?: string
           created_by?: string | null
           description?: string | null
           id?: string
           images?: Json | null
+          monthly_stock_levels?: Json | null
           name?: string
           primary_image_url?: string | null
           selected_sizes?: Json | null
@@ -151,7 +149,6 @@ export type Database = {
           status?: string
           style_id?: string | null
           tax_percentage?: number | null
-          total_capacity?: number | null
           updated_at?: string
           updated_by?: string | null
         }
