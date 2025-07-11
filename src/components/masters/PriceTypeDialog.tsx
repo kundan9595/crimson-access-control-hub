@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -14,6 +15,7 @@ import { PriceType } from '@/services/mastersService';
 const priceTypeSchema = z.object({
   name: z.string().min(1, 'Name is required'),
   description: z.string().optional(),
+  category: z.enum(['retail', 'wholesale', 'distributor', 'special']),
   status: z.string(),
 });
 
@@ -34,6 +36,7 @@ const PriceTypeDialog = ({ priceType, open, onOpenChange }: PriceTypeDialogProps
     defaultValues: {
       name: priceType?.name || '',
       description: priceType?.description || '',
+      category: priceType?.category || 'retail',
       status: priceType?.status || 'active',
     },
   });
@@ -43,12 +46,14 @@ const PriceTypeDialog = ({ priceType, open, onOpenChange }: PriceTypeDialogProps
       form.reset({
         name: priceType.name,
         description: priceType.description || '',
+        category: priceType.category,
         status: priceType.status,
       });
     } else {
       form.reset({
         name: '',
         description: '',
+        category: 'retail',
         status: 'active',
       });
     }
@@ -59,6 +64,7 @@ const PriceTypeDialog = ({ priceType, open, onOpenChange }: PriceTypeDialogProps
       const priceTypeData = {
         name: data.name,
         description: data.description || null,
+        category: data.category,
         status: data.status,
       };
 
@@ -111,6 +117,30 @@ const PriceTypeDialog = ({ priceType, open, onOpenChange }: PriceTypeDialogProps
                   <FormControl>
                     <Textarea {...field} placeholder="Enter description (optional)" />
                   </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="category"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Category</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select category" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="retail">Retail</SelectItem>
+                      <SelectItem value="wholesale">Wholesale</SelectItem>
+                      <SelectItem value="distributor">Distributor</SelectItem>
+                      <SelectItem value="special">Special</SelectItem>
+                    </SelectContent>
+                  </Select>
                   <FormMessage />
                 </FormItem>
               )}

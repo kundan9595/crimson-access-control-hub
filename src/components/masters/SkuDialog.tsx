@@ -49,6 +49,7 @@ const skuSchema = z.object({
   weight_grams: z.string().optional(),
   base_mrp: z.string().optional(),
   cost_price: z.string().optional(),
+  gst_rate: z.string().optional(),
   selected_price_types: z.array(z.string()).default([]),
   price_type_prices: z.record(z.string(), z.string()).default({}),
   status: z.enum(['active', 'inactive']),
@@ -85,6 +86,7 @@ export const SkuDialog = ({ open, onOpenChange, sku }: SkuDialogProps) => {
       weight_grams: '',
       base_mrp: '',
       cost_price: '',
+      gst_rate: '',
       selected_price_types: [],
       price_type_prices: {},
       status: 'active',
@@ -120,6 +122,7 @@ export const SkuDialog = ({ open, onOpenChange, sku }: SkuDialogProps) => {
         weight_grams: sku.weight_grams?.toString() || '',
         base_mrp: sku.base_mrp?.toString() || '',
         cost_price: sku.cost_price?.toString() || '',
+        gst_rate: sku.gst_rate?.toString() || '',
         selected_price_types: existingPriceTypes,
         price_type_prices: priceTypePricesAsString,
         status: sku.status as 'active' | 'inactive',
@@ -138,6 +141,7 @@ export const SkuDialog = ({ open, onOpenChange, sku }: SkuDialogProps) => {
         weight_grams: '',
         base_mrp: '',
         cost_price: '',
+        gst_rate: '',
         selected_price_types: [],
         price_type_prices: {},
         status: 'active',
@@ -187,6 +191,7 @@ export const SkuDialog = ({ open, onOpenChange, sku }: SkuDialogProps) => {
       weight_grams: data.weight_grams ? parseFloat(data.weight_grams) : null,
       base_mrp: data.base_mrp ? parseFloat(data.base_mrp) : null,
       cost_price: data.cost_price ? parseFloat(data.cost_price) : null,
+      gst_rate: data.gst_rate ? parseFloat(data.gst_rate) : null,
       price_type_prices: priceTypePricesAsNumbers,
       status: data.status,
     };
@@ -296,6 +301,20 @@ export const SkuDialog = ({ open, onOpenChange, sku }: SkuDialogProps) => {
                       <FormLabel>HSN Code</FormLabel>
                       <FormControl>
                         <Input placeholder="Enter HSN code" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="gst_rate"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>GST Rate (%)</FormLabel>
+                      <FormControl>
+                        <Input type="number" step="0.01" placeholder="0.00" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>

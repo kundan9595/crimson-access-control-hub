@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -20,7 +21,7 @@ const vendorSchema = z.object({
   phone: z.string().optional(),
   address: z.string().optional(),
   tax_id: z.string().optional(),
-  payment_terms: z.string().optional(),
+  credit_terms: z.string().optional(),
   status: z.string(),
 });
 
@@ -47,7 +48,7 @@ const VendorDialog = ({ vendor, open, onOpenChange }: VendorDialogProps) => {
       phone: vendor?.phone || '',
       address: vendor?.address || '',
       tax_id: vendor?.tax_id || '',
-      payment_terms: vendor?.payment_terms || '',
+      credit_terms: vendor?.credit_terms || '',
       status: vendor?.status || 'active',
     },
   });
@@ -63,7 +64,7 @@ const VendorDialog = ({ vendor, open, onOpenChange }: VendorDialogProps) => {
         phone: vendor.phone || '',
         address: vendor.address || '',
         tax_id: vendor.tax_id || '',
-        payment_terms: vendor.payment_terms || '',
+        credit_terms: vendor.credit_terms || '',
         status: vendor.status,
       });
     } else {
@@ -76,7 +77,7 @@ const VendorDialog = ({ vendor, open, onOpenChange }: VendorDialogProps) => {
         phone: '',
         address: '',
         tax_id: '',
-        payment_terms: '',
+        credit_terms: '',
         status: 'active',
       });
     }
@@ -93,7 +94,7 @@ const VendorDialog = ({ vendor, open, onOpenChange }: VendorDialogProps) => {
         phone: data.phone || null,
         address: data.address || null,
         tax_id: data.tax_id || null,
-        payment_terms: data.payment_terms || null,
+        credit_terms: data.credit_terms || null,
         status: data.status,
       };
 
@@ -244,12 +245,12 @@ const VendorDialog = ({ vendor, open, onOpenChange }: VendorDialogProps) => {
             <div className="grid grid-cols-2 gap-4">
               <FormField
                 control={form.control}
-                name="payment_terms"
+                name="credit_terms"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Payment Terms</FormLabel>
+                    <FormLabel>Credit Terms</FormLabel>
                     <FormControl>
-                      <Input {...field} placeholder="Enter payment terms" />
+                      <Input {...field} placeholder="Enter credit terms" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

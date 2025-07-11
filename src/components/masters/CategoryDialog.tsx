@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -13,6 +14,8 @@ import type { Category } from '@/services/mastersService';
 const categorySchema = z.object({
   name: z.string().min(1, 'Name is required'),
   description: z.string().optional(),
+  sort_order: z.string().optional(),
+  image_url: z.string().optional(),
   status: z.string(),
 });
 
@@ -34,6 +37,8 @@ const CategoryDialog: React.FC<CategoryDialogProps> = ({ open, onOpenChange, cat
     defaultValues: {
       name: category?.name || '',
       description: category?.description || '',
+      sort_order: category?.sort_order?.toString() || '0',
+      image_url: category?.image_url || '',
       status: category?.status || 'active',
     }
   });
@@ -43,12 +48,16 @@ const CategoryDialog: React.FC<CategoryDialogProps> = ({ open, onOpenChange, cat
       form.reset({
         name: category.name,
         description: category.description || '',
+        sort_order: category.sort_order?.toString() || '0',
+        image_url: category.image_url || '',
         status: category.status,
       });
     } else if (!category && open) {
       form.reset({
         name: '',
         description: '',
+        sort_order: '0',
+        image_url: '',
         status: 'active',
       });
     }
@@ -58,6 +67,8 @@ const CategoryDialog: React.FC<CategoryDialogProps> = ({ open, onOpenChange, cat
     const categoryData = {
       name: data.name,
       description: data.description || null,
+      sort_order: data.sort_order ? parseInt(data.sort_order) : null,
+      image_url: data.image_url || null,
       parent_id: null, // Always null since we removed parent category feature
       status: data.status,
     };
@@ -119,6 +130,36 @@ const CategoryDialog: React.FC<CategoryDialogProps> = ({ open, onOpenChange, cat
           </FormItem>
         )}
       />
+
+      <div className="grid grid-cols-2 gap-4">
+        <FormField
+          control={form.control}
+          name="sort_order"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Sort Order</FormLabel>
+              <FormControl>
+                <Input {...field} type="number" placeholder="0" />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="image_url"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Image URL</FormLabel>
+              <FormControl>
+                <Input {...field} placeholder="Enter image URL" />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      </div>
 
       <FormField
         control={form.control}
