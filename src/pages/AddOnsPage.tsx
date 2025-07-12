@@ -25,14 +25,13 @@ const AddOnsPage = () => {
 
   const filteredAddOns = addOns.filter(addOn =>
     addOn.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    addOn.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     addOn.group_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     addOn.add_on_of?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const sortedAddOns = [...filteredAddOns].sort((a, b) => {
-    const orderA = a.sort_order || a.display_order || 0;
-    const orderB = b.sort_order || b.display_order || 0;
+    const orderA = a.sort_order || 0;
+    const orderB = b.sort_order || 0;
     if (orderA !== orderB) return orderA - orderB;
     return a.name.localeCompare(b.name);
   });
@@ -66,10 +65,9 @@ const AddOnsPage = () => {
   const handleExport = () => {
     if (!addOns || addOns.length === 0) return;
     const csvContent = [
-      ['Name', 'Description', 'Group Name', 'Add On OF', 'Add On SN', 'Select Type', 'Price', 'Has Colour', 'Options Count', 'Sort Order', 'Status', 'Created At'].join(','),
+      ['Name', 'Group Name', 'Add On OF', 'Add On SN', 'Select Type', 'Add On Price', 'Has Colour', 'Options Count', 'Sort Order', 'Status', 'Created At'].join(','),
       ...addOns.map(addOn => [
         `"${addOn.name}"`,
-        `"${addOn.description || ''}"`,
         `"${addOn.group_name || ''}"`,
         `"${addOn.add_on_of || ''}"`,
         `"${addOn.add_on_sn || ''}"`,
@@ -77,7 +75,7 @@ const AddOnsPage = () => {
         addOn.price || 0,
         addOn.has_colour ? 'Yes' : 'No',
         addOn.options?.length || 0,
-        addOn.sort_order || addOn.display_order || 0,
+        addOn.sort_order || 0,
         addOn.status,
         new Date(addOn.created_at).toLocaleDateString()
       ].join(','))
@@ -127,8 +125,8 @@ const AddOnsPage = () => {
                     <TableHead>Group</TableHead>
                     <TableHead>Add On OF</TableHead>
                     <TableHead>Add On SN</TableHead>
-                    <TableHead>Type</TableHead>
-                    <TableHead>Price</TableHead>
+                    <TableHead>Select Type</TableHead>
+                    <TableHead>Add On Price</TableHead>
                     <TableHead>Colour</TableHead>
                     <TableHead>Options</TableHead>
                     <TableHead className="w-20">Sort Order</TableHead>
@@ -173,7 +171,7 @@ const AddOnsPage = () => {
                         )}
                       </TableCell>
                       <TableCell>{addOn.options?.length || 0}</TableCell>
-                      <TableCell className="text-center">{addOn.sort_order || addOn.display_order || 0}</TableCell>
+                      <TableCell className="text-center">{addOn.sort_order || 0}</TableCell>
                       <TableCell>
                         <Badge variant={addOn.status === 'active' ? 'default' : 'secondary'}>
                           {addOn.status}

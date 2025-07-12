@@ -21,8 +21,6 @@ export type Database = {
           colors: Json | null
           created_at: string
           created_by: string | null
-          description: string | null
-          display_order: number | null
           group_name: string | null
           has_colour: boolean | null
           id: string
@@ -42,8 +40,6 @@ export type Database = {
           colors?: Json | null
           created_at?: string
           created_by?: string | null
-          description?: string | null
-          display_order?: number | null
           group_name?: string | null
           has_colour?: boolean | null
           id?: string
@@ -63,8 +59,6 @@ export type Database = {
           colors?: Json | null
           created_at?: string
           created_by?: string | null
-          description?: string | null
-          display_order?: number | null
           group_name?: string | null
           has_colour?: boolean | null
           id?: string

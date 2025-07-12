@@ -42,7 +42,6 @@ export const AddOnsList = forwardRef<AddOnsListRef, AddOnsListProps>(({ searchTe
 
   const filteredAddOns = addOns.filter(addOn =>
     addOn.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    addOn.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     addOn.group_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     addOn.add_on_of?.toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -185,19 +184,14 @@ export const AddOnsList = forwardRef<AddOnsListRef, AddOnsListProps>(({ searchTe
                           </Badge>
                         )}
                       </div>
-                      {addOn.description && (
-                        <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
-                          {addOn.description}
-                        </p>
-                      )}
                       <div className="flex items-center gap-4 text-sm text-muted-foreground">
                         {addOn.group_name && <span>Group: {addOn.group_name}</span>}
                         {addOn.add_on_of && <span>OF: {addOn.add_on_of}</span>}
                         {addOn.add_on_sn && <span>SN: {addOn.add_on_sn}</span>}
-                        <span>Type: {addOn.select_type}</span>
-                        {addOn.price && <span>Price: ${addOn.price}</span>}
+                        <span>Select Type: {addOn.select_type}</span>
+                        {addOn.price && <span>Add On Price: ${addOn.price}</span>}
                         <span>Options: {addOn.options?.length || 0}</span>
-                        <span>Order: {addOn.sort_order || addOn.display_order || 0}</span>
+                        <span>Order: {addOn.sort_order || 0}</span>
                       </div>
                     </div>
                   </div>
