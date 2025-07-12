@@ -8,6 +8,8 @@ import { Plus, Edit, Trash2 } from 'lucide-react';
 import { useAddOnOptions, useDeleteAddOnOption } from '@/hooks/masters/useAddOns';
 import { AddOnOptionDialog } from './AddOnOptionDialog';
 import { AddOn, AddOnOption } from '@/services/masters/addOnsService';
+import { useAuth } from '@/contexts/AuthContext';
+import { toast } from 'sonner';
 
 interface AddOnOptionsDialogProps {
   open: boolean;
@@ -23,20 +25,33 @@ export const AddOnOptionsDialog: React.FC<AddOnOptionsDialogProps> = ({
   const [selectedOption, setSelectedOption] = useState<AddOnOption | null>(null);
   const [optionDialogOpen, setOptionDialogOpen] = useState(false);
 
+  const { user } = useAuth();
   const { data: options = [], isLoading } = useAddOnOptions(addOn?.id);
   const deleteOptionMutation = useDeleteAddOnOption();
 
   const handleCreateOption = () => {
+    if (!user) {
+      toast.error('Please sign in to create add-on options');
+      return;
+    }
     setSelectedOption(null);
     setOptionDialogOpen(true);
   };
 
   const handleEditOption = (option: AddOnOption) => {
+    if (!user) {
+      toast.error('Please sign in to edit add-on options');
+      return;
+    }
     setSelectedOption(option);
     setOptionDialogOpen(true);
   };
 
   const handleDeleteOption = async (option: AddOnOption) => {
+    if (!user) {
+      toast.error('Please sign in to delete add-on options');
+      return;
+    }
     if (window.confirm(`Are you sure you want to delete "${option.name}"?`)) {
       deleteOptionMutation.mutate(option.id);
     }
@@ -60,20 +75,26 @@ export const AddOnOptionsDialog: React.FC<AddOnOptionsDialogProps> = ({
                   {options.length} option{options.length !== 1 ? 's' : ''}
                 </span>
               </div>
-              <Button onClick={handleCreateOption}>
+              <Button onClick={handleCreateOption} disabled={!user}>
                 <Plus className="h-4 w-4 mr-2" />
                 Add Option
               </Button>
             </div>
 
-            {isLoading ? (
+            {!user && (
+              <div className="text-center py-4 text-muted-foreground">
+                <p>Please sign in to manage add-on options</p>
+              </div>
+            )}
+
+            {user && isLoading ? (
               <div className="text-center py-8">Loading options...</div>
-            ) : options.length === 0 ? (
+            ) : user && options.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
                 <p>No options found</p>
                 <p className="text-sm">Click "Add Option" to create the first option</p>
               </div>
-            ) : (
+            ) : user && (
               <div className="grid gap-3">
                 {options.map((option) => (
                   <Card key={option.id}>
@@ -114,6 +135,7 @@ export const AddOnOptionsDialog: React.FC<AddOnOptionsDialogProps> = ({
                             variant="outline"
                             size="sm"
                             onClick={() => handleEditOption(option)}
+                            disabled={!user}
                           >
                             <Edit className="h-4 w-4" />
                           </Button>
@@ -121,6 +143,7 @@ export const AddOnOptionsDialog: React.FC<AddOnOptionsDialogProps> = ({
                             variant="outline"
                             size="sm"
                             onClick={() => handleDeleteOption(option)}
+                            disabled={!user || deleteOptionMutation.isPending}
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>

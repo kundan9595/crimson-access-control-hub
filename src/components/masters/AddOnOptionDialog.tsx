@@ -11,6 +11,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import ImageUpload from '@/components/ui/ImageUpload';
 import { useCreateAddOnOption, useUpdateAddOnOption } from '@/hooks/masters/useAddOns';
 import { AddOn, AddOnOption } from '@/services/masters/addOnsService';
+import { useAuth } from '@/contexts/AuthContext';
+import { toast } from 'sonner';
 
 const optionSchema = z.object({
   name: z.string().min(1, 'Name is required').max(255, 'Name is too long'),
@@ -36,6 +38,7 @@ export const AddOnOptionDialog: React.FC<AddOnOptionDialogProps> = ({
   addOn,
   option,
 }) => {
+  const { user } = useAuth();
   const createOptionMutation = useCreateAddOnOption();
   const updateOptionMutation = useUpdateAddOnOption();
 
@@ -80,6 +83,11 @@ export const AddOnOptionDialog: React.FC<AddOnOptionDialogProps> = ({
 
   const handleSubmit = async (data: OptionFormData) => {
     if (!addOn) return;
+    
+    if (!user) {
+      toast.error('Please sign in to save changes');
+      return;
+    }
 
     if (option) {
       updateOptionMutation.mutate(
@@ -95,7 +103,7 @@ export const AddOnOptionDialog: React.FC<AddOnOptionDialogProps> = ({
         price: data.price,
         display_order: data.display_order,
         image_url: data.image_url,
-        status: data.status, // This is now guaranteed to be 'active' | 'inactive' from the form schema
+        status: data.status,
       };
       
       createOptionMutation.mutate(
@@ -118,6 +126,12 @@ export const AddOnOptionDialog: React.FC<AddOnOptionDialogProps> = ({
       isEditing={!!option}
     >
       <div className="space-y-4">
+        {!user && (
+          <div className="text-center py-4 text-muted-foreground">
+            <p>Please sign in to manage add-on options</p>
+          </div>
+        )}
+        
         <FormField
           control={form.control}
           name="name"
@@ -125,7 +139,7 @@ export const AddOnOptionDialog: React.FC<AddOnOptionDialogProps> = ({
             <FormItem>
               <FormLabel>Name *</FormLabel>
               <FormControl>
-                <Input placeholder="Enter option name" {...field} />
+                <Input placeholder="Enter option name" {...field} disabled={!user} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -143,6 +157,7 @@ export const AddOnOptionDialog: React.FC<AddOnOptionDialogProps> = ({
                   placeholder="Enter option description"
                   className="min-h-[80px]"
                   {...field}
+                  disabled={!user}
                 />
               </FormControl>
               <FormMessage />
@@ -164,6 +179,7 @@ export const AddOnOptionDialog: React.FC<AddOnOptionDialogProps> = ({
                   placeholder="0.00"
                   {...field}
                   onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                  disabled={!user}
                 />
               </FormControl>
               <FormMessage />
@@ -184,6 +200,7 @@ export const AddOnOptionDialog: React.FC<AddOnOptionDialogProps> = ({
                   placeholder="0"
                   {...field}
                   onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                  disabled={!user}
                 />
               </FormControl>
               <FormMessage />
@@ -203,6 +220,7 @@ export const AddOnOptionDialog: React.FC<AddOnOptionDialogProps> = ({
                   onChange={field.onChange}
                   onRemove={() => field.onChange('')}
                   placeholder="Upload option image"
+                  disabled={!user}
                 />
               </FormControl>
               <FormMessage />
@@ -216,7 +234,7 @@ export const AddOnOptionDialog: React.FC<AddOnOptionDialogProps> = ({
           render={({ field }) => (
             <FormItem>
               <FormLabel>Status</FormLabel>
-              <Select onValueChange={field.onChange} value={field.value}>
+              <Select onValueChange={field.onChange} value={field.value} disabled={!user}>
                 <FormControl>
                   <SelectTrigger>
                     <SelectValue placeholder="Select status" />

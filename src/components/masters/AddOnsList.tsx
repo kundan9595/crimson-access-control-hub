@@ -3,12 +3,13 @@ import React, { useState, forwardRef, useImperativeHandle } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Edit, Trash2, Plus, Settings } from 'lucide-react';
+import { Edit, Trash2, Settings } from 'lucide-react';
 import { useAddOns, useDeleteAddOn, useCreateAddOn, useUpdateAddOn } from '@/hooks/masters/useAddOns';
 import { AddOnDialog } from './AddOnDialog';
 import { AddOnOptionsDialog } from './AddOnOptionsDialog';
-import { MasterEntityCard } from './shared/MasterEntityCard';
 import { AddOn } from '@/services/masters/addOnsService';
+import { useAuth } from '@/contexts/AuthContext';
+import { toast } from 'sonner';
 
 interface AddOnsListProps {
   searchTerm: string;
@@ -24,7 +25,8 @@ export const AddOnsList = forwardRef<AddOnsListRef, AddOnsListProps>(({ searchTe
   const [optionsDialogOpen, setOptionsDialogOpen] = useState(false);
   const [optionsAddOn, setOptionsAddOn] = useState<AddOn | null>(null);
 
-  const { data: addOns = [], isLoading } = useAddOns();
+  const { user, loading: authLoading } = useAuth();
+  const { data: addOns = [], isLoading, error } = useAddOns();
   const deleteAddOnMutation = useDeleteAddOn();
   const createAddOnMutation = useCreateAddOn();
   const updateAddOnMutation = useUpdateAddOn();
@@ -35,6 +37,10 @@ export const AddOnsList = forwardRef<AddOnsListRef, AddOnsListProps>(({ searchTe
   );
 
   const handleCreate = () => {
+    if (!user) {
+      toast.error('Please sign in to create add-ons');
+      return;
+    }
     setSelectedAddOn(null);
     setDialogOpen(true);
   };
@@ -45,22 +51,39 @@ export const AddOnsList = forwardRef<AddOnsListRef, AddOnsListProps>(({ searchTe
   }));
 
   const handleEdit = (addOn: AddOn) => {
+    if (!user) {
+      toast.error('Please sign in to edit add-ons');
+      return;
+    }
     setSelectedAddOn(addOn);
     setDialogOpen(true);
   };
 
   const handleDelete = async (addOn: AddOn) => {
+    if (!user) {
+      toast.error('Please sign in to delete add-ons');
+      return;
+    }
     if (window.confirm(`Are you sure you want to delete "${addOn.name}"?`)) {
       deleteAddOnMutation.mutate(addOn.id);
     }
   };
 
   const handleManageOptions = (addOn: AddOn) => {
+    if (!user) {
+      toast.error('Please sign in to manage add-on options');
+      return;
+    }
     setOptionsAddOn(addOn);
     setOptionsDialogOpen(true);
   };
 
   const handleSubmit = async (data: any) => {
+    if (!user) {
+      toast.error('Please sign in to save changes');
+      return;
+    }
+
     if (selectedAddOn) {
       updateAddOnMutation.mutate(
         { id: selectedAddOn.id, data },
@@ -73,8 +96,29 @@ export const AddOnsList = forwardRef<AddOnsListRef, AddOnsListProps>(({ searchTe
     }
   };
 
-  if (isLoading) {
+  // Show loading state
+  if (authLoading || isLoading) {
     return <div className="text-center py-8">Loading add-ons...</div>;
+  }
+
+  // Show authentication required message
+  if (!user) {
+    return (
+      <div className="text-center py-8 text-muted-foreground">
+        <p>Please sign in to manage add-ons</p>
+        <p className="text-sm mt-2">You need to be authenticated to create, edit, or delete add-ons.</p>
+      </div>
+    );
+  }
+
+  // Show error state if there's an error
+  if (error) {
+    return (
+      <div className="text-center py-8 text-destructive">
+        <p>Error loading add-ons</p>
+        <p className="text-sm mt-2">Please try refreshing the page or contact support if the problem persists.</p>
+      </div>
+    );
   }
 
   if (filteredAddOns.length === 0) {
@@ -125,6 +169,7 @@ export const AddOnsList = forwardRef<AddOnsListRef, AddOnsListProps>(({ searchTe
                     variant="outline"
                     size="sm"
                     onClick={() => handleManageOptions(addOn)}
+                    disabled={!user}
                   >
                     <Settings className="h-4 w-4" />
                   </Button>
@@ -132,6 +177,7 @@ export const AddOnsList = forwardRef<AddOnsListRef, AddOnsListProps>(({ searchTe
                     variant="outline"
                     size="sm"
                     onClick={() => handleEdit(addOn)}
+                    disabled={!user}
                   >
                     <Edit className="h-4 w-4" />
                   </Button>
@@ -139,6 +185,7 @@ export const AddOnsList = forwardRef<AddOnsListRef, AddOnsListProps>(({ searchTe
                     variant="outline"
                     size="sm"
                     onClick={() => handleDelete(addOn)}
+                    disabled={!user || deleteAddOnMutation.isPending}
                   >
                     <Trash2 className="h-4 w-4" />
                   </Button>
