@@ -125,7 +125,7 @@ export type Database = {
           base_price: number | null
           base_sn: number | null
           branding_sides: Json | null
-          calculator: string | null
+          calculator: number | null
           category_id: string | null
           created_at: string
           created_by: string | null
@@ -137,6 +137,7 @@ export type Database = {
           overhead_percentage: number | null
           parts: Json | null
           sample_rate: number | null
+          size_group_id: string | null
           size_type: string | null
           sort_order: number | null
           status: string | null
@@ -149,7 +150,7 @@ export type Database = {
           base_price?: number | null
           base_sn?: number | null
           branding_sides?: Json | null
-          calculator?: string | null
+          calculator?: number | null
           category_id?: string | null
           created_at?: string
           created_by?: string | null
@@ -161,6 +162,7 @@ export type Database = {
           overhead_percentage?: number | null
           parts?: Json | null
           sample_rate?: number | null
+          size_group_id?: string | null
           size_type?: string | null
           sort_order?: number | null
           status?: string | null
@@ -173,7 +175,7 @@ export type Database = {
           base_price?: number | null
           base_sn?: number | null
           branding_sides?: Json | null
-          calculator?: string | null
+          calculator?: number | null
           category_id?: string | null
           created_at?: string
           created_by?: string | null
@@ -185,6 +187,7 @@ export type Database = {
           overhead_percentage?: number | null
           parts?: Json | null
           sample_rate?: number | null
+          size_group_id?: string | null
           size_type?: string | null
           sort_order?: number | null
           status?: string | null
@@ -205,6 +208,13 @@ export type Database = {
             columns: ["fabric_id"]
             isOneToOne: false
             referencedRelation: "fabrics"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "base_products_size_group_id_fkey"
+            columns: ["size_group_id"]
+            isOneToOne: false
+            referencedRelation: "size_groups"
             referencedColumns: ["id"]
           },
         ]
