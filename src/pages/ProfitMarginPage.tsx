@@ -5,7 +5,7 @@ import { TrendingUp } from 'lucide-react';
 import { MasterPageHeader } from '@/components/masters/shared/MasterPageHeader';
 import { SearchFilter } from '@/components/masters/shared/SearchFilter';
 import { ProfitMarginsList } from '@/components/masters/ProfitMarginsList';
-import { BulkImportDialog } from '@/components/masters/BulkImportDialog';
+import BulkImportDialog from '@/components/masters/BulkImportDialog';
 import { useProfitMargins } from '@/hooks/masters/useProfitMargins';
 import { exportToCSV, generateExportFilename } from '@/utils/exportUtils';
 import { useToast } from '@/hooks/use-toast';

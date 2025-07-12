@@ -12,6 +12,7 @@ import { useCreateSku } from '@/hooks/masters/useSkus';
 import { useCreateAddOn } from '@/hooks/masters/useAddOns';
 import { useCreateAppAsset } from '@/hooks/masters/useAppAssets';
 import { useCreatePart } from '@/hooks/masters/useParts';
+import { useCreateProfitMargin } from '@/hooks/masters/useProfitMargins';
 import { BulkImportType } from './types';
 
 export const useImportMutations = () => {
@@ -28,6 +29,7 @@ export const useImportMutations = () => {
   const createAddOnMutation = useCreateAddOn();
   const createAppAssetMutation = useCreateAppAsset();
   const createPartMutation = useCreatePart();
+  const createProfitMarginMutation = useCreateProfitMargin();
 
   const getMutationForType = (type: BulkImportType) => {
     switch (type) {
@@ -57,6 +59,8 @@ export const useImportMutations = () => {
         return createAppAssetMutation;
       case 'parts':
         return createPartMutation;
+      case 'profitMargins':
+        return createProfitMarginMutation;
       default:
         throw new Error(`Unsupported import type: ${type}`);
     }

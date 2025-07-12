@@ -13,7 +13,7 @@ interface ProfitMarginsListProps {
   searchTerm: string;
 }
 
-export const ProfitMarginsList: React.FC<ProfitMarginsListProps> = ({ searchTterm }) => {
+export const ProfitMarginsList: React.FC<ProfitMarginsListProps> = ({ searchTerm }) => {
   const [selectedProfitMargin, setSelectedProfitMargin] = useState<ProfitMargin | undefined>();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [viewMode, setViewMode] = useState<'add' | 'edit' | 'view'>('add');

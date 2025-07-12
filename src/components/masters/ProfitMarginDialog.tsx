@@ -80,7 +80,8 @@ export const ProfitMarginDialog: React.FC<ProfitMarginDialogProps> = ({
       title={profitMargin ? 'Edit Profit Margin' : 'Add Profit Margin'}
       form={form}
       onSubmit={onSubmit}
-      isLoading={createProfitMarginMutation.isPending || updateProfitMarginMutation.isPending}
+      isSubmitting={createProfitMarginMutation.isPending || updateProfitMarginMutation.isPending}
+      isEditing={!!profitMargin}
     >
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <FormField
