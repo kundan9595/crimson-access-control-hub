@@ -21,7 +21,11 @@ export const createStyle = async (styleData: Omit<Style, 'id' | 'created_at' | '
   const { data, error } = await supabase
     .from('styles')
     .insert([styleData])
-    .select()
+    .select(`
+      *,
+      brand:brands(*),
+      category:categories(*)
+    `)
     .single();
 
   if (error) throw error;
@@ -33,7 +37,11 @@ export const updateStyle = async (id: string, updates: Partial<Style>): Promise<
     .from('styles')
     .update(updates)
     .eq('id', id)
-    .select()
+    .select(`
+      *,
+      brand:brands(*),
+      category:categories(*)
+    `)
     .single();
 
   if (error) throw error;

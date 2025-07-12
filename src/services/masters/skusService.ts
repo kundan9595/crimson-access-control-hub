@@ -44,7 +44,19 @@ export const createSku = async (skuData: Omit<Sku, 'id' | 'created_at' | 'update
   const { data, error } = await supabase
     .from('skus')
     .insert([insertData])
-    .select()
+    .select(`
+      *,
+      class:classes(
+        *,
+        style:styles(
+          *,
+          brand:brands(*),
+          category:categories(*)
+        ),
+        color:colors(*)
+      ),
+      size:sizes(*)
+    `)
     .single();
 
   if (error) throw error;
@@ -56,7 +68,19 @@ export const updateSku = async ({ id, updates }: { id: string; updates: Partial<
     .from('skus')
     .update(updates)
     .eq('id', id)
-    .select()
+    .select(`
+      *,
+      class:classes(
+        *,
+        style:styles(
+          *,
+          brand:brands(*),
+          category:categories(*)
+        ),
+        color:colors(*)
+      ),
+      size:sizes(*)
+    `)
     .single();
 
   if (error) throw error;
