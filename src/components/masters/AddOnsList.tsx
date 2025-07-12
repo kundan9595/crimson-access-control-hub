@@ -1,3 +1,4 @@
+
 import React, { useState, forwardRef, useImperativeHandle } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -41,7 +42,9 @@ export const AddOnsList = forwardRef<AddOnsListRef, AddOnsListProps>(({ searchTe
 
   const filteredAddOns = addOns.filter(addOn =>
     addOn.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    addOn.description?.toLowerCase().includes(searchTerm.toLowerCase())
+    addOn.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    addOn.group_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    addOn.add_on_of?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const handleCreate = () => {
@@ -103,10 +106,11 @@ export const AddOnsList = forwardRef<AddOnsListRef, AddOnsListProps>(({ searchTe
       return;
     }
 
-    // Ensure options is always an array
+    // Ensure options and colors are always arrays
     const submitData = {
       ...data,
-      options: data.options || []
+      options: data.options || [],
+      colors: data.colors || []
     };
 
     if (selectedAddOn) {
@@ -175,6 +179,11 @@ export const AddOnsList = forwardRef<AddOnsListRef, AddOnsListProps>(({ searchTe
                         <Badge variant={addOn.status === 'active' ? 'default' : 'secondary'}>
                           {addOn.status}
                         </Badge>
+                        {addOn.has_colour && (
+                          <Badge variant="outline">
+                            {addOn.colors?.length || 0} colors
+                          </Badge>
+                        )}
                       </div>
                       {addOn.description && (
                         <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
@@ -182,9 +191,13 @@ export const AddOnsList = forwardRef<AddOnsListRef, AddOnsListProps>(({ searchTe
                         </p>
                       )}
                       <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                        {addOn.group_name && <span>Group: {addOn.group_name}</span>}
+                        {addOn.add_on_of && <span>OF: {addOn.add_on_of}</span>}
+                        {addOn.add_on_sn && <span>SN: {addOn.add_on_sn}</span>}
                         <span>Type: {addOn.select_type}</span>
+                        {addOn.price && <span>Price: ${addOn.price}</span>}
                         <span>Options: {addOn.options?.length || 0}</span>
-                        <span>Order: {addOn.display_order || 0}</span>
+                        <span>Order: {addOn.sort_order || addOn.display_order || 0}</span>
                       </div>
                     </div>
                   </div>

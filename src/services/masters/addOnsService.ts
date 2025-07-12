@@ -11,6 +11,12 @@ export interface AddOnOption {
   status: 'active' | 'inactive';
 }
 
+export interface AddOnColor {
+  id: string;
+  name: string;
+  hex_code: string;
+}
+
 export interface AddOn {
   id: string;
   name: string;
@@ -18,12 +24,20 @@ export interface AddOn {
   select_type: 'single' | 'multiple' | 'checked';
   options: AddOnOption[];
   display_order?: number;
+  sort_order?: number;
   image_url?: string;
   status: 'active' | 'inactive';
   created_at: string;
   updated_at: string;
   created_by?: string;
   updated_by?: string;
+  // New fields from the database update
+  add_on_of?: string;
+  add_on_sn?: string;
+  has_colour?: boolean;
+  group_name?: string;
+  colors: AddOnColor[];
+  price?: number;
 }
 
 // Helper function to safely parse options from JSON
@@ -38,9 +52,26 @@ const parseOptions = (options: any): AddOnOption[] => {
   }
 };
 
+// Helper function to safely parse colors from JSON
+const parseColors = (colors: any): AddOnColor[] => {
+  if (!colors) return [];
+  if (Array.isArray(colors)) return colors as AddOnColor[];
+  try {
+    const parsed = typeof colors === 'string' ? JSON.parse(colors) : colors;
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+};
+
 // Helper function to prepare options for database storage
 const prepareOptionsForDb = (options: AddOnOption[]): any => {
   return JSON.parse(JSON.stringify(options || []));
+};
+
+// Helper function to prepare colors for database storage
+const prepareColorsForDb = (colors: AddOnColor[]): any => {
+  return JSON.parse(JSON.stringify(colors || []));
 };
 
 export const addOnsService = {
@@ -48,7 +79,7 @@ export const addOnsService = {
     const { data, error } = await supabase
       .from('add_ons')
       .select('*')
-      .order('display_order', { ascending: true })
+      .order('sort_order', { ascending: true })
       .order('name', { ascending: true });
 
     if (error) throw error;
@@ -56,7 +87,9 @@ export const addOnsService = {
       ...item,
       select_type: item.select_type as 'single' | 'multiple' | 'checked',
       status: item.status as 'active' | 'inactive',
-      options: parseOptions(item.options)
+      options: parseOptions(item.options),
+      colors: parseColors(item.colors),
+      price: item.price ? Number(item.price) : undefined
     }));
   },
 
@@ -72,7 +105,9 @@ export const addOnsService = {
       ...data,
       select_type: data.select_type as 'single' | 'multiple' | 'checked',
       status: data.status as 'active' | 'inactive',
-      options: parseOptions(data.options)
+      options: parseOptions(data.options),
+      colors: parseColors(data.colors),
+      price: data.price ? Number(data.price) : undefined
     } : null;
   },
 
@@ -81,7 +116,8 @@ export const addOnsService = {
       .from('add_ons')
       .insert({
         ...addOn,
-        options: prepareOptionsForDb(addOn.options)
+        options: prepareOptionsForDb(addOn.options),
+        colors: prepareColorsForDb(addOn.colors)
       })
       .select()
       .single();
@@ -91,7 +127,9 @@ export const addOnsService = {
       ...data,
       select_type: data.select_type as 'single' | 'multiple' | 'checked',
       status: data.status as 'active' | 'inactive',
-      options: parseOptions(data.options)
+      options: parseOptions(data.options),
+      colors: parseColors(data.colors),
+      price: data.price ? Number(data.price) : undefined
     };
   },
 
@@ -99,6 +137,9 @@ export const addOnsService = {
     const updateData: any = { ...addOn };
     if (addOn.options) {
       updateData.options = prepareOptionsForDb(addOn.options);
+    }
+    if (addOn.colors) {
+      updateData.colors = prepareColorsForDb(addOn.colors);
     }
 
     const { data, error } = await supabase
@@ -113,7 +154,9 @@ export const addOnsService = {
       ...data,
       select_type: data.select_type as 'single' | 'multiple' | 'checked',
       status: data.status as 'active' | 'inactive',
-      options: parseOptions(data.options)
+      options: parseOptions(data.options),
+      colors: parseColors(data.colors),
+      price: data.price ? Number(data.price) : undefined
     };
   },
 
@@ -131,7 +174,8 @@ export const addOnsService = {
       .from('add_ons')
       .insert(addOns.map(addOn => ({
         ...addOn,
-        options: prepareOptionsForDb(addOn.options)
+        options: prepareOptionsForDb(addOn.options),
+        colors: prepareColorsForDb(addOn.colors)
       })))
       .select();
 
@@ -140,7 +184,9 @@ export const addOnsService = {
       ...item,
       select_type: item.select_type as 'single' | 'multiple' | 'checked',
       status: item.status as 'active' | 'inactive',
-      options: parseOptions(item.options)
+      options: parseOptions(item.options),
+      colors: parseColors(item.colors),
+      price: item.price ? Number(item.price) : undefined
     }));
   },
 };

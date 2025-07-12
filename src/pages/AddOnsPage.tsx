@@ -25,12 +25,14 @@ const AddOnsPage = () => {
 
   const filteredAddOns = addOns.filter(addOn =>
     addOn.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    addOn.description?.toLowerCase().includes(searchTerm.toLowerCase())
+    addOn.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    addOn.group_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    addOn.add_on_of?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const sortedAddOns = [...filteredAddOns].sort((a, b) => {
-    const orderA = a.display_order || 0;
-    const orderB = b.display_order || 0;
+    const orderA = a.sort_order || a.display_order || 0;
+    const orderB = b.sort_order || b.display_order || 0;
     if (orderA !== orderB) return orderA - orderB;
     return a.name.localeCompare(b.name);
   });
@@ -64,13 +66,18 @@ const AddOnsPage = () => {
   const handleExport = () => {
     if (!addOns || addOns.length === 0) return;
     const csvContent = [
-      ['Name', 'Description', 'Select Type', 'Options Count', 'Display Order', 'Status', 'Created At'].join(','),
+      ['Name', 'Description', 'Group Name', 'Add On OF', 'Add On SN', 'Select Type', 'Price', 'Has Colour', 'Options Count', 'Sort Order', 'Status', 'Created At'].join(','),
       ...addOns.map(addOn => [
         `"${addOn.name}"`,
         `"${addOn.description || ''}"`,
+        `"${addOn.group_name || ''}"`,
+        `"${addOn.add_on_of || ''}"`,
+        `"${addOn.add_on_sn || ''}"`,
         addOn.select_type,
+        addOn.price || 0,
+        addOn.has_colour ? 'Yes' : 'No',
         addOn.options?.length || 0,
-        addOn.display_order || 0,
+        addOn.sort_order || addOn.display_order || 0,
         addOn.status,
         new Date(addOn.created_at).toLocaleDateString()
       ].join(','))
@@ -117,12 +124,15 @@ const AddOnsPage = () => {
                   <TableRow>
                     <TableHead className="w-16">Image</TableHead>
                     <TableHead>Name</TableHead>
-                    <TableHead>Description</TableHead>
-                    <TableHead>Select Type</TableHead>
+                    <TableHead>Group</TableHead>
+                    <TableHead>Add On OF</TableHead>
+                    <TableHead>Add On SN</TableHead>
+                    <TableHead>Type</TableHead>
+                    <TableHead>Price</TableHead>
+                    <TableHead>Colour</TableHead>
                     <TableHead>Options</TableHead>
-                    <TableHead className="w-20">Display Order</TableHead>
+                    <TableHead className="w-20">Sort Order</TableHead>
                     <TableHead className="w-24">Status</TableHead>
-                    <TableHead className="w-32">Created At</TableHead>
                     <TableHead className="text-right w-32">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -148,16 +158,27 @@ const AddOnsPage = () => {
                         </div>
                       </TableCell>
                       <TableCell className="font-medium">{addOn.name}</TableCell>
-                      <TableCell className="max-w-xs truncate">{addOn.description || '-'}</TableCell>
+                      <TableCell>{addOn.group_name || '-'}</TableCell>
+                      <TableCell>{addOn.add_on_of || '-'}</TableCell>
+                      <TableCell>{addOn.add_on_sn || '-'}</TableCell>
                       <TableCell>{addOn.select_type}</TableCell>
+                      <TableCell>{addOn.price ? `$${addOn.price}` : '-'}</TableCell>
+                      <TableCell>
+                        {addOn.has_colour ? (
+                          <Badge variant="secondary">
+                            {addOn.colors?.length || 0} colors
+                          </Badge>
+                        ) : (
+                          '-'
+                        )}
+                      </TableCell>
                       <TableCell>{addOn.options?.length || 0}</TableCell>
-                      <TableCell className="text-center">{addOn.display_order || 0}</TableCell>
+                      <TableCell className="text-center">{addOn.sort_order || addOn.display_order || 0}</TableCell>
                       <TableCell>
                         <Badge variant={addOn.status === 'active' ? 'default' : 'secondary'}>
                           {addOn.status}
                         </Badge>
                       </TableCell>
-                      <TableCell>{new Date(addOn.created_at).toLocaleDateString()}</TableCell>
                       <TableCell className="text-right">
                         <div className="flex items-center justify-end gap-2">
                           <Button
@@ -204,18 +225,6 @@ const AddOnsPage = () => {
         onSubmit={handleDialogSubmit}
         isSubmitting={createAddOnMutation.isPending || updateAddOnMutation.isPending}
       />
-      {/*
-      <BulkImportDialog
-        open={bulkImportOpen}
-        onOpenChange={setBulkImportOpen}
-        type="brands" // Use a supported type or remove for add-ons
-        templateHeaders={['Name', 'Description', 'Select Type', 'Options', 'Display Order', 'Status']}
-        sampleData={[
-          ['Gift Wrap', 'Gift wrapping service', 'single', '2', '1', 'active'],
-          ['Warranty', 'Extended warranty', 'multiple', '3', '2', 'active']
-        ]}
-      />
-      */}
     </div>
   );
 };

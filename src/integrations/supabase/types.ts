@@ -16,43 +16,64 @@ export type Database = {
     Tables: {
       add_ons: {
         Row: {
+          add_on_of: string | null
+          add_on_sn: string | null
+          colors: Json | null
           created_at: string
           created_by: string | null
           description: string | null
           display_order: number | null
+          group_name: string | null
+          has_colour: boolean | null
           id: string
           image_url: string | null
           name: string
           options: Json | null
+          price: number | null
           select_type: string
+          sort_order: number | null
           status: string
           updated_at: string
           updated_by: string | null
         }
         Insert: {
+          add_on_of?: string | null
+          add_on_sn?: string | null
+          colors?: Json | null
           created_at?: string
           created_by?: string | null
           description?: string | null
           display_order?: number | null
+          group_name?: string | null
+          has_colour?: boolean | null
           id?: string
           image_url?: string | null
           name: string
           options?: Json | null
+          price?: number | null
           select_type: string
+          sort_order?: number | null
           status?: string
           updated_at?: string
           updated_by?: string | null
         }
         Update: {
+          add_on_of?: string | null
+          add_on_sn?: string | null
+          colors?: Json | null
           created_at?: string
           created_by?: string | null
           description?: string | null
           display_order?: number | null
+          group_name?: string | null
+          has_colour?: boolean | null
           id?: string
           image_url?: string | null
           name?: string
           options?: Json | null
+          price?: number | null
           select_type?: string
+          sort_order?: number | null
           status?: string
           updated_at?: string
           updated_by?: string | null
