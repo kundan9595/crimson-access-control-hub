@@ -88,7 +88,7 @@ export const AddOnDialog: React.FC<AddOnDialogProps> = ({
           has_colour: addOn.has_colour || false,
           group_name: addOn.group_name || '',
           price: addOn.price || 0,
-          color_id: '',
+          color_id: 'none',
         });
       } else {
         // Creating new add-on
@@ -104,7 +104,7 @@ export const AddOnDialog: React.FC<AddOnDialogProps> = ({
           has_colour: false,
           group_name: '',
           price: 0,
-          color_id: '',
+          color_id: 'none',
         });
       }
     }
@@ -116,7 +116,8 @@ export const AddOnDialog: React.FC<AddOnDialogProps> = ({
     const submitData = {
       ...data,
       colors: [],
-      options: [] // Initialize with empty options array
+      options: [], // Initialize with empty options array
+      color_id: data.color_id === 'none' ? undefined : data.color_id
     };
 
     onSubmit(submitData);
@@ -314,7 +315,7 @@ export const AddOnDialog: React.FC<AddOnDialogProps> = ({
                       <SelectItem value="loading" disabled>Loading colors...</SelectItem>
                     ) : (
                       <>
-                        <SelectItem value="">No color selected</SelectItem>
+                        <SelectItem value="none">No color selected</SelectItem>
                         {colors.map((color) => (
                           <SelectItem key={color.id} value={color.id}>
                             <div className="flex items-center gap-2">
