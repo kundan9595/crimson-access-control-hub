@@ -4,12 +4,21 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Plus } from 'lucide-react';
 import { MasterPageHeader } from '@/components/masters/shared/MasterPageHeader';
 import { SearchFilter } from '@/components/masters/shared/SearchFilter';
+import { AddOnsList } from '@/components/masters/AddOnsList';
+import { useAddOns, useBulkCreateAddOns } from '@/hooks/masters/useAddOns';
 
 const AddOnsPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
+  const { data: addOns = [] } = useAddOns();
+  const bulkCreateMutation = useBulkCreateAddOns();
+
+  const filteredAddOns = addOns.filter(addOn =>
+    addOn.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    addOn.description?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   const handleAdd = () => {
-    // TODO: Open add-ons dialog when implemented
+    // This will be handled by the AddOnsList component
     console.log('Add add-on clicked');
   };
 
@@ -32,7 +41,7 @@ const AddOnsPage = () => {
         onAdd={handleAdd}
         onExport={handleExport}
         onImport={handleImport}
-        canExport={false}
+        canExport={addOns.length > 0}
       />
 
       <Card>
@@ -41,15 +50,12 @@ const AddOnsPage = () => {
             placeholder="Search add-ons..."
             value={searchTerm}
             onChange={setSearchTerm}
-            resultCount={0}
-            totalCount={0}
+            resultCount={filteredAddOns.length}
+            totalCount={addOns.length}
           />
           
           <div className="mt-6">
-            <div className="text-center py-8 text-muted-foreground">
-              <p>No add-ons found</p>
-              <p className="text-sm">Click "Add Add On" to create your first add-on entry</p>
-            </div>
+            <AddOnsList searchTerm={searchTerm} />
           </div>
         </CardContent>
       </Card>

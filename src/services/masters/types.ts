@@ -238,3 +238,8 @@ export interface Fabric {
     hex_code: string;
   };
 }
+
+export type {
+  AddOn,
+  AddOnOption,
+} from './addOnsService';

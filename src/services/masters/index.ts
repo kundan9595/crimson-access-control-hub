@@ -53,3 +53,4 @@ export type {
 } from './mediaService';
 
 export * from './fabricsService';
+export * from './addOnsService';
