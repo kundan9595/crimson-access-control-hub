@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 
 export interface AddOnOption {
@@ -31,9 +30,9 @@ export interface AddOn {
   updated_at: string;
   created_by?: string;
   updated_by?: string;
-  // New fields from the database update
-  add_on_of?: string;
-  add_on_sn?: string;
+  // Updated fields to match new database schema
+  add_on_of?: number;
+  add_on_sn?: number;
   has_colour?: boolean;
   group_name?: string;
   colors: AddOnColor[];
@@ -89,7 +88,9 @@ export const addOnsService = {
       status: item.status as 'active' | 'inactive',
       options: parseOptions(item.options),
       colors: parseColors(item.colors),
-      price: item.price ? Number(item.price) : undefined
+      price: item.price ? Number(item.price) : undefined,
+      add_on_of: item.add_on_of ? Number(item.add_on_of) : undefined,
+      add_on_sn: item.add_on_sn ? Number(item.add_on_sn) : undefined
     }));
   },
 
@@ -107,7 +108,9 @@ export const addOnsService = {
       status: data.status as 'active' | 'inactive',
       options: parseOptions(data.options),
       colors: parseColors(data.colors),
-      price: data.price ? Number(data.price) : undefined
+      price: data.price ? Number(data.price) : undefined,
+      add_on_of: data.add_on_of ? Number(data.add_on_of) : undefined,
+      add_on_sn: data.add_on_sn ? Number(data.add_on_sn) : undefined
     } : null;
   },
 
@@ -129,7 +132,9 @@ export const addOnsService = {
       status: data.status as 'active' | 'inactive',
       options: parseOptions(data.options),
       colors: parseColors(data.colors),
-      price: data.price ? Number(data.price) : undefined
+      price: data.price ? Number(data.price) : undefined,
+      add_on_of: data.add_on_of ? Number(data.add_on_of) : undefined,
+      add_on_sn: data.add_on_sn ? Number(data.add_on_sn) : undefined
     };
   },
 
@@ -156,7 +161,9 @@ export const addOnsService = {
       status: data.status as 'active' | 'inactive',
       options: parseOptions(data.options),
       colors: parseColors(data.colors),
-      price: data.price ? Number(data.price) : undefined
+      price: data.price ? Number(data.price) : undefined,
+      add_on_of: data.add_on_of ? Number(data.add_on_of) : undefined,
+      add_on_sn: data.add_on_sn ? Number(data.add_on_sn) : undefined
     };
   },
 
@@ -186,7 +193,9 @@ export const addOnsService = {
       status: item.status as 'active' | 'inactive',
       options: parseOptions(item.options),
       colors: parseColors(item.colors),
-      price: item.price ? Number(item.price) : undefined
+      price: item.price ? Number(item.price) : undefined,
+      add_on_of: item.add_on_of ? Number(data.add_on_of) : undefined,
+      add_on_sn: item.add_on_sn ? Number(data.add_on_sn) : undefined
     }));
   },
 };

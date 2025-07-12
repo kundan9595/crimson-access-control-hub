@@ -16,8 +16,8 @@ export type Database = {
     Tables: {
       add_ons: {
         Row: {
-          add_on_of: string | null
-          add_on_sn: string | null
+          add_on_of: number | null
+          add_on_sn: number | null
           colors: Json | null
           created_at: string
           created_by: string | null
@@ -35,8 +35,8 @@ export type Database = {
           updated_by: string | null
         }
         Insert: {
-          add_on_of?: string | null
-          add_on_sn?: string | null
+          add_on_of?: number | null
+          add_on_sn?: number | null
           colors?: Json | null
           created_at?: string
           created_by?: string | null
@@ -54,8 +54,8 @@ export type Database = {
           updated_by?: string | null
         }
         Update: {
-          add_on_of?: string | null
-          add_on_sn?: string | null
+          add_on_of?: number | null
+          add_on_sn?: number | null
           colors?: Json | null
           created_at?: string
           created_by?: string | null

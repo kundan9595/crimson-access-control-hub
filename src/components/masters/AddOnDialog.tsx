@@ -20,8 +20,8 @@ const addOnSchema = z.object({
   sort_order: z.number().int().min(0).default(0),
   image_url: z.string().url().optional().or(z.literal('')),
   status: z.enum(['active', 'inactive']).default('active'),
-  add_on_of: z.string().optional(),
-  add_on_sn: z.string().optional(),
+  add_on_of: z.number().min(0).optional(),
+  add_on_sn: z.number().min(0).optional(),
   has_colour: z.boolean().default(false),
   group_name: z.string().optional(),
   price: z.number().min(0).optional(),
@@ -61,8 +61,8 @@ export const AddOnDialog: React.FC<AddOnDialogProps> = ({
       sort_order: 0,
       image_url: '',
       status: 'active',
-      add_on_of: '',
-      add_on_sn: '',
+      add_on_of: 0,
+      add_on_sn: 0,
       has_colour: false,
       group_name: '',
       price: 0,
@@ -83,8 +83,8 @@ export const AddOnDialog: React.FC<AddOnDialogProps> = ({
           sort_order: addOn.sort_order || 0,
           image_url: addOn.image_url || '',
           status: addOn.status || 'active',
-          add_on_of: addOn.add_on_of || '',
-          add_on_sn: addOn.add_on_sn || '',
+          add_on_of: addOn.add_on_of || 0,
+          add_on_sn: addOn.add_on_sn || 0,
           has_colour: addOn.has_colour || false,
           group_name: addOn.group_name || '',
           price: addOn.price || 0,
@@ -99,8 +99,8 @@ export const AddOnDialog: React.FC<AddOnDialogProps> = ({
           sort_order: 0,
           image_url: '',
           status: 'active',
-          add_on_of: '',
-          add_on_sn: '',
+          add_on_of: 0,
+          add_on_sn: 0,
           has_colour: false,
           group_name: '',
           price: 0,
@@ -159,7 +159,14 @@ export const AddOnDialog: React.FC<AddOnDialogProps> = ({
               <FormItem>
                 <FormLabel>Add On OF</FormLabel>
                 <FormControl>
-                  <Input placeholder="Enter add-on OF" {...field} />
+                  <Input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    placeholder="0.00"
+                    {...field}
+                    onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -173,7 +180,14 @@ export const AddOnDialog: React.FC<AddOnDialogProps> = ({
               <FormItem>
                 <FormLabel>Add On SN</FormLabel>
                 <FormControl>
-                  <Input placeholder="Enter add-on SN" {...field} />
+                  <Input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    placeholder="0.00"
+                    {...field}
+                    onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -263,44 +277,6 @@ export const AddOnDialog: React.FC<AddOnDialogProps> = ({
 
         <FormField
           control={form.control}
-          name="color_id"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Color</FormLabel>
-              <Select onValueChange={field.onChange} value={field.value}>
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select a color" />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  {colorsLoading ? (
-                    <SelectItem value="loading" disabled>Loading colors...</SelectItem>
-                  ) : (
-                    <>
-                      <SelectItem value="none">No color selected</SelectItem>
-                      {colors.map((color) => (
-                        <SelectItem key={color.id} value={color.id}>
-                          <div className="flex items-center gap-2">
-                            <div 
-                              className="w-4 h-4 rounded border border-gray-300" 
-                              style={{ backgroundColor: color.hex_code }}
-                            />
-                            {color.name}
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </>
-                  )}
-                </SelectContent>
-              </Select>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
           name="has_colour"
           render={({ field }) => (
             <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
@@ -319,6 +295,46 @@ export const AddOnDialog: React.FC<AddOnDialogProps> = ({
             </FormItem>
           )}
         />
+
+        {hasColourValue && (
+          <FormField
+            control={form.control}
+            name="color_id"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Color</FormLabel>
+                <Select onValueChange={field.onChange} value={field.value}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select a color" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {colorsLoading ? (
+                      <SelectItem value="loading" disabled>Loading colors...</SelectItem>
+                    ) : (
+                      <>
+                        <SelectItem value="">No color selected</SelectItem>
+                        {colors.map((color) => (
+                          <SelectItem key={color.id} value={color.id}>
+                            <div className="flex items-center gap-2">
+                              <div 
+                                className="w-4 h-4 rounded border border-gray-300" 
+                                style={{ backgroundColor: color.hex_code }}
+                              />
+                              {color.name}
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </>
+                    )}
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        )}
 
         <FormField
           control={form.control}
