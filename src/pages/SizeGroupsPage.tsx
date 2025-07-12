@@ -1,16 +1,17 @@
 
 import React, { useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { Plus, Search, Edit, Trash2, Ruler, ChevronDown, ChevronRight, ArrowLeft, Download, Upload } from 'lucide-react';
+import { Search, Edit, Trash2, Ruler, ChevronDown, ChevronRight } from 'lucide-react';
 import { useSizeGroups, useDeleteSizeGroup } from '@/hooks/useMasters';
 import { SizeGroup } from '@/services/mastersService';
-import { useSearchParams, Link } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 import SizeGroupWithSizesDialog from '@/components/masters/SizeGroupWithSizesDialog';
 import SizeGroupSizes from '@/components/masters/SizeGroupSizes';
 import BulkImportDialog from '@/components/masters/BulkImportDialog';
+import { MasterPageHeader } from '@/components/masters/shared/MasterPageHeader';
 
 const SizeGroupsPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -91,136 +92,112 @@ const SizeGroupsPage = () => {
 
   return (
     <div className="container mx-auto p-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <Button variant="outline" size="sm" asChild>
-            <Link to="/masters">
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Back to Masters
-            </Link>
-          </Button>
-          <div>
-            <h1 className="text-3xl font-bold flex items-center gap-2">
-              <Ruler className="h-8 w-8" />
-              Size Groups
-            </h1>
-            <p className="text-muted-foreground">Manage size groupings and individual sizes</p>
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" onClick={handleExport} disabled={!filteredSizeGroups?.length}>
-            <Download className="h-4 w-4 mr-2" />
-            Export CSV
-          </Button>
-          <Button variant="outline" onClick={() => setIsBulkImportOpen(true)}>
-            <Upload className="h-4 w-4 mr-2" />
-            Bulk Import
-          </Button>
-          <Button onClick={() => setIsDialogOpen(true)}>
-            <Plus className="h-4 w-4 mr-2" />
-            Add Size Group
-          </Button>
-        </div>
-      </div>
+      <MasterPageHeader
+        title="Size Groups"
+        description="Manage size groupings and individual sizes"
+        icon={<Ruler className="h-8 w-8" />}
+        onAdd={() => setIsDialogOpen(true)}
+        onExport={handleExport}
+        onImport={() => setIsBulkImportOpen(true)}
+        canExport={!!filteredSizeGroups?.length}
+      />
 
       <Card>
-        <CardHeader>
-          <CardTitle>Search Size Groups</CardTitle>
-          <CardDescription>Find size groups by name or description</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="relative">
-            <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search size groups..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-8"
-            />
+        <CardContent className="p-6">
+          <div className="flex items-center justify-between mb-6">
+            <h3 className="text-lg font-semibold">Search Size Groups</h3>
+            <div className="relative">
+              <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search size groups..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-8 w-64"
+              />
+            </div>
+          </div>
+
+          <div className="grid gap-4">
+            {filteredSizeGroups?.map((sizeGroup) => (
+              <Card key={sizeGroup.id}>
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-3 mb-2">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => toggleGroupExpansion(sizeGroup.id)}
+                          className="p-1"
+                        >
+                          {expandedGroups.has(sizeGroup.id) ? (
+                            <ChevronDown className="h-4 w-4" />
+                          ) : (
+                            <ChevronRight className="h-4 w-4" />
+                          )}
+                        </Button>
+                        <h3 className="text-lg font-semibold">{sizeGroup.name}</h3>
+                        <Badge variant={sizeGroup.status === 'active' ? 'default' : 'secondary'}>
+                          {sizeGroup.status}
+                        </Badge>
+                      </div>
+                      {sizeGroup.description && (
+                        <p className="text-muted-foreground mb-2 ml-10">{sizeGroup.description}</p>
+                      )}
+                      <div className="text-sm text-muted-foreground ml-10">
+                        Created: {new Date(sizeGroup.created_at).toLocaleDateString()}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleEdit(sizeGroup)}
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleDelete(sizeGroup.id)}
+                        disabled={deleteSizeGroup.isPending}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                  
+                  {expandedGroups.has(sizeGroup.id) && (
+                    <div className="ml-10">
+                      <SizeGroupSizes 
+                        sizeGroupId={sizeGroup.id}
+                        sizeGroupName={sizeGroup.name}
+                      />
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            ))}
+
+            {filteredSizeGroups?.length === 0 && (
+              <Card>
+                <CardContent className="p-12 text-center">
+                  <Ruler className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                  <h3 className="text-lg font-semibold mb-2">No Size Groups Found</h3>
+                  <p className="text-muted-foreground mb-4">
+                    {searchTerm ? 'No size groups match your search criteria.' : 'Get started by creating your first size group.'}
+                  </p>
+                  {!searchTerm && (
+                    <Button onClick={() => setIsDialogOpen(true)}>
+                      Add Size Group
+                    </Button>
+                  )}
+                </CardContent>
+              </Card>
+            )}
           </div>
         </CardContent>
       </Card>
-
-      <div className="grid gap-4">
-        {filteredSizeGroups?.map((sizeGroup) => (
-          <Card key={sizeGroup.id}>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex-1">
-                  <div className="flex items-center gap-3 mb-2">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => toggleGroupExpansion(sizeGroup.id)}
-                      className="p-1"
-                    >
-                      {expandedGroups.has(sizeGroup.id) ? (
-                        <ChevronDown className="h-4 w-4" />
-                      ) : (
-                        <ChevronRight className="h-4 w-4" />
-                      )}
-                    </Button>
-                    <h3 className="text-lg font-semibold">{sizeGroup.name}</h3>
-                    <Badge variant={sizeGroup.status === 'active' ? 'default' : 'secondary'}>
-                      {sizeGroup.status}
-                    </Badge>
-                  </div>
-                  {sizeGroup.description && (
-                    <p className="text-muted-foreground mb-2 ml-10">{sizeGroup.description}</p>
-                  )}
-                  <div className="text-sm text-muted-foreground ml-10">
-                    Created: {new Date(sizeGroup.created_at).toLocaleDateString()}
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleEdit(sizeGroup)}
-                  >
-                    <Edit className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleDelete(sizeGroup.id)}
-                    disabled={deleteSizeGroup.isPending}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-              
-              {expandedGroups.has(sizeGroup.id) && (
-                <div className="ml-10">
-                  <SizeGroupSizes 
-                    sizeGroupId={sizeGroup.id}
-                    sizeGroupName={sizeGroup.name}
-                  />
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-
-      {filteredSizeGroups?.length === 0 && (
-        <Card>
-          <CardContent className="p-12 text-center">
-            <Ruler className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-            <h3 className="text-lg font-semibold mb-2">No Size Groups Found</h3>
-            <p className="text-muted-foreground mb-4">
-              {searchTerm ? 'No size groups match your search criteria.' : 'Get started by creating your first size group.'}
-            </p>
-            {!searchTerm && (
-              <Button onClick={() => setIsDialogOpen(true)}>
-                <Plus className="h-4 w-4 mr-2" />
-                Add Size Group
-              </Button>
-            )}
-          </CardContent>
-        </Card>
-      )}
 
       <SizeGroupWithSizesDialog
         sizeGroup={editingSizeGroup}

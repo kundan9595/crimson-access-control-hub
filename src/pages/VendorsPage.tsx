@@ -1,15 +1,16 @@
 
 import React, { useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { Plus, Search, Edit, Trash2, Users, ArrowLeft, Download, Upload } from 'lucide-react';
+import { Search, Edit, Trash2, Users } from 'lucide-react';
 import { useVendors, useDeleteVendor } from '@/hooks/useMasters';
 import { Vendor } from '@/services/mastersService';
-import { useSearchParams, Link } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 import VendorDialog from '@/components/masters/VendorDialog';
 import BulkImportDialog from '@/components/masters/BulkImportDialog';
+import { MasterPageHeader } from '@/components/masters/shared/MasterPageHeader';
 
 const VendorsPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -85,130 +86,106 @@ const VendorsPage = () => {
 
   return (
     <div className="container mx-auto p-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <Button variant="outline" size="sm" asChild>
-            <Link to="/masters">
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Back to Masters
-            </Link>
-          </Button>
-          <div>
-            <h1 className="text-3xl font-bold flex items-center gap-2">
-              <Users className="h-8 w-8" />
-              Vendors
-            </h1>
-            <p className="text-muted-foreground">Manage supplier and vendor information</p>
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" onClick={handleExport} disabled={!filteredVendors?.length}>
-            <Download className="h-4 w-4 mr-2" />
-            Export CSV
-          </Button>
-          <Button variant="outline" onClick={() => setIsBulkImportOpen(true)}>
-            <Upload className="h-4 w-4 mr-2" />
-            Bulk Import
-          </Button>
-          <Button onClick={() => setIsDialogOpen(true)}>
-            <Plus className="h-4 w-4 mr-2" />
-            Add Vendor
-          </Button>
-        </div>
-      </div>
+      <MasterPageHeader
+        title="Vendors"
+        description="Manage supplier and vendor information"
+        icon={<Users className="h-8 w-8" />}
+        onAdd={() => setIsDialogOpen(true)}
+        onExport={handleExport}
+        onImport={() => setIsBulkImportOpen(true)}
+        canExport={!!filteredVendors?.length}
+      />
 
       <Card>
-        <CardHeader>
-          <CardTitle>Search Vendors</CardTitle>
-          <CardDescription>Find vendors by name, code, contact person, or email</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="relative">
-            <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search vendors..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-8"
-            />
+        <CardContent className="p-6">
+          <div className="flex items-center justify-between mb-6">
+            <h3 className="text-lg font-semibold">Search Vendors</h3>
+            <div className="relative">
+              <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search vendors..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-8 w-64"
+              />
+            </div>
+          </div>
+
+          <div className="grid gap-4">
+            {filteredVendors?.map((vendor) => (
+              <Card key={vendor.id}>
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-3 mb-2">
+                        <h3 className="text-lg font-semibold">{vendor.name}</h3>
+                        <Badge variant="outline">Code: {vendor.code}</Badge>
+                        <Badge variant={vendor.status === 'active' ? 'default' : 'secondary'}>
+                          {vendor.status}
+                        </Badge>
+                      </div>
+                      {vendor.description && (
+                        <p className="text-muted-foreground mb-2">{vendor.description}</p>
+                      )}
+                      <div className="grid grid-cols-2 gap-4 text-sm text-muted-foreground mb-2">
+                        {vendor.contact_person && (
+                          <div>Contact: {vendor.contact_person}</div>
+                        )}
+                        {vendor.email && (
+                          <div>Email: {vendor.email}</div>
+                        )}
+                        {vendor.phone && (
+                          <div>Phone: {vendor.phone}</div>
+                        )}
+                        {vendor.tax_id && (
+                          <div>Tax ID: {vendor.tax_id}</div>
+                        )}
+                      </div>
+                      <div className="text-sm text-muted-foreground">
+                        Created: {new Date(vendor.created_at).toLocaleDateString()}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleEdit(vendor)}
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleDelete(vendor.id)}
+                        disabled={deleteVendor.isPending}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+
+            {filteredVendors?.length === 0 && (
+              <Card>
+                <CardContent className="p-12 text-center">
+                  <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                  <h3 className="text-lg font-semibold mb-2">No Vendors Found</h3>
+                  <p className="text-muted-foreground mb-4">
+                    {searchTerm ? 'No vendors match your search criteria.' : 'Get started by creating your first vendor.'}
+                  </p>
+                  {!searchTerm && (
+                    <Button onClick={() => setIsDialogOpen(true)}>
+                      Add Vendor
+                    </Button>
+                  )}
+                </CardContent>
+              </Card>
+            )}
           </div>
         </CardContent>
       </Card>
-
-      <div className="grid gap-4">
-        {filteredVendors?.map((vendor) => (
-          <Card key={vendor.id}>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div className="flex-1">
-                  <div className="flex items-center gap-3 mb-2">
-                    <h3 className="text-lg font-semibold">{vendor.name}</h3>
-                    <Badge variant="outline">Code: {vendor.code}</Badge>
-                    <Badge variant={vendor.status === 'active' ? 'default' : 'secondary'}>
-                      {vendor.status}
-                    </Badge>
-                  </div>
-                  {vendor.description && (
-                    <p className="text-muted-foreground mb-2">{vendor.description}</p>
-                  )}
-                  <div className="grid grid-cols-2 gap-4 text-sm text-muted-foreground mb-2">
-                    {vendor.contact_person && (
-                      <div>Contact: {vendor.contact_person}</div>
-                    )}
-                    {vendor.email && (
-                      <div>Email: {vendor.email}</div>
-                    )}
-                    {vendor.phone && (
-                      <div>Phone: {vendor.phone}</div>
-                    )}
-                    {vendor.tax_id && (
-                      <div>Tax ID: {vendor.tax_id}</div>
-                    )}
-                  </div>
-                  <div className="text-sm text-muted-foreground">
-                    Created: {new Date(vendor.created_at).toLocaleDateString()}
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleEdit(vendor)}
-                  >
-                    <Edit className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleDelete(vendor.id)}
-                    disabled={deleteVendor.isPending}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-
-      {filteredVendors?.length === 0 && (
-        <Card>
-          <CardContent className="p-12 text-center">
-            <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-            <h3 className="text-lg font-semibold mb-2">No Vendors Found</h3>
-            <p className="text-muted-foreground mb-4">
-              {searchTerm ? 'No vendors match your search criteria.' : 'Get started by creating your first vendor.'}
-            </p>
-            {!searchTerm && (
-              <Button onClick={() => setIsDialogOpen(true)}>
-                <Plus className="h-4 w-4 mr-2" />
-                Add Vendor
-              </Button>
-            )}
-          </CardContent>
-        </Card>
-      )}
 
       <VendorDialog
         vendor={editingVendor}

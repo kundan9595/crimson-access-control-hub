@@ -1,17 +1,15 @@
 
 import React, { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Plus, ArrowLeft, Download, Upload } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { Package } from 'lucide-react';
 import { SkusList } from '@/components/masters/SkusList';
 import { SkuDialog } from '@/components/masters/SkuDialog';
 import BulkImportDialog from '@/components/masters/BulkImportDialog';
 import { useSkus } from '@/hooks/masters/useSkus';
+import { MasterPageHeader } from '@/components/masters/shared/MasterPageHeader';
 
 const SkusPage = () => {
   const [showSkuDialog, setShowSkuDialog] = useState(false);
   const [showImportDialog, setShowImportDialog] = useState(false);
-  const navigate = useNavigate();
   const { data: skus = [] } = useSkus();
 
   const handleExport = () => {
@@ -111,46 +109,15 @@ const SkusPage = () => {
 
   return (
     <div className="container mx-auto p-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => navigate('/masters')}
-            className="flex items-center gap-2"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Back to Masters
-          </Button>
-          <div>
-            <h1 className="text-3xl font-bold">SKU Management</h1>
-            <p className="text-muted-foreground">
-              Manage your product SKUs with pricing, dimensions, and specifications
-            </p>
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            onClick={handleExport}
-            disabled={skus.length === 0}
-          >
-            <Download className="mr-2 h-4 w-4" />
-            Export
-          </Button>
-          <Button
-            variant="outline"
-            onClick={() => setShowImportDialog(true)}
-          >
-            <Upload className="mr-2 h-4 w-4" />
-            Import
-          </Button>
-          <Button onClick={() => setShowSkuDialog(true)}>
-            <Plus className="mr-2 h-4 w-4" />
-            Add SKU
-          </Button>
-        </div>
-      </div>
+      <MasterPageHeader
+        title="SKUs"
+        description="Manage your product SKUs with pricing, dimensions, and specifications"
+        icon={<Package className="h-8 w-8" />}
+        onAdd={() => setShowSkuDialog(true)}
+        onExport={handleExport}
+        onImport={() => setShowImportDialog(true)}
+        canExport={skus.length > 0}
+      />
 
       <SkusList />
 
