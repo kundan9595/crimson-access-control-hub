@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -131,6 +130,7 @@ export const BaseProductDialog: React.FC<BaseProductDialogProps> = ({
         ...data,
         category_id: data.category_id || null,
         fabric_id: data.fabric_id || null,
+        parts: data.parts || [], // Ensure parts is always an array
       };
 
       if (baseProduct) {
@@ -167,366 +167,367 @@ export const BaseProductDialog: React.FC<BaseProductDialogProps> = ({
       open={open}
       onOpenChange={onOpenChange}
       title={baseProduct ? 'Edit Base Product' : 'Add Base Product'}
-      onSubmit={form.handleSubmit(handleSubmit)}
-      isLoading={createMutation.isPending || updateMutation.isPending}
+      form={form}
+      onSubmit={handleSubmit}
+      isSubmitting={createMutation.isPending || updateMutation.isPending}
+      isEditing={!!baseProduct}
     >
-      <Form {...form}>
-        <div className="grid gap-4">
-          <div className="grid grid-cols-2 gap-4">
-            <FormField
-              control={form.control}
-              name="name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Name *</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Enter base product name" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="sort_order"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Sort Order</FormLabel>
-                  <FormControl>
-                    <Input 
-                      type="number" 
-                      placeholder="0" 
-                      {...field}
-                      onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <FormField
-              control={form.control}
-              name="calculator"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Calculator Type</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value || ''}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select calculator type" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="Knit">Knit</SelectItem>
-                      <SelectItem value="Woven">Woven</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="size_type"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Size Type</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="Adult">Adult</SelectItem>
-                      <SelectItem value="Kids">Kids</SelectItem>
-                      <SelectItem value="Both">Both</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <FormField
-              control={form.control}
-              name="category_id"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Category</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value || ''}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select category" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {categories.map((category) => (
-                        <SelectItem key={category.id} value={category.id}>
-                          {category.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="fabric_id"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Fabric</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value || ''}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select fabric" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {fabrics.map((fabric) => (
-                        <SelectItem key={fabric.id} value={fabric.id}>
-                          {fabric.name} ({fabric.fabric_type})
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </div>
-
-          <FormItem>
-            <FormLabel>Parts</FormLabel>
-            <div className="space-y-2">
-              <Select onValueChange={addPart}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select parts to add" />
-                </SelectTrigger>
-                <SelectContent>
-                  {parts
-                    .filter(part => !selectedParts.includes(part.id))
-                    .map((part) => (
-                      <SelectItem key={part.id} value={part.id}>
-                        {part.name}
-                      </SelectItem>
-                    ))}
-                </SelectContent>
-              </Select>
-              {selectedParts.length > 0 && (
-                <div className="flex flex-wrap gap-2">
-                  {selectedParts.map((partId) => {
-                    const part = parts.find(p => p.id === partId);
-                    return (
-                      <Badge key={partId} variant="secondary" className="flex items-center gap-1">
-                        {part?.name || partId}
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          className="h-4 w-4 p-0"
-                          onClick={() => removePart(partId)}
-                        >
-                          <X className="h-3 w-3" />
-                        </Button>
-                      </Badge>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-          </FormItem>
-
-          <div className="grid grid-cols-3 gap-4">
-            <FormField
-              control={form.control}
-              name="base_price"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Base Price</FormLabel>
-                  <FormControl>
-                    <Input 
-                      type="number" 
-                      step="0.01"
-                      placeholder="0.00" 
-                      {...field}
-                      onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="base_sn"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Base SN</FormLabel>
-                  <FormControl>
-                    <Input 
-                      type="number" 
-                      placeholder="Enter base SN" 
-                      {...field}
-                      onChange={(e) => field.onChange(parseInt(e.target.value) || undefined)}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="trims_cost"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Trims Cost</FormLabel>
-                  <FormControl>
-                    <Input 
-                      type="number" 
-                      step="0.01"
-                      placeholder="0.00" 
-                      {...field}
-                      onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <FormField
-              control={form.control}
-              name="adult_consumption"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Adult Consumption</FormLabel>
-                  <FormControl>
-                    <Input 
-                      type="number" 
-                      step="0.01"
-                      placeholder="0.00" 
-                      {...field}
-                      onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="kids_consumption"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Kids Consumption</FormLabel>
-                  <FormControl>
-                    <Input 
-                      type="number" 
-                      step="0.01"
-                      placeholder="0.00" 
-                      {...field}
-                      onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <FormField
-              control={form.control}
-              name="overhead_percentage"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Overhead Percentage (%)</FormLabel>
-                  <FormControl>
-                    <Input 
-                      type="number" 
-                      step="0.01"
-                      max="100"
-                      placeholder="0.00" 
-                      {...field}
-                      onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="sample_rate"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Sample Rate</FormLabel>
-                  <FormControl>
-                    <Input 
-                      type="number" 
-                      step="0.01"
-                      placeholder="0.00" 
-                      {...field}
-                      onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </div>
-
+      <div className="grid gap-4">
+        <div className="grid grid-cols-2 gap-4">
           <FormField
             control={form.control}
-            name="image_url"
+            name="name"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Product Image</FormLabel>
+                <FormLabel>Name *</FormLabel>
                 <FormControl>
-                  <ImageUpload
-                    value={field.value || ''}
-                    onChange={field.onChange}
-                    onRemove={() => field.onChange('')}
-                    placeholder="Upload base product image"
+                  <Input placeholder="Enter base product name" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="sort_order"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Sort Order</FormLabel>
+                <FormControl>
+                  <Input 
+                    type="number" 
+                    placeholder="0" 
+                    {...field}
+                    onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
                   />
                 </FormControl>
                 <FormMessage />
               </FormItem>
             )}
           />
+        </div>
 
+        <div className="grid grid-cols-2 gap-4">
           <FormField
             control={form.control}
-            name="status"
+            name="calculator"
             render={({ field }) => (
-              <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
-                <div className="space-y-0.5">
-                  <FormLabel>Active Status</FormLabel>
-                  <div className="text-sm text-muted-foreground">
-                    Enable or disable this base product
-                  </div>
-                </div>
-                <FormControl>
-                  <Switch
-                    checked={field.value === 'active'}
-                    onCheckedChange={(checked) => field.onChange(checked ? 'active' : 'inactive')}
-                  />
-                </FormControl>
+              <FormItem>
+                <FormLabel>Calculator Type</FormLabel>
+                <Select onValueChange={field.onChange} value={field.value || ''}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select calculator type" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    <SelectItem value="Knit">Knit</SelectItem>
+                    <SelectItem value="Woven">Woven</SelectItem>
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="size_type"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Size Type</FormLabel>
+                <Select onValueChange={field.onChange} value={field.value}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    <SelectItem value="Adult">Adult</SelectItem>
+                    <SelectItem value="Kids">Kids</SelectItem>
+                    <SelectItem value="Both">Both</SelectItem>
+                  </SelectContent>
+                </Select>
+                <FormMessage />
               </FormItem>
             )}
           />
         </div>
-      </Form>
+
+        <div className="grid grid-cols-2 gap-4">
+          <FormField
+            control={form.control}
+            name="category_id"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Category</FormLabel>
+                <Select onValueChange={field.onChange} value={field.value || ''}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select category" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {categories.map((category) => (
+                      <SelectItem key={category.id} value={category.id}>
+                        {category.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="fabric_id"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Fabric</FormLabel>
+                <Select onValueChange={field.onChange} value={field.value || ''}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select fabric" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {fabrics.map((fabric) => (
+                      <SelectItem key={fabric.id} value={fabric.id}>
+                        {fabric.name} ({fabric.fabric_type})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+
+        <FormItem>
+          <FormLabel>Parts</FormLabel>
+          <div className="space-y-2">
+            <Select onValueChange={addPart}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select parts to add" />
+              </SelectTrigger>
+              <SelectContent>
+                {parts
+                  .filter(part => !selectedParts.includes(part.id))
+                  .map((part) => (
+                    <SelectItem key={part.id} value={part.id}>
+                      {part.name}
+                    </SelectItem>
+                  ))}
+              </SelectContent>
+            </Select>
+            {selectedParts.length > 0 && (
+              <div className="flex flex-wrap gap-2">
+                {selectedParts.map((partId) => {
+                  const part = parts.find(p => p.id === partId);
+                  return (
+                    <Badge key={partId} variant="secondary" className="flex items-center gap-1">
+                      {part?.name || partId}
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="h-4 w-4 p-0"
+                        onClick={() => removePart(partId)}
+                      >
+                        <X className="h-3 w-3" />
+                      </Button>
+                    </Badge>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </FormItem>
+
+        
+        <div className="grid grid-cols-3 gap-4">
+          <FormField
+            control={form.control}
+            name="base_price"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Base Price</FormLabel>
+                <FormControl>
+                  <Input 
+                    type="number" 
+                    step="0.01"
+                    placeholder="0.00" 
+                    {...field}
+                    onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="base_sn"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Base SN</FormLabel>
+                <FormControl>
+                  <Input 
+                    type="number" 
+                    placeholder="Enter base SN" 
+                    {...field}
+                    onChange={(e) => field.onChange(parseInt(e.target.value) || undefined)}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="trims_cost"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Trims Cost</FormLabel>
+                <FormControl>
+                  <Input 
+                    type="number" 
+                    step="0.01"
+                    placeholder="0.00" 
+                    {...field}
+                    onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <FormField
+            control={form.control}
+            name="adult_consumption"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Adult Consumption</FormLabel>
+                <FormControl>
+                  <Input 
+                    type="number" 
+                    step="0.01"
+                    placeholder="0.00" 
+                    {...field}
+                    onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="kids_consumption"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Kids Consumption</FormLabel>
+                <FormControl>
+                  <Input 
+                    type="number" 
+                    step="0.01"
+                    placeholder="0.00" 
+                    {...field}
+                    onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <FormField
+            control={form.control}
+            name="overhead_percentage"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Overhead Percentage (%)</FormLabel>
+                <FormControl>
+                  <Input 
+                    type="number" 
+                    step="0.01"
+                    max="100"
+                    placeholder="0.00" 
+                    {...field}
+                    onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="sample_rate"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Sample Rate</FormLabel>
+                <FormControl>
+                  <Input 
+                    type="number" 
+                    step="0.01"
+                    placeholder="0.00" 
+                    {...field}
+                    onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+
+        <FormField
+          control={form.control}
+          name="image_url"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Product Image</FormLabel>
+              <FormControl>
+                <ImageUpload
+                  value={field.value || ''}
+                  onChange={field.onChange}
+                  onRemove={() => field.onChange('')}
+                  placeholder="Upload base product image"
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="status"
+          render={({ field }) => (
+            <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
+              <div className="space-y-0.5">
+                <FormLabel>Active Status</FormLabel>
+                <div className="text-sm text-muted-foreground">
+                  Enable or disable this base product
+                </div>
+              </div>
+              <FormControl>
+                <Switch
+                  checked={field.value === 'active'}
+                  onCheckedChange={(checked) => field.onChange(checked ? 'active' : 'inactive')}
+                />
+              </FormControl>
+            </FormItem>
+          )}
+        />
+      </div>
     </BaseFormDialog>
   );
 };
