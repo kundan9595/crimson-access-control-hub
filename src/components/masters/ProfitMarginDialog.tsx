@@ -55,8 +55,13 @@ export const ProfitMarginDialog: React.FC<ProfitMarginDialogProps> = ({
   const onSubmit = async (data: ProfitMarginFormData) => {
     try {
       if (profitMargin) {
-        await updateProfitMarginMutation.mutateAsync({ id: profitMargin.id, updates: data });
+        // For updates, we can pass partial data
+        await updateProfitMarginMutation.mutateAsync({ 
+          id: profitMargin.id, 
+          updates: data 
+        });
       } else {
+        // For creates, we need all required fields (which the form validation ensures)
         await createProfitMarginMutation.mutateAsync(data);
       }
       onOpenChange(false);
