@@ -10,6 +10,7 @@ export const fetchStyles = async (): Promise<Style[]> => {
       brand:brands(*),
       category:categories(*)
     `)
+    .order('sort_order', { ascending: true })
     .order('created_at', { ascending: false });
 
   if (error) throw error;
