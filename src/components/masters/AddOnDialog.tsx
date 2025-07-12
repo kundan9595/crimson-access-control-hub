@@ -1,3 +1,4 @@
+
 import React, { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -8,7 +9,6 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import ImageUpload from '@/components/ui/ImageUpload';
-import { TagsInput } from '@/components/ui/tags-input';
 import { AddOn } from '@/services/masters/addOnsService';
 import { useColors } from '@/hooks/masters/useColors';
 
@@ -25,7 +25,6 @@ const addOnSchema = z.object({
   has_colour: z.boolean().default(false),
   group_name: z.string().optional(),
   price: z.number().min(0).optional(),
-  color_names: z.array(z.string()).default([]),
   color_id: z.string().optional(),
 });
 
@@ -67,7 +66,6 @@ export const AddOnDialog: React.FC<AddOnDialogProps> = ({
       has_colour: false,
       group_name: '',
       price: 0,
-      color_names: [],
       color_id: '',
     },
   });
@@ -90,7 +88,6 @@ export const AddOnDialog: React.FC<AddOnDialogProps> = ({
           has_colour: addOn.has_colour || false,
           group_name: addOn.group_name || '',
           price: addOn.price || 0,
-          color_names: addOn.colors?.map(c => c.name) || [],
           color_id: '',
         });
       } else {
@@ -107,7 +104,6 @@ export const AddOnDialog: React.FC<AddOnDialogProps> = ({
           has_colour: false,
           group_name: '',
           price: 0,
-          color_names: [],
           color_id: '',
         });
       }
@@ -117,16 +113,9 @@ export const AddOnDialog: React.FC<AddOnDialogProps> = ({
   const handleSubmit = (data: AddOnFormData) => {
     console.log('📝 AddOnDialog - handleSubmit called with data:', data);
     
-    // Transform color names to color objects
-    const colors = data.color_names.map(name => ({
-      id: crypto.randomUUID(),
-      name: name,
-      hex_code: '#000000' // Default color, can be updated later
-    }));
-
     const submitData = {
       ...data,
-      colors,
+      colors: [],
       options: [] // Initialize with empty options array
     };
 
@@ -330,26 +319,6 @@ export const AddOnDialog: React.FC<AddOnDialogProps> = ({
             </FormItem>
           )}
         />
-
-        {hasColourValue && (
-          <FormField
-            control={form.control}
-            name="color_names"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Color Names</FormLabel>
-                <FormControl>
-                  <TagsInput
-                    value={field.value}
-                    onChange={field.onChange}
-                    placeholder="Enter color names..."
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        )}
 
         <FormField
           control={form.control}
