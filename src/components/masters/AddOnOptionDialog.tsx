@@ -90,22 +90,32 @@ export const AddOnOptionDialog: React.FC<AddOnOptionDialogProps> = ({
     }
 
     if (option) {
-      // Update existing option
+      // Update existing option - ensure all required fields are present
       updateOptionMutation.mutate(
         { 
           id: option.id, 
           data: {
-            ...data,
+            name: data.name, // name is guaranteed to be present due to form validation
+            description: data.description,
+            price: data.price,
+            display_order: data.display_order,
+            image_url: data.image_url,
+            status: data.status,
             add_on_id: addOn.id
           }
         },
         { onSuccess: () => onOpenChange(false) }
       );
     } else {
-      // Create new option
+      // Create new option - ensure all required fields are present
       createOptionMutation.mutate(
         {
-          ...data,
+          name: data.name, // name is guaranteed to be present due to form validation
+          description: data.description,
+          price: data.price,
+          display_order: data.display_order,
+          image_url: data.image_url,
+          status: data.status,
           add_on_id: addOn.id
         },
         { onSuccess: () => onOpenChange(false) }
