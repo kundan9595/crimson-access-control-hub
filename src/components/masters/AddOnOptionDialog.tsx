@@ -87,8 +87,14 @@ export const AddOnOptionDialog: React.FC<AddOnOptionDialogProps> = ({
         { onSuccess: () => onOpenChange(false) }
       );
     } else {
+      // Ensure name is provided when creating
+      const optionData = {
+        ...data,
+        add_on_id: addOn.id,
+        name: data.name, // Explicitly ensure name is included
+      };
       createOptionMutation.mutate(
-        { ...data, add_on_id: addOn.id },
+        optionData,
         { onSuccess: () => onOpenChange(false) }
       );
     }

@@ -81,39 +81,62 @@ export const AddOnsList: React.FC<AddOnsListProps> = ({ searchTerm }) => {
     <>
       <div className="grid gap-4">
         {filteredAddOns.map((addOn) => (
-          <MasterEntityCard
-            key={addOn.id}
-            title={addOn.name}
-            description={addOn.description}
-            imageUrl={addOn.image_url}
-            status={addOn.status}
-            metadata={[
-              { label: 'Type', value: addOn.select_type },
-              { label: 'Options', value: addOn.options?.length || 0 },
-              { label: 'Order', value: addOn.display_order || 0 },
-            ]}
-            actions={[
-              {
-                label: 'Manage Options',
-                icon: Settings,
-                onClick: () => handleManageOptions(addOn),
-                variant: 'outline',
-              },
-              {
-                label: 'Edit',
-                icon: Edit,
-                onClick: () => handleEdit(addOn),
-                variant: 'outline',
-              },
-              {
-                label: 'Delete',
-                icon: Trash2,
-                onClick: () => handleDelete(addOn),
-                variant: 'outline',
-                destructive: true,
-              },
-            ]}
-          />
+          <Card key={addOn.id}>
+            <CardContent className="p-6">
+              <div className="flex items-start justify-between">
+                <div className="flex items-start gap-4 flex-1 min-w-0">
+                  {addOn.image_url && (
+                    <img
+                      src={addOn.image_url}
+                      alt={addOn.name}
+                      className="w-16 h-16 object-cover rounded-md border flex-shrink-0"
+                    />
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-2">
+                      <h3 className="font-semibold text-lg truncate">{addOn.name}</h3>
+                      <Badge variant={addOn.status === 'active' ? 'default' : 'secondary'}>
+                        {addOn.status}
+                      </Badge>
+                    </div>
+                    {addOn.description && (
+                      <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
+                        {addOn.description}
+                      </p>
+                    )}
+                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                      <span>Type: {addOn.select_type}</span>
+                      <span>Options: {addOn.options?.length || 0}</span>
+                      <span>Order: {addOn.display_order || 0}</span>
+                    </div>
+                  </div>
+                </div>
+                <div className="flex gap-2 flex-shrink-0">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleManageOptions(addOn)}
+                  >
+                    <Settings className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleEdit(addOn)}
+                  >
+                    <Edit className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleDelete(addOn)}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         ))}
       </div>
 

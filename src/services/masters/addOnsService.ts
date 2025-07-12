@@ -43,7 +43,15 @@ export const addOnsService = {
       .order('name', { ascending: true });
 
     if (error) throw error;
-    return data || [];
+    return (data || []).map(item => ({
+      ...item,
+      select_type: item.select_type as 'single' | 'multiple' | 'checked',
+      status: item.status as 'active' | 'inactive',
+      options: item.options?.map((option: any) => ({
+        ...option,
+        status: option.status as 'active' | 'inactive'
+      })) || []
+    }));
   },
 
   async getById(id: string): Promise<AddOn | null> {
@@ -57,7 +65,15 @@ export const addOnsService = {
       .single();
 
     if (error) throw error;
-    return data;
+    return data ? {
+      ...data,
+      select_type: data.select_type as 'single' | 'multiple' | 'checked',
+      status: data.status as 'active' | 'inactive',
+      options: data.options?.map((option: any) => ({
+        ...option,
+        status: option.status as 'active' | 'inactive'
+      })) || []
+    } : null;
   },
 
   async create(addOn: Omit<AddOn, 'id' | 'created_at' | 'updated_at' | 'created_by' | 'updated_by'>): Promise<AddOn> {
@@ -68,7 +84,11 @@ export const addOnsService = {
       .single();
 
     if (error) throw error;
-    return data;
+    return {
+      ...data,
+      select_type: data.select_type as 'single' | 'multiple' | 'checked',
+      status: data.status as 'active' | 'inactive'
+    };
   },
 
   async update(id: string, addOn: Partial<AddOn>): Promise<AddOn> {
@@ -80,7 +100,11 @@ export const addOnsService = {
       .single();
 
     if (error) throw error;
-    return data;
+    return {
+      ...data,
+      select_type: data.select_type as 'single' | 'multiple' | 'checked',
+      status: data.status as 'active' | 'inactive'
+    };
   },
 
   async delete(id: string): Promise<void> {
@@ -99,7 +123,11 @@ export const addOnsService = {
       .select();
 
     if (error) throw error;
-    return data || [];
+    return (data || []).map(item => ({
+      ...item,
+      select_type: item.select_type as 'single' | 'multiple' | 'checked',
+      status: item.status as 'active' | 'inactive'
+    }));
   },
 };
 
@@ -113,7 +141,10 @@ export const addOnOptionsService = {
       .order('name', { ascending: true });
 
     if (error) throw error;
-    return data || [];
+    return (data || []).map(item => ({
+      ...item,
+      status: item.status as 'active' | 'inactive'
+    }));
   },
 
   async create(option: Omit<AddOnOption, 'id' | 'created_at' | 'updated_at' | 'created_by' | 'updated_by'>): Promise<AddOnOption> {
@@ -124,7 +155,10 @@ export const addOnOptionsService = {
       .single();
 
     if (error) throw error;
-    return data;
+    return {
+      ...data,
+      status: data.status as 'active' | 'inactive'
+    };
   },
 
   async update(id: string, option: Partial<AddOnOption>): Promise<AddOnOption> {
@@ -136,7 +170,10 @@ export const addOnOptionsService = {
       .single();
 
     if (error) throw error;
-    return data;
+    return {
+      ...data,
+      status: data.status as 'active' | 'inactive'
+    };
   },
 
   async delete(id: string): Promise<void> {
@@ -155,6 +192,9 @@ export const addOnOptionsService = {
       .select();
 
     if (error) throw error;
-    return data || [];
+    return (data || []).map(item => ({
+      ...item,
+      status: item.status as 'active' | 'inactive'
+    }));
   },
 };
