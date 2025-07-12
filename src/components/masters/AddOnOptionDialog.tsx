@@ -87,12 +87,17 @@ export const AddOnOptionDialog: React.FC<AddOnOptionDialogProps> = ({
         { onSuccess: () => onOpenChange(false) }
       );
     } else {
-      // Ensure name is provided when creating
-      const optionData = {
-        ...data,
+      // Ensure required fields are properly typed when creating
+      const optionData: Omit<AddOnOption, 'id' | 'created_at' | 'updated_at' | 'created_by' | 'updated_by'> = {
         add_on_id: addOn.id,
-        name: data.name, // Explicitly ensure name is included
+        name: data.name,
+        description: data.description,
+        price: data.price,
+        display_order: data.display_order,
+        image_url: data.image_url,
+        status: data.status, // This is now guaranteed to be 'active' | 'inactive' from the form schema
       };
+      
       createOptionMutation.mutate(
         optionData,
         { onSuccess: () => onOpenChange(false) }
