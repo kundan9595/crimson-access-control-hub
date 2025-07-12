@@ -5,10 +5,10 @@ export interface BaseProduct {
   id: string;
   name: string;
   sort_order: number;
-  calculator?: number;
+  calculator?: number; // Changed from number to match database
   category_id?: string;
   fabric_id?: string;
-  size_group_id?: string;
+  size_group_id?: string; // Added missing field
   parts: string[]; // Array of part IDs
   base_price: number;
   base_sn?: number;
@@ -58,14 +58,29 @@ export const fetchBaseProducts = async (): Promise<BaseProduct[]> => {
   }
   
   console.log('✅ Fetched base products:', data);
-  return (data || []) as BaseProduct[];
+  // Convert calculator from string to number if it exists
+  const processedData = (data || []).map(item => ({
+    ...item,
+    calculator: item.calculator ? Number(item.calculator) : undefined,
+    parts: item.parts || [],
+    branding_sides: item.branding_sides || []
+  }));
+  
+  return processedData as BaseProduct[];
 };
 
 export const createBaseProduct = async (baseProductData: Omit<BaseProduct, 'id' | 'created_at' | 'updated_at' | 'created_by' | 'updated_by' | 'category' | 'fabric' | 'size_group'>): Promise<BaseProduct> => {
   console.log('🆕 Creating base product:', baseProductData);
+  
+  // Prepare data for insertion, ensuring calculator is handled properly
+  const insertData = {
+    ...baseProductData,
+    calculator: baseProductData.calculator?.toString() || null,
+  };
+  
   const { data, error } = await supabase
     .from('base_products')
-    .insert([baseProductData])
+    .insert([insertData])
     .select(`
       *,
       category:categories(id, name),
@@ -80,14 +95,29 @@ export const createBaseProduct = async (baseProductData: Omit<BaseProduct, 'id' 
   }
   
   console.log('✅ Created base product:', data);
-  return data as BaseProduct;
+  // Convert calculator back to number
+  const processedData = {
+    ...data,
+    calculator: data.calculator ? Number(data.calculator) : undefined,
+    parts: data.parts || [],
+    branding_sides: data.branding_sides || []
+  };
+  
+  return processedData as BaseProduct;
 };
 
 export const updateBaseProduct = async (id: string, updates: Partial<BaseProduct>): Promise<BaseProduct> => {
   console.log('📝 Updating base product:', id, updates);
+  
+  // Prepare updates, ensuring calculator is handled properly
+  const updateData = {
+    ...updates,
+    calculator: updates.calculator?.toString() || null,
+  };
+  
   const { data, error } = await supabase
     .from('base_products')
-    .update(updates)
+    .update(updateData)
     .eq('id', id)
     .select(`
       *,
@@ -103,7 +133,15 @@ export const updateBaseProduct = async (id: string, updates: Partial<BaseProduct
   }
   
   console.log('✅ Updated base product:', data);
-  return data as BaseProduct;
+  // Convert calculator back to number
+  const processedData = {
+    ...data,
+    calculator: data.calculator ? Number(data.calculator) : undefined,
+    parts: data.parts || [],
+    branding_sides: data.branding_sides || []
+  };
+  
+  return processedData as BaseProduct;
 };
 
 export const deleteBaseProduct = async (id: string): Promise<void> => {

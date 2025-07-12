@@ -12,7 +12,7 @@ export const useBaseProducts = () => {
 };
 
 export const useCreateBaseProduct = () => {
-  return useCreateMutation<Omit<BaseProduct, 'id' | 'created_at' | 'updated_at' | 'created_by' | 'updated_by' | 'category' | 'fabric'>>({
+  return useCreateMutation<Omit<BaseProduct, 'id' | 'created_at' | 'updated_at' | 'created_by' | 'updated_by' | 'category' | 'fabric' | 'size_group'>>({
     queryKey: ['baseProducts'],
     mutationFn: createBaseProduct,
     successMessage: 'Base product created successfully',

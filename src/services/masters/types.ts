@@ -277,7 +277,7 @@ export interface BaseProduct {
   calculator?: number;
   category_id?: string;
   fabric_id?: string;
-  size_group_id?: string;
+  size_group_id?: string; // Added missing field
   parts: string[]; // Array of part IDs
   base_price: number;
   base_sn?: number;
