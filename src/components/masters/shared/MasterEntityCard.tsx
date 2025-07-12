@@ -9,6 +9,7 @@ interface MasterEntityCardProps {
   title: string;
   description?: string | null;
   status: 'active' | 'inactive';
+  icon?: React.ReactNode;
   children?: React.ReactNode;
   onEdit: () => void;
   onDelete: () => void;
@@ -19,6 +20,7 @@ export const MasterEntityCard: React.FC<MasterEntityCardProps> = ({
   title,
   description,
   status,
+  icon,
   children,
   onEdit,
   onDelete,
@@ -28,7 +30,10 @@ export const MasterEntityCard: React.FC<MasterEntityCardProps> = ({
     <Card>
       <CardHeader>
         <div className="flex items-center justify-between">
-          <CardTitle className="text-lg">{title}</CardTitle>
+          <div className="flex items-center gap-2">
+            {icon}
+            <CardTitle className="text-lg">{title}</CardTitle>
+          </div>
           <Badge variant={status === 'active' ? 'default' : 'secondary'}>
             {status}
           </Badge>
