@@ -21,16 +21,28 @@ const AddOnsPage = () => {
   );
 
   const handleAdd = () => {
+    if (!user) {
+      console.log('User must be authenticated to add add-ons');
+      return;
+    }
     // Trigger the create function in AddOnsList component
     addOnsListRef.current?.triggerCreate();
   };
 
   const handleExport = () => {
+    if (!user) {
+      console.log('User must be authenticated to export add-ons');
+      return;
+    }
     // TODO: Implement export functionality
     console.log('Export add-ons clicked');
   };
 
   const handleImport = () => {
+    if (!user) {
+      console.log('User must be authenticated to import add-ons');
+      return;
+    }
     // TODO: Implement import functionality
     console.log('Import add-ons clicked');
   };
@@ -52,9 +64,7 @@ const AddOnsPage = () => {
         onAdd={handleAdd}
         onExport={handleExport}
         onImport={handleImport}
-        canExport={addOns.length > 0}
-        // Disable actions if user is not authenticated
-        disabled={!user}
+        canExport={addOns.length > 0 && !!user}
       />
 
       {!user && (
