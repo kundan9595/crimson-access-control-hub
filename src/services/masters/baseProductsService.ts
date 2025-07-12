@@ -58,6 +58,7 @@ export const fetchBaseProducts = async (): Promise<BaseProduct[]> => {
   }
   
   console.log('✅ Fetched base products:', data);
+  
   // Convert calculator from string to number if it exists and ensure proper data structure
   const processedData = (data || []).map(item => ({
     ...item,
@@ -66,7 +67,7 @@ export const fetchBaseProducts = async (): Promise<BaseProduct[]> => {
     branding_sides: Array.isArray(item.branding_sides) ? item.branding_sides : [],
     category: item.category && typeof item.category === 'object' && 'id' in item.category ? item.category : undefined,
     fabric: item.fabric && typeof item.fabric === 'object' && 'id' in item.fabric ? item.fabric : undefined,
-    size_group: item.size_group && typeof item.size_group === 'object' && 'id' in item.size_group ? item.size_group : undefined,
+    size_group: item.size_group && typeof item.size_group === 'object' && item.size_group !== null && 'id' in item.size_group ? item.size_group : undefined,
   }));
   
   return processedData as BaseProduct[];
@@ -98,6 +99,7 @@ export const createBaseProduct = async (baseProductData: Omit<BaseProduct, 'id' 
   }
   
   console.log('✅ Created base product:', data);
+  
   // Convert calculator back to number and ensure proper data structure
   const processedData = {
     ...data,
@@ -106,7 +108,7 @@ export const createBaseProduct = async (baseProductData: Omit<BaseProduct, 'id' 
     branding_sides: Array.isArray(data.branding_sides) ? data.branding_sides : [],
     category: data.category && typeof data.category === 'object' && 'id' in data.category ? data.category : undefined,
     fabric: data.fabric && typeof data.fabric === 'object' && 'id' in data.fabric ? data.fabric : undefined,
-    size_group: data.size_group && typeof data.size_group === 'object' && 'id' in data.size_group ? data.size_group : undefined,
+    size_group: data.size_group && typeof data.size_group === 'object' && data.size_group !== null && 'id' in data.size_group ? data.size_group : undefined,
   };
   
   return processedData as BaseProduct;
@@ -139,6 +141,7 @@ export const updateBaseProduct = async (id: string, updates: Partial<BaseProduct
   }
   
   console.log('✅ Updated base product:', data);
+  
   // Convert calculator back to number and ensure proper data structure
   const processedData = {
     ...data,
@@ -147,7 +150,7 @@ export const updateBaseProduct = async (id: string, updates: Partial<BaseProduct
     branding_sides: Array.isArray(data.branding_sides) ? data.branding_sides : [],
     category: data.category && typeof data.category === 'object' && 'id' in data.category ? data.category : undefined,
     fabric: data.fabric && typeof data.fabric === 'object' && 'id' in data.fabric ? data.fabric : undefined,
-    size_group: data.size_group && typeof data.size_group === 'object' && 'id' in data.size_group ? data.size_group : undefined,
+    size_group: data.size_group && typeof data.size_group === 'object' && data.size_group !== null && 'id' in data.size_group ? data.size_group : undefined,
   };
   
   return processedData as BaseProduct;
