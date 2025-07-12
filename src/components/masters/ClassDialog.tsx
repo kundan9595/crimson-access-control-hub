@@ -17,10 +17,12 @@ import { validateSizeRatios, getSizeRatioDisplay, getDefaultMonthlyStockLevels, 
 interface ClassDialogProps {
   classItem?: Class;
   trigger?: React.ReactNode;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
-const ClassDialog: React.FC<ClassDialogProps> = ({ classItem, trigger }) => {
-  const [open, setOpen] = useState(false);
+const ClassDialog: React.FC<ClassDialogProps> = ({ classItem, trigger, open, onOpenChange }) => {
+  const [internalOpen, setInternalOpen] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     style_id: null as string | null,
@@ -46,6 +48,9 @@ const ClassDialog: React.FC<ClassDialogProps> = ({ classItem, trigger }) => {
   const { data: allSizes = [] } = useSizes();
   const createMutation = useCreateClass();
   const updateMutation = useUpdateClass();
+
+  const isOpen = open !== undefined ? open : internalOpen;
+  const setIsOpen = onOpenChange || setInternalOpen;
 
   // Filter sizes based on selected size group
   const availableSizes = formData.size_group_id 
@@ -106,7 +111,7 @@ const ClassDialog: React.FC<ClassDialogProps> = ({ classItem, trigger }) => {
       } else {
         await createMutation.mutateAsync(submitData);
       }
-      setOpen(false);
+      setIsOpen(false);
       resetForm();
     } catch (error) {
       console.error('Error saving class:', error);
@@ -135,7 +140,7 @@ const ClassDialog: React.FC<ClassDialogProps> = ({ classItem, trigger }) => {
   };
 
   const handleClose = () => {
-    setOpen(false);
+    setIsOpen(false);
     if (!classItem) resetForm();
   };
 
@@ -241,15 +246,12 @@ const ClassDialog: React.FC<ClassDialogProps> = ({ classItem, trigger }) => {
   ];
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild onClick={(e) => e.stopPropagation()}>
-        {trigger || (
-          <Button>
-            {classItem ? <Edit2 className="h-4 w-4 mr-2" /> : <Plus className="h-4 w-4 mr-2" />}
-            {classItem ? 'Edit' : 'Add Class'}
-          </Button>
-        )}
-      </DialogTrigger>
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      {trigger && (
+        <DialogTrigger asChild onClick={(e) => e.stopPropagation()}>
+          {trigger}
+        </DialogTrigger>
+      )}
       <DialogContent className="max-w-6xl max-h-[95vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
@@ -460,23 +462,13 @@ const ClassDialog: React.FC<ClassDialogProps> = ({ classItem, trigger }) => {
                           ))}
                       </div>
                       
-                      {hasRatioData && (
-                        <div className="mt-4 p-3 bg-white rounded border">
-                          <div className="flex justify-between items-center">
-                            <span className="font-medium">Ratio Display:</span>
-                            <span className="text-lg font-bold text-blue-600">
-                              {getSizeRatioDisplay(formData.size_ratios)}
-                            </span>
-                          </div>
-                          {!isRatioValid && (
-                            <Alert className="mt-2">
-                              <AlertTriangle className="h-4 w-4" />
-                              <AlertDescription>
-                                All ratio values must be positive numbers.
-                              </AlertDescription>
-                            </Alert>
-                          )}
-                        </div>
+                      {!isRatioValid && hasRatioData && (
+                        <Alert className="mt-4">
+                          <AlertTriangle className="h-4 w-4" />
+                          <AlertDescription>
+                            All ratio values must be positive numbers.
+                          </AlertDescription>
+                        </Alert>
                       )}
                     </div>
                   )}
