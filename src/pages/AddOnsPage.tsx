@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Plus } from 'lucide-react';
 import { MasterPageHeader } from '@/components/masters/shared/MasterPageHeader';
@@ -11,6 +11,7 @@ const AddOnsPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const { data: addOns = [] } = useAddOns();
   const bulkCreateMutation = useBulkCreateAddOns();
+  const addOnsListRef = useRef<{ triggerCreate: () => void }>(null);
 
   const filteredAddOns = addOns.filter(addOn =>
     addOn.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -18,8 +19,8 @@ const AddOnsPage = () => {
   );
 
   const handleAdd = () => {
-    // This will be handled by the AddOnsList component
-    console.log('Add add-on clicked');
+    // Trigger the create function in AddOnsList component
+    addOnsListRef.current?.triggerCreate();
   };
 
   const handleExport = () => {
@@ -55,7 +56,7 @@ const AddOnsPage = () => {
           />
           
           <div className="mt-6">
-            <AddOnsList searchTerm={searchTerm} />
+            <AddOnsList ref={addOnsListRef} searchTerm={searchTerm} />
           </div>
         </CardContent>
       </Card>

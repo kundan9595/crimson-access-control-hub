@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, forwardRef, useImperativeHandle } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -14,7 +14,11 @@ interface AddOnsListProps {
   searchTerm: string;
 }
 
-export const AddOnsList: React.FC<AddOnsListProps> = ({ searchTerm }) => {
+interface AddOnsListRef {
+  triggerCreate: () => void;
+}
+
+export const AddOnsList = forwardRef<AddOnsListRef, AddOnsListProps>(({ searchTerm }, ref) => {
   const [selectedAddOn, setSelectedAddOn] = useState<AddOn | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [optionsDialogOpen, setOptionsDialogOpen] = useState(false);
@@ -34,6 +38,11 @@ export const AddOnsList: React.FC<AddOnsListProps> = ({ searchTerm }) => {
     setSelectedAddOn(null);
     setDialogOpen(true);
   };
+
+  // Expose the create function to parent component
+  useImperativeHandle(ref, () => ({
+    triggerCreate: handleCreate
+  }));
 
   const handleEdit = (addOn: AddOn) => {
     setSelectedAddOn(addOn);
@@ -155,4 +164,6 @@ export const AddOnsList: React.FC<AddOnsListProps> = ({ searchTerm }) => {
       />
     </>
   );
-};
+});
+
+AddOnsList.displayName = 'AddOnsList';
