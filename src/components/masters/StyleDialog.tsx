@@ -1,3 +1,4 @@
+
 import React, { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -96,6 +97,7 @@ export const StyleDialog: React.FC<StyleDialogProps> = ({
         brand_id: data.brand_id || null,
         category_id: data.category_id || null,
         status: data.status,
+        sort_order: style?.sort_order || null,
       };
 
       if (style) {
