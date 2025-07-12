@@ -7,7 +7,7 @@ import { BaseFormDialog } from './shared/BaseFormDialog';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ImageUpload } from '@/components/ui/ImageUpload';
+import ImageUpload from '@/components/ui/ImageUpload';
 import { useCreateFabric, useUpdateFabric } from '@/hooks/masters/useFabrics';
 import { useColors } from '@/hooks/masters/useColors';
 import { Fabric } from '@/services/masters/types';
@@ -24,6 +24,7 @@ const fabricSchema = z.object({
   price: z.number().min(0, 'Price must be non-negative'),
   color_id: z.string().optional(),
   image_url: z.string().optional(),
+  status: z.string().default('active'),
 });
 
 type FabricFormData = z.infer<typeof fabricSchema>;
@@ -53,6 +54,7 @@ export const FabricDialog: React.FC<FabricDialogProps> = ({
       price: fabric?.price || 0,
       color_id: fabric?.color_id || '',
       image_url: fabric?.image_url || '',
+      status: fabric?.status || 'active',
     },
   });
 
@@ -80,102 +82,60 @@ export const FabricDialog: React.FC<FabricDialogProps> = ({
       open={open}
       onOpenChange={onOpenChange}
       title={fabric ? 'Edit Fabric' : 'Add Fabric'}
-      description={fabric ? 'Update fabric details' : 'Add a new fabric to your inventory'}
-      onSubmit={form.handleSubmit(onSubmit)}
-      isLoading={isLoading}
+      form={form}
+      onSubmit={onSubmit}
+      isSubmitting={isLoading}
+      isEditing={!!fabric}
     >
-      <Form {...form}>
-        <div className="grid gap-4 py-4">
-          <FormField
-            control={form.control}
-            name="name"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Fabric Name</FormLabel>
+      <div className="grid gap-4 py-4">
+        <FormField
+          control={form.control}
+          name="name"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Fabric Name</FormLabel>
+              <FormControl>
+                <Input placeholder="Enter fabric name" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="fabric_type"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Fabric Type</FormLabel>
+              <Select onValueChange={field.onChange} defaultValue={field.value}>
                 <FormControl>
-                  <Input placeholder="Enter fabric name" {...field} />
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select fabric type" />
+                  </SelectTrigger>
                 </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+                <SelectContent>
+                  <SelectItem value="Cotton">Cotton</SelectItem>
+                  <SelectItem value="Poly Cotton">Poly Cotton</SelectItem>
+                  <SelectItem value="Polyester">Polyester</SelectItem>
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
+        <div className="grid grid-cols-2 gap-4">
           <FormField
             control={form.control}
-            name="fabric_type"
+            name="gsm"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Fabric Type</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select fabric type" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    <SelectItem value="Cotton">Cotton</SelectItem>
-                    <SelectItem value="Poly Cotton">Poly Cotton</SelectItem>
-                    <SelectItem value="Polyester">Polyester</SelectItem>
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <div className="grid grid-cols-2 gap-4">
-            <FormField
-              control={form.control}
-              name="gsm"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>GSM</FormLabel>
-                  <FormControl>
-                    <Input
-                      type="number"
-                      placeholder="Enter GSM"
-                      {...field}
-                      onChange={(e) => field.onChange(Number(e.target.value))}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="uom"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Unit of Measure</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select UOM" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="kg">kg</SelectItem>
-                      <SelectItem value="meter">meter</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </div>
-
-          <FormField
-            control={form.control}
-            name="price"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Price</FormLabel>
+                <FormLabel>GSM</FormLabel>
                 <FormControl>
                   <Input
                     type="number"
-                    placeholder="Enter price"
+                    placeholder="Enter GSM"
                     {...field}
                     onChange={(e) => field.onChange(Number(e.target.value))}
                   />
@@ -187,56 +147,96 @@ export const FabricDialog: React.FC<FabricDialogProps> = ({
 
           <FormField
             control={form.control}
-            name="color_id"
+            name="uom"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Color (Optional)</FormLabel>
+                <FormLabel>Unit of Measure</FormLabel>
                 <Select onValueChange={field.onChange} defaultValue={field.value}>
                   <FormControl>
                     <SelectTrigger>
-                      <SelectValue placeholder="Select color" />
+                      <SelectValue placeholder="Select UOM" />
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    <SelectItem value="">No Color</SelectItem>
-                    {colors.map((color) => (
-                      <SelectItem key={color.id} value={color.id}>
-                        <div className="flex items-center gap-2">
-                          <div
-                            className="w-4 h-4 rounded border"
-                            style={{ backgroundColor: color.hex_code }}
-                          />
-                          {color.name}
-                        </div>
-                      </SelectItem>
-                    ))}
+                    <SelectItem value="kg">kg</SelectItem>
+                    <SelectItem value="meter">meter</SelectItem>
                   </SelectContent>
                 </Select>
                 <FormMessage />
               </FormItem>
             )}
           />
-
-          <FormField
-            control={form.control}
-            name="image_url"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Fabric Image</FormLabel>
-                <FormControl>
-                  <ImageUpload
-                    value={field.value}
-                    onChange={field.onChange}
-                    bucket="master-images"
-                    folder="fabrics"
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
         </div>
-      </Form>
+
+        <FormField
+          control={form.control}
+          name="price"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Price</FormLabel>
+              <FormControl>
+                <Input
+                  type="number"
+                  placeholder="Enter price"
+                  {...field}
+                  onChange={(e) => field.onChange(Number(e.target.value))}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="color_id"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Color (Optional)</FormLabel>
+              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select color" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  <SelectItem value="">No Color</SelectItem>
+                  {colors.map((color) => (
+                    <SelectItem key={color.id} value={color.id}>
+                      <div className="flex items-center gap-2">
+                        <div
+                          className="w-4 h-4 rounded border"
+                          style={{ backgroundColor: color.hex_code }}
+                        />
+                        {color.name}
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="image_url"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Fabric Image</FormLabel>
+              <FormControl>
+                <ImageUpload
+                  value={field.value}
+                  onChange={field.onChange}
+                  onRemove={() => field.onChange('')}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      </div>
     </BaseFormDialog>
   );
 };
