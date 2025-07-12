@@ -45,7 +45,7 @@ export const PartsList: React.FC<PartsListProps> = ({
           key={part.id}
           title={part.name}
           description={part.description}
-          status={part.status}
+          status={part.status as 'active' | 'inactive'}
           icon={<Package className="h-5 w-5" />}
           onEdit={() => onEdit(part)}
           onDelete={() => onDelete(part)}
