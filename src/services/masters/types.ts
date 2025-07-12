@@ -1,4 +1,3 @@
-
 export interface Brand {
   id: string;
   name: string;
@@ -123,6 +122,7 @@ export interface Style {
   brand_id: string | null;
   category_id: string | null;
   status: string;
+  sort_order: number | null;
   created_at: string;
   updated_at: string;
   created_by: string | null;
