@@ -37,6 +37,7 @@ export const createSku = async (skuData: Omit<Sku, 'id' | 'created_at' | 'update
     weight_grams: skuData.weight_grams,
     base_mrp: skuData.base_mrp,
     cost_price: skuData.cost_price,
+    gst_rate: skuData.gst_rate,
     price_type_prices: skuData.price_type_prices,
     status: skuData.status,
   };
