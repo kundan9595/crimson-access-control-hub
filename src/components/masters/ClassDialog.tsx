@@ -57,6 +57,35 @@ const ClassDialog: React.FC<ClassDialogProps> = ({ classItem, trigger, open, onO
     ? allSizes.filter(size => size.size_group_id === formData.size_group_id && size.status === 'active')
     : [];
 
+  const resetForm = () => {
+    setFormData({
+      name: '',
+      style_id: null,
+      color_id: null,
+      size_group_id: null,
+      selected_sizes: [],
+      description: '',
+      status: 'active',
+      gst_rate: 0,
+      sort_order: 0,
+      primary_image_url: '',
+      images: [],
+      size_ratios: {},
+      stock_management_type: 'overall',
+      overall_min_stock: 0,
+      overall_max_stock: 0,
+      monthly_stock_levels: {},
+    });
+  };
+
+  // Reset form when dialog opens and there's no classItem (add mode)
+  useEffect(() => {
+    if (isOpen && !classItem) {
+      console.log('Dialog opened in add mode - resetting form');
+      resetForm();
+    }
+  }, [isOpen, classItem]);
+
   useEffect(() => {
     if (classItem) {
       console.log('Loading class item for editing:', classItem);
@@ -78,8 +107,12 @@ const ClassDialog: React.FC<ClassDialogProps> = ({ classItem, trigger, open, onO
         overall_max_stock: classItem.overall_max_stock || 0,
         monthly_stock_levels: classItem.monthly_stock_levels || {},
       });
+    } else if (isOpen) {
+      // Explicitly reset when no classItem and dialog is open
+      console.log('No class item and dialog is open - resetting form');
+      resetForm();
     }
-  }, [classItem]);
+  }, [classItem, isOpen]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -118,30 +151,9 @@ const ClassDialog: React.FC<ClassDialogProps> = ({ classItem, trigger, open, onO
     }
   };
 
-  const resetForm = () => {
-    setFormData({
-      name: '',
-      style_id: null,
-      color_id: null,
-      size_group_id: null,
-      selected_sizes: [],
-      description: '',
-      status: 'active',
-      gst_rate: 0,
-      sort_order: 0,
-      primary_image_url: '',
-      images: [],
-      size_ratios: {},
-      stock_management_type: 'overall',
-      overall_min_stock: 0,
-      overall_max_stock: 0,
-      monthly_stock_levels: {},
-    });
-  };
-
   const handleClose = () => {
     setIsOpen(false);
-    if (!classItem) resetForm();
+    resetForm();
   };
 
   const handleSizeGroupChange = (value: string) => {

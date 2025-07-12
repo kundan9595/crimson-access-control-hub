@@ -24,6 +24,7 @@ const ClassesPage = () => {
 
   useEffect(() => {
     if (searchParams.get('add') === 'true') {
+      setEditingClass(null);
       setDialogOpen(true);
       setSearchParams({});
     }
@@ -31,6 +32,12 @@ const ClassesPage = () => {
 
   const handleEdit = (classItem: Class) => {
     setEditingClass(classItem);
+    setDialogOpen(true);
+  };
+
+  const handleAdd = () => {
+    console.log('Opening add dialog - clearing editingClass');
+    setEditingClass(null);
     setDialogOpen(true);
   };
 
@@ -55,7 +62,7 @@ const ClassesPage = () => {
         `"${cls.description || ''}"`,
         `"${cls.style?.name || ''}"`,
         `"${cls.color?.name || ''}"`,
-        `"${cls.size_group_id || ''}"`, // Fixed: use size_group_id instead of size_group?.name
+        `"${cls.size_group_id || ''}"`,
         cls.gst_rate || 0,
         cls.sort_order || 0,
         cls.status
@@ -98,7 +105,7 @@ const ClassesPage = () => {
         title="Classes"
         description="Manage product classes with styles, colors, and images"
         icon={<Shirt className="h-6 w-6 text-pink-600" />}
-        onAdd={() => setDialogOpen(true)}
+        onAdd={handleAdd}
         onExport={handleExport}
         onImport={() => setBulkImportOpen(true)}
         canExport={!!classes?.length}
