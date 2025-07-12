@@ -239,6 +239,21 @@ export interface Fabric {
   };
 }
 
+export interface AppAsset {
+  id: string;
+  name: string;
+  dx: number;
+  dy: number;
+  mirror_dx: number;
+  asset_height_resp_to_box: number;
+  asset?: string;
+  status: string;
+  created_at: string;
+  updated_at: string;
+  created_by?: string;
+  updated_by?: string;
+}
+
 export type {
   AddOn,
   AddOnOption,

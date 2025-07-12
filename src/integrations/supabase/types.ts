@@ -74,6 +74,51 @@ export type Database = {
         }
         Relationships: []
       }
+      app_assets: {
+        Row: {
+          asset: string | null
+          asset_height_resp_to_box: number
+          created_at: string
+          created_by: string | null
+          dx: number
+          dy: number
+          id: string
+          mirror_dx: number
+          name: string
+          status: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          asset?: string | null
+          asset_height_resp_to_box?: number
+          created_at?: string
+          created_by?: string | null
+          dx?: number
+          dy?: number
+          id?: string
+          mirror_dx?: number
+          name: string
+          status?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          asset?: string | null
+          asset_height_resp_to_box?: number
+          created_at?: string
+          created_by?: string | null
+          dx?: number
+          dy?: number
+          id?: string
+          mirror_dx?: number
+          name?: string
+          status?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       brands: {
         Row: {
           created_at: string

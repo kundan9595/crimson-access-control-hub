@@ -31,6 +31,9 @@ export * from './skusService';
 // Export all media services
 export * from './mediaService';
 
+// Export all app assets services
+export * from './appAssetsService';
+
 // Re-export types for convenience
 export type {
   Brand,
@@ -51,6 +54,11 @@ export type {
   MediaFolder,
   MediaItem,
 } from './mediaService';
+
+// Re-export app assets types
+export type {
+  AppAsset,
+} from './appAssetsService';
 
 export * from './fabricsService';
 export * from './addOnsService';
