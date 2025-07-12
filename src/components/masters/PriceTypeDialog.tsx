@@ -10,12 +10,12 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useCreatePriceType, useUpdatePriceType } from '@/hooks/useMasters';
-import { PriceType, PriceTypeCategory } from '@/services/masters/types';
+import { PriceType } from '@/services/masters/types';
 
 const priceTypeSchema = z.object({
   name: z.string().min(1, 'Name is required'),
   description: z.string().optional(),
-  category: z.enum(['retail', 'wholesale', 'distributor', 'special'] as const),
+  category: z.enum(['zone', 'customer'] as const),
   status: z.string(),
 });
 
@@ -36,7 +36,7 @@ const PriceTypeDialog = ({ priceType, open, onOpenChange }: PriceTypeDialogProps
     defaultValues: {
       name: priceType?.name || '',
       description: priceType?.description || '',
-      category: (priceType?.category as PriceTypeCategory) || 'retail',
+      category: (priceType?.category === 'zone' || priceType?.category === 'customer') ? priceType.category : 'zone',
       status: priceType?.status || 'active',
     },
   });
@@ -46,14 +46,14 @@ const PriceTypeDialog = ({ priceType, open, onOpenChange }: PriceTypeDialogProps
       form.reset({
         name: priceType.name,
         description: priceType.description || '',
-        category: priceType.category as PriceTypeCategory,
+        category: (priceType.category === 'zone' || priceType.category === 'customer') ? priceType.category : 'zone',
         status: priceType.status,
       });
     } else {
       form.reset({
         name: '',
         description: '',
-        category: 'retail',
+        category: 'zone',
         status: 'active',
       });
     }
@@ -135,10 +135,8 @@ const PriceTypeDialog = ({ priceType, open, onOpenChange }: PriceTypeDialogProps
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="retail">Retail</SelectItem>
-                      <SelectItem value="wholesale">Wholesale</SelectItem>
-                      <SelectItem value="distributor">Distributor</SelectItem>
-                      <SelectItem value="special">Special</SelectItem>
+                      <SelectItem value="zone">Zone</SelectItem>
+                      <SelectItem value="customer">Customer</SelectItem>
                     </SelectContent>
                   </Select>
                   <FormMessage />
