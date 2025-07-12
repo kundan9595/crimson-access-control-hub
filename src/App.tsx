@@ -22,6 +22,12 @@ import StylesPage from "./pages/StylesPage";
 import ClassesPage from "./pages/ClassesPage";
 import SkusPage from "./pages/SkusPage";
 import MediaPage from "./pages/MediaPage";
+import FabricPage from "./pages/FabricPage";
+import PartsPage from "./pages/PartsPage";
+import AddOnsPage from "./pages/AddOnsPage";
+import BaseProductPage from "./pages/BaseProductPage";
+import ProfitMarginPage from "./pages/ProfitMarginPage";
+import AppAssetsPage from "./pages/AppAssetsPage";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 
@@ -56,6 +62,12 @@ const App = () => (
               <Route path="masters/classes" element={<ClassesPage />} />
               <Route path="masters/skus" element={<SkusPage />} />
               <Route path="masters/media" element={<MediaPage />} />
+              <Route path="masters/fabric" element={<FabricPage />} />
+              <Route path="masters/parts" element={<PartsPage />} />
+              <Route path="masters/add-ons" element={<AddOnsPage />} />
+              <Route path="masters/base-product" element={<BaseProductPage />} />
+              <Route path="masters/profit-margin" element={<ProfitMarginPage />} />
+              <Route path="masters/app-assets" element={<AppAssetsPage />} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>

@@ -13,7 +13,13 @@ import {
   Shirt,
   ArrowRight,
   Package2,
-  FolderOpen
+  FolderOpen,
+  Scissors,
+  Wrench,
+  Plus,
+  Box,
+  TrendingUp,
+  Smartphone
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
@@ -97,6 +103,48 @@ const Masters = () => {
       icon: FolderOpen,
       path: '/masters/media',
       color: 'text-violet-600',
+    },
+    {
+      title: 'Fabric',
+      description: 'Manage fabric types, properties, and specifications',
+      icon: Scissors,
+      path: '/masters/fabric',
+      color: 'text-amber-600',
+    },
+    {
+      title: 'Parts',
+      description: 'Define and manage product parts and components',
+      icon: Wrench,
+      path: '/masters/parts',
+      color: 'text-slate-600',
+    },
+    {
+      title: 'Add Ons',
+      description: 'Configure additional features and add-on components',
+      icon: Plus,
+      path: '/masters/add-ons',
+      color: 'text-lime-600',
+    },
+    {
+      title: 'Base Product',
+      description: 'Manage base product templates and configurations',
+      icon: Box,
+      path: '/masters/base-product',
+      color: 'text-rose-600',
+    },
+    {
+      title: 'Profit Margin',
+      description: 'Configure profit margins and pricing strategies',
+      icon: TrendingUp,
+      path: '/masters/profit-margin',
+      color: 'text-teal-600',
+    },
+    {
+      title: 'App Assets',
+      description: 'Manage application assets, icons, and media resources',
+      icon: Smartphone,
+      path: '/masters/app-assets',
+      color: 'text-sky-600',
     },
   ];
 
