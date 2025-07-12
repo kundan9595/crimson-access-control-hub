@@ -55,6 +55,11 @@ export const SkusList = () => {
     return `₹${price.toFixed(2)}`;
   };
 
+  const formatGstRate = (rate: number | null) => {
+    if (rate === null) return '-';
+    return `${rate}%`;
+  };
+
   if (isLoading) {
     return <div>Loading SKUs...</div>;
   }
@@ -73,6 +78,7 @@ export const SkusList = () => {
               <TableHead>Class</TableHead>
               <TableHead>Size</TableHead>
               <TableHead>Base MRP</TableHead>
+              <TableHead>GST Rate</TableHead>
               <TableHead>Status</TableHead>
               <TableHead className="w-[50px]"></TableHead>
             </TableRow>
@@ -80,7 +86,7 @@ export const SkusList = () => {
           <TableBody>
             {skus.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={10} className="text-center py-8 text-muted-foreground">
+                <TableCell colSpan={11} className="text-center py-8 text-muted-foreground">
                   No SKUs found. Create your first SKU to get started.
                 </TableCell>
               </TableRow>
@@ -123,6 +129,7 @@ export const SkusList = () => {
                     )}
                   </TableCell>
                   <TableCell>{formatPrice(sku.base_mrp)}</TableCell>
+                  <TableCell>{formatGstRate(sku.gst_rate)}</TableCell>
                   <TableCell>
                     <Badge variant={sku.status === 'active' ? 'default' : 'secondary'}>
                       {sku.status}

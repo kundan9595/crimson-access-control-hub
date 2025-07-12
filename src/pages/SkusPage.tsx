@@ -29,6 +29,7 @@ const SkusPage = () => {
       'Breadth (cm)',
       'Height (cm)',
       'Weight (grams)',
+      'GST Rate (%)',
       'Status'
     ];
 
@@ -46,6 +47,7 @@ const SkusPage = () => {
         sku.breadth_cm || '',
         sku.height_cm || '',
         sku.weight_grams || '',
+        sku.gst_rate || '',
         `"${sku.status}"`
       ].join(','))
     ].join('\n');
@@ -73,6 +75,7 @@ const SkusPage = () => {
     'Breadth (cm)',
     'Height (cm)',
     'Weight (grams)',
+    'GST Rate (%)',
     'Status'
   ];
 
@@ -89,6 +92,7 @@ const SkusPage = () => {
       '20',
       '10',
       '500',
+      '18',
       'active'
     ],
     [
@@ -103,6 +107,7 @@ const SkusPage = () => {
       '15',
       '8',
       '400',
+      '12',
       'active'
     ]
   ];
