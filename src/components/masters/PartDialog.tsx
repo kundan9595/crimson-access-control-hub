@@ -5,7 +5,6 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { BaseFormDialog } from './shared/BaseFormDialog';
 import { Part } from '@/services/masters/partsService';
@@ -14,7 +13,6 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 
 const partSchema = z.object({
   name: z.string().min(1, 'Name is required'),
-  description: z.string().optional(),
   selected_add_ons: z.array(z.string()).default([]),
   selected_colors: z.array(z.string()).default([]),
   order_criteria: z.boolean().default(false),
@@ -48,7 +46,6 @@ export const PartDialog: React.FC<PartDialogProps> = ({
     resolver: zodResolver(partSchema),
     defaultValues: {
       name: '',
-      description: '',
       selected_add_ons: [],
       selected_colors: [],
       order_criteria: false,
@@ -62,7 +59,6 @@ export const PartDialog: React.FC<PartDialogProps> = ({
     if (part) {
       form.reset({
         name: part.name,
-        description: part.description || '',
         selected_add_ons: part.selected_add_ons || [],
         selected_colors: part.selected_colors || [],
         order_criteria: part.order_criteria,
@@ -72,7 +68,6 @@ export const PartDialog: React.FC<PartDialogProps> = ({
     } else {
       form.reset({
         name: '',
-        description: '',
         selected_add_ons: [],
         selected_colors: [],
         order_criteria: false,
@@ -119,20 +114,6 @@ export const PartDialog: React.FC<PartDialogProps> = ({
               <FormLabel>Name *</FormLabel>
               <FormControl>
                 <Input placeholder="Enter part name" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
-          name="description"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Description</FormLabel>
-              <FormControl>
-                <Textarea placeholder="Enter part description" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>

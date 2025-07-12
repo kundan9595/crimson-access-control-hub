@@ -4,7 +4,6 @@ import { supabase } from '@/integrations/supabase/client';
 export interface Part {
   id: string;
   name: string;
-  description?: string;
   selected_add_ons: string[];
   selected_colors: string[];
   order_criteria: boolean;

@@ -44,7 +44,6 @@ export const PartsList: React.FC<PartsListProps> = ({
         <MasterEntityCard
           key={part.id}
           title={part.name}
-          description={part.description}
           status={part.status as 'active' | 'inactive'}
           icon={<Package className="h-5 w-5" />}
           onEdit={() => onEdit(part)}

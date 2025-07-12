@@ -23,8 +23,7 @@ const PartsPage = () => {
   const deletePartMutation = useDeletePart();
 
   const filteredParts = parts.filter(part =>
-    part.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (part.description && part.description.toLowerCase().includes(searchTerm.toLowerCase()))
+    part.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const handleAdd = () => {
