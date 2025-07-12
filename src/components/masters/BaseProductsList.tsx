@@ -9,7 +9,7 @@ import {
   DropdownMenuItem, 
   DropdownMenuTrigger 
 } from '@/components/ui/dropdown-menu';
-import { MoreHorizontal, Edit, Trash2, Eye } from 'lucide-react';
+import { MoreHorizontal, Edit, Trash2 } from 'lucide-react';
 import { useBaseProducts, useDeleteBaseProduct } from '@/hooks/masters/useBaseProducts';
 import { BaseProduct } from '@/services/masters/baseProductsService';
 import { BaseProductDialog } from './BaseProductDialog';
@@ -111,16 +111,18 @@ export const BaseProductsList: React.FC = () => {
                         <span className="font-medium">Fabric:</span> {baseProduct.fabric.name} ({baseProduct.fabric.fabric_type})
                       </div>
                     )}
+                    {baseProduct.size_group && (
+                      <div>
+                        <span className="font-medium">Size Group:</span> {baseProduct.size_group.name}
+                      </div>
+                    )}
                     {baseProduct.calculator && (
                       <div>
-                        <span className="font-medium">Calculator:</span> {baseProduct.calculator}
+                        <span className="font-medium">Calculator:</span> {baseProduct.calculator.toFixed(2)}
                       </div>
                     )}
                     <div>
-                      <span className="font-medium">Size Type:</span> {baseProduct.size_type}
-                    </div>
-                    <div>
-                      <span className="font-medium">Base Price:</span> ₹{baseProduct.base_price.toFixed(2)}
+                      <span className="font-medium">Base OF:</span> ₹{baseProduct.base_price.toFixed(2)}
                     </div>
                     {baseProduct.parts && baseProduct.parts.length > 0 && (
                       <div>

@@ -1,3 +1,4 @@
+
 export interface Brand {
   id: string;
   name: string;
@@ -273,9 +274,10 @@ export interface BaseProduct {
   id: string;
   name: string;
   sort_order: number;
-  calculator?: 'Knit' | 'Woven';
+  calculator?: number;
   category_id?: string;
   fabric_id?: string;
+  size_group_id?: string;
   parts: string[]; // Array of part IDs
   base_price: number;
   base_sn?: number;
@@ -285,7 +287,6 @@ export interface BaseProduct {
   overhead_percentage: number;
   sample_rate: number;
   image_url?: string;
-  size_type: 'Adult' | 'Kids' | 'Both';
   branding_sides: any[]; // Array of branding side objects
   status: string;
   created_at: string;
@@ -301,6 +302,10 @@ export interface BaseProduct {
     id: string;
     name: string;
     fabric_type: string;
+  };
+  size_group?: {
+    id: string;
+    name: string;
   };
 }
 

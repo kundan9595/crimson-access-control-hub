@@ -5,9 +5,10 @@ export interface BaseProduct {
   id: string;
   name: string;
   sort_order: number;
-  calculator?: 'Knit' | 'Woven';
+  calculator?: number;
   category_id?: string;
   fabric_id?: string;
+  size_group_id?: string;
   parts: string[]; // Array of part IDs
   base_price: number;
   base_sn?: number;
@@ -17,7 +18,6 @@ export interface BaseProduct {
   overhead_percentage: number;
   sample_rate: number;
   image_url?: string;
-  size_type: 'Adult' | 'Kids' | 'Both';
   branding_sides: any[]; // Array of branding side objects
   status: string;
   created_at: string;
@@ -34,6 +34,10 @@ export interface BaseProduct {
     name: string;
     fabric_type: string;
   };
+  size_group?: {
+    id: string;
+    name: string;
+  };
 }
 
 export const fetchBaseProducts = async (): Promise<BaseProduct[]> => {
@@ -43,7 +47,8 @@ export const fetchBaseProducts = async (): Promise<BaseProduct[]> => {
     .select(`
       *,
       category:categories(id, name),
-      fabric:fabrics(id, name, fabric_type)
+      fabric:fabrics(id, name, fabric_type),
+      size_group:size_groups(id, name)
     `)
     .order('sort_order', { ascending: true });
 
@@ -56,7 +61,7 @@ export const fetchBaseProducts = async (): Promise<BaseProduct[]> => {
   return (data || []) as BaseProduct[];
 };
 
-export const createBaseProduct = async (baseProductData: Omit<BaseProduct, 'id' | 'created_at' | 'updated_at' | 'created_by' | 'updated_by' | 'category' | 'fabric'>): Promise<BaseProduct> => {
+export const createBaseProduct = async (baseProductData: Omit<BaseProduct, 'id' | 'created_at' | 'updated_at' | 'created_by' | 'updated_by' | 'category' | 'fabric' | 'size_group'>): Promise<BaseProduct> => {
   console.log('🆕 Creating base product:', baseProductData);
   const { data, error } = await supabase
     .from('base_products')
@@ -64,7 +69,8 @@ export const createBaseProduct = async (baseProductData: Omit<BaseProduct, 'id' 
     .select(`
       *,
       category:categories(id, name),
-      fabric:fabrics(id, name, fabric_type)
+      fabric:fabrics(id, name, fabric_type),
+      size_group:size_groups(id, name)
     `)
     .single();
 
@@ -86,7 +92,8 @@ export const updateBaseProduct = async (id: string, updates: Partial<BaseProduct
     .select(`
       *,
       category:categories(id, name),
-      fabric:fabrics(id, name, fabric_type)
+      fabric:fabrics(id, name, fabric_type),
+      size_group:size_groups(id, name)
     `)
     .single();
 

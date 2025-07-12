@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -12,6 +13,7 @@ import ImageUpload from '@/components/ui/ImageUpload';
 import { useCategories } from '@/hooks/masters/useCategories';
 import { useFabrics } from '@/hooks/masters/useFabrics';
 import { useParts } from '@/hooks/masters/useParts';
+import { useSizeGroups } from '@/hooks/masters/useSizes';
 import { useCreateBaseProduct, useUpdateBaseProduct } from '@/hooks/masters/useBaseProducts';
 import { BaseProduct } from '@/services/masters/baseProductsService';
 import { Badge } from '@/components/ui/badge';
@@ -21,11 +23,12 @@ import { Button } from '@/components/ui/button';
 const formSchema = z.object({
   name: z.string().min(1, 'Name is required'),
   sort_order: z.number().min(0).default(0),
-  calculator: z.enum(['Knit', 'Woven']).optional(),
+  calculator: z.number().min(0).default(0),
   category_id: z.string().optional(),
   fabric_id: z.string().optional(),
+  size_group_id: z.string().optional(),
   parts: z.array(z.string()).default([]),
-  base_price: z.number().min(0).default(0),
+  base_of: z.number().min(0).default(0),
   base_sn: z.number().optional(),
   trims_cost: z.number().min(0).default(0),
   adult_consumption: z.number().min(0).default(0),
@@ -33,7 +36,6 @@ const formSchema = z.object({
   overhead_percentage: z.number().min(0).max(100).default(0),
   sample_rate: z.number().min(0).default(0),
   image_url: z.string().optional(),
-  size_type: z.enum(['Adult', 'Kids', 'Both']).default('Adult'),
   branding_sides: z.array(z.any()).default([]),
   status: z.enum(['active', 'inactive']).default('active'),
 });
@@ -54,6 +56,7 @@ export const BaseProductDialog: React.FC<BaseProductDialogProps> = ({
   const { data: categories = [] } = useCategories();
   const { data: fabrics = [] } = useFabrics();
   const { data: parts = [] } = useParts();
+  const { data: sizeGroups = [] } = useSizeGroups();
   const createMutation = useCreateBaseProduct();
   const updateMutation = useUpdateBaseProduct();
 
@@ -62,11 +65,12 @@ export const BaseProductDialog: React.FC<BaseProductDialogProps> = ({
     defaultValues: {
       name: '',
       sort_order: 0,
-      calculator: undefined,
+      calculator: 0,
       category_id: '',
       fabric_id: '',
+      size_group_id: '',
       parts: [],
-      base_price: 0,
+      base_of: 0,
       base_sn: undefined,
       trims_cost: 0,
       adult_consumption: 0,
@@ -74,7 +78,6 @@ export const BaseProductDialog: React.FC<BaseProductDialogProps> = ({
       overhead_percentage: 0,
       sample_rate: 0,
       image_url: '',
-      size_type: 'Adult',
       branding_sides: [],
       status: 'active',
     },
@@ -85,11 +88,12 @@ export const BaseProductDialog: React.FC<BaseProductDialogProps> = ({
       form.reset({
         name: baseProduct.name,
         sort_order: baseProduct.sort_order,
-        calculator: baseProduct.calculator,
+        calculator: typeof baseProduct.calculator === 'number' ? baseProduct.calculator : 0,
         category_id: baseProduct.category_id || '',
         fabric_id: baseProduct.fabric_id || '',
+        size_group_id: baseProduct.size_group_id || '',
         parts: baseProduct.parts || [],
-        base_price: baseProduct.base_price,
+        base_of: baseProduct.base_price, // mapping base_price to base_of
         base_sn: baseProduct.base_sn,
         trims_cost: baseProduct.trims_cost,
         adult_consumption: baseProduct.adult_consumption,
@@ -97,7 +101,6 @@ export const BaseProductDialog: React.FC<BaseProductDialogProps> = ({
         overhead_percentage: baseProduct.overhead_percentage,
         sample_rate: baseProduct.sample_rate,
         image_url: baseProduct.image_url || '',
-        size_type: baseProduct.size_type,
         branding_sides: baseProduct.branding_sides || [],
         status: baseProduct.status as 'active' | 'inactive',
       });
@@ -105,11 +108,12 @@ export const BaseProductDialog: React.FC<BaseProductDialogProps> = ({
       form.reset({
         name: '',
         sort_order: 0,
-        calculator: undefined,
+        calculator: 0,
         category_id: '',
         fabric_id: '',
+        size_group_id: '',
         parts: [],
-        base_price: 0,
+        base_of: 0,
         base_sn: undefined,
         trims_cost: 0,
         adult_consumption: 0,
@@ -117,7 +121,6 @@ export const BaseProductDialog: React.FC<BaseProductDialogProps> = ({
         overhead_percentage: 0,
         sample_rate: 0,
         image_url: '',
-        size_type: 'Adult',
         branding_sides: [],
         status: 'active',
       });
@@ -127,10 +130,23 @@ export const BaseProductDialog: React.FC<BaseProductDialogProps> = ({
   const handleSubmit = async (data: FormData) => {
     try {
       const formattedData = {
-        ...data,
+        name: data.name,
+        sort_order: data.sort_order,
+        calculator: data.calculator,
         category_id: data.category_id || null,
         fabric_id: data.fabric_id || null,
-        parts: data.parts || [], // Ensure parts is always an array
+        size_group_id: data.size_group_id || null,
+        parts: data.parts || [],
+        base_price: data.base_of, // mapping base_of back to base_price for API
+        base_sn: data.base_sn,
+        trims_cost: data.trims_cost,
+        adult_consumption: data.adult_consumption,
+        kids_consumption: data.kids_consumption,
+        overhead_percentage: data.overhead_percentage,
+        sample_rate: data.sample_rate,
+        image_url: data.image_url,
+        branding_sides: data.branding_sides,
+        status: data.status,
       };
 
       if (baseProduct) {
@@ -213,38 +229,38 @@ export const BaseProductDialog: React.FC<BaseProductDialogProps> = ({
             name="calculator"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Calculator Type</FormLabel>
-                <Select onValueChange={field.onChange} value={field.value || ''}>
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select calculator type" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    <SelectItem value="Knit">Knit</SelectItem>
-                    <SelectItem value="Woven">Woven</SelectItem>
-                  </SelectContent>
-                </Select>
+                <FormLabel>Calculator</FormLabel>
+                <FormControl>
+                  <Input 
+                    type="number" 
+                    step="0.01"
+                    placeholder="0.00" 
+                    {...field}
+                    onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                  />
+                </FormControl>
                 <FormMessage />
               </FormItem>
             )}
           />
           <FormField
             control={form.control}
-            name="size_type"
+            name="size_group_id"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Size Type</FormLabel>
-                <Select onValueChange={field.onChange} value={field.value}>
+                <FormLabel>Size Group</FormLabel>
+                <Select onValueChange={field.onChange} value={field.value || ''}>
                   <FormControl>
                     <SelectTrigger>
-                      <SelectValue />
+                      <SelectValue placeholder="Select size group" />
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    <SelectItem value="Adult">Adult</SelectItem>
-                    <SelectItem value="Kids">Kids</SelectItem>
-                    <SelectItem value="Both">Both</SelectItem>
+                    {sizeGroups.map((sizeGroup) => (
+                      <SelectItem key={sizeGroup.id} value={sizeGroup.id}>
+                        {sizeGroup.name}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
                 <FormMessage />
@@ -349,10 +365,10 @@ export const BaseProductDialog: React.FC<BaseProductDialogProps> = ({
         <div className="grid grid-cols-3 gap-4">
           <FormField
             control={form.control}
-            name="base_price"
+            name="base_of"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Base Price</FormLabel>
+                <FormLabel>Base OF</FormLabel>
                 <FormControl>
                   <Input 
                     type="number" 
@@ -487,6 +503,32 @@ export const BaseProductDialog: React.FC<BaseProductDialogProps> = ({
             )}
           />
         </div>
+
+        <FormField
+          control={form.control}
+          name="branding_sides"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Branding Sides</FormLabel>
+              <FormControl>
+                <Textarea
+                  placeholder="Enter branding sides information (JSON format or description)"
+                  value={Array.isArray(field.value) ? JSON.stringify(field.value, null, 2) : field.value}
+                  onChange={(e) => {
+                    try {
+                      const parsed = JSON.parse(e.target.value);
+                      field.onChange(parsed);
+                    } catch {
+                      field.onChange(e.target.value);
+                    }
+                  }}
+                  rows={3}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
         <FormField
           control={form.control}
