@@ -137,10 +137,11 @@ const AppAssetDialog: React.FC<AppAssetDialogProps> = ({ open, onOpenChange, app
               <FormControl>
                 <Input
                   type="number"
+                  step="0.01"
                   min="0"
-                  placeholder="0"
+                  placeholder="0.00"
                   {...field}
-                  onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                  onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
                 />
               </FormControl>
               <FormMessage />
@@ -157,10 +158,11 @@ const AppAssetDialog: React.FC<AppAssetDialogProps> = ({ open, onOpenChange, app
               <FormControl>
                 <Input
                   type="number"
+                  step="0.01"
                   min="0"
-                  placeholder="0"
+                  placeholder="0.00"
                   {...field}
-                  onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                  onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
                 />
               </FormControl>
               <FormMessage />
@@ -178,10 +180,11 @@ const AppAssetDialog: React.FC<AppAssetDialogProps> = ({ open, onOpenChange, app
             <FormControl>
               <Input
                 type="number"
+                step="0.01"
                 min="0"
-                placeholder="0"
+                placeholder="0.00"
                 {...field}
-                onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
               />
             </FormControl>
             <FormMessage />
@@ -198,10 +201,11 @@ const AppAssetDialog: React.FC<AppAssetDialogProps> = ({ open, onOpenChange, app
             <FormControl>
               <Input
                 type="number"
+                step="0.01"
                 min="0"
-                placeholder="0"
+                placeholder="0.00"
                 {...field}
-                onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
               />
             </FormControl>
             <FormMessage />
