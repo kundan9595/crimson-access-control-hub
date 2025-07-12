@@ -29,9 +29,10 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { MoreHorizontal, Edit, Trash2 } from 'lucide-react';
-import { useStyles, useDeleteStyle } from '@/hooks/useMasters';
+import { useStyles, useDeleteStyle, useUpdateStyle } from '@/hooks/useMasters';
 import { Style } from '@/services/mastersService';
 import { StyleDialog } from './StyleDialog';
+import DraggableList from './shared/DraggableList';
 
 interface StylesListProps {
   searchTerm?: string;
@@ -40,9 +41,11 @@ interface StylesListProps {
 export const StylesList: React.FC<StylesListProps> = ({ searchTerm = '' }) => {
   const { data: styles, isLoading, error } = useStyles();
   const deleteMutation = useDeleteStyle();
+  const updateMutation = useUpdateStyle();
   const [editingStyle, setEditingStyle] = useState<Style | null>(null);
   const [deletingStyle, setDeletingStyle] = useState<Style | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [sortEnabled, setSortEnabled] = useState(false);
 
   const filteredStyles = useMemo(() => {
     if (!styles || !searchTerm.trim()) return styles || [];
@@ -56,6 +59,16 @@ export const StylesList: React.FC<StylesListProps> = ({ searchTerm = '' }) => {
       style.status.toLowerCase().includes(searchLower)
     );
   }, [styles, searchTerm]);
+
+  // Sort styles by sort_order for consistent display
+  const sortedStyles = useMemo(() => {
+    if (!filteredStyles) return [];
+    return [...filteredStyles].sort((a, b) => {
+      const orderA = a.sort_order || 0;
+      const orderB = b.sort_order || 0;
+      return orderA - orderB;
+    });
+  }, [filteredStyles]);
 
   const handleEdit = (style: Style) => {
     setEditingStyle(style);
@@ -78,6 +91,75 @@ export const StylesList: React.FC<StylesListProps> = ({ searchTerm = '' }) => {
     setEditingStyle(null);
   };
 
+  const handleReorder = (reorderedStyles: Style[]) => {
+    // Update each style with new sort_order
+    reorderedStyles.forEach((style, index) => {
+      if (style.sort_order !== index + 1) {
+        updateMutation.mutate({
+          id: style.id,
+          updates: { sort_order: index + 1 }
+        });
+      }
+    });
+  };
+
+  const renderStyleRow = (style: Style, index: number, isDragging: boolean) => (
+    <TableRow className={isDragging ? 'opacity-80' : ''}>
+      <TableCell className="font-medium">{style.name}</TableCell>
+      <TableCell className="max-w-[200px] truncate">
+        {style.description || '-'}
+      </TableCell>
+      <TableCell>
+        {style.brand?.name ? (
+          <Badge variant="outline">
+            {style.brand.name}
+          </Badge>
+        ) : (
+          '-'
+        )}
+      </TableCell>
+      <TableCell>
+        {style.category?.name ? (
+          <Badge variant="outline">
+            {style.category.name}
+          </Badge>
+        ) : (
+          '-'
+        )}
+      </TableCell>
+      <TableCell>
+        <Badge variant={style.status === 'active' ? 'default' : 'secondary'}>
+          {style.status}
+        </Badge>
+      </TableCell>
+      <TableCell>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" className="h-8 w-8 p-0">
+              <span className="sr-only">Open menu</span>
+              <MoreHorizontal className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuLabel>Actions</DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={() => handleEdit(style)}>
+              <Edit className="mr-2 h-4 w-4" />
+              Edit
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => setDeletingStyle(style)}
+              className="text-destructive"
+            >
+              <Trash2 className="mr-2 h-4 w-4" />
+              Delete
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </TableCell>
+    </TableRow>
+  );
+
   if (isLoading) return <div>Loading styles...</div>;
   if (error) return <div>Error loading styles: {error.message}</div>;
 
@@ -87,17 +169,28 @@ export const StylesList: React.FC<StylesListProps> = ({ searchTerm = '' }) => {
   return (
     <>
       <div className="space-y-4">
-        {searchTerm && (
-          <div className="text-sm text-muted-foreground">
-            Showing {filteredCount} of {totalCount} styles
-            {searchTerm && ` matching "${searchTerm}"`}
-          </div>
-        )}
+        <div className="flex items-center justify-between">
+          {searchTerm && (
+            <div className="text-sm text-muted-foreground">
+              Showing {filteredCount} of {totalCount} styles
+              {searchTerm && ` matching "${searchTerm}"`}
+            </div>
+          )}
+          <Button
+            variant={sortEnabled ? "default" : "outline"}
+            size="sm"
+            onClick={() => setSortEnabled(!sortEnabled)}
+            disabled={filteredCount <= 1}
+          >
+            {sortEnabled ? 'Done Sorting' : 'Sort Order'}
+          </Button>
+        </div>
 
         <div className="rounded-md border">
           <Table>
             <TableHeader>
               <TableRow>
+                {sortEnabled && <TableHead className="w-[50px]"></TableHead>}
                 <TableHead>Name</TableHead>
                 <TableHead>Description</TableHead>
                 <TableHead>Brand</TableHead>
@@ -107,69 +200,32 @@ export const StylesList: React.FC<StylesListProps> = ({ searchTerm = '' }) => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredStyles?.length === 0 ? (
+              {sortedStyles?.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
                     {searchTerm ? 'No styles found matching your search.' : 'No styles found.'}
                   </TableCell>
                 </TableRow>
+              ) : sortEnabled ? (
+                <TableRow>
+                  <TableCell colSpan={7} className="p-0">
+                    <DraggableList
+                      items={sortedStyles}
+                      onReorder={handleReorder}
+                      renderItem={(style, index, isDragging) => (
+                        <Table>
+                          <TableBody>
+                            {renderStyleRow(style, index, isDragging)}
+                          </TableBody>
+                        </Table>
+                      )}
+                      disabled={searchTerm.length > 0}
+                      droppableId="styles-list"
+                    />
+                  </TableCell>
+                </TableRow>
               ) : (
-                filteredStyles?.map((style) => (
-                  <TableRow key={style.id}>
-                    <TableCell className="font-medium">{style.name}</TableCell>
-                    <TableCell className="max-w-[200px] truncate">
-                      {style.description || '-'}
-                    </TableCell>
-                    <TableCell>
-                      {style.brand?.name ? (
-                        <Badge variant="outline">
-                          {style.brand.name}
-                        </Badge>
-                      ) : (
-                        '-'
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      {style.category?.name ? (
-                        <Badge variant="outline">
-                          {style.category.name}
-                        </Badge>
-                      ) : (
-                        '-'
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={style.status === 'active' ? 'default' : 'secondary'}>
-                        {style.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" className="h-8 w-8 p-0">
-                            <span className="sr-only">Open menu</span>
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem onClick={() => handleEdit(style)}>
-                            <Edit className="mr-2 h-4 w-4" />
-                            Edit
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() => setDeletingStyle(style)}
-                            className="text-destructive"
-                          >
-                            <Trash2 className="mr-2 h-4 w-4" />
-                            Delete
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
-                  </TableRow>
-                ))
+                sortedStyles?.map((style, index) => renderStyleRow(style, index, false))
               )}
             </TableBody>
           </Table>

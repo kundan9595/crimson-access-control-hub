@@ -9,6 +9,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useCreateCategory, useUpdateCategory } from '@/hooks/useMasters';
 import { BaseFormDialog } from './shared/BaseFormDialog';
+import ImageUpload from '@/components/ui/ImageUpload';
 import type { Category } from '@/services/mastersService';
 
 const categorySchema = z.object({
@@ -131,35 +132,38 @@ const CategoryDialog: React.FC<CategoryDialogProps> = ({ open, onOpenChange, cat
         )}
       />
 
-      <div className="grid grid-cols-2 gap-4">
-        <FormField
-          control={form.control}
-          name="sort_order"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Sort Order</FormLabel>
-              <FormControl>
-                <Input {...field} type="number" placeholder="0" />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+      <FormField
+        control={form.control}
+        name="image_url"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>Category Image</FormLabel>
+            <FormControl>
+              <ImageUpload
+                value={field.value}
+                onChange={field.onChange}
+                onRemove={() => field.onChange('')}
+                placeholder="Upload category image"
+              />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
 
-        <FormField
-          control={form.control}
-          name="image_url"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Image URL</FormLabel>
-              <FormControl>
-                <Input {...field} placeholder="Enter image URL" />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-      </div>
+      <FormField
+        control={form.control}
+        name="sort_order"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>Sort Order</FormLabel>
+            <FormControl>
+              <Input {...field} type="number" placeholder="0" />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
 
       <FormField
         control={form.control}
