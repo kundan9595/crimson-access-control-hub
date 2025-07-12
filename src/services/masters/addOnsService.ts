@@ -26,6 +26,23 @@ export interface AddOn {
   updated_by?: string;
 }
 
+// Helper function to safely parse options from JSON
+const parseOptions = (options: any): AddOnOption[] => {
+  if (!options) return [];
+  if (Array.isArray(options)) return options as AddOnOption[];
+  try {
+    const parsed = typeof options === 'string' ? JSON.parse(options) : options;
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+};
+
+// Helper function to prepare options for database storage
+const prepareOptionsForDb = (options: AddOnOption[]): any => {
+  return JSON.parse(JSON.stringify(options || []));
+};
+
 export const addOnsService = {
   async getAll(): Promise<AddOn[]> {
     const { data, error } = await supabase
@@ -39,7 +56,7 @@ export const addOnsService = {
       ...item,
       select_type: item.select_type as 'single' | 'multiple' | 'checked',
       status: item.status as 'active' | 'inactive',
-      options: (item.options as AddOnOption[]) || []
+      options: parseOptions(item.options)
     }));
   },
 
@@ -55,7 +72,7 @@ export const addOnsService = {
       ...data,
       select_type: data.select_type as 'single' | 'multiple' | 'checked',
       status: data.status as 'active' | 'inactive',
-      options: (data.options as AddOnOption[]) || []
+      options: parseOptions(data.options)
     } : null;
   },
 
@@ -64,7 +81,7 @@ export const addOnsService = {
       .from('add_ons')
       .insert({
         ...addOn,
-        options: addOn.options || []
+        options: prepareOptionsForDb(addOn.options)
       })
       .select()
       .single();
@@ -74,14 +91,19 @@ export const addOnsService = {
       ...data,
       select_type: data.select_type as 'single' | 'multiple' | 'checked',
       status: data.status as 'active' | 'inactive',
-      options: (data.options as AddOnOption[]) || []
+      options: parseOptions(data.options)
     };
   },
 
   async update(id: string, addOn: Partial<AddOn>): Promise<AddOn> {
+    const updateData: any = { ...addOn };
+    if (addOn.options) {
+      updateData.options = prepareOptionsForDb(addOn.options);
+    }
+
     const { data, error } = await supabase
       .from('add_ons')
-      .update(addOn)
+      .update(updateData)
       .eq('id', id)
       .select()
       .single();
@@ -91,7 +113,7 @@ export const addOnsService = {
       ...data,
       select_type: data.select_type as 'single' | 'multiple' | 'checked',
       status: data.status as 'active' | 'inactive',
-      options: (data.options as AddOnOption[]) || []
+      options: parseOptions(data.options)
     };
   },
 
@@ -109,7 +131,7 @@ export const addOnsService = {
       .from('add_ons')
       .insert(addOns.map(addOn => ({
         ...addOn,
-        options: addOn.options || []
+        options: prepareOptionsForDb(addOn.options)
       })))
       .select();
 
@@ -118,7 +140,7 @@ export const addOnsService = {
       ...item,
       select_type: item.select_type as 'single' | 'multiple' | 'checked',
       status: item.status as 'active' | 'inactive',
-      options: (item.options as AddOnOption[]) || []
+      options: parseOptions(item.options)
     }));
   },
 };

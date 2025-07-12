@@ -138,6 +138,9 @@ export const AddOnOptionsDialog: React.FC<AddOnOptionsDialogProps> = ({
 
   if (!addOn) return null;
 
+  const isFormValid = formData.name.trim().length > 0;
+  const isEditingOrCreating = editingOption !== null || isCreating;
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
@@ -154,14 +157,14 @@ export const AddOnOptionsDialog: React.FC<AddOnOptionsDialogProps> = ({
                 Manage the available options for this add-on
               </p>
             </div>
-            <Button onClick={handleCreate} disabled={isCreating || editingOption}>
+            <Button onClick={handleCreate} disabled={isEditingOrCreating}>
               <Plus className="h-4 w-4 mr-2" />
               Add Option
             </Button>
           </div>
 
           {/* Create/Edit Form */}
-          {(isCreating || editingOption) && (
+          {isEditingOrCreating && (
             <Card>
               <CardContent className="p-4">
                 <div className="space-y-4">
@@ -231,7 +234,7 @@ export const AddOnOptionsDialog: React.FC<AddOnOptionsDialogProps> = ({
                   <div className="flex gap-2">
                     <Button 
                       onClick={handleSave} 
-                      disabled={!formData.name.trim() || updateAddOnMutation.isPending}
+                      disabled={!isFormValid || updateAddOnMutation.isPending}
                     >
                       <Save className="h-4 w-4 mr-2" />
                       {editingOption ? 'Update' : 'Create'}
@@ -285,7 +288,7 @@ export const AddOnOptionsDialog: React.FC<AddOnOptionsDialogProps> = ({
                           variant="outline"
                           size="sm"
                           onClick={() => handleEdit(option)}
-                          disabled={isCreating || editingOption}
+                          disabled={isEditingOrCreating}
                         >
                           <Edit className="h-4 w-4" />
                         </Button>

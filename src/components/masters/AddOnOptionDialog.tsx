@@ -90,24 +90,24 @@ export const AddOnOptionDialog: React.FC<AddOnOptionDialogProps> = ({
     }
 
     if (option) {
+      // Update existing option
       updateOptionMutation.mutate(
-        { id: option.id, data },
+        { 
+          id: option.id, 
+          data: {
+            ...data,
+            add_on_id: addOn.id
+          }
+        },
         { onSuccess: () => onOpenChange(false) }
       );
     } else {
-      // Ensure required fields are properly typed when creating
-      const optionData: Omit<AddOnOption, 'id' | 'created_at' | 'updated_at' | 'created_by' | 'updated_by'> = {
-        add_on_id: addOn.id,
-        name: data.name,
-        description: data.description,
-        price: data.price,
-        display_order: data.display_order,
-        image_url: data.image_url,
-        status: data.status,
-      };
-      
+      // Create new option
       createOptionMutation.mutate(
-        optionData,
+        {
+          ...data,
+          add_on_id: addOn.id
+        },
         { onSuccess: () => onOpenChange(false) }
       );
     }
