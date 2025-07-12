@@ -1,5 +1,5 @@
 
-export type BulkImportType = 'brands' | 'categories' | 'colors' | 'sizeGroups' | 'zones' | 'priceTypes' | 'vendors' | 'styles' | 'classes' | 'skus' | 'add-ons';
+export type BulkImportType = 'brands' | 'categories' | 'colors' | 'sizeGroups' | 'zones' | 'priceTypes' | 'vendors' | 'styles' | 'classes' | 'skus' | 'add-ons' | 'appAssets' | 'parts';
 
 export type ValidationResult = {
   valid: boolean;

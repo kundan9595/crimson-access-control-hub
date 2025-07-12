@@ -8,10 +8,11 @@ import { Edit, Trash2, Wrench } from 'lucide-react';
 import { MasterPageHeader } from '@/components/masters/shared/MasterPageHeader';
 import { SearchFilter } from '@/components/masters/shared/SearchFilter';
 import { PartDialog } from '@/components/masters/PartDialog';
+import BulkImportDialog from '@/components/masters/BulkImportDialog';
 import { useParts, useCreatePart, useUpdatePart, useDeletePart } from '@/hooks/masters/useParts';
 import { useAddOns, useColors } from '@/hooks/masters';
+import { exportToCSV, generateExportFilename } from '@/utils/exportUtils';
 import { Part } from '@/services/masters/partsService';
-import { toast } from '@/hooks/use-toast';
 
 const PartsPage = () => {
   console.log('🏗️ PartsPage - Rendering');
@@ -19,6 +20,7 @@ const PartsPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingPart, setEditingPart] = useState<Part | undefined>();
+  const [importDialogOpen, setImportDialogOpen] = useState(false);
 
   const { data: parts = [], isLoading } = useParts();
   const { data: addOns = [] } = useAddOns();
@@ -103,37 +105,32 @@ const PartsPage = () => {
     console.log('📤 Export parts clicked');
     if (!parts || parts.length === 0) return;
 
-    const csvContent = [
-      ['Name', 'Add-ons', 'Colors', 'Order Criteria', 'Sort Position', 'Status', 'Created At'].join(','),
-      ...parts.map(part => [
-        `"${part.name}"`,
-        `"${getAddOnNames(part.selected_add_ons || [])}"`,
-        `"${getColorNames(part.selected_colors || [])}"`,
-        part.order_criteria ? 'Yes' : 'No',
-        part.sort_position || 0,
-        part.status,
-        new Date(part.created_at).toLocaleDateString()
-      ].join(','))
-    ].join('\n');
-
-    const blob = new Blob([csvContent], { type: 'text/csv' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `parts-${new Date().toISOString().split('T')[0]}.csv`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    exportToCSV({
+      filename: generateExportFilename('parts'),
+      headers: ['Name', 'Add-ons', 'Colors', 'Order Criteria', 'Sort Position', 'Status', 'Created At'],
+      data: parts,
+      fieldMap: {
+        'Name': 'name',
+        'Add-ons': (item: Part) => getAddOnNames(item.selected_add_ons || []),
+        'Colors': (item: Part) => getColorNames(item.selected_colors || []),
+        'Order Criteria': (item: Part) => item.order_criteria ? 'Yes' : 'No',
+        'Sort Position': (item: Part) => (item.sort_position || 0).toString(),
+        'Status': 'status',
+        'Created At': (item: Part) => new Date(item.created_at).toLocaleDateString()
+      }
+    });
   };
 
   const handleImport = () => {
     console.log('📥 Import parts clicked');
-    toast({
-      title: "Import functionality", 
-      description: "Import feature will be implemented soon",
-    });
+    setImportDialogOpen(true);
   };
+
+  const templateHeaders = ['Name', 'Order Criteria', 'Sort Position', 'Status'];
+  const sampleData = [
+    ['Collar', 'true', '1', 'active'],
+    ['Sleeves', 'false', '2', 'active']
+  ];
 
   if (isLoading) {
     return (
@@ -267,6 +264,14 @@ const PartsPage = () => {
         part={editingPart}
         onSubmit={handleSubmit}
         isSubmitting={createPartMutation.isPending || updatePartMutation.isPending}
+      />
+
+      <BulkImportDialog
+        open={importDialogOpen}
+        onOpenChange={setImportDialogOpen}
+        type="parts"
+        templateHeaders={templateHeaders}
+        sampleData={sampleData}
       />
     </div>
   );

@@ -8,12 +8,15 @@ import { SearchFilter } from '@/components/masters/shared/SearchFilter';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useGetAppAssets, useDeleteAppAsset } from '@/hooks/masters/useAppAssets';
 import AppAssetDialog from '@/components/masters/AppAssetDialog';
+import BulkImportDialog from '@/components/masters/BulkImportDialog';
+import { exportToCSV, generateExportFilename } from '@/utils/exportUtils';
 import type { AppAsset } from '@/services/masters/appAssetsService';
 
 const AppAssetsPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedAsset, setSelectedAsset] = useState<AppAsset | null>(null);
+  const [importDialogOpen, setImportDialogOpen] = useState(false);
 
   const { data: appAssets = [], isLoading } = useGetAppAssets();
   const deleteAppAssetMutation = useDeleteAppAsset();
@@ -39,12 +42,33 @@ const AppAssetsPage = () => {
   };
 
   const handleExport = () => {
-    console.log('Export app assets clicked');
+    if (!appAssets || appAssets.length === 0) return;
+
+    exportToCSV({
+      filename: generateExportFilename('app-assets'),
+      headers: ['Name', 'dX', 'dY', 'Mirror dX', 'Height Resp', 'Status', 'Created At'],
+      data: appAssets,
+      fieldMap: {
+        'Name': 'name',
+        'dX': 'dx',
+        'dY': 'dy',
+        'Mirror dX': 'mirror_dx',
+        'Height Resp': 'asset_height_resp_to_box',
+        'Status': 'status',
+        'Created At': (item: AppAsset) => new Date(item.created_at).toLocaleDateString()
+      }
+    });
   };
 
   const handleImport = () => {
-    console.log('Import app assets clicked');
+    setImportDialogOpen(true);
   };
+
+  const templateHeaders = ['Name', 'dX', 'dY', 'Mirror dX', 'Height Resp', 'Status'];
+  const sampleData = [
+    ['Logo Icon', '10.5', '15.2', '8.3', '100.0', 'active'],
+    ['Banner Image', '0.0', '0.0', '0.0', '75.5', 'active']
+  ];
 
   if (isLoading) {
     return (
@@ -164,6 +188,14 @@ const AppAssetsPage = () => {
         open={dialogOpen}
         onOpenChange={setDialogOpen}
         appAsset={selectedAsset}
+      />
+
+      <BulkImportDialog
+        open={importDialogOpen}
+        onOpenChange={setImportDialogOpen}
+        type="appAssets"
+        templateHeaders={templateHeaders}
+        sampleData={sampleData}
       />
     </div>
   );

@@ -1,332 +1,488 @@
 import { BulkImportType, ValidationResult } from './types';
 
-export const validateRow = (row: string[], index: number, type: BulkImportType): ValidationResult => {
+export function validateRow(row: string[], index: number, type: BulkImportType): ValidationResult {
   const errors: string[] = [];
+  let data: any = {};
 
-  if (type === 'brands') {
-    const [name, description, sortOrder, status] = row;
-    
-    if (!name?.trim()) {
-      errors.push('Name is required');
-    }
-    
-    if (sortOrder && isNaN(Number(sortOrder))) {
-      errors.push('Sort order must be a number');
-    }
-    
-    if (status && !['active', 'inactive'].includes(status.toLowerCase())) {
+  switch (type) {
+    case 'brands':
+      return validateBrandRow(row, errors, data);
+    case 'categories':
+      return validateCategoryRow(row, errors, data);
+    case 'colors':
+      return validateColorRow(row, errors, data);
+    case 'sizeGroups':
+      return validateSizeGroupRow(row, errors, data);
+    case 'zones':
+      return validateZoneRow(row, errors, data);
+    case 'priceTypes':
+      return validatePriceTypeRow(row, errors, data);
+    case 'vendors':
+      return validateVendorRow(row, errors, data);
+    case 'styles':
+      return validateStyleRow(row, errors, data);
+    case 'classes':
+      return validateClassRow(row, errors, data);
+    case 'skus':
+      return validateSkuRow(row, errors, data);
+    case 'add-ons':
+      return validateAddOnRow(row, errors, data);
+    case 'appAssets':
+      return validateAppAssetRow(row, errors, data);
+    case 'parts':
+      return validatePartRow(row, errors, data);
+    default:
+      errors.push('Unsupported import type');
+      return { valid: false, errors };
+  }
+}
+
+function validateBrandRow(row: string[], errors: string[], data: any): ValidationResult {
+  const [name, description, status] = row;
+
+  if (!name?.trim()) {
+    errors.push('Name is required');
+  } else {
+    data.name = name.trim();
+  }
+
+  if (description?.trim()) {
+    data.description = description.trim();
+  }
+
+  if (status?.trim()) {
+    if (!['active', 'inactive'].includes(status.toLowerCase())) {
       errors.push('Status must be either "active" or "inactive"');
+    } else {
+      data.status = status.toLowerCase();
     }
-    
-    if (errors.length === 0) {
-      return {
-        valid: true,
-        errors: [],
-        data: {
-          name: name.trim(),
-          description: description?.trim() || '',
-          sort_order: sortOrder ? parseInt(sortOrder) : 0,
-          status: status?.toLowerCase() || 'active'
-        }
-      };
+  } else {
+    data.status = 'active';
+  }
+
+  return { valid: errors.length === 0, errors, data };
+}
+
+function validateCategoryRow(row: string[], errors: string[], data: any): ValidationResult {
+  const [name, description, status] = row;
+
+  if (!name?.trim()) {
+    errors.push('Name is required');
+  } else {
+    data.name = name.trim();
+  }
+
+  if (description?.trim()) {
+    data.description = description.trim();
+  }
+
+  if (status?.trim()) {
+    if (!['active', 'inactive'].includes(status.toLowerCase())) {
+      errors.push('Status must be either "active" or "inactive"');
+    } else {
+      data.status = status.toLowerCase();
+    }
+  } else {
+    data.status = 'active';
+  }
+
+  return { valid: errors.length === 0, errors, data };
+}
+
+function validateColorRow(row: string[], errors: string[], data: any): ValidationResult {
+  const [name, hexCode, status] = row;
+
+  if (!name?.trim()) {
+    errors.push('Name is required');
+  } else {
+    data.name = name.trim();
+  }
+
+  if (!hexCode?.trim()) {
+    errors.push('Hex code is required');
+  } else if (!/^#[0-9A-F]{6}$/i.test(hexCode.trim())) {
+    errors.push('Hex code must be in format #RRGGBB');
+  } else {
+    data.hex_code = hexCode.trim().toUpperCase();
+  }
+
+  if (status?.trim()) {
+    if (!['active', 'inactive'].includes(status.toLowerCase())) {
+      errors.push('Status must be either "active" or "inactive"');
+    } else {
+      data.status = status.toLowerCase();
+    }
+  } else {
+    data.status = 'active';
+  }
+
+  return { valid: errors.length === 0, errors, data };
+}
+
+function validateSizeGroupRow(row: string[], errors: string[], data: any): ValidationResult {
+  const [name, description, status] = row;
+
+  if (!name?.trim()) {
+    errors.push('Name is required');
+  } else {
+    data.name = name.trim();
+  }
+
+  if (description?.trim()) {
+    data.description = description.trim();
+  }
+
+  if (status?.trim()) {
+    if (!['active', 'inactive'].includes(status.toLowerCase())) {
+      errors.push('Status must be either "active" or "inactive"');
+    } else {
+      data.status = status.toLowerCase();
+    }
+  } else {
+    data.status = 'active';
+  }
+
+  return { valid: errors.length === 0, errors, data };
+}
+
+function validateZoneRow(row: string[], errors: string[], data: any): ValidationResult {
+  const [name, status] = row;
+
+  if (!name?.trim()) {
+    errors.push('Name is required');
+  } else {
+    data.name = name.trim();
+  }
+
+  if (status?.trim()) {
+    if (!['active', 'inactive'].includes(status.toLowerCase())) {
+      errors.push('Status must be either "active" or "inactive"');
+    } else {
+      data.status = status.toLowerCase();
+    }
+  } else {
+    data.status = 'active';
+  }
+
+  return { valid: errors.length === 0, errors, data };
+}
+
+function validatePriceTypeRow(row: string[], errors: string[], data: any): ValidationResult {
+  const [name, category, description, status] = row;
+
+  if (!name?.trim()) {
+    errors.push('Name is required');
+  } else {
+    data.name = name.trim();
+  }
+
+  if (category?.trim()) {
+    if (!['zone', 'customer'].includes(category.toLowerCase())) {
+      errors.push('Category must be either "zone" or "customer"');
+    } else {
+      data.category = category.toLowerCase();
+    }
+  } else {
+    data.category = 'customer';
+  }
+
+  if (description?.trim()) {
+    data.description = description.trim();
+  }
+
+  if (status?.trim()) {
+    if (!['active', 'inactive'].includes(status.toLowerCase())) {
+      errors.push('Status must be either "active" or "inactive"');
+    } else {
+      data.status = status.toLowerCase();
+    }
+  } else {
+    data.status = 'active';
+  }
+
+  return { valid: errors.length === 0, errors, data };
+}
+
+function validateVendorRow(row: string[], errors: string[], data: any): ValidationResult {
+  const [name, code, contactPerson, email, phone, status] = row;
+
+  if (!name?.trim()) {
+    errors.push('Name is required');
+  } else {
+    data.name = name.trim();
+  }
+
+  if (!code?.trim()) {
+    errors.push('Code is required');
+  } else {
+    data.code = code.trim();
+  }
+
+  if (contactPerson?.trim()) {
+    data.contact_person = contactPerson.trim();
+  }
+
+  if (email?.trim()) {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email.trim())) {
+      errors.push('Email must be a valid email address');
+    } else {
+      data.email = email.trim();
     }
   }
 
-  if (type === 'add-ons') {
-    const [name, groupName, addOnOf, addOnSn, selectType, price, hasColour, sortOrder, status] = row;
-    
-    if (!name?.trim()) {
-      errors.push('Name is required');
-    }
-    
-    if (selectType && !['single', 'multiple', 'checked'].includes(selectType.toLowerCase())) {
-      errors.push('Select type must be "single", "multiple", or "checked"');
-    }
-    
-    if (price && isNaN(Number(price))) {
-      errors.push('Price must be a number');
-    }
-    
-    if (addOnOf && isNaN(Number(addOnOf))) {
-      errors.push('Add On OF must be a number');
-    }
-    
-    if (addOnSn && isNaN(Number(addOnSn))) {
-      errors.push('Add On SN must be a number');
-    }
-    
-    if (hasColour && !['yes', 'no', 'true', 'false'].includes(hasColour.toLowerCase())) {
-      errors.push('Has Colour must be "Yes", "No", "True", or "False"');
-    }
-    
-    if (sortOrder && isNaN(Number(sortOrder))) {
-      errors.push('Sort order must be a number');
-    }
-    
-    if (status && !['active', 'inactive'].includes(status.toLowerCase())) {
+  if (phone?.trim()) {
+    data.phone = phone.trim();
+  }
+
+  if (status?.trim()) {
+    if (!['active', 'inactive'].includes(status.toLowerCase())) {
       errors.push('Status must be either "active" or "inactive"');
+    } else {
+      data.status = status.toLowerCase();
     }
-    
-    if (errors.length === 0) {
-      return {
-        valid: true,
-        errors: [],
-        data: {
-          name: name.trim(),
-          group_name: groupName?.trim() || null,
-          add_on_of: addOnOf ? Number(addOnOf) : null,
-          add_on_sn: addOnSn ? Number(addOnSn) : null,
-          select_type: selectType?.toLowerCase() || 'single',
-          price: price ? Number(price) : null,
-          has_colour: hasColour ? ['yes', 'true'].includes(hasColour.toLowerCase()) : false,
-          sort_order: sortOrder ? parseInt(sortOrder) : 0,
-          status: status?.toLowerCase() || 'active',
-          options: [],
-          colors: []
-        }
-      };
+  } else {
+    data.status = 'active';
+  }
+
+  return { valid: errors.length === 0, errors, data };
+}
+
+function validateStyleRow(row: string[], errors: string[], data: any): ValidationResult {
+  const [name, description, status] = row;
+
+  if (!name?.trim()) {
+    errors.push('Name is required');
+  } else {
+    data.name = name.trim();
+  }
+
+  if (description?.trim()) {
+    data.description = description.trim();
+  }
+
+  if (status?.trim()) {
+    if (!['active', 'inactive'].includes(status.toLowerCase())) {
+      errors.push('Status must be either "active" or "inactive"');
+    } else {
+      data.status = status.toLowerCase();
+    }
+  } else {
+    data.status = 'active';
+  }
+
+  return { valid: errors.length === 0, errors, data };
+}
+
+function validateClassRow(row: string[], errors: string[], data: any): ValidationResult {
+  const [name, description, gstRate, status] = row;
+
+  if (!name?.trim()) {
+    errors.push('Name is required');
+  } else {
+    data.name = name.trim();
+  }
+
+  if (description?.trim()) {
+    data.description = description.trim();
+  }
+
+  if (gstRate?.trim()) {
+    const rate = parseFloat(gstRate);
+    if (isNaN(rate) || rate < 0 || rate > 100) {
+      errors.push('GST Rate must be a number between 0 and 100');
+    } else {
+      data.gst_rate = rate;
     }
   }
 
-  if (type === 'categories') {
-    const [name, description, sortOrder, status] = row;
-    
-    if (!name?.trim()) {
-      errors.push('Name is required');
-    }
-    
-    if (sortOrder && isNaN(Number(sortOrder))) {
-      errors.push('Sort order must be a number');
-    }
-    
-    if (status && !['active', 'inactive'].includes(status.toLowerCase())) {
+  if (status?.trim()) {
+    if (!['active', 'inactive'].includes(status.toLowerCase())) {
       errors.push('Status must be either "active" or "inactive"');
+    } else {
+      data.status = status.toLowerCase();
     }
-    
-    if (errors.length === 0) {
-      return {
-        valid: true,
-        errors: [],
-        data: {
-          name: name.trim(),
-          description: description?.trim() || '',
-          sort_order: sortOrder ? parseInt(sortOrder) : 0,
-          status: status?.toLowerCase() || 'active'
-        }
-      };
+  } else {
+    data.status = 'active';
+  }
+
+  return { valid: errors.length === 0, errors, data };
+}
+
+function validateSkuRow(row: string[], errors: string[], data: any): ValidationResult {
+  const [skuCode, baseMrp, costPrice, status] = row;
+
+  if (!skuCode?.trim()) {
+    errors.push('SKU Code is required');
+  } else {
+    data.sku_code = skuCode.trim();
+  }
+
+  if (baseMrp?.trim()) {
+    const mrp = parseFloat(baseMrp);
+    if (isNaN(mrp) || mrp < 0) {
+      errors.push('Base MRP must be a valid non-negative number');
+    } else {
+      data.base_mrp = mrp;
     }
   }
 
-  if (type === 'colors') {
-    const [name, hexCode, status] = row;
-    
-    if (!name?.trim()) {
-      errors.push('Name is required');
-    }
-    
-    if (!hexCode?.trim()) {
-      errors.push('Hex code is required');
-    } else if (!/^#[0-9A-F]{6}$/i.test(hexCode.trim())) {
-      errors.push('Hex code must be in format #RRGGBB');
-    }
-    
-    if (status && !['active', 'inactive'].includes(status.toLowerCase())) {
-      errors.push('Status must be either "active" or "inactive"');
-    }
-    
-    if (errors.length === 0) {
-      return {
-        valid: true,
-        errors: [],
-        data: {
-          name: name.trim(),
-          hex_code: hexCode.trim(),
-          status: status?.toLowerCase() || 'active'
-        }
-      };
+  if (costPrice?.trim()) {
+    const cost = parseFloat(costPrice);
+    if (isNaN(cost) || cost < 0) {
+      errors.push('Cost Price must be a valid non-negative number');
+    } else {
+      data.cost_price = cost;
     }
   }
 
-  if (type === 'sizeGroups') {
-    const [name, description, sortOrder, status] = row;
-
-    if (!name?.trim()) {
-      errors.push('Name is required');
-    }
-
-    if (sortOrder && isNaN(Number(sortOrder))) {
-      errors.push('Sort order must be a number');
-    }
-
-    if (status && !['active', 'inactive'].includes(status.toLowerCase())) {
+  if (status?.trim()) {
+    if (!['active', 'inactive'].includes(status.toLowerCase())) {
       errors.push('Status must be either "active" or "inactive"');
+    } else {
+      data.status = status.toLowerCase();
     }
-
-    if (errors.length === 0) {
-      return {
-        valid: true,
-        errors: [],
-        data: {
-          name: name.trim(),
-          description: description?.trim() || '',
-          sort_order: sortOrder ? parseInt(sortOrder) : 0,
-          status: status?.toLowerCase() || 'active'
-        }
-      };
-    }
+  } else {
+    data.status = 'active';
   }
 
-  if (type === 'zones') {
-    const [name, code, status] = row;
+  return { valid: errors.length === 0, errors, data };
+}
 
-    if (!name?.trim()) {
-      errors.push('Name is required');
-    }
+function validateAddOnRow(row: string[], errors: string[], data: any): ValidationResult {
+  const [name, selectType, price, status] = row;
 
-    if (!code?.trim()) {
-      errors.push('Code is required');
-    }
-
-    if (status && !['active', 'inactive'].includes(status.toLowerCase())) {
-      errors.push('Status must be either "active" or "inactive"');
-    }
-
-    if (errors.length === 0) {
-      return {
-        valid: true,
-        errors: [],
-        data: {
-          name: name.trim(),
-          code: code.trim(),
-          status: status?.toLowerCase() || 'active'
-        }
-      };
-    }
+  if (!name?.trim()) {
+    errors.push('Name is required');
+  } else {
+    data.name = name.trim();
   }
 
-  if (type === 'priceTypes') {
-    const [name, description, status] = row;
-
-    if (!name?.trim()) {
-      errors.push('Name is required');
-    }
-
-    if (status && !['active', 'inactive'].includes(status.toLowerCase())) {
-      errors.push('Status must be either "active" or "inactive"');
-    }
-
-    if (errors.length === 0) {
-      return {
-        valid: true,
-        errors: [],
-        data: {
-          name: name.trim(),
-          description: description?.trim() || '',
-          status: status?.toLowerCase() || 'active'
-        }
-      };
-    }
+  if (!selectType?.trim()) {
+    errors.push('Select Type is required');
+  } else if (!['single', 'multiple'].includes(selectType.toLowerCase())) {
+    errors.push('Select Type must be either "single" or "multiple"');
+  } else {
+    data.select_type = selectType.toLowerCase();
   }
 
-  if (type === 'vendors') {
-    const [name, description, status] = row;
-
-    if (!name?.trim()) {
-      errors.push('Name is required');
+  if (price?.trim()) {
+    const priceNum = parseFloat(price);
+    if (isNaN(priceNum) || priceNum < 0) {
+      errors.push('Price must be a valid non-negative number');
+    } else {
+      data.price = priceNum;
     }
-
-    if (status && !['active', 'inactive'].includes(status.toLowerCase())) {
-      errors.push('Status must be either "active" or "inactive"');
-    }
-
-    if (errors.length === 0) {
-      return {
-        valid: true,
-        errors: [],
-        data: {
-          name: name.trim(),
-          description: description?.trim() || '',
-          status: status?.toLowerCase() || 'active'
-        }
-      };
-    }
+  } else {
+    data.price = 0;
   }
 
-  if (type === 'styles') {
-    const [name, description, status] = row;
-
-    if (!name?.trim()) {
-      errors.push('Name is required');
-    }
-
-    if (status && !['active', 'inactive'].includes(status.toLowerCase())) {
+  if (status?.trim()) {
+    if (!['active', 'inactive'].includes(status.toLowerCase())) {
       errors.push('Status must be either "active" or "inactive"');
+    } else {
+      data.status = status.toLowerCase();
     }
-
-    if (errors.length === 0) {
-      return {
-        valid: true,
-        errors: [],
-        data: {
-          name: name.trim(),
-          description: description?.trim() || '',
-          status: status?.toLowerCase() || 'active'
-        }
-      };
-    }
+  } else {
+    data.status = 'active';
   }
 
-  if (type === 'classes') {
-    const [name, description, status] = row;
+  return { valid: errors.length === 0, errors, data };
+}
 
-    if (!name?.trim()) {
-      errors.push('Name is required');
-    }
+function validateAppAssetRow(row: string[], errors: string[], data: any): ValidationResult {
+  const [name, dx, dy, mirrorDx, heightResp, status] = row;
 
-    if (status && !['active', 'inactive'].includes(status.toLowerCase())) {
-      errors.push('Status must be either "active" or "inactive"');
-    }
-
-    if (errors.length === 0) {
-      return {
-        valid: true,
-        errors: [],
-        data: {
-          name: name.trim(),
-          description: description?.trim() || '',
-          status: status?.toLowerCase() || 'active'
-        }
-      };
-    }
+  if (!name?.trim()) {
+    errors.push('Name is required');
+  } else {
+    data.name = name.trim();
   }
 
-  if (type === 'skus') {
-    const [name, description, status] = row;
-
-    if (!name?.trim()) {
-      errors.push('Name is required');
-    }
-
-    if (status && !['active', 'inactive'].includes(status.toLowerCase())) {
-      errors.push('Status must be either "active" or "inactive"');
-    }
-
-    if (errors.length === 0) {
-      return {
-        valid: true,
-        errors: [],
-        data: {
-          name: name.trim(),
-          description: description?.trim() || '',
-          status: status?.toLowerCase() || 'active'
-        }
-      };
-    }
+  // Validate numeric fields
+  const dxNum = parseFloat(dx);
+  if (isNaN(dxNum) || dxNum < 0) {
+    errors.push('dX must be a valid non-negative number');
+  } else {
+    data.dx = dxNum;
   }
 
-  return {
-    valid: false,
-    errors: errors.length > 0 ? errors : ['Invalid data format'],
-    data: undefined
-  };
-};
+  const dyNum = parseFloat(dy);
+  if (isNaN(dyNum) || dyNum < 0) {
+    errors.push('dY must be a valid non-negative number');
+  } else {
+    data.dy = dyNum;
+  }
+
+  const mirrorDxNum = parseFloat(mirrorDx);
+  if (isNaN(mirrorDxNum) || mirrorDxNum < 0) {
+    errors.push('Mirror dX must be a valid non-negative number');
+  } else {
+    data.mirror_dx = mirrorDxNum;
+  }
+
+  const heightRespNum = parseFloat(heightResp);
+  if (isNaN(heightRespNum) || heightRespNum < 0) {
+    errors.push('Height Resp must be a valid non-negative number');
+  } else {
+    data.asset_height_resp_to_box = heightRespNum;
+  }
+
+  if (status?.trim()) {
+    if (!['active', 'inactive'].includes(status.toLowerCase())) {
+      errors.push('Status must be either "active" or "inactive"');
+    } else {
+      data.status = status.toLowerCase();
+    }
+  } else {
+    data.status = 'active';
+  }
+
+  return { valid: errors.length === 0, errors, data };
+}
+
+function validatePartRow(row: string[], errors: string[], data: any): ValidationResult {
+  const [name, orderCriteria, sortPosition, status] = row;
+
+  if (!name?.trim()) {
+    errors.push('Name is required');
+  } else {
+    data.name = name.trim();
+  }
+
+  // Validate order criteria
+  if (orderCriteria?.trim()) {
+    const criteriaLower = orderCriteria.toLowerCase();
+    if (!['true', 'false', 'yes', 'no', '1', '0'].includes(criteriaLower)) {
+      errors.push('Order Criteria must be true/false, yes/no, or 1/0');
+    } else {
+      data.order_criteria = ['true', 'yes', '1'].includes(criteriaLower);
+    }
+  } else {
+    data.order_criteria = false;
+  }
+
+  // Validate sort position
+  if (sortPosition?.trim()) {
+    const sortNum = parseInt(sortPosition);
+    if (isNaN(sortNum) || sortNum < 0) {
+      errors.push('Sort Position must be a valid non-negative number');
+    } else {
+      data.sort_position = sortNum;
+    }
+  } else {
+    data.sort_position = 0;
+  }
+
+  if (status?.trim()) {
+    if (!['active', 'inactive'].includes(status.toLowerCase())) {
+      errors.push('Status must be either "active" or "inactive"');
+    } else {
+      data.status = status.toLowerCase();
+    }
+  } else {
+    data.status = 'active';
+  }
+
+  return { valid: errors.length === 0, errors, data };
+}
