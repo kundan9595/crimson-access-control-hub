@@ -26,6 +26,9 @@ export const BaseFormDialog: React.FC<BaseFormDialogProps> = ({
   isSubmitting = false,
   isEditing = false,
 }) => {
+  console.log('BaseFormDialog render - open:', open, 'title:', title);
+  console.log('BaseFormDialog - Dialog component should render with open:', open);
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">

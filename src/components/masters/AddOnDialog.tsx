@@ -40,6 +40,7 @@ export const AddOnDialog: React.FC<AddOnDialogProps> = ({
   isSubmitting = false,
 }) => {
   console.log('AddOnDialog render - open:', open, 'addOn:', addOn, 'isSubmitting:', isSubmitting);
+  console.log('AddOnDialog - BaseFormDialog should be rendered with open:', open);
 
   const form = useForm<AddOnFormData>({
     resolver: zodResolver(addOnSchema),
@@ -87,6 +88,8 @@ export const AddOnDialog: React.FC<AddOnDialogProps> = ({
     console.log('AddOnDialog handleSubmit called with data:', data);
     onSubmit(data);
   };
+
+  console.log('AddOnDialog about to return BaseFormDialog');
 
   return (
     <BaseFormDialog
