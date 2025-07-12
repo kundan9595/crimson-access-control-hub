@@ -64,7 +64,7 @@ export const FabricDialog: React.FC<FabricDialogProps> = ({
       gsm: fabric?.gsm || 100,
       uom: fabric?.uom || 'kg',
       price: fabric?.price || 0,
-      color_id: fabric?.color_id || '',
+      color_id: fabric?.color_id || undefined,
       image_url: fabric?.image_url || '',
       status: fabric?.status || 'active',
     },
@@ -216,14 +216,17 @@ export const FabricDialog: React.FC<FabricDialogProps> = ({
           render={({ field }) => (
             <FormItem>
               <FormLabel>Color (Optional)</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
+              <Select 
+                onValueChange={(value) => field.onChange(value === 'none' ? undefined : value)} 
+                defaultValue={field.value || 'none'}
+              >
                 <FormControl>
                   <SelectTrigger>
                     <SelectValue placeholder="Select color" />
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  <SelectItem value="">No Color</SelectItem>
+                  <SelectItem value="none">No Color</SelectItem>
                   {colors.map((color) => (
                     <SelectItem key={color.id} value={color.id}>
                       <div className="flex items-center gap-2">
