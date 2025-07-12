@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -59,16 +59,47 @@ export const FabricDialog: React.FC<FabricDialogProps> = ({
   const form = useForm<FabricFormData>({
     resolver: zodResolver(fabricSchema),
     defaultValues: {
-      name: fabric?.name || '',
-      fabric_type: fabric?.fabric_type || 'Cotton',
-      gsm: fabric?.gsm || 100,
-      uom: fabric?.uom || 'kg',
-      price: fabric?.price || 0,
-      color_id: fabric?.color_id || undefined,
-      image_url: fabric?.image_url || '',
-      status: fabric?.status || 'active',
+      name: '',
+      fabric_type: 'Cotton',
+      gsm: 100,
+      uom: 'kg',
+      price: 0,
+      color_id: undefined,
+      image_url: '',
+      status: 'active',
     },
   });
+
+  // Reset form values when fabric changes or dialog opens
+  useEffect(() => {
+    if (open) {
+      if (fabric) {
+        // Editing existing fabric
+        form.reset({
+          name: fabric.name || '',
+          fabric_type: fabric.fabric_type || 'Cotton',
+          gsm: fabric.gsm || 100,
+          uom: fabric.uom || 'kg',
+          price: fabric.price || 0,
+          color_id: fabric.color_id || undefined,
+          image_url: fabric.image_url || '',
+          status: fabric.status || 'active',
+        });
+      } else {
+        // Creating new fabric
+        form.reset({
+          name: '',
+          fabric_type: 'Cotton',
+          gsm: 100,
+          uom: 'kg',
+          price: 0,
+          color_id: undefined,
+          image_url: '',
+          status: 'active',
+        });
+      }
+    }
+  }, [fabric, open, form]);
 
   const onSubmit = async (data: FabricFormData) => {
     try {
@@ -131,7 +162,7 @@ export const FabricDialog: React.FC<FabricDialogProps> = ({
           render={({ field }) => (
             <FormItem>
               <FormLabel>Fabric Type</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
+              <Select onValueChange={field.onChange} value={field.value}>
                 <FormControl>
                   <SelectTrigger>
                     <SelectValue placeholder="Select fabric type" />
@@ -174,7 +205,7 @@ export const FabricDialog: React.FC<FabricDialogProps> = ({
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Unit of Measure</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <Select onValueChange={field.onChange} value={field.value}>
                   <FormControl>
                     <SelectTrigger>
                       <SelectValue placeholder="Select UOM" />
@@ -218,7 +249,7 @@ export const FabricDialog: React.FC<FabricDialogProps> = ({
               <FormLabel>Color (Optional)</FormLabel>
               <Select 
                 onValueChange={(value) => field.onChange(value === 'none' ? undefined : value)} 
-                defaultValue={field.value || 'none'}
+                value={field.value || 'none'}
               >
                 <FormControl>
                   <SelectTrigger>
