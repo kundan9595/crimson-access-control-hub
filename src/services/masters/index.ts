@@ -54,3 +54,4 @@ export type {
 
 export * from './fabricsService';
 export * from './addOnsService';
+export * from './partsService';

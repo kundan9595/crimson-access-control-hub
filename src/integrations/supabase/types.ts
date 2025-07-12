@@ -511,6 +511,51 @@ export type Database = {
           },
         ]
       }
+      parts: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          name: string
+          order_criteria: boolean | null
+          selected_add_ons: Json | null
+          selected_colors: Json | null
+          sort_position: number | null
+          status: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          name: string
+          order_criteria?: boolean | null
+          selected_add_ons?: Json | null
+          selected_colors?: Json | null
+          sort_position?: number | null
+          status?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          name?: string
+          order_criteria?: boolean | null
+          selected_add_ons?: Json | null
+          selected_colors?: Json | null
+          sort_position?: number | null
+          status?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       permissions: {
         Row: {
           created_at: string

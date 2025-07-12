@@ -55,3 +55,5 @@ export type {
 export * from './useFabrics';
 
 export * from './useAddOns';
+
+export * from './useParts';
