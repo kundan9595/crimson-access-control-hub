@@ -24,10 +24,22 @@ const fabricSchema = z.object({
   price: z.number().min(0, 'Price must be non-negative'),
   color_id: z.string().optional(),
   image_url: z.string().optional(),
-  status: z.string().default('active'),
+  status: z.string().min(1, 'Status is required'),
 });
 
 type FabricFormData = z.infer<typeof fabricSchema>;
+
+// Type for create mutation that ensures all required fields are present
+type CreateFabricData = {
+  name: string;
+  fabric_type: 'Cotton' | 'Poly Cotton' | 'Polyester';
+  gsm: number;
+  uom: 'kg' | 'meter';
+  price: number;
+  color_id?: string;
+  image_url?: string;
+  status: string;
+};
 
 interface FabricDialogProps {
   fabric?: Fabric;
@@ -49,7 +61,7 @@ export const FabricDialog: React.FC<FabricDialogProps> = ({
     defaultValues: {
       name: fabric?.name || '',
       fabric_type: fabric?.fabric_type || 'Cotton',
-      gsm: fabric?.gsm || 0,
+      gsm: fabric?.gsm || 100,
       uom: fabric?.uom || 'kg',
       price: fabric?.price || 0,
       color_id: fabric?.color_id || '',
@@ -66,7 +78,18 @@ export const FabricDialog: React.FC<FabricDialogProps> = ({
           updates: data,
         });
       } else {
-        await createFabric.mutateAsync(data);
+        // Ensure all required fields are present for creation
+        const createData: CreateFabricData = {
+          name: data.name,
+          fabric_type: data.fabric_type,
+          gsm: data.gsm,
+          uom: data.uom,
+          price: data.price,
+          status: data.status,
+          ...(data.color_id && { color_id: data.color_id }),
+          ...(data.image_url && { image_url: data.image_url }),
+        };
+        await createFabric.mutateAsync(createData);
       }
       onOpenChange(false);
       form.reset();
