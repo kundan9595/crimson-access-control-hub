@@ -1,4 +1,3 @@
-
 import React, { useState, useRef } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -26,7 +25,8 @@ const AddOnsPage = () => {
   const filteredAddOns = addOns.filter(addOn =>
     addOn.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     addOn.group_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    addOn.add_on_of?.toLowerCase().includes(searchTerm.toLowerCase())
+    (addOn.add_on_of && addOn.add_on_of.toString().includes(searchTerm)) ||
+    (addOn.add_on_sn && addOn.add_on_sn.toString().includes(searchTerm))
   );
 
   const sortedAddOns = [...filteredAddOns].sort((a, b) => {

@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 
 export interface AddOnOption {
@@ -194,8 +195,8 @@ export const addOnsService = {
       options: parseOptions(item.options),
       colors: parseColors(item.colors),
       price: item.price ? Number(item.price) : undefined,
-      add_on_of: item.add_on_of ? Number(data.add_on_of) : undefined,
-      add_on_sn: item.add_on_sn ? Number(data.add_on_sn) : undefined
+      add_on_of: item.add_on_of ? Number(item.add_on_of) : undefined,
+      add_on_sn: item.add_on_sn ? Number(item.add_on_sn) : undefined
     }));
   },
 };

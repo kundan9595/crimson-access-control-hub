@@ -1,4 +1,3 @@
-
 import React, { useState, forwardRef, useImperativeHandle } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -43,7 +42,8 @@ export const AddOnsList = forwardRef<AddOnsListRef, AddOnsListProps>(({ searchTe
   const filteredAddOns = addOns.filter(addOn =>
     addOn.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     addOn.group_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    addOn.add_on_of?.toLowerCase().includes(searchTerm.toLowerCase())
+    (addOn.add_on_of && addOn.add_on_of.toString().includes(searchTerm)) ||
+    (addOn.add_on_sn && addOn.add_on_sn.toString().includes(searchTerm))
   );
 
   const handleCreate = () => {
