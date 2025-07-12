@@ -67,10 +67,11 @@ export const SkuDialog = ({ open, onOpenChange, sku }: SkuDialogProps) => {
   const createMutation = useCreateSku();
   const updateMutation = useUpdateSku();
   const { data: classes = [] } = useClasses();
-  const { data: sizes = [] } = useSizes();
+  const { data: allSizes = [] } = useSizes();
   const { data: priceTypes = [] } = usePriceTypes();
 
   const [selectedPriceTypes, setSelectedPriceTypes] = useState<string[]>([]);
+  const [availableSizes, setAvailableSizes] = useState<typeof allSizes>([]);
 
   const form = useForm<SkuFormData>({
     resolver: zodResolver(skuSchema),
@@ -92,6 +93,50 @@ export const SkuDialog = ({ open, onOpenChange, sku }: SkuDialogProps) => {
       status: 'active',
     },
   });
+
+  // Watch for class_id changes to update available sizes
+  const selectedClassId = form.watch('class_id');
+
+  // Update available sizes when class selection changes
+  useEffect(() => {
+    if (selectedClassId && classes.length > 0 && allSizes.length > 0) {
+      console.log('Selected class ID:', selectedClassId);
+      
+      const selectedClass = classes.find(c => c.id === selectedClassId);
+      console.log('Selected class:', selectedClass);
+      
+      if (selectedClass?.selected_sizes && Array.isArray(selectedClass.selected_sizes)) {
+        // Filter sizes based on the selected_sizes array from the class
+        const classSizeIds = selectedClass.selected_sizes.map((size: any) => 
+          typeof size === 'string' ? size : size.id
+        );
+        
+        const filteredSizes = allSizes.filter(size => 
+          classSizeIds.includes(size.id) && size.status === 'active'
+        );
+        
+        console.log('Class size IDs:', classSizeIds);
+        console.log('Filtered sizes:', filteredSizes);
+        
+        setAvailableSizes(filteredSizes);
+        
+        // Reset size selection if current size is not in the new available sizes
+        const currentSizeId = form.getValues('size_id');
+        if (currentSizeId && !filteredSizes.some(size => size.id === currentSizeId)) {
+          form.setValue('size_id', '');
+        }
+      } else {
+        console.log('No selected sizes found for class');
+        setAvailableSizes([]);
+        form.setValue('size_id', '');
+      }
+    } else {
+      setAvailableSizes([]);
+      if (form.getValues('size_id')) {
+        form.setValue('size_id', '');
+      }
+    }
+  }, [selectedClassId, classes, allSizes, form]);
 
   useEffect(() => {
     if (sku) {
@@ -129,6 +174,7 @@ export const SkuDialog = ({ open, onOpenChange, sku }: SkuDialogProps) => {
       });
     } else {
       setSelectedPriceTypes([]);
+      setAvailableSizes([]);
       form.reset({
         sku_code: '',
         class_id: '',
@@ -205,6 +251,7 @@ export const SkuDialog = ({ open, onOpenChange, sku }: SkuDialogProps) => {
       onOpenChange(false);
       form.reset();
       setSelectedPriceTypes([]);
+      setAvailableSizes([]);
     } catch (error) {
       console.error('Error saving SKU:', error);
     }
@@ -252,7 +299,7 @@ export const SkuDialog = ({ open, onOpenChange, sku }: SkuDialogProps) => {
                       <Select onValueChange={field.onChange} value={field.value}>
                         <FormControl>
                           <SelectTrigger>
-                            <SelectValue placeholder="Select a class" />
+                            <SelectValue placeholder="Select a class first" />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
@@ -274,20 +321,42 @@ export const SkuDialog = ({ open, onOpenChange, sku }: SkuDialogProps) => {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Size *</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
+                      <Select 
+                        onValueChange={field.onChange} 
+                        value={field.value}
+                        disabled={!selectedClassId || availableSizes.length === 0}
+                      >
                         <FormControl>
                           <SelectTrigger>
-                            <SelectValue placeholder="Select a size" />
+                            <SelectValue 
+                              placeholder={
+                                !selectedClassId 
+                                  ? "Select a class first" 
+                                  : availableSizes.length === 0
+                                  ? "No sizes available for selected class"
+                                  : "Select a size"
+                              } 
+                            />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          {sizes.map((size) => (
+                          {availableSizes.map((size) => (
                             <SelectItem key={size.id} value={size.id}>
                               {size.name} ({size.code})
                             </SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
+                      {!selectedClassId && (
+                        <FormDescription>
+                          Please select a class first to see available sizes
+                        </FormDescription>
+                      )}
+                      {selectedClassId && availableSizes.length === 0 && (
+                        <FormDescription className="text-amber-600">
+                          No sizes are configured for the selected class
+                        </FormDescription>
+                      )}
                       <FormMessage />
                     </FormItem>
                   )}
