@@ -12,11 +12,11 @@ import type { ProfitMargin } from '@/services/masters/profitMarginsService';
 
 const profitMarginSchema = z.object({
   name: z.string().min(1, 'Name is required'),
-  min_range: z.coerce.number().min(0, 'Min range must be >= 0'),
-  max_range: z.coerce.number().min(0, 'Max range must be >= 0'),
-  margin_percentage: z.coerce.number().min(0, 'Margin percentage must be >= 0').max(100, 'Margin percentage must be <= 100'),
-  branding_print: z.coerce.number().min(0, 'Branding print must be >= 0').max(100, 'Branding print must be <= 100'),
-  branding_embroidery: z.coerce.number().min(0, 'Branding embroidery must be >= 0').max(100, 'Branding embroidery must be <= 100'),
+  min_range: z.number().min(0, 'Min range must be >= 0'),
+  max_range: z.number().min(0, 'Max range must be >= 0'),
+  margin_percentage: z.number().min(0, 'Margin percentage must be >= 0').max(100, 'Margin percentage must be <= 100'),
+  branding_print: z.number().min(0, 'Branding print must be >= 0').max(100, 'Branding print must be <= 100'),
+  branding_embroidery: z.number().min(0, 'Branding embroidery must be >= 0').max(100, 'Branding embroidery must be <= 100'),
   status: z.string().default('active'),
 }).refine((data) => data.max_range >= data.min_range, {
   message: 'Max range must be greater than or equal to min range',
@@ -55,13 +55,11 @@ export const ProfitMarginDialog: React.FC<ProfitMarginDialogProps> = ({
   const onSubmit = async (data: ProfitMarginFormData) => {
     try {
       if (profitMargin) {
-        // For updates, we can pass partial data
         await updateProfitMarginMutation.mutateAsync({ 
           id: profitMargin.id, 
           updates: data 
         });
       } else {
-        // For creates, we need all required fields (which the form validation ensures)
         await createProfitMarginMutation.mutateAsync(data);
       }
       onOpenChange(false);
@@ -110,7 +108,12 @@ export const ProfitMarginDialog: React.FC<ProfitMarginDialogProps> = ({
             <FormItem>
               <FormLabel>Min Range</FormLabel>
               <FormControl>
-                <Input type="number" placeholder="0" {...field} />
+                <Input 
+                  type="number" 
+                  placeholder="0" 
+                  {...field}
+                  onChange={(e) => field.onChange(Number(e.target.value))}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -124,7 +127,12 @@ export const ProfitMarginDialog: React.FC<ProfitMarginDialogProps> = ({
             <FormItem>
               <FormLabel>Max Range</FormLabel>
               <FormControl>
-                <Input type="number" placeholder="0" {...field} />
+                <Input 
+                  type="number" 
+                  placeholder="0" 
+                  {...field}
+                  onChange={(e) => field.onChange(Number(e.target.value))}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -138,7 +146,13 @@ export const ProfitMarginDialog: React.FC<ProfitMarginDialogProps> = ({
             <FormItem>
               <FormLabel>Margin Percentage (%)</FormLabel>
               <FormControl>
-                <Input type="number" step="0.01" placeholder="0.00" {...field} />
+                <Input 
+                  type="number" 
+                  step="0.01" 
+                  placeholder="0.00" 
+                  {...field}
+                  onChange={(e) => field.onChange(Number(e.target.value))}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -152,7 +166,13 @@ export const ProfitMarginDialog: React.FC<ProfitMarginDialogProps> = ({
             <FormItem>
               <FormLabel>Branding Print (%)</FormLabel>
               <FormControl>
-                <Input type="number" step="0.01" placeholder="0.00" {...field} />
+                <Input 
+                  type="number" 
+                  step="0.01" 
+                  placeholder="0.00" 
+                  {...field}
+                  onChange={(e) => field.onChange(Number(e.target.value))}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -166,7 +186,13 @@ export const ProfitMarginDialog: React.FC<ProfitMarginDialogProps> = ({
             <FormItem>
               <FormLabel>Branding Embroidery (%)</FormLabel>
               <FormControl>
-                <Input type="number" step="0.01" placeholder="0.00" {...field} />
+                <Input 
+                  type="number" 
+                  step="0.01" 
+                  placeholder="0.00" 
+                  {...field}
+                  onChange={(e) => field.onChange(Number(e.target.value))}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
