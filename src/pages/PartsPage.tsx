@@ -1,12 +1,15 @@
 
 import React, { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
-import { Wrench } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Button } from '@/components/ui/button';
+import { Edit, Trash2, Wrench } from 'lucide-react';
 import { MasterPageHeader } from '@/components/masters/shared/MasterPageHeader';
 import { SearchFilter } from '@/components/masters/shared/SearchFilter';
 import { PartDialog } from '@/components/masters/PartDialog';
-import { PartsList } from '@/components/masters/PartsList';
 import { useParts, useCreatePart, useUpdatePart, useDeletePart } from '@/hooks/masters/useParts';
+import { useAddOns, useColors } from '@/hooks/masters';
 import { Part } from '@/services/masters/partsService';
 import { toast } from '@/hooks/use-toast';
 
@@ -18,6 +21,8 @@ const PartsPage = () => {
   const [editingPart, setEditingPart] = useState<Part | undefined>();
 
   const { data: parts = [], isLoading } = useParts();
+  const { data: addOns = [] } = useAddOns();
+  const { data: colors = [] } = useColors();
   const createPartMutation = useCreatePart();
   const updatePartMutation = useUpdatePart();
   const deletePartMutation = useDeletePart();
@@ -25,6 +30,28 @@ const PartsPage = () => {
   const filteredParts = parts.filter(part =>
     part.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  // Sort parts by sort_position, then by name
+  const sortedParts = [...filteredParts].sort((a, b) => {
+    const positionA = a.sort_position || 0;
+    const positionB = b.sort_position || 0;
+    if (positionA !== positionB) return positionA - positionB;
+    return a.name.localeCompare(b.name);
+  });
+
+  const getAddOnNames = (addOnIds: string[]) => {
+    return addOnIds
+      .map(id => addOns.find(addOn => addOn.id === id)?.name)
+      .filter(Boolean)
+      .join(', ');
+  };
+
+  const getColorNames = (colorIds: string[]) => {
+    return colorIds
+      .map(id => colors.find(color => color.id === id)?.name)
+      .filter(Boolean)
+      .join(', ');
+  };
 
   const handleAdd = () => {
     console.log('➕ Adding new part');
@@ -67,12 +94,37 @@ const PartsPage = () => {
     }
   };
 
+  const handleDialogClose = () => {
+    setDialogOpen(false);
+    setEditingPart(undefined);
+  };
+
   const handleExport = () => {
     console.log('📤 Export parts clicked');
-    toast({
-      title: "Export functionality",
-      description: "Export feature will be implemented soon",
-    });
+    if (!parts || parts.length === 0) return;
+
+    const csvContent = [
+      ['Name', 'Add-ons', 'Colors', 'Order Criteria', 'Sort Position', 'Status', 'Created At'].join(','),
+      ...parts.map(part => [
+        `"${part.name}"`,
+        `"${getAddOnNames(part.selected_add_ons || [])}"`,
+        `"${getColorNames(part.selected_colors || [])}"`,
+        part.order_criteria ? 'Yes' : 'No',
+        part.sort_position || 0,
+        part.status,
+        new Date(part.created_at).toLocaleDateString()
+      ].join(','))
+    ].join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `parts-${new Date().toISOString().split('T')[0]}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
   };
 
   const handleImport = () => {
@@ -124,17 +176,72 @@ const PartsPage = () => {
             placeholder="Search parts..."
             value={searchTerm}
             onChange={setSearchTerm}
-            resultCount={filteredParts.length}
+            resultCount={sortedParts.length}
             totalCount={parts.length}
           />
           
           <div className="mt-6">
-            {filteredParts.length > 0 ? (
-              <PartsList
-                parts={filteredParts}
-                onEdit={handleEdit}
-                onDelete={handleDelete}
-              />
+            {sortedParts.length > 0 ? (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Add-ons</TableHead>
+                    <TableHead>Colors</TableHead>
+                    <TableHead className="w-24">Order Criteria</TableHead>
+                    <TableHead className="w-20">Sort Position</TableHead>
+                    <TableHead className="w-24">Status</TableHead>
+                    <TableHead className="w-32">Created At</TableHead>
+                    <TableHead className="text-right w-32">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {sortedParts.map((part) => (
+                    <TableRow key={part.id}>
+                      <TableCell className="font-medium">{part.name}</TableCell>
+                      <TableCell className="max-w-xs truncate">
+                        {part.selected_add_ons?.length > 0 ? getAddOnNames(part.selected_add_ons) : '-'}
+                      </TableCell>
+                      <TableCell className="max-w-xs truncate">
+                        {part.selected_colors?.length > 0 ? getColorNames(part.selected_colors) : '-'}
+                      </TableCell>
+                      <TableCell className="text-center">
+                        {part.order_criteria ? (
+                          <Badge variant="default" className="text-xs">Yes</Badge>
+                        ) : (
+                          <Badge variant="secondary" className="text-xs">No</Badge>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-center">{part.sort_position || 0}</TableCell>
+                      <TableCell>
+                        <Badge variant={part.status === 'active' ? 'default' : 'secondary'}>
+                          {part.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>{new Date(part.created_at).toLocaleDateString()}</TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleEdit(part)}
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleDelete(part)}
+                            disabled={deletePartMutation.isPending}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
             ) : (
               <div className="text-center py-8 text-muted-foreground">
                 {searchTerm ? (
@@ -156,7 +263,7 @@ const PartsPage = () => {
 
       <PartDialog
         open={dialogOpen}
-        onOpenChange={setDialogOpen}
+        onOpenChange={handleDialogClose}
         part={editingPart}
         onSubmit={handleSubmit}
         isSubmitting={createPartMutation.isPending || updatePartMutation.isPending}
