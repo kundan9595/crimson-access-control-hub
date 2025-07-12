@@ -4,13 +4,17 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Scissors } from 'lucide-react';
 import { MasterPageHeader } from '@/components/masters/shared/MasterPageHeader';
 import { SearchFilter } from '@/components/masters/shared/SearchFilter';
+import { FabricDialog } from '@/components/masters/FabricDialog';
+import { FabricsList } from '@/components/masters/FabricsList';
+import { useFabrics } from '@/hooks/masters/useFabrics';
 
 const FabricPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const { data: fabrics = [] } = useFabrics();
 
   const handleAdd = () => {
-    // TODO: Open fabric dialog when implemented
-    console.log('Add fabric clicked');
+    setDialogOpen(true);
   };
 
   const handleExport = () => {
@@ -23,6 +27,11 @@ const FabricPage = () => {
     console.log('Import fabric clicked');
   };
 
+  const filteredFabrics = fabrics.filter((fabric) =>
+    fabric.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    fabric.fabric_type.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   return (
     <div className="container mx-auto p-6 space-y-6">
       <MasterPageHeader
@@ -32,7 +41,7 @@ const FabricPage = () => {
         onAdd={handleAdd}
         onExport={handleExport}
         onImport={handleImport}
-        canExport={false}
+        canExport={fabrics.length > 0}
       />
 
       <Card>
@@ -41,18 +50,20 @@ const FabricPage = () => {
             placeholder="Search fabric..."
             value={searchTerm}
             onChange={setSearchTerm}
-            resultCount={0}
-            totalCount={0}
+            resultCount={filteredFabrics.length}
+            totalCount={fabrics.length}
           />
           
           <div className="mt-6">
-            <div className="text-center py-8 text-muted-foreground">
-              <p>No fabric records found</p>
-              <p className="text-sm">Click "Add Fabric" to create your first fabric entry</p>
-            </div>
+            <FabricsList searchTerm={searchTerm} />
           </div>
         </CardContent>
       </Card>
+
+      <FabricDialog
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+      />
     </div>
   );
 };

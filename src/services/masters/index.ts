@@ -1,4 +1,3 @@
-
 // Export all brand services
 export * from './brandsService';
 
@@ -52,3 +51,5 @@ export type {
   MediaFolder,
   MediaItem,
 } from './mediaService';
+
+export * from './fabricsService';

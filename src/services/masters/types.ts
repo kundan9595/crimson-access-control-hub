@@ -217,3 +217,24 @@ export interface MediaItem {
   created_by?: string;
   updated_by?: string;
 }
+
+export interface Fabric {
+  id: string;
+  name: string;
+  fabric_type: 'Cotton' | 'Poly Cotton' | 'Polyester';
+  gsm: number;
+  uom: 'kg' | 'meter';
+  price: number;
+  color_id?: string;
+  image_url?: string;
+  status: string;
+  created_at: string;
+  updated_at: string;
+  created_by?: string;
+  updated_by?: string;
+  colors?: {
+    id: string;
+    name: string;
+    hex_code: string;
+  };
+}

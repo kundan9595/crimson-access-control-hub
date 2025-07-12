@@ -230,6 +230,62 @@ export type Database = {
         }
         Relationships: []
       }
+      fabrics: {
+        Row: {
+          color_id: string | null
+          created_at: string
+          created_by: string | null
+          fabric_type: string
+          gsm: number
+          id: string
+          image_url: string | null
+          name: string
+          price: number
+          status: string
+          uom: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          color_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          fabric_type: string
+          gsm: number
+          id?: string
+          image_url?: string | null
+          name: string
+          price: number
+          status?: string
+          uom: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          color_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          fabric_type?: string
+          gsm?: number
+          id?: string
+          image_url?: string | null
+          name?: string
+          price?: number
+          status?: string
+          uom?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fabrics_color_id_fkey"
+            columns: ["color_id"]
+            isOneToOne: false
+            referencedRelation: "colors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       indian_cities: {
         Row: {
           created_at: string

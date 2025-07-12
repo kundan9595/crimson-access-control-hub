@@ -1,4 +1,3 @@
-
 // Export all brand hooks
 export * from './useBrands';
 
@@ -52,3 +51,5 @@ export type {
   MediaFolder,
   MediaItem,
 } from '@/services/masters/mediaService';
+
+export * from './useFabrics';
