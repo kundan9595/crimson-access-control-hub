@@ -915,10 +915,8 @@ export type Database = {
       }
       zones: {
         Row: {
-          code: string | null
           created_at: string
           created_by: string | null
-          description: string | null
           id: string
           name: string
           status: string
@@ -927,10 +925,8 @@ export type Database = {
           warehouse_assignments: Json | null
         }
         Insert: {
-          code?: string | null
           created_at?: string
           created_by?: string | null
-          description?: string | null
           id?: string
           name: string
           status?: string
@@ -939,10 +935,8 @@ export type Database = {
           warehouse_assignments?: Json | null
         }
         Update: {
-          code?: string | null
           created_at?: string
           created_by?: string | null
-          description?: string | null
           id?: string
           name?: string
           status?: string

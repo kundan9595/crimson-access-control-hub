@@ -52,11 +52,9 @@ const ZonesPage = () => {
     if (!filteredZones?.length) return;
 
     const csvContent = [
-      ['Name', 'Code', 'Description', 'Status', 'Locations', 'Created Date'].join(','),
+      ['Name', 'Status', 'Locations', 'Created Date'].join(','),
       ...filteredZones.map(zone => [
         `"${zone.name}"`,
-        `"${zone.code || ''}"`,
-        `"${zone.description || ''}"`,
         zone.status,
         `"${zone.locations?.map(loc => `${loc.state}, ${loc.city}`).join('; ') || ''}"`,
         new Date(zone.created_at).toLocaleDateString()
@@ -74,10 +72,10 @@ const ZonesPage = () => {
     URL.revokeObjectURL(url);
   };
 
-  const templateHeaders = ['Name', 'Code', 'Description', 'Status'];
+  const templateHeaders = ['Name', 'Status'];
   const sampleData = [
-    ['North Zone', 'NZ001', 'Northern region coverage', 'active'],
-    ['South Zone', 'SZ001', 'Southern region coverage', 'active']
+    ['North Zone', 'active'],
+    ['South Zone', 'active']
   ];
 
   if (isLoading) {
@@ -112,8 +110,6 @@ const ZonesPage = () => {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Name</TableHead>
-                    <TableHead>Code</TableHead>
-                    <TableHead>Description</TableHead>
                     <TableHead>Locations</TableHead>
                     <TableHead className="w-24">Status</TableHead>
                     <TableHead className="w-32">Created At</TableHead>
@@ -124,8 +120,6 @@ const ZonesPage = () => {
                   {filteredZones.map((zone) => (
                     <TableRow key={zone.id}>
                       <TableCell className="font-medium">{zone.name}</TableCell>
-                      <TableCell>{zone.code || '-'}</TableCell>
-                      <TableCell className="max-w-xs truncate">{zone.description || '-'}</TableCell>
                       <TableCell>
                         {zone.locations && zone.locations.length > 0 ? (
                           <div className="flex flex-wrap gap-1">

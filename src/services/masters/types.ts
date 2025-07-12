@@ -1,27 +1,29 @@
+
 export interface Brand {
   id: string;
   name: string;
-  description: string | null;
-  logo_url: string | null;
+  description?: string;
+  logo_url?: string;
   status: string;
-  sort_order: number | null;
+  sort_order?: number;
   created_at: string;
   updated_at: string;
-  created_by: string | null;
-  updated_by: string | null;
+  created_by?: string;
+  updated_by?: string;
 }
 
 export interface Category {
   id: string;
   name: string;
-  description: string | null;
-  image_url: string | null;
-  sort_order: number | null;
+  description?: string;
+  parent_id?: string;
+  image_url?: string;
   status: string;
+  sort_order?: number;
   created_at: string;
   updated_at: string;
-  created_by: string | null;
-  updated_by: string | null;
+  created_by?: string;
+  updated_by?: string;
 }
 
 export interface Color {
@@ -31,19 +33,46 @@ export interface Color {
   status: string;
   created_at: string;
   updated_at: string;
-  created_by: string | null;
-  updated_by: string | null;
+  created_by?: string;
+  updated_by?: string;
 }
 
-export interface SizeGroup {
+export interface Style {
   id: string;
   name: string;
-  description: string | null;
+  description?: string;
+  category_id?: string;
+  brand_id?: string;
   status: string;
+  sort_order?: number;
   created_at: string;
   updated_at: string;
-  created_by: string | null;
-  updated_by: string | null;
+  created_by?: string;
+  updated_by?: string;
+}
+
+export interface Class {
+  id: string;
+  name: string;
+  description?: string;
+  style_id?: string;
+  color_id?: string;
+  size_group_id?: string;
+  selected_sizes?: any[];
+  size_ratios?: Record<string, number>;
+  monthly_stock_levels?: Record<string, any>;
+  overall_min_stock?: number;
+  overall_max_stock?: number;
+  stock_management_type?: string;
+  gst_rate?: number;
+  images?: any[];
+  primary_image_url?: string;
+  status: string;
+  sort_order?: number;
+  created_at: string;
+  updated_at: string;
+  created_by?: string;
+  updated_by?: string;
 }
 
 export interface Size {
@@ -51,13 +80,76 @@ export interface Size {
   name: string;
   code: string;
   size_group_id: string;
-  sort_order: number | null;
+  status: string;
+  sort_order?: number;
+  created_at: string;
+  updated_at: string;
+  created_by?: string;
+  updated_by?: string;
+}
+
+export interface SizeGroup {
+  id: string;
+  name: string;
+  description?: string;
   status: string;
   created_at: string;
   updated_at: string;
-  created_by: string | null;
-  updated_by: string | null;
-  size_group?: SizeGroup;
+  created_by?: string;
+  updated_by?: string;
+  sizes?: Size[];
+}
+
+export interface Sku {
+  id: string;
+  sku_code: string;
+  class_id: string;
+  size_id: string;
+  description?: string;
+  base_mrp?: number;
+  cost_price?: number;
+  gst_rate?: number;
+  hsn_code?: string;
+  price_type_prices?: Record<string, number>;
+  length_cm?: number;
+  breadth_cm?: number;
+  height_cm?: number;
+  weight_grams?: number;
+  status: string;
+  created_at: string;
+  updated_at: string;
+  created_by?: string;
+  updated_by?: string;
+}
+
+export interface Vendor {
+  id: string;
+  name: string;
+  code: string;
+  description?: string;
+  contact_person?: string;
+  email?: string;
+  phone?: string;
+  address?: string;
+  tax_id?: string;
+  credit_terms?: string;
+  status: string;
+  created_at: string;
+  updated_at: string;
+  created_by?: string;
+  updated_by?: string;
+}
+
+export interface PriceType {
+  id: string;
+  name: string;
+  description?: string;
+  category?: string;
+  status: string;
+  created_at: string;
+  updated_at: string;
+  created_by?: string;
+  updated_by?: string;
 }
 
 export interface ZoneLocation {
@@ -67,116 +159,51 @@ export interface ZoneLocation {
   city: string;
   created_at: string;
   updated_at: string;
-  created_by: string | null;
-  updated_by: string | null;
+  created_by?: string;
+  updated_by?: string;
 }
 
 export interface Zone {
   id: string;
   name: string;
-  code: string | null;
-  description: string | null;
   status: string;
-  warehouse_assignments: any[];
-  created_at: string;
-  updated_at: string;
-  created_by: string | null;
-  updated_by: string | null;
+  warehouse_assignments?: any[];
   locations?: ZoneLocation[];
+  created_at: string;
+  updated_at: string;
+  created_by?: string;
+  updated_by?: string;
 }
 
-export interface PriceType {
+export interface MediaFolder {
   id: string;
   name: string;
-  description: string | null;
-  category: 'retail' | 'wholesale' | 'distributor' | 'special';
+  description?: string;
+  parent_id?: string;
+  path: string;
   status: string;
   created_at: string;
   updated_at: string;
-  created_by: string | null;
-  updated_by: string | null;
+  created_by?: string;
+  updated_by?: string;
 }
 
-export interface Vendor {
+export interface MediaItem {
   id: string;
   name: string;
-  code: string;
-  description: string | null;
-  contact_person: string | null;
-  email: string | null;
-  phone: string | null;
-  address: string | null;
-  tax_id: string | null;
-  credit_terms: string | null;
+  original_name: string;
+  file_url: string;
+  folder_id?: string;
+  file_size?: number;
+  mime_type?: string;
+  width?: number;
+  height?: number;
+  alt_text?: string;
+  tags?: string[];
+  usage_count?: number;
   status: string;
   created_at: string;
   updated_at: string;
-  created_by: string | null;
-  updated_by: string | null;
-}
-
-export interface Style {
-  id: string;
-  name: string;
-  description: string | null;
-  brand_id: string | null;
-  category_id: string | null;
-  status: string;
-  sort_order: number | null;
-  created_at: string;
-  updated_at: string;
-  created_by: string | null;
-  updated_by: string | null;
-  brand?: Brand;
-  category?: Category;
-}
-
-export interface Class {
-  id: string;
-  name: string;
-  style_id: string | null;
-  color_id: string | null;
-  size_group_id: string | null;
-  selected_sizes: string[] | null;
-  description: string | null;
-  status: string;
-  gst_rate: number | null;
-  sort_order: number | null;
-  primary_image_url: string | null;
-  images: string[] | null;
-  size_ratios: Record<string, number> | null;
-  stock_management_type: 'overall' | 'monthly' | null;
-  overall_min_stock: number | null;
-  overall_max_stock: number | null;
-  monthly_stock_levels: Record<string, any> | null;
-  created_at: string;
-  updated_at: string;
-  created_by: string | null;
-  updated_by: string | null;
-  style?: Style;
-  color?: Color;
-}
-
-export interface Sku {
-  id: string;
-  sku_code: string;
-  class_id: string;
-  size_id: string;
-  hsn_code: string | null;
-  description: string | null;
-  length_cm: number | null;
-  breadth_cm: number | null;
-  height_cm: number | null;
-  weight_grams: number | null;
-  base_mrp: number | null;
-  cost_price: number | null;
-  gst_rate: number | null;
-  price_type_prices: any | null;
-  status: string;
-  created_at: string;
-  updated_at: string;
-  created_by: string | null;
-  updated_by: string | null;
-  class?: Class;
-  size?: Size;
+  created_by?: string;
+  updated_by?: string;
 }

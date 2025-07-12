@@ -132,8 +132,6 @@ const ZoneDialog = ({ zone, open, onOpenChange }: ZoneDialogProps) => {
       const zoneData = {
         name: data.name,
         status: data.status,
-        code: null,
-        description: null,
         warehouse_assignments: zone?.warehouse_assignments || [],
       };
 
