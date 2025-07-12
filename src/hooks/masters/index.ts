@@ -60,3 +60,6 @@ export * from './useParts';
 
 // Export profit margin hooks
 export * from './useProfitMargins';
+
+// Export base products hooks
+export * from './useBaseProducts';

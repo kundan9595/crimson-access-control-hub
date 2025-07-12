@@ -37,6 +37,9 @@ export * from './appAssetsService';
 // Export all profit margin services
 export * from './profitMarginsService';
 
+// Export base products services
+export * from './baseProductsService';
+
 // Re-export types for convenience
 export type {
   Brand,
@@ -50,6 +53,7 @@ export type {
   Style,
   Class,
   Sku,
+  BaseProduct,
 } from './types';
 
 // Re-export media types

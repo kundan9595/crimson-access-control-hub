@@ -119,6 +119,96 @@ export type Database = {
         }
         Relationships: []
       }
+      base_products: {
+        Row: {
+          adult_consumption: number | null
+          base_price: number | null
+          base_sn: number | null
+          branding_sides: Json | null
+          calculator: string | null
+          category_id: string | null
+          created_at: string
+          created_by: string | null
+          fabric_id: string | null
+          id: string
+          image_url: string | null
+          kids_consumption: number | null
+          name: string
+          overhead_percentage: number | null
+          parts: Json | null
+          sample_rate: number | null
+          size_type: string | null
+          sort_order: number | null
+          status: string | null
+          trims_cost: number | null
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          adult_consumption?: number | null
+          base_price?: number | null
+          base_sn?: number | null
+          branding_sides?: Json | null
+          calculator?: string | null
+          category_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          fabric_id?: string | null
+          id?: string
+          image_url?: string | null
+          kids_consumption?: number | null
+          name: string
+          overhead_percentage?: number | null
+          parts?: Json | null
+          sample_rate?: number | null
+          size_type?: string | null
+          sort_order?: number | null
+          status?: string | null
+          trims_cost?: number | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          adult_consumption?: number | null
+          base_price?: number | null
+          base_sn?: number | null
+          branding_sides?: Json | null
+          calculator?: string | null
+          category_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          fabric_id?: string | null
+          id?: string
+          image_url?: string | null
+          kids_consumption?: number | null
+          name?: string
+          overhead_percentage?: number | null
+          parts?: Json | null
+          sample_rate?: number | null
+          size_type?: string | null
+          sort_order?: number | null
+          status?: string | null
+          trims_cost?: number | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "base_products_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "base_products_fabric_id_fkey"
+            columns: ["fabric_id"]
+            isOneToOne: false
+            referencedRelation: "fabrics"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       brands: {
         Row: {
           created_at: string

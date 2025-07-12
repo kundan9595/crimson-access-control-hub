@@ -269,6 +269,41 @@ export interface ProfitMargin {
   updated_by?: string;
 }
 
+export interface BaseProduct {
+  id: string;
+  name: string;
+  sort_order: number;
+  calculator?: 'Knit' | 'Woven';
+  category_id?: string;
+  fabric_id?: string;
+  parts: string[]; // Array of part IDs
+  base_price: number;
+  base_sn?: number;
+  trims_cost: number;
+  adult_consumption: number;
+  kids_consumption: number;
+  overhead_percentage: number;
+  sample_rate: number;
+  image_url?: string;
+  size_type: 'Adult' | 'Kids' | 'Both';
+  branding_sides: any[]; // Array of branding side objects
+  status: string;
+  created_at: string;
+  updated_at: string;
+  created_by?: string;
+  updated_by?: string;
+  // Populated relation fields
+  category?: {
+    id: string;
+    name: string;
+  };
+  fabric?: {
+    id: string;
+    name: string;
+    fabric_type: string;
+  };
+}
+
 export type {
   AddOn,
   AddOnOption,
