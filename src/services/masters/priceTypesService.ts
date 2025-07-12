@@ -9,7 +9,7 @@ export const fetchPriceTypes = async (): Promise<PriceType[]> => {
     .order('created_at', { ascending: false });
 
   if (error) throw error;
-  return (data || []) as PriceType[];
+  return data || [];
 };
 
 export const createPriceType = async (priceTypeData: {
@@ -25,7 +25,7 @@ export const createPriceType = async (priceTypeData: {
     .single();
 
   if (error) throw error;
-  return data as PriceType;
+  return data;
 };
 
 export const updatePriceType = async (id: string, updates: {
@@ -42,7 +42,7 @@ export const updatePriceType = async (id: string, updates: {
     .single();
 
   if (error) throw error;
-  return data as PriceType;
+  return data;
 };
 
 export const deletePriceType = async (id: string): Promise<void> => {

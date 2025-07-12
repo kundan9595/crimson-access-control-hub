@@ -999,7 +999,7 @@ export type Database = {
         | "delete_roles"
         | "manage_roles"
         | "admin_access"
-      price_type_category: "retail" | "wholesale" | "distributor" | "special"
+      price_type_category: "zone" | "customer"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1164,7 +1164,7 @@ export const Constants = {
         "manage_roles",
         "admin_access",
       ],
-      price_type_category: ["retail", "wholesale", "distributor", "special"],
+      price_type_category: ["zone", "customer"],
     },
   },
 } as const
