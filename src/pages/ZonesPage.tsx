@@ -3,14 +3,15 @@ import React, { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
-import { Search, Edit, Trash2, MapPin } from 'lucide-react';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Edit, Trash2, MapPin } from 'lucide-react';
 import { useZones, useDeleteZone } from '@/hooks/useMasters';
 import { Zone } from '@/services/mastersService';
 import { useSearchParams } from 'react-router-dom';
 import ZoneDialog from '@/components/masters/ZoneDialog';
 import BulkImportDialog from '@/components/masters/BulkImportDialog';
 import { MasterPageHeader } from '@/components/masters/shared/MasterPageHeader';
+import { SearchFilter } from '@/components/masters/shared/SearchFilter';
 
 const ZonesPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -28,7 +29,7 @@ const ZonesPage = () => {
       location.state.toLowerCase().includes(searchTerm.toLowerCase()) ||
       location.city.toLowerCase().includes(searchTerm.toLowerCase())
     )
-  );
+  ) || [];
 
   const handleEdit = (zone: Zone) => {
     setEditingZone(zone);
@@ -80,7 +81,7 @@ const ZonesPage = () => {
   ];
 
   if (isLoading) {
-    return <div className="container mx-auto p-6">Loading...</div>;
+    return <div className="text-center">Loading zones...</div>;
   }
 
   return (
@@ -88,7 +89,7 @@ const ZonesPage = () => {
       <MasterPageHeader
         title="Zones"
         description="Manage geographical zones and their locations"
-        icon={<MapPin className="h-8 w-8" />}
+        icon={<MapPin className="h-6 w-6 text-blue-600" />}
         onAdd={() => setIsDialogOpen(true)}
         onExport={handleExport}
         onImport={() => setIsBulkImportOpen(true)}
@@ -97,88 +98,86 @@ const ZonesPage = () => {
 
       <Card>
         <CardContent className="p-6">
-          <div className="flex items-center justify-between mb-6">
-            <h3 className="text-lg font-semibold">Search Zones</h3>
-            <div className="relative">
-              <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search zones..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-8 w-64"
-              />
-            </div>
-          </div>
-
-          <div className="grid gap-4">
-            {filteredZones?.map((zone) => (
-              <Card key={zone.id}>
-                <CardContent className="p-6">
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-3">
-                        <h3 className="text-lg font-semibold">{zone.name}</h3>
-                        <Badge variant={zone.status === 'active' ? 'default' : 'secondary'}>
-                          {zone.status}
-                        </Badge>
-                      </div>
-                      
-                      {zone.locations && zone.locations.length > 0 ? (
-                        <div className="mb-3">
-                          <h4 className="text-sm font-medium text-muted-foreground mb-2">Locations:</h4>
-                          <div className="flex flex-wrap gap-2">
-                            {zone.locations.map((location, index) => (
+          <SearchFilter
+            placeholder="Search zones..."
+            value={searchTerm}
+            onChange={setSearchTerm}
+            resultCount={filteredZones.length}
+            totalCount={zones?.length || 0}
+          />
+          
+          <div className="mt-6">
+            {filteredZones.length > 0 ? (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Code</TableHead>
+                    <TableHead>Description</TableHead>
+                    <TableHead>Locations</TableHead>
+                    <TableHead className="w-24">Status</TableHead>
+                    <TableHead className="w-32">Created At</TableHead>
+                    <TableHead className="text-right w-32">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredZones.map((zone) => (
+                    <TableRow key={zone.id}>
+                      <TableCell className="font-medium">{zone.name}</TableCell>
+                      <TableCell>{zone.code || '-'}</TableCell>
+                      <TableCell className="max-w-xs truncate">{zone.description || '-'}</TableCell>
+                      <TableCell>
+                        {zone.locations && zone.locations.length > 0 ? (
+                          <div className="flex flex-wrap gap-1">
+                            {zone.locations.slice(0, 2).map((location, index) => (
                               <Badge key={index} variant="outline" className="text-xs">
                                 {location.state}, {location.city}
                               </Badge>
                             ))}
+                            {zone.locations.length > 2 && (
+                              <Badge variant="outline" className="text-xs">
+                                +{zone.locations.length - 2} more
+                              </Badge>
+                            )}
                           </div>
+                        ) : (
+                          <span className="text-muted-foreground">No locations</span>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={zone.status === 'active' ? 'default' : 'secondary'}>
+                          {zone.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>{new Date(zone.created_at).toLocaleDateString()}</TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleEdit(zone)}
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleDelete(zone.id)}
+                            disabled={deleteZone.isPending}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
                         </div>
-                      ) : (
-                        <p className="text-sm text-muted-foreground mb-3">No locations assigned</p>
-                      )}
-                      
-                      <div className="text-sm text-muted-foreground">
-                        Created: {new Date(zone.created_at).toLocaleDateString()}
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleEdit(zone)}
-                      >
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleDelete(zone.id)}
-                        disabled={deleteZone.isPending}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-
-            {filteredZones?.length === 0 && (
-              <Card>
-                <CardContent className="p-12 text-center">
-                  <MapPin className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                  <h3 className="text-lg font-semibold mb-2">No Zones Found</h3>
-                  <p className="text-muted-foreground mb-4">
-                    {searchTerm ? 'No zones match your search criteria.' : 'Get started by creating your first zone.'}
-                  </p>
-                  {!searchTerm && (
-                    <Button onClick={() => setIsDialogOpen(true)}>
-                      Add Zone
-                    </Button>
-                  )}
-                </CardContent>
-              </Card>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            ) : (
+              <div className="text-center py-8 text-muted-foreground">
+                <p>No zones found</p>
+                {searchTerm && <p className="text-sm">Try adjusting your search terms</p>}
+              </div>
             )}
           </div>
         </CardContent>

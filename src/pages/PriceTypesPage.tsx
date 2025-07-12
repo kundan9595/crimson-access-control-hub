@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Edit, Trash2, DollarSign } from 'lucide-react';
 import { usePriceTypes, useDeletePriceType } from '@/hooks/useMasters';
@@ -74,7 +75,7 @@ const PriceTypesPage = () => {
   ) || [];
 
   if (isLoading) {
-    return <div className="container mx-auto p-6">Loading...</div>;
+    return <div className="text-center">Loading price types...</div>;
   }
 
   return (
@@ -82,7 +83,7 @@ const PriceTypesPage = () => {
       <MasterPageHeader
         title="Price Types"
         description="Configure pricing structures"
-        icon={<DollarSign className="h-8 w-8" />}
+        icon={<DollarSign className="h-6 w-6 text-blue-600" />}
         onAdd={() => setIsDialogOpen(true)}
         onExport={handleExport}
         onImport={() => setIsBulkImportOpen(true)}
@@ -99,59 +100,56 @@ const PriceTypesPage = () => {
             totalCount={priceTypes?.length || 0}
           />
           
-          <div className="mt-6 space-y-4">
+          <div className="mt-6">
             {filteredPriceTypes.length > 0 ? (
-              filteredPriceTypes.map((priceType) => (
-                <Card key={priceType.id}>
-                  <CardContent className="p-6">
-                    <div className="flex items-center justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-2">
-                          <h3 className="text-lg font-semibold">{priceType.name}</h3>
-                          <Badge variant={priceType.status === 'active' ? 'default' : 'secondary'}>
-                            {priceType.status}
-                          </Badge>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Description</TableHead>
+                    <TableHead className="w-24">Status</TableHead>
+                    <TableHead className="w-32">Created At</TableHead>
+                    <TableHead className="text-right w-32">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredPriceTypes.map((priceType) => (
+                    <TableRow key={priceType.id}>
+                      <TableCell className="font-medium">{priceType.name}</TableCell>
+                      <TableCell className="max-w-xs truncate">{priceType.description || '-'}</TableCell>
+                      <TableCell>
+                        <Badge variant={priceType.status === 'active' ? 'default' : 'secondary'}>
+                          {priceType.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>{new Date(priceType.created_at).toLocaleDateString()}</TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleEdit(priceType)}
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleDelete(priceType.id)}
+                            disabled={deletePriceType.isPending}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
                         </div>
-                        {priceType.description && (
-                          <p className="text-muted-foreground mb-2">{priceType.description}</p>
-                        )}
-                        <div className="text-sm text-muted-foreground">
-                          Created: {new Date(priceType.created_at).toLocaleDateString()}
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleEdit(priceType)}
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleDelete(priceType.id)}
-                          disabled={deletePriceType.isPending}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
             ) : (
               <div className="text-center py-8 text-muted-foreground">
-                <DollarSign className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                <h3 className="text-lg font-semibold mb-2">No Price Types Found</h3>
-                <p className="mb-4">
-                  {searchTerm ? 'No price types match your search criteria.' : 'Get started by creating your first price type.'}
-                </p>
-                {!searchTerm && (
-                  <Button onClick={() => setIsDialogOpen(true)}>
-                    Add Price Type
-                  </Button>
-                )}
+                <p>No price types found</p>
+                {searchTerm && <p className="text-sm">Try adjusting your search terms</p>}
               </div>
             )}
           </div>
