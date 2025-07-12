@@ -15,21 +15,37 @@ const AddOnsPage = () => {
   const addOnsListRef = useRef<{ triggerCreate: () => void }>(null);
   const { user, loading: authLoading } = useAuth();
 
+  console.log('🔍 AddOnsPage - Render state:', {
+    searchTerm,
+    addOnsCount: addOns.length,
+    user: user ? { id: user.id, email: user.email } : null,
+    authLoading,
+    addOnsListRef: addOnsListRef.current
+  });
+
   const filteredAddOns = addOns.filter(addOn =>
     addOn.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     addOn.description?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const handleAdd = () => {
+    console.log('🎯 AddOnsPage - handleAdd called!');
+    console.log('🎯 AddOnsPage - User check:', user ? 'User exists' : 'No user');
+    console.log('🎯 AddOnsPage - addOnsListRef.current:', addOnsListRef.current);
+    
     if (!user) {
+      console.log('❌ AddOnsPage - No user, returning early');
       return;
     }
     
     if (!addOnsListRef.current) {
+      console.log('❌ AddOnsPage - No addOnsListRef.current, returning early');
       return;
     }
     
+    console.log('✅ AddOnsPage - About to call triggerCreate');
     addOnsListRef.current?.triggerCreate();
+    console.log('✅ AddOnsPage - triggerCreate called');
   };
 
   const handleExport = () => {
