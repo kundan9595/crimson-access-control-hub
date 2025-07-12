@@ -1,4 +1,3 @@
-
 import React, { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -287,10 +286,10 @@ export const AddOnDialog: React.FC<AddOnDialogProps> = ({
                 </FormControl>
                 <SelectContent>
                   {colorsLoading ? (
-                    <SelectItem value="" disabled>Loading colors...</SelectItem>
+                    <SelectItem value="loading" disabled>Loading colors...</SelectItem>
                   ) : (
                     <>
-                      <SelectItem value="">No color selected</SelectItem>
+                      <SelectItem value="none">No color selected</SelectItem>
                       {colors.map((color) => (
                         <SelectItem key={color.id} value={color.id}>
                           <div className="flex items-center gap-2">
