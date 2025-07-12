@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 
 export interface ProfitMargin {
@@ -23,7 +22,7 @@ export interface CreateProfitMarginData {
   margin_percentage: number;
   branding_print: number;
   branding_embroidery: number;
-  status?: string;
+  status: string;
 }
 
 export interface UpdateProfitMarginData {
