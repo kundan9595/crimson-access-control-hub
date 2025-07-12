@@ -60,7 +60,17 @@ export const ProfitMarginDialog: React.FC<ProfitMarginDialogProps> = ({
           updates: data 
         });
       } else {
-        await createProfitMarginMutation.mutateAsync(data);
+        // Ensure all required fields are present for creation
+        const createData = {
+          name: data.name,
+          min_range: data.min_range,
+          max_range: data.max_range,
+          margin_percentage: data.margin_percentage,
+          branding_print: data.branding_print,
+          branding_embroidery: data.branding_embroidery,
+          status: data.status,
+        };
+        await createProfitMarginMutation.mutateAsync(createData);
       }
       onOpenChange(false);
       form.reset();
@@ -110,7 +120,8 @@ export const ProfitMarginDialog: React.FC<ProfitMarginDialogProps> = ({
               <FormControl>
                 <Input 
                   type="number" 
-                  placeholder="0" 
+                  step="0.01"
+                  placeholder="0.00" 
                   {...field}
                   onChange={(e) => field.onChange(Number(e.target.value))}
                 />
@@ -129,7 +140,8 @@ export const ProfitMarginDialog: React.FC<ProfitMarginDialogProps> = ({
               <FormControl>
                 <Input 
                   type="number" 
-                  placeholder="0" 
+                  step="0.01"
+                  placeholder="0.00" 
                   {...field}
                   onChange={(e) => field.onChange(Number(e.target.value))}
                 />
