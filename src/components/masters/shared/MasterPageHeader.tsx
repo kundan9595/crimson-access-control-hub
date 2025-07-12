@@ -25,6 +25,11 @@ export const MasterPageHeader: React.FC<MasterPageHeaderProps> = ({
 }) => {
   const navigate = useNavigate();
 
+  const handleAddClick = () => {
+    console.log('MasterPageHeader Add button clicked - calling onAdd');
+    onAdd();
+  };
+
   return (
     <div className="space-y-4">
       {/* Back button row */}
@@ -68,7 +73,7 @@ export const MasterPageHeader: React.FC<MasterPageHeaderProps> = ({
               Import
             </Button>
           )}
-          <Button onClick={onAdd}>
+          <Button onClick={handleAddClick}>
             <Plus className="h-4 w-4 mr-2" />
             Add {title.slice(0, -1)}
           </Button>

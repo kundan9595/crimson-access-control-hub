@@ -31,26 +31,38 @@ export const AddOnsList = forwardRef<AddOnsListRef, AddOnsListProps>(({ searchTe
   const createAddOnMutation = useCreateAddOn();
   const updateAddOnMutation = useUpdateAddOn();
 
+  console.log('AddOnsList render - user:', user, 'dialogOpen:', dialogOpen, 'selectedAddOn:', selectedAddOn);
+
   const filteredAddOns = addOns.filter(addOn =>
     addOn.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     addOn.description?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const handleCreate = () => {
+    console.log('AddOnsList handleCreate called - user:', user);
+    
     if (!user) {
+      console.log('No user, showing toast error');
       toast.error('Please sign in to create add-ons');
       return;
     }
+    
+    console.log('Setting selectedAddOn to null and dialogOpen to true');
     setSelectedAddOn(null);
     setDialogOpen(true);
+    console.log('Dialog should now be open - dialogOpen:', true);
   };
 
   // Expose the create function to parent component
-  useImperativeHandle(ref, () => ({
-    triggerCreate: handleCreate
-  }));
+  useImperativeHandle(ref, () => {
+    console.log('useImperativeHandle - exposing triggerCreate function');
+    return {
+      triggerCreate: handleCreate
+    };
+  });
 
   const handleEdit = (addOn: AddOn) => {
+    console.log('handleEdit called for addOn:', addOn.name);
     if (!user) {
       toast.error('Please sign in to edit add-ons');
       return;
@@ -60,6 +72,7 @@ export const AddOnsList = forwardRef<AddOnsListRef, AddOnsListProps>(({ searchTe
   };
 
   const handleDelete = async (addOn: AddOn) => {
+    console.log('handleDelete called for addOn:', addOn.name);
     if (!user) {
       toast.error('Please sign in to delete add-ons');
       return;
@@ -70,6 +83,7 @@ export const AddOnsList = forwardRef<AddOnsListRef, AddOnsListProps>(({ searchTe
   };
 
   const handleManageOptions = (addOn: AddOn) => {
+    console.log('handleManageOptions called for addOn:', addOn.name);
     if (!user) {
       toast.error('Please sign in to manage add-on options');
       return;
@@ -79,19 +93,28 @@ export const AddOnsList = forwardRef<AddOnsListRef, AddOnsListProps>(({ searchTe
   };
 
   const handleSubmit = async (data: any) => {
+    console.log('handleSubmit called with data:', data, 'selectedAddOn:', selectedAddOn);
     if (!user) {
       toast.error('Please sign in to save changes');
       return;
     }
 
     if (selectedAddOn) {
+      console.log('Updating existing add-on');
       updateAddOnMutation.mutate(
         { id: selectedAddOn.id, data },
-        { onSuccess: () => setDialogOpen(false) }
+        { onSuccess: () => {
+          console.log('Update successful, closing dialog');
+          setDialogOpen(false);
+        }}
       );
     } else {
+      console.log('Creating new add-on');
       createAddOnMutation.mutate(data, {
-        onSuccess: () => setDialogOpen(false)
+        onSuccess: () => {
+          console.log('Create successful, closing dialog');
+          setDialogOpen(false);
+        }
       });
     }
   };
@@ -129,6 +152,8 @@ export const AddOnsList = forwardRef<AddOnsListRef, AddOnsListProps>(({ searchTe
       </div>
     );
   }
+
+  console.log('Rendering AddOnsList with', filteredAddOns.length, 'add-ons');
 
   return (
     <>
@@ -198,7 +223,10 @@ export const AddOnsList = forwardRef<AddOnsListRef, AddOnsListProps>(({ searchTe
 
       <AddOnDialog
         open={dialogOpen}
-        onOpenChange={setDialogOpen}
+        onOpenChange={(open) => {
+          console.log('AddOnDialog onOpenChange called with:', open);
+          setDialogOpen(open);
+        }}
         onSubmit={handleSubmit}
         addOn={selectedAddOn}
         isSubmitting={createAddOnMutation.isPending || updateAddOnMutation.isPending}

@@ -1,4 +1,3 @@
-
 import React, { useState, useRef } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Plus } from 'lucide-react';
@@ -15,18 +14,30 @@ const AddOnsPage = () => {
   const addOnsListRef = useRef<{ triggerCreate: () => void }>(null);
   const { user, loading: authLoading } = useAuth();
 
+  console.log('AddOnsPage render - user:', user, 'authLoading:', authLoading, 'addOnsListRef.current:', addOnsListRef.current);
+
   const filteredAddOns = addOns.filter(addOn =>
     addOn.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     addOn.description?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const handleAdd = () => {
+    console.log('handleAdd called - user:', user, 'addOnsListRef.current:', addOnsListRef.current);
+    
     if (!user) {
       console.log('User must be authenticated to add add-ons');
       return;
     }
+    
+    if (!addOnsListRef.current) {
+      console.error('addOnsListRef.current is null - AddOnsList component may not be mounted or ref not set');
+      return;
+    }
+    
+    console.log('About to call triggerCreate...');
     // Trigger the create function in AddOnsList component
     addOnsListRef.current?.triggerCreate();
+    console.log('triggerCreate called');
   };
 
   const handleExport = () => {

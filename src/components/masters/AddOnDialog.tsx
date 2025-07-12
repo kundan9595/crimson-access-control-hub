@@ -39,6 +39,8 @@ export const AddOnDialog: React.FC<AddOnDialogProps> = ({
   addOn,
   isSubmitting = false,
 }) => {
+  console.log('AddOnDialog render - open:', open, 'addOn:', addOn, 'isSubmitting:', isSubmitting);
+
   const form = useForm<AddOnFormData>({
     resolver: zodResolver(addOnSchema),
     defaultValues: {
@@ -53,8 +55,10 @@ export const AddOnDialog: React.FC<AddOnDialogProps> = ({
 
   // Reset form values when addOn changes or dialog opens
   useEffect(() => {
+    console.log('AddOnDialog useEffect - open:', open, 'addOn:', addOn);
     if (open) {
       if (addOn) {
+        console.log('Resetting form for editing existing add-on');
         // Editing existing add-on
         form.reset({
           name: addOn.name || '',
@@ -65,6 +69,7 @@ export const AddOnDialog: React.FC<AddOnDialogProps> = ({
           status: addOn.status || 'active',
         });
       } else {
+        console.log('Resetting form for creating new add-on');
         // Creating new add-on
         form.reset({
           name: '',
@@ -79,6 +84,7 @@ export const AddOnDialog: React.FC<AddOnDialogProps> = ({
   }, [addOn, open, form]);
 
   const handleSubmit = (data: AddOnFormData) => {
+    console.log('AddOnDialog handleSubmit called with data:', data);
     onSubmit(data);
   };
 
