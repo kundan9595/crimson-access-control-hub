@@ -56,7 +56,7 @@ const ClassesPage = () => {
         `"${cls.description || ''}"`,
         `"${cls.style?.name || ''}"`,
         `"${cls.color?.name || ''}"`,
-        `"${cls.size_group?.name || ''}"`,
+        `"${cls.size_group_id || ''}"`, // Fixed: use size_group_id instead of size_group?.name
         cls.gst_rate || 0,
         cls.sort_order || 0,
         cls.status
@@ -234,8 +234,6 @@ const ClassesPage = () => {
       </Card>
 
       <ClassDialog
-        open={dialogOpen}
-        onOpenChange={handleDialogClose}
         classItem={editingClass}
       />
 
