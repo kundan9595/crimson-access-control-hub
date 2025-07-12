@@ -49,6 +49,9 @@ export interface Style {
   updated_at: string;
   created_by?: string;
   updated_by?: string;
+  // Populated relation fields
+  brand?: Brand;
+  category?: Category;
 }
 
 export interface Class {
@@ -63,7 +66,7 @@ export interface Class {
   monthly_stock_levels?: Record<string, any>;
   overall_min_stock?: number;
   overall_max_stock?: number;
-  stock_management_type?: string;
+  stock_management_type?: 'overall' | 'monthly';
   gst_rate?: number;
   images?: any[];
   primary_image_url?: string;
@@ -73,6 +76,9 @@ export interface Class {
   updated_at: string;
   created_by?: string;
   updated_by?: string;
+  // Populated relation fields
+  style?: Style;
+  color?: Color;
 }
 
 export interface Size {
@@ -120,6 +126,9 @@ export interface Sku {
   updated_at: string;
   created_by?: string;
   updated_by?: string;
+  // Populated relation fields
+  class?: Class;
+  size?: Size;
 }
 
 export interface Vendor {
@@ -140,11 +149,13 @@ export interface Vendor {
   updated_by?: string;
 }
 
+export type PriceTypeCategory = 'retail' | 'wholesale' | 'distributor' | 'special';
+
 export interface PriceType {
   id: string;
   name: string;
   description?: string;
-  category?: string;
+  category: PriceTypeCategory;
   status: string;
   created_at: string;
   updated_at: string;

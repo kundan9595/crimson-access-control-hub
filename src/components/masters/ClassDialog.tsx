@@ -73,7 +73,7 @@ const ClassDialog: React.FC<ClassDialogProps> = ({ classItem, trigger, open, onO
         primary_image_url: classItem.primary_image_url || '',
         images: Array.isArray(classItem.images) ? classItem.images : [],
         size_ratios: classItem.size_ratios || {},
-        stock_management_type: classItem.stock_management_type || 'overall',
+        stock_management_type: (classItem.stock_management_type as 'overall' | 'monthly') || 'overall',
         overall_min_stock: classItem.overall_min_stock || 0,
         overall_max_stock: classItem.overall_max_stock || 0,
         monthly_stock_levels: classItem.monthly_stock_levels || {},

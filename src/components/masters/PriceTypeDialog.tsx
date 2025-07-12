@@ -10,12 +10,12 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useCreatePriceType, useUpdatePriceType } from '@/hooks/useMasters';
-import { PriceType } from '@/services/mastersService';
+import { PriceType, PriceTypeCategory } from '@/services/masters/types';
 
 const priceTypeSchema = z.object({
   name: z.string().min(1, 'Name is required'),
   description: z.string().optional(),
-  category: z.enum(['retail', 'wholesale', 'distributor', 'special']),
+  category: z.enum(['retail', 'wholesale', 'distributor', 'special'] as const),
   status: z.string(),
 });
 
@@ -36,7 +36,7 @@ const PriceTypeDialog = ({ priceType, open, onOpenChange }: PriceTypeDialogProps
     defaultValues: {
       name: priceType?.name || '',
       description: priceType?.description || '',
-      category: priceType?.category || 'retail',
+      category: (priceType?.category as PriceTypeCategory) || 'retail',
       status: priceType?.status || 'active',
     },
   });
@@ -46,7 +46,7 @@ const PriceTypeDialog = ({ priceType, open, onOpenChange }: PriceTypeDialogProps
       form.reset({
         name: priceType.name,
         description: priceType.description || '',
-        category: priceType.category,
+        category: priceType.category as PriceTypeCategory,
         status: priceType.status,
       });
     } else {

@@ -1,6 +1,6 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { PriceType } from './types';
+import { PriceType, PriceTypeCategory } from './types';
 
 export const fetchPriceTypes = async (): Promise<PriceType[]> => {
   const { data, error } = await supabase
@@ -12,7 +12,12 @@ export const fetchPriceTypes = async (): Promise<PriceType[]> => {
   return (data || []) as PriceType[];
 };
 
-export const createPriceType = async (priceTypeData: Omit<PriceType, 'id' | 'created_at' | 'updated_at' | 'created_by' | 'updated_by'>): Promise<PriceType> => {
+export const createPriceType = async (priceTypeData: {
+  name: string;
+  description?: string;
+  category: PriceTypeCategory;
+  status: string;
+}): Promise<PriceType> => {
   const { data, error } = await supabase
     .from('price_types')
     .insert([priceTypeData])
@@ -23,7 +28,12 @@ export const createPriceType = async (priceTypeData: Omit<PriceType, 'id' | 'cre
   return data as PriceType;
 };
 
-export const updatePriceType = async (id: string, updates: Partial<PriceType>): Promise<PriceType> => {
+export const updatePriceType = async (id: string, updates: {
+  name?: string;
+  description?: string;
+  category?: PriceTypeCategory;
+  status?: string;
+}): Promise<PriceType> => {
   const { data, error } = await supabase
     .from('price_types')
     .update(updates)
