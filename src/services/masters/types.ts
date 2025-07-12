@@ -1,4 +1,3 @@
-
 export interface Brand {
   id: string;
   name: string;
@@ -149,7 +148,7 @@ export interface Vendor {
   updated_by?: string;
 }
 
-export type PriceTypeCategory = 'retail' | 'wholesale' | 'distributor' | 'special';
+export type PriceTypeCategory = 'zone' | 'customer';
 
 export interface PriceType {
   id: string;
