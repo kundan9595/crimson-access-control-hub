@@ -1,9 +1,8 @@
-
 import React, { useState } from 'react';
 import { Folder, Plus, Upload } from 'lucide-react';
 import { MasterPageHeader } from '@/components/masters/shared/MasterPageHeader';
 import { SearchFilter } from '@/components/masters/shared/SearchFilter';
-import { MediaGrid } from '@/components/masters/media/MediaGrid';
+import { MediaTable } from '@/components/masters/media/MediaTable';
 import { MediaBreadcrumb } from '@/components/masters/media/MediaBreadcrumb';
 import { MediaFolderDialog } from '@/components/masters/media/MediaFolderDialog';
 import { MediaItemDialog } from '@/components/masters/media/MediaItemDialog';
@@ -221,7 +220,7 @@ const MediaPage = () => {
         />
       </div>
 
-      <MediaGrid
+      <MediaTable
         folders={filteredFolders}
         items={filteredItems}
         onFolderClick={handleFolderClick}
