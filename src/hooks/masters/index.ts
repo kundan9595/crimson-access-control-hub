@@ -57,3 +57,6 @@ export * from './useFabrics';
 export * from './useAddOns';
 
 export * from './useParts';
+
+// Export profit margin hooks
+export * from './useProfitMargins';

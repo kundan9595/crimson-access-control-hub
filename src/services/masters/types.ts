@@ -254,6 +254,21 @@ export interface AppAsset {
   updated_by?: string;
 }
 
+export interface ProfitMargin {
+  id: string;
+  name: string;
+  min_range: number;
+  max_range: number;
+  margin_percentage: number;
+  branding_print: number;
+  branding_embroidery: number;
+  status: string;
+  created_at: string;
+  updated_at: string;
+  created_by?: string;
+  updated_by?: string;
+}
+
 export type {
   AddOn,
   AddOnOption,

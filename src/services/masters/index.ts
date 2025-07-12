@@ -34,6 +34,9 @@ export * from './mediaService';
 // Export all app assets services
 export * from './appAssetsService';
 
+// Export all profit margin services
+export * from './profitMarginsService';
+
 // Re-export types for convenience
 export type {
   Brand,
@@ -63,3 +66,10 @@ export type {
 export * from './fabricsService';
 export * from './addOnsService';
 export * from './partsService';
+
+// Re-export profit margin types
+export type {
+  ProfitMargin,
+  CreateProfitMarginData,
+  UpdateProfitMarginData,
+} from './profitMarginsService';

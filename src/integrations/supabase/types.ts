@@ -697,6 +697,51 @@ export type Database = {
         }
         Relationships: []
       }
+      profit_margins: {
+        Row: {
+          branding_embroidery: number
+          branding_print: number
+          created_at: string
+          created_by: string | null
+          id: string
+          margin_percentage: number
+          max_range: number
+          min_range: number
+          name: string
+          status: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          branding_embroidery: number
+          branding_print: number
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          margin_percentage: number
+          max_range: number
+          min_range: number
+          name: string
+          status?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          branding_embroidery?: number
+          branding_print?: number
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          margin_percentage?: number
+          max_range?: number
+          min_range?: number
+          name?: string
+          status?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       role_permissions: {
         Row: {
           id: string
