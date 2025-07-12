@@ -25,7 +25,7 @@ const addOnSchema = z.object({
   has_colour: z.boolean().default(false),
   group_name: z.string().optional(),
   price: z.number().min(0).optional(),
-  color_id: z.string().optional(),
+  selected_color_id: z.string().optional(), // Form-only field for color selection
 });
 
 type AddOnFormData = z.infer<typeof addOnSchema>;
@@ -33,7 +33,7 @@ type AddOnFormData = z.infer<typeof addOnSchema>;
 interface AddOnDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSubmit: (data: AddOnFormData) => void;
+  onSubmit: (data: any) => void; // Updated to any since we transform the data
   addOn?: AddOn;
   isSubmitting?: boolean;
 }
@@ -66,7 +66,7 @@ export const AddOnDialog: React.FC<AddOnDialogProps> = ({
       has_colour: false,
       group_name: '',
       price: 0,
-      color_id: '',
+      selected_color_id: 'none',
     },
   });
 
@@ -77,6 +77,13 @@ export const AddOnDialog: React.FC<AddOnDialogProps> = ({
       if (addOn) {
         // Editing existing add-on
         console.log('✏️ AddOnDialog - Resetting form for editing');
+        
+        // Find the selected color ID from the colors array
+        let selectedColorId = 'none';
+        if (addOn.has_colour && addOn.colors && addOn.colors.length > 0) {
+          selectedColorId = addOn.colors[0].id; // Use first color if multiple
+        }
+        
         form.reset({
           name: addOn.name || '',
           select_type: addOn.select_type || 'single',
@@ -88,7 +95,7 @@ export const AddOnDialog: React.FC<AddOnDialogProps> = ({
           has_colour: addOn.has_colour || false,
           group_name: addOn.group_name || '',
           price: addOn.price || 0,
-          color_id: 'none',
+          selected_color_id: selectedColorId,
         });
       } else {
         // Creating new add-on
@@ -104,7 +111,7 @@ export const AddOnDialog: React.FC<AddOnDialogProps> = ({
           has_colour: false,
           group_name: '',
           price: 0,
-          color_id: 'none',
+          selected_color_id: 'none',
         });
       }
     }
@@ -113,19 +120,35 @@ export const AddOnDialog: React.FC<AddOnDialogProps> = ({
   const handleSubmit = (data: AddOnFormData) => {
     console.log('📝 AddOnDialog - handleSubmit called with data:', data);
     
+    // Transform the form data to match the database schema
+    const { selected_color_id, ...restData } = data;
+    
+    // Build the colors array based on selection
+    let colorsArray: any[] = [];
+    if (data.has_colour && selected_color_id && selected_color_id !== 'none') {
+      const selectedColor = colors.find(color => color.id === selected_color_id);
+      if (selectedColor) {
+        colorsArray = [{
+          id: selectedColor.id,
+          name: selectedColor.name,
+          hex_code: selectedColor.hex_code
+        }];
+      }
+    }
+    
     const submitData = {
-      ...data,
-      colors: [],
+      ...restData,
+      colors: colorsArray,
       options: [], // Initialize with empty options array
-      color_id: data.color_id === 'none' ? undefined : data.color_id
     };
 
+    console.log('📝 AddOnDialog - Submitting transformed data:', submitData);
     onSubmit(submitData);
   };
 
   const hasColourValue = form.watch('has_colour');
 
-  console.log('🎪 AddOnDialog - About to render BaseFormDialog, open:', open);
+  console.log('🎨 AddOnDialog - About to render BaseFormDialog, open:', open);
 
   return (
     <BaseFormDialog
@@ -300,7 +323,7 @@ export const AddOnDialog: React.FC<AddOnDialogProps> = ({
         {hasColourValue && (
           <FormField
             control={form.control}
-            name="color_id"
+            name="selected_color_id"
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Color</FormLabel>
