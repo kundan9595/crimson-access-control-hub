@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Pencil, Trash2, Eye } from 'lucide-react';
+import { Pencil, Trash2 } from 'lucide-react';
 import { useProfitMargins, useDeleteProfitMargin } from '@/hooks/masters/useProfitMargins';
 import { ProfitMarginDialog } from './ProfitMarginDialog';
 import type { ProfitMargin } from '@/services/masters/profitMarginsService';
@@ -16,7 +16,6 @@ interface ProfitMarginsListProps {
 export const ProfitMarginsList: React.FC<ProfitMarginsListProps> = ({ searchTerm }) => {
   const [selectedProfitMargin, setSelectedProfitMargin] = useState<ProfitMargin | undefined>();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [viewMode, setViewMode] = useState<'add' | 'edit' | 'view'>('add');
 
   const { data: profitMargins = [], isLoading } = useProfitMargins();
   const deleteProfitMarginMutation = useDeleteProfitMargin();
@@ -27,19 +26,11 @@ export const ProfitMarginsList: React.FC<ProfitMarginsListProps> = ({ searchTerm
 
   const handleAdd = () => {
     setSelectedProfitMargin(undefined);
-    setViewMode('add');
     setIsDialogOpen(true);
   };
 
   const handleEdit = (profitMargin: ProfitMargin) => {
     setSelectedProfitMargin(profitMargin);
-    setViewMode('edit');
-    setIsDialogOpen(true);
-  };
-
-  const handleView = (profitMargin: ProfitMargin) => {
-    setSelectedProfitMargin(profitMargin);
-    setViewMode('view');
     setIsDialogOpen(true);
   };
 
@@ -117,14 +108,6 @@ export const ProfitMarginsList: React.FC<ProfitMarginsListProps> = ({ searchTerm
                           <Button
                             variant="ghost"
                             size="icon"
-                            onClick={() => handleView(profitMargin)}
-                            title="View details"
-                          >
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
                             onClick={() => handleEdit(profitMargin)}
                             title="Edit"
                           >
@@ -153,7 +136,7 @@ export const ProfitMarginsList: React.FC<ProfitMarginsListProps> = ({ searchTerm
       <ProfitMarginDialog
         open={isDialogOpen}
         onOpenChange={setIsDialogOpen}
-        profitMargin={viewMode !== 'add' ? selectedProfitMargin : undefined}
+        profitMargin={selectedProfitMargin}
       />
     </>
   );

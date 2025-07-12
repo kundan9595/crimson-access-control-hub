@@ -38,19 +38,47 @@ export const ProfitMarginDialog: React.FC<ProfitMarginDialogProps> = ({
 }) => {
   const createProfitMarginMutation = useCreateProfitMargin();
   const updateProfitMarginMutation = useUpdateProfitMargin();
+  const isEditing = !!profitMargin;
 
   const form = useForm<ProfitMarginFormData>({
     resolver: zodResolver(profitMarginSchema),
     defaultValues: {
-      name: profitMargin?.name || '',
-      min_range: profitMargin?.min_range || 0,
-      max_range: profitMargin?.max_range || 0,
-      margin_percentage: profitMargin?.margin_percentage || 0,
-      branding_print: profitMargin?.branding_print || 0,
-      branding_embroidery: profitMargin?.branding_embroidery || 0,
-      status: profitMargin?.status || 'active',
+      name: '',
+      min_range: 0,
+      max_range: 0,
+      margin_percentage: 0,
+      branding_print: 0,
+      branding_embroidery: 0,
+      status: 'active',
     },
   });
+
+  // Reset form when dialog opens or profit margin changes
+  React.useEffect(() => {
+    if (open) {
+      if (profitMargin) {
+        form.reset({
+          name: profitMargin.name,
+          min_range: profitMargin.min_range,
+          max_range: profitMargin.max_range,
+          margin_percentage: profitMargin.margin_percentage,
+          branding_print: profitMargin.branding_print,
+          branding_embroidery: profitMargin.branding_embroidery,
+          status: profitMargin.status,
+        });
+      } else {
+        form.reset({
+          name: '',
+          min_range: 0,
+          max_range: 0,
+          margin_percentage: 0,
+          branding_print: 0,
+          branding_embroidery: 0,
+          status: 'active',
+        });
+      }
+    }
+  }, [open, profitMargin, form]);
 
   const onSubmit = async (data: ProfitMarginFormData) => {
     try {
@@ -60,7 +88,6 @@ export const ProfitMarginDialog: React.FC<ProfitMarginDialogProps> = ({
           updates: data 
         });
       } else {
-        // Ensure all required fields are present for creation
         const createData = {
           name: data.name,
           min_range: data.min_range,
@@ -73,7 +100,6 @@ export const ProfitMarginDialog: React.FC<ProfitMarginDialogProps> = ({
         await createProfitMarginMutation.mutateAsync(createData);
       }
       onOpenChange(false);
-      form.reset();
     } catch (error) {
       console.error('Error saving profit margin:', error);
     }
@@ -90,11 +116,11 @@ export const ProfitMarginDialog: React.FC<ProfitMarginDialogProps> = ({
     <BaseFormDialog
       open={open}
       onOpenChange={handleOpenChange}
-      title={profitMargin ? 'Edit Profit Margin' : 'Add Profit Margin'}
+      title={isEditing ? 'Edit Profit Margin' : 'Create Profit Margin'}
       form={form}
       onSubmit={onSubmit}
       isSubmitting={createProfitMarginMutation.isPending || updateProfitMarginMutation.isPending}
-      isEditing={!!profitMargin}
+      isEditing={isEditing}
     >
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <FormField
@@ -102,9 +128,9 @@ export const ProfitMarginDialog: React.FC<ProfitMarginDialogProps> = ({
           name="name"
           render={({ field }) => (
             <FormItem className="col-span-2">
-              <FormLabel>Name</FormLabel>
+              <FormLabel>Name *</FormLabel>
               <FormControl>
-                <Input placeholder="Profit margin name" {...field} />
+                <Input placeholder="Enter profit margin name" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -217,7 +243,7 @@ export const ProfitMarginDialog: React.FC<ProfitMarginDialogProps> = ({
           render={({ field }) => (
             <FormItem>
               <FormLabel>Status</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
+              <Select onValueChange={field.onChange} value={field.value}>
                 <FormControl>
                   <SelectTrigger>
                     <SelectValue placeholder="Select status" />

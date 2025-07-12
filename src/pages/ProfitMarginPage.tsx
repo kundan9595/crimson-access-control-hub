@@ -91,7 +91,7 @@ const ProfitMarginPage = () => {
   return (
     <div className="container mx-auto p-6 space-y-6">
       <MasterPageHeader
-        title="Profit Margin"
+        title="Profit Margins"
         description="Configure profit margins and pricing strategies"
         icon={<TrendingUp className="h-6 w-6 text-teal-600" />}
         onAdd={handleAdd}
