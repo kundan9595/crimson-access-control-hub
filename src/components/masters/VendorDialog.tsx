@@ -218,9 +218,9 @@ const VendorDialog = ({ vendor, open, onOpenChange }: VendorDialogProps) => {
                 name="tax_id"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Tax ID</FormLabel>
+                    <FormLabel>GSTIN</FormLabel>
                     <FormControl>
-                      <Input {...field} placeholder="Enter tax ID" />
+                      <Input {...field} placeholder="Enter GSTIN" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
