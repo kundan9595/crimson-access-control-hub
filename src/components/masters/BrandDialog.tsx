@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -17,6 +18,7 @@ const brandSchema = z.object({
   description: z.string().optional(),
   logo_url: z.string().optional(),
   status: z.string(),
+  sort_order: z.number().min(0, 'Sort order must be 0 or greater').optional(),
 });
 
 type BrandFormData = z.infer<typeof brandSchema>;
@@ -39,6 +41,7 @@ const BrandDialog: React.FC<BrandDialogProps> = ({ open, onOpenChange, brand }) 
       description: brand?.description || '',
       logo_url: brand?.logo_url || '',
       status: brand?.status || 'active',
+      sort_order: brand?.sort_order || 0,
     }
   });
 
@@ -49,6 +52,7 @@ const BrandDialog: React.FC<BrandDialogProps> = ({ open, onOpenChange, brand }) 
         description: brand.description || '',
         logo_url: brand.logo_url || '',
         status: brand.status,
+        sort_order: brand.sort_order || 0,
       });
     } else if (!brand && open) {
       form.reset({
@@ -56,6 +60,7 @@ const BrandDialog: React.FC<BrandDialogProps> = ({ open, onOpenChange, brand }) 
         description: '',
         logo_url: '',
         status: 'active',
+        sort_order: 0,
       });
     }
   }, [brand, open, form]);
@@ -66,6 +71,7 @@ const BrandDialog: React.FC<BrandDialogProps> = ({ open, onOpenChange, brand }) 
       description: data.description || null,
       logo_url: data.logo_url || null,
       status: data.status,
+      sort_order: data.sort_order || 0,
     };
 
     if (isEditing && brand) {
@@ -138,6 +144,26 @@ const BrandDialog: React.FC<BrandDialogProps> = ({ open, onOpenChange, brand }) 
                 onChange={field.onChange}
                 onRemove={() => field.onChange('')}
                 placeholder="Upload brand logo"
+              />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+
+      <FormField
+        control={form.control}
+        name="sort_order"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>Sort Order</FormLabel>
+            <FormControl>
+              <Input
+                type="number"
+                min="0"
+                placeholder="0"
+                {...field}
+                onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
               />
             </FormControl>
             <FormMessage />

@@ -4,7 +4,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { Edit, Trash2 } from 'lucide-react';
+import { Edit, Trash2, Package } from 'lucide-react';
 import { useBrands, useDeleteBrand } from '@/hooks/masters/useBrands';
 import { useSearchParams } from 'react-router-dom';
 import BrandDialog from '@/components/masters/BrandDialog';
@@ -49,10 +49,11 @@ const BrandsPage = () => {
     if (!brands || brands.length === 0) return;
 
     const csvContent = [
-      ['Name', 'Description', 'Status', 'Created At'].join(','),
+      ['Name', 'Description', 'Sort Order', 'Status', 'Created At'].join(','),
       ...brands.map(brand => [
         `"${brand.name}"`,
         `"${brand.description || ''}"`,
+        brand.sort_order || 0,
         brand.status,
         new Date(brand.created_at).toLocaleDateString()
       ].join(','))
@@ -74,6 +75,14 @@ const BrandsPage = () => {
     brand.description?.toLowerCase().includes(searchTerm.toLowerCase())
   ) || [];
 
+  // Sort brands by sort_order, then by name
+  const sortedBrands = [...filteredBrands].sort((a, b) => {
+    const orderA = a.sort_order || 0;
+    const orderB = b.sort_order || 0;
+    if (orderA !== orderB) return orderA - orderB;
+    return a.name.localeCompare(b.name);
+  });
+
   if (isLoading) {
     return <div className="text-center">Loading brands...</div>;
   }
@@ -83,6 +92,7 @@ const BrandsPage = () => {
       <MasterPageHeader
         title="Brands"
         description="Manage your product brands"
+        icon={<Package className="h-6 w-6 text-blue-600" />}
         onAdd={() => setDialogOpen(true)}
         onExport={handleExport}
         onImport={() => setBulkImportOpen(true)}
@@ -95,27 +105,48 @@ const BrandsPage = () => {
             placeholder="Search brands..."
             value={searchTerm}
             onChange={setSearchTerm}
-            resultCount={filteredBrands.length}
+            resultCount={sortedBrands.length}
             totalCount={brands?.length || 0}
           />
           
           <div className="mt-6">
-            {filteredBrands.length > 0 ? (
+            {sortedBrands.length > 0 ? (
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead className="w-16">Logo</TableHead>
                     <TableHead>Name</TableHead>
                     <TableHead>Description</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Created At</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
+                    <TableHead className="w-20">Sort Order</TableHead>
+                    <TableHead className="w-24">Status</TableHead>
+                    <TableHead className="w-32">Created At</TableHead>
+                    <TableHead className="text-right w-32">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredBrands.map((brand) => (
+                  {sortedBrands.map((brand) => (
                     <TableRow key={brand.id}>
+                      <TableCell>
+                        <div className="w-10 h-10 relative">
+                          {brand.logo_url ? (
+                            <img
+                              src={brand.logo_url}
+                              alt={`${brand.name} logo`}
+                              className="w-full h-full object-contain rounded border bg-muted"
+                              onError={(e) => {
+                                e.currentTarget.style.display = 'none';
+                                e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                              }}
+                            />
+                          ) : null}
+                          <div className={`w-full h-full flex items-center justify-center bg-muted rounded border text-muted-foreground text-xs ${brand.logo_url ? 'hidden' : ''}`}>
+                            <Package className="h-4 w-4" />
+                          </div>
+                        </div>
+                      </TableCell>
                       <TableCell className="font-medium">{brand.name}</TableCell>
                       <TableCell className="max-w-xs truncate">{brand.description || '-'}</TableCell>
+                      <TableCell className="text-center">{brand.sort_order || 0}</TableCell>
                       <TableCell>
                         <Badge variant={brand.status === 'active' ? 'default' : 'secondary'}>
                           {brand.status}
@@ -165,10 +196,10 @@ const BrandsPage = () => {
         open={bulkImportOpen}
         onOpenChange={setBulkImportOpen}
         type="brands"
-        templateHeaders={['Name', 'Description', 'Status']}
+        templateHeaders={['Name', 'Description', 'Sort Order', 'Status']}
         sampleData={[
-          ['Apple', 'Technology company', 'active'],
-          ['Samsung', 'Electronics manufacturer', 'active']
+          ['Apple', 'Technology company', '1', 'active'],
+          ['Samsung', 'Electronics manufacturer', '2', 'active']
         ]}
       />
     </div>

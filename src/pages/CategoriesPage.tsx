@@ -4,7 +4,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { Edit, Trash2 } from 'lucide-react';
+import { Edit, Trash2, Tags, Image as ImageIcon } from 'lucide-react';
 import { useCategories, useDeleteCategory } from '@/hooks/useMasters';
 import { useSearchParams } from 'react-router-dom';
 import CategoryDialog from '@/components/masters/CategoryDialog';
@@ -49,10 +49,11 @@ const CategoriesPage = () => {
     if (!categories || categories.length === 0) return;
 
     const csvContent = [
-      ['Name', 'Description', 'Status', 'Created At'].join(','),
+      ['Name', 'Description', 'Sort Order', 'Status', 'Created At'].join(','),
       ...categories.map(category => [
         `"${category.name}"`,
         `"${category.description || ''}"`,
+        category.sort_order || 0,
         category.status,
         new Date(category.created_at).toLocaleDateString()
       ].join(','))
@@ -74,6 +75,14 @@ const CategoriesPage = () => {
     category.description?.toLowerCase().includes(searchTerm.toLowerCase())
   ) || [];
 
+  // Sort categories by sort_order, then by name
+  const sortedCategories = [...filteredCategories].sort((a, b) => {
+    const orderA = a.sort_order || 0;
+    const orderB = b.sort_order || 0;
+    if (orderA !== orderB) return orderA - orderB;
+    return a.name.localeCompare(b.name);
+  });
+
   if (isLoading) {
     return <div className="text-center">Loading categories...</div>;
   }
@@ -83,6 +92,7 @@ const CategoriesPage = () => {
       <MasterPageHeader
         title="Categories"
         description="Organize your products into categories"
+        icon={<Tags className="h-6 w-6 text-green-600" />}
         onAdd={() => setDialogOpen(true)}
         onExport={handleExport}
         onImport={() => setBulkImportOpen(true)}
@@ -95,27 +105,48 @@ const CategoriesPage = () => {
             placeholder="Search categories..."
             value={searchTerm}
             onChange={setSearchTerm}
-            resultCount={filteredCategories.length}
+            resultCount={sortedCategories.length}
             totalCount={categories?.length || 0}
           />
           
           <div className="mt-6">
-            {filteredCategories.length > 0 ? (
+            {sortedCategories.length > 0 ? (
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead className="w-16">Image</TableHead>
                     <TableHead>Name</TableHead>
                     <TableHead>Description</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Created At</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
+                    <TableHead className="w-20">Sort Order</TableHead>
+                    <TableHead className="w-24">Status</TableHead>
+                    <TableHead className="w-32">Created At</TableHead>
+                    <TableHead className="text-right w-32">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredCategories.map((category) => (
+                  {sortedCategories.map((category) => (
                     <TableRow key={category.id}>
+                      <TableCell>
+                        <div className="w-10 h-10 relative">
+                          {category.image_url ? (
+                            <img
+                              src={category.image_url}
+                              alt={`${category.name} image`}
+                              className="w-full h-full object-cover rounded border bg-muted"
+                              onError={(e) => {
+                                e.currentTarget.style.display = 'none';
+                                e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                              }}
+                            />
+                          ) : null}
+                          <div className={`w-full h-full flex items-center justify-center bg-muted rounded border text-muted-foreground text-xs ${category.image_url ? 'hidden' : ''}`}>
+                            <ImageIcon className="h-4 w-4" />
+                          </div>
+                        </div>
+                      </TableCell>
                       <TableCell className="font-medium">{category.name}</TableCell>
                       <TableCell className="max-w-xs truncate">{category.description || '-'}</TableCell>
+                      <TableCell className="text-center">{category.sort_order || 0}</TableCell>
                       <TableCell>
                         <Badge variant={category.status === 'active' ? 'default' : 'secondary'}>
                           {category.status}
@@ -165,10 +196,10 @@ const CategoriesPage = () => {
         open={bulkImportOpen}
         onOpenChange={setBulkImportOpen}
         type="categories"
-        templateHeaders={['Name', 'Description', 'Status']}
+        templateHeaders={['Name', 'Description', 'Sort Order', 'Status']}
         sampleData={[
-          ['Electronics', 'Electronic devices and gadgets', 'active'],
-          ['Clothing', 'Apparel and accessories', 'active']
+          ['Electronics', 'Electronic devices and gadgets', '1', 'active'],
+          ['Clothing', 'Apparel and accessories', '2', 'active']
         ]}
       />
     </div>
