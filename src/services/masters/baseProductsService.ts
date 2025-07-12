@@ -18,7 +18,7 @@ export interface BaseProduct {
   overhead_percentage: number;
   sample_rate: number;
   image_url?: string;
-  branding_sides: any[]; // Array of branding side objects
+  branding_sides: string[]; // Array of branding side options
   status: string;
   created_at: string;
   updated_at: string;
@@ -58,12 +58,15 @@ export const fetchBaseProducts = async (): Promise<BaseProduct[]> => {
   }
   
   console.log('✅ Fetched base products:', data);
-  // Convert calculator from string to number if it exists
+  // Convert calculator from string to number if it exists and ensure proper data structure
   const processedData = (data || []).map(item => ({
     ...item,
     calculator: item.calculator ? Number(item.calculator) : undefined,
-    parts: item.parts || [],
-    branding_sides: item.branding_sides || []
+    parts: Array.isArray(item.parts) ? item.parts : [],
+    branding_sides: Array.isArray(item.branding_sides) ? item.branding_sides : [],
+    category: item.category && typeof item.category === 'object' && 'id' in item.category ? item.category : undefined,
+    fabric: item.fabric && typeof item.fabric === 'object' && 'id' in item.fabric ? item.fabric : undefined,
+    size_group: item.size_group && typeof item.size_group === 'object' && 'id' in item.size_group ? item.size_group : undefined,
   }));
   
   return processedData as BaseProduct[];
@@ -95,12 +98,15 @@ export const createBaseProduct = async (baseProductData: Omit<BaseProduct, 'id' 
   }
   
   console.log('✅ Created base product:', data);
-  // Convert calculator back to number
+  // Convert calculator back to number and ensure proper data structure
   const processedData = {
     ...data,
     calculator: data.calculator ? Number(data.calculator) : undefined,
-    parts: data.parts || [],
-    branding_sides: data.branding_sides || []
+    parts: Array.isArray(data.parts) ? data.parts : [],
+    branding_sides: Array.isArray(data.branding_sides) ? data.branding_sides : [],
+    category: data.category && typeof data.category === 'object' && 'id' in data.category ? data.category : undefined,
+    fabric: data.fabric && typeof data.fabric === 'object' && 'id' in data.fabric ? data.fabric : undefined,
+    size_group: data.size_group && typeof data.size_group === 'object' && 'id' in data.size_group ? data.size_group : undefined,
   };
   
   return processedData as BaseProduct;
@@ -133,12 +139,15 @@ export const updateBaseProduct = async (id: string, updates: Partial<BaseProduct
   }
   
   console.log('✅ Updated base product:', data);
-  // Convert calculator back to number
+  // Convert calculator back to number and ensure proper data structure
   const processedData = {
     ...data,
     calculator: data.calculator ? Number(data.calculator) : undefined,
-    parts: data.parts || [],
-    branding_sides: data.branding_sides || []
+    parts: Array.isArray(data.parts) ? data.parts : [],
+    branding_sides: Array.isArray(data.branding_sides) ? data.branding_sides : [],
+    category: data.category && typeof data.category === 'object' && 'id' in data.category ? data.category : undefined,
+    fabric: data.fabric && typeof data.fabric === 'object' && 'id' in data.fabric ? data.fabric : undefined,
+    size_group: data.size_group && typeof data.size_group === 'object' && 'id' in data.size_group ? data.size_group : undefined,
   };
   
   return processedData as BaseProduct;

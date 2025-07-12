@@ -287,7 +287,7 @@ export interface BaseProduct {
   overhead_percentage: number;
   sample_rate: number;
   image_url?: string;
-  branding_sides: any[]; // Array of branding side objects
+  branding_sides: string[]; // Array of branding side options
   status: string;
   created_at: string;
   updated_at: string;

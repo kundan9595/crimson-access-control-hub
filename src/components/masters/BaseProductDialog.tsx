@@ -6,9 +6,9 @@ import * as z from 'zod';
 import { BaseFormDialog } from './shared/BaseFormDialog';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
+import { Checkbox } from '@/components/ui/checkbox';
 import ImageUpload from '@/components/ui/ImageUpload';
 import { useCategories } from '@/hooks/masters/useCategories';
 import { useFabrics } from '@/hooks/masters/useFabrics';
@@ -19,6 +19,14 @@ import { BaseProduct } from '@/services/masters/baseProductsService';
 import { Badge } from '@/components/ui/badge';
 import { X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+
+const BRANDING_SIDE_OPTIONS = [
+  'Front Side',
+  'Back Side',
+  'Left Sleeves',
+  'Right Sleeves',
+  'Inner Label'
+] as const;
 
 const formSchema = z.object({
   name: z.string().min(1, 'Name is required'),
@@ -36,7 +44,7 @@ const formSchema = z.object({
   overhead_percentage: z.number().min(0).max(100).default(0),
   sample_rate: z.number().min(0).default(0),
   image_url: z.string().optional(),
-  branding_sides: z.array(z.any()).default([]),
+  branding_sides: z.array(z.string()).default([]),
   status: z.enum(['active', 'inactive']).default('active'),
 });
 
@@ -507,24 +515,44 @@ export const BaseProductDialog: React.FC<BaseProductDialogProps> = ({
         <FormField
           control={form.control}
           name="branding_sides"
-          render={({ field }) => (
+          render={() => (
             <FormItem>
               <FormLabel>Branding Sides</FormLabel>
-              <FormControl>
-                <Textarea
-                  placeholder="Enter branding sides information (JSON format or description)"
-                  value={Array.isArray(field.value) ? JSON.stringify(field.value, null, 2) : field.value}
-                  onChange={(e) => {
-                    try {
-                      const parsed = JSON.parse(e.target.value);
-                      field.onChange(parsed);
-                    } catch {
-                      field.onChange(e.target.value);
-                    }
-                  }}
-                  rows={3}
-                />
-              </FormControl>
+              <div className="grid grid-cols-2 gap-3">
+                {BRANDING_SIDE_OPTIONS.map((option) => (
+                  <FormField
+                    key={option}
+                    control={form.control}
+                    name="branding_sides"
+                    render={({ field }) => {
+                      return (
+                        <FormItem
+                          key={option}
+                          className="flex flex-row items-start space-x-3 space-y-0"
+                        >
+                          <FormControl>
+                            <Checkbox
+                              checked={field.value?.includes(option)}
+                              onCheckedChange={(checked) => {
+                                return checked
+                                  ? field.onChange([...field.value, option])
+                                  : field.onChange(
+                                      field.value?.filter(
+                                        (value) => value !== option
+                                      )
+                                    )
+                              }}
+                            />
+                          </FormControl>
+                          <FormLabel className="text-sm font-normal">
+                            {option}
+                          </FormLabel>
+                        </FormItem>
+                      )
+                    }}
+                  />
+                ))}
+              </div>
               <FormMessage />
             </FormItem>
           )}
