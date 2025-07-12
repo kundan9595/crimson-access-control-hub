@@ -1,11 +1,11 @@
+
 import React, { useState, forwardRef, useImperativeHandle } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Edit, Trash2, Settings } from 'lucide-react';
+import { Edit, Trash2 } from 'lucide-react';
 import { useAddOns, useDeleteAddOn, useCreateAddOn, useUpdateAddOn } from '@/hooks/masters/useAddOns';
 import { AddOnDialog } from './AddOnDialog';
-import { AddOnOptionsDialog } from './AddOnOptionsDialog';
 import { AddOn } from '@/services/masters/addOnsService';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
@@ -22,15 +22,11 @@ interface AddOnsListRef {
 export const AddOnsList = forwardRef<AddOnsListRef, AddOnsListProps>(({ searchTerm }, ref) => {
   const [selectedAddOn, setSelectedAddOn] = useState<AddOn | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [optionsDialogOpen, setOptionsDialogOpen] = useState(false);
-  const [optionsAddOn, setOptionsAddOn] = useState<AddOn | null>(null);
 
   console.log('🔄 AddOnsList - Render state:', {
     searchTerm,
     selectedAddOn: selectedAddOn?.id || null,
-    dialogOpen,
-    optionsDialogOpen,
-    optionsAddOn: optionsAddOn?.id || null
+    dialogOpen
   });
 
   const { user, loading: authLoading } = useAuth();
@@ -88,15 +84,6 @@ export const AddOnsList = forwardRef<AddOnsListRef, AddOnsListProps>(({ searchTe
     if (window.confirm(`Are you sure you want to delete "${addOn.name}"?`)) {
       deleteAddOnMutation.mutate(addOn.id);
     }
-  };
-
-  const handleManageOptions = (addOn: AddOn) => {
-    if (!user) {
-      toast.error('Please sign in to manage add-on options');
-      return;
-    }
-    setOptionsAddOn(addOn);
-    setOptionsDialogOpen(true);
   };
 
   const handleSubmit = async (data: any) => {
@@ -199,14 +186,6 @@ export const AddOnsList = forwardRef<AddOnsListRef, AddOnsListProps>(({ searchTe
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => handleManageOptions(addOn)}
-                      disabled={!user}
-                    >
-                      <Settings className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
                       onClick={() => handleEdit(addOn)}
                       disabled={!user}
                     >
@@ -235,14 +214,6 @@ export const AddOnsList = forwardRef<AddOnsListRef, AddOnsListProps>(({ searchTe
           onSubmit={handleSubmit}
           addOn={selectedAddOn}
           isSubmitting={createAddOnMutation.isPending || updateAddOnMutation.isPending}
-        />
-      </ErrorBoundary>
-
-      <ErrorBoundary fallback={<div className="text-red-500">Options Dialog Error: Check console</div>}>
-        <AddOnOptionsDialog
-          open={optionsDialogOpen}
-          onOpenChange={setOptionsDialogOpen}
-          addOn={optionsAddOn}
         />
       </ErrorBoundary>
     </>

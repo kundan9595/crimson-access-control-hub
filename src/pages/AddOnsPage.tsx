@@ -1,13 +1,13 @@
+
 import React, { useState, useRef } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Edit, Trash2, Settings, Plus } from 'lucide-react';
+import { Edit, Trash2, Plus } from 'lucide-react';
 import { AddOnDialog } from '@/components/masters/AddOnDialog';
 import BulkImportDialog from '@/components/masters/BulkImportDialog';
 import { MasterPageHeader } from '@/components/masters/shared/MasterPageHeader';
 import { SearchFilter } from '@/components/masters/shared/SearchFilter';
-import EntityImage from '@/components/ui/EntityImage';
 import { useAddOns, useDeleteAddOn, useCreateAddOn, useUpdateAddOn } from '@/hooks/masters/useAddOns';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -151,7 +151,7 @@ const AddOnsPage = () => {
                             />
                           ) : null}
                           <div className={`w-full h-full flex items-center justify-center bg-muted rounded border text-muted-foreground text-xs ${addOn.image_url ? 'hidden' : ''}`}>
-                            <Settings className="h-4 w-4" />
+                            <Plus className="h-4 w-4" />
                           </div>
                         </div>
                       </TableCell>
@@ -194,13 +194,6 @@ const AddOnsPage = () => {
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => {/* handle manage options modal here */}}
-                          >
-                            <Settings className="h-4 w-4" />
-                          </Button>
                         </div>
                       </TableCell>
                     </TableRow>
@@ -216,12 +209,24 @@ const AddOnsPage = () => {
           </div>
         </CardContent>
       </Card>
+      
       <AddOnDialog
         open={dialogOpen}
         onOpenChange={handleDialogClose}
         addOn={editingAddOn}
         onSubmit={handleDialogSubmit}
         isSubmitting={createAddOnMutation.isPending || updateAddOnMutation.isPending}
+      />
+
+      <BulkImportDialog
+        open={bulkImportOpen}
+        onOpenChange={setBulkImportOpen}
+        type="add-ons"
+        templateHeaders={['Name', 'Group Name', 'Add On OF', 'Add On SN', 'Select Type', 'Add On Price', 'Has Colour', 'Sort Order', 'Status']}
+        sampleData={[
+          ['Premium Quality', 'Materials', '1', '101', 'single', '5.99', 'Yes', '1', 'active'],
+          ['Express Delivery', 'Services', '2', '201', 'checked', '12.99', 'No', '2', 'active']
+        ]}
       />
     </div>
   );
