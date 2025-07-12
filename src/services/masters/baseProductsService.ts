@@ -5,11 +5,11 @@ export interface BaseProduct {
   id: string;
   name: string;
   sort_order: number;
-  calculator?: number; // Changed from number to match database
+  calculator?: number;
   category_id?: string;
   fabric_id?: string;
-  size_group_id?: string; // Added missing field
-  parts: string[]; // Array of part IDs
+  size_group_id?: string;
+  parts: string[];
   base_price: number;
   base_sn?: number;
   trims_cost: number;
@@ -18,7 +18,8 @@ export interface BaseProduct {
   overhead_percentage: number;
   sample_rate: number;
   image_url?: string;
-  branding_sides: string[]; // Array of branding side options
+  base_icon_url?: string; // Added base icon field
+  branding_sides: string[];
   status: string;
   created_at: string;
   updated_at: string;
@@ -59,7 +60,6 @@ export const fetchBaseProducts = async (): Promise<BaseProduct[]> => {
   
   console.log('✅ Fetched base products:', data);
   
-  // Convert calculator from string to number if it exists and ensure proper data structure
   const processedData = (data || []).map(item => ({
     ...item,
     calculator: item.calculator ? Number(item.calculator) : undefined,
@@ -76,10 +76,9 @@ export const fetchBaseProducts = async (): Promise<BaseProduct[]> => {
 export const createBaseProduct = async (baseProductData: Omit<BaseProduct, 'id' | 'created_at' | 'updated_at' | 'created_by' | 'updated_by' | 'category' | 'fabric' | 'size_group'>): Promise<BaseProduct> => {
   console.log('🆕 Creating base product:', baseProductData);
   
-  // Prepare data for insertion, ensuring calculator is handled properly
   const insertData = {
     ...baseProductData,
-    calculator: baseProductData.calculator?.toString() || null,
+    calculator: baseProductData.calculator || null,
   };
   
   const { data, error } = await supabase
@@ -100,7 +99,6 @@ export const createBaseProduct = async (baseProductData: Omit<BaseProduct, 'id' 
   
   console.log('✅ Created base product:', data);
   
-  // Convert calculator back to number and ensure proper data structure
   const processedData = {
     ...data,
     calculator: data.calculator ? Number(data.calculator) : undefined,
@@ -117,10 +115,9 @@ export const createBaseProduct = async (baseProductData: Omit<BaseProduct, 'id' 
 export const updateBaseProduct = async (id: string, updates: Partial<BaseProduct>): Promise<BaseProduct> => {
   console.log('📝 Updating base product:', id, updates);
   
-  // Prepare updates, ensuring calculator is handled properly
   const updateData = {
     ...updates,
-    calculator: updates.calculator?.toString() || null,
+    calculator: updates.calculator || null,
   };
   
   const { data, error } = await supabase
@@ -142,7 +139,6 @@ export const updateBaseProduct = async (id: string, updates: Partial<BaseProduct
   
   console.log('✅ Updated base product:', data);
   
-  // Convert calculator back to number and ensure proper data structure
   const processedData = {
     ...data,
     calculator: data.calculator ? Number(data.calculator) : undefined,

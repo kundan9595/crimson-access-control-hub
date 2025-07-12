@@ -44,6 +44,7 @@ const formSchema = z.object({
   overhead_percentage: z.number().min(0).max(100).default(0),
   sample_rate: z.number().min(0).default(0),
   image_url: z.string().optional(),
+  base_icon_url: z.string().optional(),
   branding_sides: z.array(z.string()).default([]),
   status: z.enum(['active', 'inactive']).default('active'),
 });
@@ -86,6 +87,7 @@ export const BaseProductDialog: React.FC<BaseProductDialogProps> = ({
       overhead_percentage: 0,
       sample_rate: 0,
       image_url: '',
+      base_icon_url: '',
       branding_sides: [],
       status: 'active',
     },
@@ -101,7 +103,7 @@ export const BaseProductDialog: React.FC<BaseProductDialogProps> = ({
         fabric_id: baseProduct.fabric_id || '',
         size_group_id: baseProduct.size_group_id || '',
         parts: baseProduct.parts || [],
-        base_of: baseProduct.base_price, // mapping base_price to base_of
+        base_of: baseProduct.base_price,
         base_sn: baseProduct.base_sn,
         trims_cost: baseProduct.trims_cost,
         adult_consumption: baseProduct.adult_consumption,
@@ -109,6 +111,7 @@ export const BaseProductDialog: React.FC<BaseProductDialogProps> = ({
         overhead_percentage: baseProduct.overhead_percentage,
         sample_rate: baseProduct.sample_rate,
         image_url: baseProduct.image_url || '',
+        base_icon_url: baseProduct.base_icon_url || '',
         branding_sides: baseProduct.branding_sides || [],
         status: baseProduct.status as 'active' | 'inactive',
       });
@@ -129,6 +132,7 @@ export const BaseProductDialog: React.FC<BaseProductDialogProps> = ({
         overhead_percentage: 0,
         sample_rate: 0,
         image_url: '',
+        base_icon_url: '',
         branding_sides: [],
         status: 'active',
       });
@@ -145,7 +149,7 @@ export const BaseProductDialog: React.FC<BaseProductDialogProps> = ({
         fabric_id: data.fabric_id || null,
         size_group_id: data.size_group_id || null,
         parts: data.parts || [],
-        base_price: data.base_of, // mapping base_of back to base_price for API
+        base_price: data.base_of,
         base_sn: data.base_sn,
         trims_cost: data.trims_cost,
         adult_consumption: data.adult_consumption,
@@ -153,6 +157,7 @@ export const BaseProductDialog: React.FC<BaseProductDialogProps> = ({
         overhead_percentage: data.overhead_percentage,
         sample_rate: data.sample_rate,
         image_url: data.image_url,
+        base_icon_url: data.base_icon_url,
         branding_sides: data.branding_sides,
         status: data.status,
       };
@@ -369,7 +374,6 @@ export const BaseProductDialog: React.FC<BaseProductDialogProps> = ({
           </div>
         </FormItem>
 
-        
         <div className="grid grid-cols-3 gap-4">
           <FormField
             control={form.control}
@@ -558,24 +562,44 @@ export const BaseProductDialog: React.FC<BaseProductDialogProps> = ({
           )}
         />
 
-        <FormField
-          control={form.control}
-          name="image_url"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Product Image</FormLabel>
-              <FormControl>
-                <ImageUpload
-                  value={field.value || ''}
-                  onChange={field.onChange}
-                  onRemove={() => field.onChange('')}
-                  placeholder="Upload base product image"
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+        <div className="grid grid-cols-2 gap-4">
+          <FormField
+            control={form.control}
+            name="base_icon_url"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Base Icon</FormLabel>
+                <FormControl>
+                  <ImageUpload
+                    value={field.value || ''}
+                    onChange={field.onChange}
+                    onRemove={() => field.onChange('')}
+                    placeholder="Upload base product icon"
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="image_url"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Product Image</FormLabel>
+                <FormControl>
+                  <ImageUpload
+                    value={field.value || ''}
+                    onChange={field.onChange}
+                    onRemove={() => field.onChange('')}
+                    placeholder="Upload base product image"
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
 
         <FormField
           control={form.control}
