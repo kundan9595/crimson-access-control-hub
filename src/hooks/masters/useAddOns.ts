@@ -83,7 +83,7 @@ export const useBulkCreateAddOns = () => {
   });
 };
 
-// Add-on options hooks
+// Add-on options hooks (legacy compatibility)
 export const useAddOnOptions = (addOnId: string | undefined) => {
   return useQuery({
     queryKey: ['add-on-options', addOnId],
@@ -98,7 +98,6 @@ export const useCreateAddOnOption = () => {
   return useMutation({
     mutationFn: addOnOptionsService.create,
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['add-on-options', data.add_on_id] });
       queryClient.invalidateQueries({ queryKey: ['add-ons'] });
       toast.success('Add-on option created successfully');
     },
@@ -113,10 +112,9 @@ export const useUpdateAddOnOption = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, data }: { id: string; data: Partial<AddOnOption> }) =>
+    mutationFn: ({ id, data }: { id: string; data: Partial<AddOnOption> & { add_on_id: string } }) =>
       addOnOptionsService.update(id, data),
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['add-on-options', data.add_on_id] });
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['add-ons'] });
       toast.success('Add-on option updated successfully');
     },
@@ -131,9 +129,9 @@ export const useDeleteAddOnOption = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: addOnOptionsService.delete,
+    mutationFn: ({ id, add_on_id }: { id: string; add_on_id: string }) =>
+      addOnOptionsService.delete(id, add_on_id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['add-on-options'] });
       queryClient.invalidateQueries({ queryKey: ['add-ons'] });
       toast.success('Add-on option deleted successfully');
     },

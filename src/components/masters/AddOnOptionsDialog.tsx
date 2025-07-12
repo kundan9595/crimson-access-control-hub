@@ -2,13 +2,13 @@
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Edit, Trash2 } from 'lucide-react';
-import { useAddOnOptions, useDeleteAddOnOption } from '@/hooks/masters/useAddOns';
-import { AddOnOptionDialog } from './AddOnOptionDialog';
+import { Card, CardContent } from '@/components/ui/card';
+import { Plus, Edit, Trash2, Save, X } from 'lucide-react';
 import { AddOn, AddOnOption } from '@/services/masters/addOnsService';
-import { useAuth } from '@/contexts/AuthContext';
+import { useUpdateAddOn } from '@/hooks/masters/useAddOns';
 import { toast } from 'sonner';
 
 interface AddOnOptionsDialogProps {
@@ -17,153 +17,295 @@ interface AddOnOptionsDialogProps {
   addOn: AddOn | null;
 }
 
+interface OptionFormData {
+  name: string;
+  description: string;
+  price: string;
+  display_order: string;
+  image_url: string;
+  status: 'active' | 'inactive';
+}
+
 export const AddOnOptionsDialog: React.FC<AddOnOptionsDialogProps> = ({
   open,
   onOpenChange,
   addOn,
 }) => {
-  const [selectedOption, setSelectedOption] = useState<AddOnOption | null>(null);
-  const [optionDialogOpen, setOptionDialogOpen] = useState(false);
+  const [editingOption, setEditingOption] = useState<AddOnOption | null>(null);
+  const [isCreating, setIsCreating] = useState(false);
+  const [formData, setFormData] = useState<OptionFormData>({
+    name: '',
+    description: '',
+    price: '',
+    display_order: '',
+    image_url: '',
+    status: 'active',
+  });
 
-  const { user } = useAuth();
-  const { data: options = [], isLoading } = useAddOnOptions(addOn?.id);
-  const deleteOptionMutation = useDeleteAddOnOption();
+  const updateAddOnMutation = useUpdateAddOn();
 
-  const handleCreateOption = () => {
-    if (!user) {
-      toast.error('Please sign in to create add-on options');
-      return;
-    }
-    setSelectedOption(null);
-    setOptionDialogOpen(true);
+  const resetForm = () => {
+    setFormData({
+      name: '',
+      description: '',
+      price: '',
+      display_order: '',
+      image_url: '',
+      status: 'active',
+    });
+    setEditingOption(null);
+    setIsCreating(false);
   };
 
-  const handleEditOption = (option: AddOnOption) => {
-    if (!user) {
-      toast.error('Please sign in to edit add-on options');
-      return;
-    }
-    setSelectedOption(option);
-    setOptionDialogOpen(true);
+  const handleCreate = () => {
+    setIsCreating(true);
+    resetForm();
   };
 
-  const handleDeleteOption = async (option: AddOnOption) => {
-    if (!user) {
-      toast.error('Please sign in to delete add-on options');
+  const handleEdit = (option: AddOnOption) => {
+    setEditingOption(option);
+    setFormData({
+      name: option.name,
+      description: option.description || '',
+      price: option.price?.toString() || '',
+      display_order: option.display_order?.toString() || '',
+      image_url: option.image_url || '',
+      status: option.status,
+    });
+    setIsCreating(false);
+  };
+
+  const handleSave = async () => {
+    if (!addOn) return;
+
+    try {
+      const newOption: AddOnOption = {
+        id: editingOption?.id || crypto.randomUUID(),
+        name: formData.name,
+        description: formData.description || undefined,
+        price: formData.price ? parseFloat(formData.price) : undefined,
+        display_order: formData.display_order ? parseInt(formData.display_order) : undefined,
+        image_url: formData.image_url || undefined,
+        status: formData.status,
+      };
+
+      let updatedOptions: AddOnOption[];
+      
+      if (editingOption) {
+        // Update existing option
+        updatedOptions = addOn.options.map(opt => 
+          opt.id === editingOption.id ? newOption : opt
+        );
+      } else {
+        // Add new option
+        updatedOptions = [...addOn.options, newOption];
+      }
+
+      await updateAddOnMutation.mutateAsync({
+        id: addOn.id,
+        data: { options: updatedOptions }
+      });
+
+      resetForm();
+      toast.success(editingOption ? 'Option updated successfully' : 'Option created successfully');
+    } catch (error) {
+      console.error('Error saving option:', error);
+      toast.error('Failed to save option');
+    }
+  };
+
+  const handleDelete = async (optionId: string) => {
+    if (!addOn) return;
+
+    if (!window.confirm('Are you sure you want to delete this option?')) {
       return;
     }
-    if (window.confirm(`Are you sure you want to delete "${option.name}"?`)) {
-      deleteOptionMutation.mutate(option.id);
+
+    try {
+      const updatedOptions = addOn.options.filter(opt => opt.id !== optionId);
+      
+      await updateAddOnMutation.mutateAsync({
+        id: addOn.id,
+        data: { options: updatedOptions }
+      });
+
+      toast.success('Option deleted successfully');
+    } catch (error) {
+      console.error('Error deleting option:', error);
+      toast.error('Failed to delete option');
     }
   };
 
   if (!addOn) return null;
 
   return (
-    <>
-      <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Manage Options: {addOn.name}</DialogTitle>
-          </DialogHeader>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Manage Options for "{addOn.name}"</DialogTitle>
+        </DialogHeader>
 
-          <div className="space-y-4">
-            <div className="flex justify-between items-center">
-              <div className="flex items-center gap-2">
-                <Badge variant="secondary">{addOn.select_type}</Badge>
-                <span className="text-sm text-muted-foreground">
-                  {options.length} option{options.length !== 1 ? 's' : ''}
-                </span>
-              </div>
-              <Button onClick={handleCreateOption} disabled={!user}>
-                <Plus className="h-4 w-4 mr-2" />
-                Add Option
-              </Button>
+        <div className="space-y-6">
+          {/* Add New Option Button */}
+          <div className="flex justify-between items-center">
+            <div>
+              <h3 className="text-lg font-semibold">Options ({addOn.options.length})</h3>
+              <p className="text-sm text-muted-foreground">
+                Manage the available options for this add-on
+              </p>
             </div>
+            <Button onClick={handleCreate} disabled={isCreating || editingOption}>
+              <Plus className="h-4 w-4 mr-2" />
+              Add Option
+            </Button>
+          </div>
 
-            {!user && (
-              <div className="text-center py-4 text-muted-foreground">
-                <p>Please sign in to manage add-on options</p>
-              </div>
-            )}
+          {/* Create/Edit Form */}
+          {(isCreating || editingOption) && (
+            <Card>
+              <CardContent className="p-4">
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-sm font-medium">Name *</label>
+                      <Input
+                        value={formData.name}
+                        onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                        placeholder="Option name"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium">Price</label>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        value={formData.price}
+                        onChange={(e) => setFormData(prev => ({ ...prev, price: e.target.value }))}
+                        placeholder="0.00"
+                      />
+                    </div>
+                  </div>
 
-            {user && isLoading ? (
-              <div className="text-center py-8">Loading options...</div>
-            ) : user && options.length === 0 ? (
+                  <div>
+                    <label className="text-sm font-medium">Description</label>
+                    <Textarea
+                      value={formData.description}
+                      onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+                      placeholder="Option description"
+                      rows={2}
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-sm font-medium">Display Order</label>
+                      <Input
+                        type="number"
+                        value={formData.display_order}
+                        onChange={(e) => setFormData(prev => ({ ...prev, display_order: e.target.value }))}
+                        placeholder="0"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium">Status</label>
+                      <select
+                        value={formData.status}
+                        onChange={(e) => setFormData(prev => ({ ...prev, status: e.target.value as 'active' | 'inactive' }))}
+                        className="w-full px-3 py-2 border border-input rounded-md"
+                      >
+                        <option value="active">Active</option>
+                        <option value="inactive">Inactive</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="text-sm font-medium">Image URL</label>
+                    <Input
+                      value={formData.image_url}
+                      onChange={(e) => setFormData(prev => ({ ...prev, image_url: e.target.value }))}
+                      placeholder="https://..."
+                    />
+                  </div>
+
+                  <div className="flex gap-2">
+                    <Button 
+                      onClick={handleSave} 
+                      disabled={!formData.name.trim() || updateAddOnMutation.isPending}
+                    >
+                      <Save className="h-4 w-4 mr-2" />
+                      {editingOption ? 'Update' : 'Create'}
+                    </Button>
+                    <Button variant="outline" onClick={resetForm}>
+                      <X className="h-4 w-4 mr-2" />
+                      Cancel
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Options List */}
+          <div className="space-y-3">
+            {addOn.options.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
                 <p>No options found</p>
-                <p className="text-sm">Click "Add Option" to create the first option</p>
+                <p className="text-sm">Click "Add Option" to create your first option</p>
               </div>
-            ) : user && (
-              <div className="grid gap-3">
-                {options.map((option) => (
-                  <Card key={option.id}>
-                    <CardContent className="p-4">
-                      <div className="flex items-center justify-between">
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-3">
-                            {option.image_url && (
-                              <img
-                                src={option.image_url}
-                                alt={option.name}
-                                className="w-12 h-12 object-cover rounded-md border"
-                              />
-                            )}
-                            <div>
-                              <h4 className="font-medium truncate">{option.name}</h4>
-                              {option.description && (
-                                <p className="text-sm text-muted-foreground truncate">
-                                  {option.description}
-                                </p>
-                              )}
-                              <div className="flex items-center gap-2 mt-1">
-                                {option.price !== undefined && option.price > 0 && (
-                                  <Badge variant="outline">₹{option.price}</Badge>
-                                )}
-                                <Badge variant={option.status === 'active' ? 'default' : 'secondary'}>
-                                  {option.status}
-                                </Badge>
-                                {option.display_order !== undefined && (
-                                  <Badge variant="outline">Order: {option.display_order}</Badge>
-                                )}
-                              </div>
-                            </div>
-                          </div>
+            ) : (
+              addOn.options.map((option) => (
+                <Card key={option.id}>
+                  <CardContent className="p-4">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-2">
+                          <h4 className="font-medium">{option.name}</h4>
+                          <Badge variant={option.status === 'active' ? 'default' : 'secondary'}>
+                            {option.status}
+                          </Badge>
+                          {option.price && (
+                            <Badge variant="outline">
+                              ${option.price.toFixed(2)}
+                            </Badge>
+                          )}
                         </div>
-                        <div className="flex gap-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleEditOption(option)}
-                            disabled={!user}
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleDeleteOption(option)}
-                            disabled={!user || deleteOptionMutation.isPending}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
+                        {option.description && (
+                          <p className="text-sm text-muted-foreground mb-2">
+                            {option.description}
+                          </p>
+                        )}
+                        <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                          <span>Order: {option.display_order || 0}</span>
+                          {option.image_url && <span>Has Image</span>}
                         </div>
                       </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
+                      <div className="flex gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleEdit(option)}
+                          disabled={isCreating || editingOption}
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleDelete(option.id)}
+                          disabled={updateAddOnMutation.isPending}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))
             )}
           </div>
-        </DialogContent>
-      </Dialog>
-
-      <AddOnOptionDialog
-        open={optionDialogOpen}
-        onOpenChange={setOptionDialogOpen}
-        addOn={addOn}
-        option={selectedOption}
-      />
-    </>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 };

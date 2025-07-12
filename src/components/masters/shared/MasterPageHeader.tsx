@@ -26,7 +26,6 @@ export const MasterPageHeader: React.FC<MasterPageHeaderProps> = ({
   const navigate = useNavigate();
 
   const handleAddClick = () => {
-    console.log('MasterPageHeader Add button clicked - calling onAdd');
     onAdd();
   };
 

@@ -14,59 +14,6 @@ export type Database = {
   }
   public: {
     Tables: {
-      add_on_options: {
-        Row: {
-          add_on_id: string
-          created_at: string
-          created_by: string | null
-          description: string | null
-          display_order: number | null
-          id: string
-          image_url: string | null
-          name: string
-          price: number | null
-          status: string
-          updated_at: string
-          updated_by: string | null
-        }
-        Insert: {
-          add_on_id: string
-          created_at?: string
-          created_by?: string | null
-          description?: string | null
-          display_order?: number | null
-          id?: string
-          image_url?: string | null
-          name: string
-          price?: number | null
-          status?: string
-          updated_at?: string
-          updated_by?: string | null
-        }
-        Update: {
-          add_on_id?: string
-          created_at?: string
-          created_by?: string | null
-          description?: string | null
-          display_order?: number | null
-          id?: string
-          image_url?: string | null
-          name?: string
-          price?: number | null
-          status?: string
-          updated_at?: string
-          updated_by?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "add_on_options_add_on_id_fkey"
-            columns: ["add_on_id"]
-            isOneToOne: false
-            referencedRelation: "add_ons"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       add_ons: {
         Row: {
           created_at: string
@@ -76,6 +23,7 @@ export type Database = {
           id: string
           image_url: string | null
           name: string
+          options: Json | null
           select_type: string
           status: string
           updated_at: string
@@ -89,6 +37,7 @@ export type Database = {
           id?: string
           image_url?: string | null
           name: string
+          options?: Json | null
           select_type: string
           status?: string
           updated_at?: string
@@ -102,6 +51,7 @@ export type Database = {
           id?: string
           image_url?: string | null
           name?: string
+          options?: Json | null
           select_type?: string
           status?: string
           updated_at?: string
