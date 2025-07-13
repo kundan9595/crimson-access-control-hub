@@ -18,7 +18,7 @@ export interface BaseProduct {
   overhead_percentage: number;
   sample_rate: number;
   image_url?: string;
-  base_icon_url?: string; // Added base icon field
+  base_icon_url?: string;
   branding_sides: string[];
   status: string;
   created_at: string;
@@ -63,6 +63,7 @@ export const fetchBaseProducts = async (): Promise<BaseProduct[]> => {
   const processedData = (data || []).map(item => ({
     ...item,
     calculator: item.calculator ? Number(item.calculator) : undefined,
+    base_sn: item.base_sn ? Number(item.base_sn) : undefined,
     parts: Array.isArray(item.parts) ? item.parts : [],
     branding_sides: Array.isArray(item.branding_sides) ? item.branding_sides : [],
     category: item.category && typeof item.category === 'object' && 'id' in item.category ? item.category : undefined,
@@ -77,8 +78,24 @@ export const createBaseProduct = async (baseProductData: Omit<BaseProduct, 'id' 
   console.log('🆕 Creating base product:', baseProductData);
   
   const insertData = {
-    ...baseProductData,
+    name: baseProductData.name,
+    sort_order: baseProductData.sort_order,
     calculator: baseProductData.calculator || null,
+    category_id: baseProductData.category_id || null,
+    fabric_id: baseProductData.fabric_id || null,
+    size_group_id: baseProductData.size_group_id || null,
+    parts: baseProductData.parts || [],
+    base_price: baseProductData.base_price,
+    base_sn: baseProductData.base_sn || null,
+    trims_cost: baseProductData.trims_cost,
+    adult_consumption: baseProductData.adult_consumption,
+    kids_consumption: baseProductData.kids_consumption,
+    overhead_percentage: baseProductData.overhead_percentage,
+    sample_rate: baseProductData.sample_rate,
+    image_url: baseProductData.image_url || null,
+    base_icon_url: baseProductData.base_icon_url || null,
+    branding_sides: baseProductData.branding_sides || [],
+    status: baseProductData.status,
   };
   
   const { data, error } = await supabase
@@ -102,6 +119,7 @@ export const createBaseProduct = async (baseProductData: Omit<BaseProduct, 'id' 
   const processedData = {
     ...data,
     calculator: data.calculator ? Number(data.calculator) : undefined,
+    base_sn: data.base_sn ? Number(data.base_sn) : undefined,
     parts: Array.isArray(data.parts) ? data.parts : [],
     branding_sides: Array.isArray(data.branding_sides) ? data.branding_sides : [],
     category: data.category && typeof data.category === 'object' && 'id' in data.category ? data.category : undefined,
@@ -116,8 +134,24 @@ export const updateBaseProduct = async (id: string, updates: Partial<BaseProduct
   console.log('📝 Updating base product:', id, updates);
   
   const updateData = {
-    ...updates,
+    name: updates.name,
+    sort_order: updates.sort_order,
     calculator: updates.calculator || null,
+    category_id: updates.category_id || null,
+    fabric_id: updates.fabric_id || null,
+    size_group_id: updates.size_group_id || null,
+    parts: updates.parts || [],
+    base_price: updates.base_price,
+    base_sn: updates.base_sn || null,
+    trims_cost: updates.trims_cost,
+    adult_consumption: updates.adult_consumption,
+    kids_consumption: updates.kids_consumption,
+    overhead_percentage: updates.overhead_percentage,
+    sample_rate: updates.sample_rate,
+    image_url: updates.image_url || null,
+    base_icon_url: updates.base_icon_url || null,
+    branding_sides: updates.branding_sides || [],
+    status: updates.status,
   };
   
   const { data, error } = await supabase
@@ -142,6 +176,7 @@ export const updateBaseProduct = async (id: string, updates: Partial<BaseProduct
   const processedData = {
     ...data,
     calculator: data.calculator ? Number(data.calculator) : undefined,
+    base_sn: data.base_sn ? Number(data.base_sn) : undefined,
     parts: Array.isArray(data.parts) ? data.parts : [],
     branding_sides: Array.isArray(data.branding_sides) ? data.branding_sides : [],
     category: data.category && typeof data.category === 'object' && 'id' in data.category ? data.category : undefined,

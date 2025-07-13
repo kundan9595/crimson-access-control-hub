@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -36,7 +35,7 @@ const formSchema = z.object({
   fabric_id: z.string().optional(),
   size_group_id: z.string().optional(),
   parts: z.array(z.string()).default([]),
-  base_of: z.number().min(0).default(0),
+  base_price: z.number().min(0).default(0),
   base_sn: z.number().optional(),
   trims_cost: z.number().min(0).default(0),
   adult_consumption: z.number().min(0).default(0),
@@ -79,7 +78,7 @@ export const BaseProductDialog: React.FC<BaseProductDialogProps> = ({
       fabric_id: '',
       size_group_id: '',
       parts: [],
-      base_of: 0,
+      base_price: 0,
       base_sn: undefined,
       trims_cost: 0,
       adult_consumption: 0,
@@ -103,7 +102,7 @@ export const BaseProductDialog: React.FC<BaseProductDialogProps> = ({
         fabric_id: baseProduct.fabric_id || '',
         size_group_id: baseProduct.size_group_id || '',
         parts: baseProduct.parts || [],
-        base_of: baseProduct.base_price,
+        base_price: baseProduct.base_price,
         base_sn: baseProduct.base_sn,
         trims_cost: baseProduct.trims_cost,
         adult_consumption: baseProduct.adult_consumption,
@@ -124,7 +123,7 @@ export const BaseProductDialog: React.FC<BaseProductDialogProps> = ({
         fabric_id: '',
         size_group_id: '',
         parts: [],
-        base_of: 0,
+        base_price: 0,
         base_sn: undefined,
         trims_cost: 0,
         adult_consumption: 0,
@@ -149,7 +148,7 @@ export const BaseProductDialog: React.FC<BaseProductDialogProps> = ({
         fabric_id: data.fabric_id || null,
         size_group_id: data.size_group_id || null,
         parts: data.parts || [],
-        base_price: data.base_of,
+        base_price: data.base_price,
         base_sn: data.base_sn,
         trims_cost: data.trims_cost,
         adult_consumption: data.adult_consumption,
@@ -377,10 +376,10 @@ export const BaseProductDialog: React.FC<BaseProductDialogProps> = ({
         <div className="grid grid-cols-3 gap-4">
           <FormField
             control={form.control}
-            name="base_of"
+            name="base_price"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Base OF</FormLabel>
+                <FormLabel>Base Price</FormLabel>
                 <FormControl>
                   <Input 
                     type="number" 
@@ -403,9 +402,11 @@ export const BaseProductDialog: React.FC<BaseProductDialogProps> = ({
                 <FormControl>
                   <Input 
                     type="number" 
+                    step="0.01"
                     placeholder="Enter base SN" 
                     {...field}
-                    onChange={(e) => field.onChange(parseInt(e.target.value) || undefined)}
+                    value={field.value || ''}
+                    onChange={(e) => field.onChange(e.target.value ? parseFloat(e.target.value) : undefined)}
                   />
                 </FormControl>
                 <FormMessage />

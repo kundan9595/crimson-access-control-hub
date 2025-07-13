@@ -122,6 +122,7 @@ export type Database = {
       base_products: {
         Row: {
           adult_consumption: number | null
+          base_icon_url: string | null
           base_price: number | null
           base_sn: number | null
           branding_sides: Json | null
@@ -147,6 +148,7 @@ export type Database = {
         }
         Insert: {
           adult_consumption?: number | null
+          base_icon_url?: string | null
           base_price?: number | null
           base_sn?: number | null
           branding_sides?: Json | null
@@ -172,6 +174,7 @@ export type Database = {
         }
         Update: {
           adult_consumption?: number | null
+          base_icon_url?: string | null
           base_price?: number | null
           base_sn?: number | null
           branding_sides?: Json | null
