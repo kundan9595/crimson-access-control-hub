@@ -36,7 +36,7 @@ const formSchema = z.object({
   size_group_id: z.string().optional(),
   parts: z.array(z.string()).default([]),
   base_price: z.number().min(0).default(0),
-  base_sn: z.number().optional(),
+  base_sn: z.number().min(0).optional(),
   trims_cost: z.number().min(0).default(0),
   adult_consumption: z.number().min(0).default(0),
   kids_consumption: z.number().min(0).default(0),
@@ -403,7 +403,7 @@ export const BaseProductDialog: React.FC<BaseProductDialogProps> = ({
                   <Input 
                     type="number" 
                     step="0.01"
-                    placeholder="Enter base SN" 
+                    placeholder="0.00" 
                     {...field}
                     value={field.value || ''}
                     onChange={(e) => field.onChange(e.target.value ? parseFloat(e.target.value) : undefined)}
