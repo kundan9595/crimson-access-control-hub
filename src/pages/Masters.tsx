@@ -1,7 +1,8 @@
 
-import React from 'react';
+import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { 
   Package, 
   Tags, 
@@ -19,12 +20,14 @@ import {
   Plus,
   Box,
   TrendingUp,
-  Smartphone
+  Smartphone,
+  Search
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 const Masters = () => {
   const navigate = useNavigate();
+  const [searchTerm, setSearchTerm] = useState('');
 
   const masterCategories = [
     {
@@ -148,6 +151,18 @@ const Masters = () => {
     },
   ];
 
+  const filteredCategories = useMemo(() => {
+    if (!searchTerm.trim()) {
+      return masterCategories;
+    }
+    
+    const term = searchTerm.toLowerCase();
+    return masterCategories.filter(category => 
+      category.title.toLowerCase().includes(term) ||
+      category.description.toLowerCase().includes(term)
+    );
+  }, [searchTerm]);
+
   return (
     <div className="container mx-auto p-6 space-y-6">
       <div>
@@ -157,31 +172,61 @@ const Masters = () => {
         </p>
       </div>
 
+      {/* Search Bar */}
+      <div className="space-y-2">
+        <div className="relative max-w-md">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search masters..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-10"
+          />
+        </div>
+        {searchTerm && (
+          <p className="text-sm text-muted-foreground">
+            Found {filteredCategories.length} of {masterCategories.length} masters
+          </p>
+        )}
+      </div>
+
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {masterCategories.map((category) => {
-          const Icon = category.icon;
-          return (
-            <Card key={category.title} className="hover:shadow-md transition-shadow">
-              <CardHeader>
-                <div className="flex items-center space-x-2">
-                  <Icon className={`h-6 w-6 ${category.color}`} />
-                  <CardTitle className="text-xl">{category.title}</CardTitle>
-                </div>
-                <CardDescription>{category.description}</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Button 
-                  onClick={() => navigate(category.path)}
-                  className="w-full"
-                  variant="outline"
-                >
-                  Manage {category.title}
-                  <ArrowRight className="ml-2 h-4 w-4" />
-                </Button>
-              </CardContent>
-            </Card>
-          );
-        })}
+        {filteredCategories.length > 0 ? (
+          filteredCategories.map((category) => {
+            const Icon = category.icon;
+            return (
+              <Card key={category.title} className="hover:shadow-md transition-shadow">
+                <CardHeader>
+                  <div className="flex items-center space-x-2">
+                    <Icon className={`h-6 w-6 ${category.color}`} />
+                    <CardTitle className="text-xl">{category.title}</CardTitle>
+                  </div>
+                  <CardDescription>{category.description}</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Button 
+                    onClick={() => navigate(category.path)}
+                    className="w-full"
+                    variant="outline"
+                  >
+                    Manage {category.title}
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
+                </CardContent>
+              </Card>
+            );
+          })
+        ) : (
+          <div className="col-span-full text-center py-12">
+            <Search className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+            <h3 className="text-lg font-semibold text-muted-foreground mb-2">
+              No masters found
+            </h3>
+            <p className="text-muted-foreground">
+              Try adjusting your search terms or browse all available masters.
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );

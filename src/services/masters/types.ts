@@ -140,8 +140,11 @@ export interface Vendor {
   email?: string;
   phone?: string;
   address?: string;
+  state_id?: string;
+  city_id?: string;
   tax_id?: string;
   credit_terms?: string;
+  style_specializations?: string[]; // Array of style IDs that this vendor specializes in
   status: string;
   created_at: string;
   updated_at: string;
@@ -248,6 +251,11 @@ export interface AppAsset {
   mirror_dx: number;
   asset_height_resp_to_box: number;
   asset?: string;
+  add_on_id?: string;
+  add_on?: {
+    id: string;
+    name: string;
+  };
   status: string;
   created_at: string;
   updated_at: string;
@@ -277,7 +285,7 @@ export interface BaseProduct {
   calculator?: number;
   category_id?: string;
   fabric_id?: string;
-  size_group_id?: string; // Added missing field
+  size_group_ids?: string[]; // Array of size group IDs
   parts: string[]; // Array of part IDs
   base_price: number;
   base_sn?: number;
@@ -303,10 +311,10 @@ export interface BaseProduct {
     name: string;
     fabric_type: string;
   };
-  size_group?: {
+  size_groups?: {
     id: string;
     name: string;
-  };
+  }[];
 }
 
 export type {

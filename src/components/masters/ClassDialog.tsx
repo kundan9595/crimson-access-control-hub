@@ -12,6 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Plus, Edit2, X, AlertTriangle, CheckCircle, Package, TrendingUp, Calendar, BarChart3 } from 'lucide-react';
 import { useCreateClass, useUpdateClass, useStyles, useColors, useSizeGroups, useSizes, Class } from '@/hooks/masters';
 import ImageUpload from '@/components/ui/ImageUpload';
+import MultipleImageUpload from '@/components/ui/MultipleImageUpload';
 import { validateSizeRatios, getSizeRatioDisplay, getDefaultMonthlyStockLevels, validateMonthlyStockLevels, StockLevelsByMonth } from '@/utils/stockUtils';
 
 interface ClassDialogProps {
@@ -223,11 +224,12 @@ const ClassDialog: React.FC<ClassDialogProps> = ({ classItem, trigger, open, onO
     }));
   };
 
-  const addImage = (url: string) => {
-    if (url && !formData.images.includes(url)) {
+  const addImages = (urls: string[]) => {
+    const newImages = urls.filter(url => url && !formData.images.includes(url));
+    if (newImages.length > 0) {
       setFormData(prev => ({
         ...prev,
-        images: [...prev.images, url]
+        images: [...prev.images, ...newImages]
       }));
     }
   };
@@ -595,11 +597,11 @@ const ClassDialog: React.FC<ClassDialogProps> = ({ classItem, trigger, open, onO
 
                   <div>
                     <Label>Additional Images</Label>
-                    <ImageUpload
-                      value=""
-                      onChange={addImage}
-                      onRemove={() => {}}
+                    <MultipleImageUpload
+                      onImagesUploaded={addImages}
                       placeholder="Upload additional images"
+                      maxFiles={10}
+                      maxSize={5}
                     />
                     
                     {formData.images.length > 0 && (

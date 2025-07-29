@@ -9,6 +9,11 @@ export interface AppAsset {
   mirror_dx: number;
   asset_height_resp_to_box: number;
   asset?: string;
+  add_on_id?: string;
+  add_on?: {
+    id: string;
+    name: string;
+  };
   status: string;
   created_at: string;
   updated_at: string;
@@ -21,7 +26,10 @@ export const getAppAssets = async (): Promise<AppAsset[]> => {
   
   const { data, error } = await supabase
     .from('app_assets')
-    .select('*')
+    .select(`
+      *,
+      add_on:add_ons(id, name)
+    `)
     .order('name');
   
   if (error) {
@@ -30,16 +38,19 @@ export const getAppAssets = async (): Promise<AppAsset[]> => {
   }
   
   console.log('✅ AppAssetsService - Successfully fetched app assets:', data?.length);
-  return data || [];
+  return (data as unknown as AppAsset[]) || [];
 };
 
-export const createAppAsset = async (asset: Omit<AppAsset, 'id' | 'created_at' | 'updated_at' | 'created_by' | 'updated_by'>): Promise<AppAsset> => {
+export const createAppAsset = async (asset: Omit<AppAsset, 'id' | 'created_at' | 'updated_at' | 'created_by' | 'updated_by' | 'add_on'>): Promise<AppAsset> => {
   console.log('📊 AppAssetsService - Creating app asset:', asset);
   
   const { data, error } = await supabase
     .from('app_assets')
     .insert([asset])
-    .select()
+    .select(`
+      *,
+      add_on:add_ons(id, name)
+    `)
     .single();
   
   if (error) {
@@ -48,17 +59,20 @@ export const createAppAsset = async (asset: Omit<AppAsset, 'id' | 'created_at' |
   }
   
   console.log('✅ AppAssetsService - Successfully created app asset:', data);
-  return data;
+  return data as unknown as AppAsset;
 };
 
-export const updateAppAsset = async (id: string, updates: Partial<Omit<AppAsset, 'id' | 'created_at' | 'updated_at' | 'created_by' | 'updated_by'>>): Promise<AppAsset> => {
+export const updateAppAsset = async (id: string, updates: Partial<Omit<AppAsset, 'id' | 'created_at' | 'updated_at' | 'created_by' | 'updated_by' | 'add_on'>>): Promise<AppAsset> => {
   console.log('📊 AppAssetsService - Updating app asset:', { id, updates });
   
   const { data, error } = await supabase
     .from('app_assets')
     .update(updates)
     .eq('id', id)
-    .select()
+    .select(`
+      *,
+      add_on:add_ons(id, name)
+    `)
     .single();
   
   if (error) {
@@ -67,7 +81,7 @@ export const updateAppAsset = async (id: string, updates: Partial<Omit<AppAsset,
   }
   
   console.log('✅ AppAssetsService - Successfully updated app asset:', data);
-  return data;
+  return data as unknown as AppAsset;
 };
 
 export const deleteAppAsset = async (id: string): Promise<void> => {

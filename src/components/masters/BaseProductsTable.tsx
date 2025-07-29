@@ -122,7 +122,22 @@ export const BaseProductsTable: React.FC = () => {
                   ) : '-'}
                 </TableCell>
                 <TableCell>
-                  {baseProduct.size_group?.name || '-'}
+                  {baseProduct.size_group_ids && baseProduct.size_group_ids.length > 0 ? (
+                    <div className="flex flex-wrap gap-1">
+                      {baseProduct.size_group_ids.slice(0, 2).map((sizeGroupId) => (
+                        <Badge key={sizeGroupId} variant="outline" className="text-xs">
+                          {sizeGroupId}
+                        </Badge>
+                      ))}
+                      {baseProduct.size_group_ids.length > 2 && (
+                        <Badge variant="outline" className="text-xs">
+                          +{baseProduct.size_group_ids.length - 2} more
+                        </Badge>
+                      )}
+                    </div>
+                  ) : (
+                    <span className="text-muted-foreground text-sm">-</span>
+                  )}
                 </TableCell>
                 <TableCell>
                   ₹{baseProduct.base_price.toFixed(2)}

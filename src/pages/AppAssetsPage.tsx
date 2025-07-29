@@ -46,7 +46,7 @@ const AppAssetsPage = () => {
 
     exportToCSV({
       filename: generateExportFilename('app-assets'),
-      headers: ['Name', 'dX', 'dY', 'Mirror dX', 'Height Resp', 'Status', 'Created At'],
+      headers: ['Name', 'dX', 'dY', 'Mirror dX', 'Height Resp', 'Connected Add-On', 'Status', 'Created At'],
       data: appAssets,
       fieldMap: {
         'Name': 'name',
@@ -54,6 +54,7 @@ const AppAssetsPage = () => {
         'dY': 'dy',
         'Mirror dX': 'mirror_dx',
         'Height Resp': 'asset_height_resp_to_box',
+        'Connected Add-On': (item: AppAsset) => item.add_on?.name || '-',
         'Status': 'status',
         'Created At': (item: AppAsset) => new Date(item.created_at).toLocaleDateString()
       }
@@ -64,10 +65,10 @@ const AppAssetsPage = () => {
     setImportDialogOpen(true);
   };
 
-  const templateHeaders = ['Name', 'dX', 'dY', 'Mirror dX', 'Height Resp', 'Status'];
+  const templateHeaders = ['Name', 'dX', 'dY', 'Mirror dX', 'Height Resp', 'Connected Add-On', 'Status'];
   const sampleData = [
-    ['Logo Icon', '10.5', '15.2', '8.3', '100.0', 'active'],
-    ['Banner Image', '0.0', '0.0', '0.0', '75.5', 'active']
+    ['Logo Icon', '10.5', '15.2', '8.3', '100.0', 'Premium Quality', 'active'],
+    ['Banner Image', '0.0', '0.0', '0.0', '75.5', '', 'active']
   ];
 
   if (isLoading) {
@@ -118,6 +119,7 @@ const AppAssetsPage = () => {
                     <TableHead>dY</TableHead>
                     <TableHead>Mirror dX</TableHead>
                     <TableHead>Height Resp</TableHead>
+                    <TableHead>Connected Add-On</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
@@ -147,6 +149,15 @@ const AppAssetsPage = () => {
                       <TableCell>{asset.dy}</TableCell>
                       <TableCell>{asset.mirror_dx}</TableCell>
                       <TableCell>{asset.asset_height_resp_to_box}</TableCell>
+                      <TableCell>
+                        {asset.add_on ? (
+                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                            {asset.add_on.name}
+                          </span>
+                        ) : (
+                          <span className="text-muted-foreground text-xs">-</span>
+                        )}
+                      </TableCell>
                       <TableCell>
                         <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
                           asset.status === 'active' 

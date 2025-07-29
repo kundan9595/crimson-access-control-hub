@@ -4,10 +4,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useCreateAppAsset, useUpdateAppAsset } from '@/hooks/masters/useAppAssets';
+import { useAddOns } from '@/hooks/masters/useAddOns';
 import ImageUpload from '@/components/ui/ImageUpload';
 import { BaseFormDialog } from './shared/BaseFormDialog';
 import type { AppAsset } from '@/services/masters/appAssetsService';
@@ -19,6 +21,7 @@ const appAssetSchema = z.object({
   mirror_dx: z.number().min(0, 'Mirror dX must be 0 or greater'),
   asset_height_resp_to_box: z.number().min(0, 'Asset height must be 0 or greater'),
   asset: z.string().optional(),
+  add_on_id: z.string().optional().or(z.literal('none')),
   status: z.string(),
 });
 
@@ -33,6 +36,7 @@ type AppAssetDialogProps = {
 const AppAssetDialog: React.FC<AppAssetDialogProps> = ({ open, onOpenChange, appAsset }) => {
   const createAppAssetMutation = useCreateAppAsset();
   const updateAppAssetMutation = useUpdateAppAsset();
+  const { data: addOns = [] } = useAddOns();
   const isEditing = !!appAsset;
 
   const form = useForm<AppAssetFormData>({
@@ -44,6 +48,7 @@ const AppAssetDialog: React.FC<AppAssetDialogProps> = ({ open, onOpenChange, app
       mirror_dx: appAsset?.mirror_dx || 0,
       asset_height_resp_to_box: appAsset?.asset_height_resp_to_box || 0,
       asset: appAsset?.asset || '',
+      add_on_id: appAsset?.add_on_id || 'none',
       status: appAsset?.status || 'active',
     }
   });
@@ -57,6 +62,7 @@ const AppAssetDialog: React.FC<AppAssetDialogProps> = ({ open, onOpenChange, app
         mirror_dx: appAsset.mirror_dx,
         asset_height_resp_to_box: appAsset.asset_height_resp_to_box,
         asset: appAsset.asset || '',
+        add_on_id: appAsset.add_on_id || 'none',
         status: appAsset.status,
       });
     } else if (!appAsset && open) {
@@ -67,6 +73,7 @@ const AppAssetDialog: React.FC<AppAssetDialogProps> = ({ open, onOpenChange, app
         mirror_dx: 0,
         asset_height_resp_to_box: 0,
         asset: '',
+        add_on_id: 'none',
         status: 'active',
       });
     }
@@ -80,6 +87,7 @@ const AppAssetDialog: React.FC<AppAssetDialogProps> = ({ open, onOpenChange, app
       mirror_dx: data.mirror_dx,
       asset_height_resp_to_box: data.asset_height_resp_to_box,
       asset: data.asset || null,
+      add_on_id: data.add_on_id === 'none' ? null : data.add_on_id || null,
       status: data.status,
     };
 
@@ -227,6 +235,32 @@ const AppAssetDialog: React.FC<AppAssetDialogProps> = ({ open, onOpenChange, app
                 placeholder="Upload asset image"
               />
             </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+
+      <FormField
+        control={form.control}
+        name="add_on_id"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>Connected Add-On</FormLabel>
+            <Select onValueChange={field.onChange} value={field.value || 'none'}>
+              <FormControl>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select an add-on (optional)" />
+                </SelectTrigger>
+              </FormControl>
+              <SelectContent>
+                <SelectItem value="none">No add-on connected</SelectItem>
+                {addOns.map((addOn) => (
+                  <SelectItem key={addOn.id} value={addOn.id}>
+                    {addOn.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             <FormMessage />
           </FormItem>
         )}

@@ -9,6 +9,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch';
 import { Checkbox } from '@/components/ui/checkbox';
 import ImageUpload from '@/components/ui/ImageUpload';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useCategories } from '@/hooks/masters/useCategories';
 import { useFabrics } from '@/hooks/masters/useFabrics';
 import { useParts } from '@/hooks/masters/useParts';
@@ -16,7 +18,7 @@ import { useSizeGroups } from '@/hooks/masters/useSizes';
 import { useCreateBaseProduct, useUpdateBaseProduct } from '@/hooks/masters/useBaseProducts';
 import { BaseProduct } from '@/services/masters/baseProductsService';
 import { Badge } from '@/components/ui/badge';
-import { X } from 'lucide-react';
+import { X, Search, Package, DollarSign, Settings, Image, Tag } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 const BRANDING_SIDE_OPTIONS = [
@@ -33,7 +35,7 @@ const formSchema = z.object({
   calculator: z.number().min(0).default(0),
   category_id: z.string().optional(),
   fabric_id: z.string().optional(),
-  size_group_id: z.string().optional(),
+  size_group_ids: z.array(z.string()).default([]),
   parts: z.array(z.string()).default([]),
   base_price: z.number().min(0).default(0),
   base_sn: z.number().min(0).optional(),
@@ -76,7 +78,7 @@ export const BaseProductDialog: React.FC<BaseProductDialogProps> = ({
       calculator: 0,
       category_id: '',
       fabric_id: '',
-      size_group_id: '',
+      size_group_ids: [],
       parts: [],
       base_price: 0,
       base_sn: undefined,
@@ -100,7 +102,7 @@ export const BaseProductDialog: React.FC<BaseProductDialogProps> = ({
         calculator: typeof baseProduct.calculator === 'number' ? baseProduct.calculator : 0,
         category_id: baseProduct.category_id || '',
         fabric_id: baseProduct.fabric_id || '',
-        size_group_id: baseProduct.size_group_id || '',
+        size_group_ids: baseProduct.size_group_ids || [],
         parts: baseProduct.parts || [],
         base_price: baseProduct.base_price,
         base_sn: baseProduct.base_sn,
@@ -121,7 +123,7 @@ export const BaseProductDialog: React.FC<BaseProductDialogProps> = ({
         calculator: 0,
         category_id: '',
         fabric_id: '',
-        size_group_id: '',
+        size_group_ids: [],
         parts: [],
         base_price: 0,
         base_sn: undefined,
@@ -146,7 +148,7 @@ export const BaseProductDialog: React.FC<BaseProductDialogProps> = ({
         calculator: data.calculator,
         category_id: data.category_id || null,
         fabric_id: data.fabric_id || null,
-        size_group_id: data.size_group_id || null,
+        size_group_ids: data.size_group_ids || [],
         parts: data.parts || [],
         base_price: data.base_price,
         base_sn: data.base_sn,
@@ -189,6 +191,28 @@ export const BaseProductDialog: React.FC<BaseProductDialogProps> = ({
   };
 
   const selectedParts = form.watch('parts') || [];
+  const selectedSizeGroups = form.watch('size_group_ids') || [];
+  const [sizeGroupSearchTerm, setSizeGroupSearchTerm] = React.useState('');
+  
+  // Filter size groups based on search term
+  const filteredSizeGroups = sizeGroups.filter(sizeGroup =>
+    sizeGroup.name.toLowerCase().includes(sizeGroupSearchTerm.toLowerCase()) ||
+    (sizeGroup.description && sizeGroup.description.toLowerCase().includes(sizeGroupSearchTerm.toLowerCase()))
+  );
+
+  const handleSizeGroupToggle = (sizeGroupId: string, checked: boolean) => {
+    const currentSizeGroups = form.getValues('size_group_ids') || [];
+    if (checked) {
+      form.setValue('size_group_ids', [...currentSizeGroups, sizeGroupId]);
+    } else {
+      form.setValue('size_group_ids', currentSizeGroups.filter(id => id !== sizeGroupId));
+    }
+  };
+
+  const removeSizeGroup = (sizeGroupId: string) => {
+    const currentSizeGroups = form.getValues('size_group_ids') || [];
+    form.setValue('size_group_ids', currentSizeGroups.filter(id => id !== sizeGroupId));
+  };
 
   return (
     <BaseFormDialog
@@ -200,429 +224,551 @@ export const BaseProductDialog: React.FC<BaseProductDialogProps> = ({
       isSubmitting={createMutation.isPending || updateMutation.isPending}
       isEditing={!!baseProduct}
     >
-      <div className="grid gap-4">
-        <div className="grid grid-cols-2 gap-4">
-          <FormField
-            control={form.control}
-            name="name"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Name *</FormLabel>
-                <FormControl>
-                  <Input placeholder="Enter base product name" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="sort_order"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Sort Order</FormLabel>
-                <FormControl>
-                  <Input 
-                    type="number" 
-                    placeholder="0" 
-                    {...field}
-                    onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
+      <Tabs defaultValue="basic" className="w-full">
+        <TabsList className="grid w-full grid-cols-5">
+          <TabsTrigger value="basic" className="flex items-center gap-2">
+            <Settings className="h-4 w-4" />
+            Basic Info
+          </TabsTrigger>
+          <TabsTrigger value="categories" className="flex items-center gap-2">
+            <Tag className="h-4 w-4" />
+            Categories
+          </TabsTrigger>
+          <TabsTrigger value="pricing" className="flex items-center gap-2">
+            <DollarSign className="h-4 w-4" />
+            Pricing
+          </TabsTrigger>
+          <TabsTrigger value="consumption" className="flex items-center gap-2">
+            <Package className="h-4 w-4" />
+            Consumption
+          </TabsTrigger>
+          <TabsTrigger value="media" className="flex items-center gap-2">
+            <Image className="h-4 w-4" />
+            Media
+          </TabsTrigger>
+        </TabsList>
 
-        <div className="grid grid-cols-2 gap-4">
-          <FormField
-            control={form.control}
-            name="calculator"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Calculator</FormLabel>
-                <FormControl>
-                  <Input 
-                    type="number" 
-                    step="0.01"
-                    placeholder="0.00" 
-                    {...field}
-                    onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="size_group_id"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Size Group</FormLabel>
-                <Select onValueChange={field.onChange} value={field.value || ''}>
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select size group" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    {sizeGroups.map((sizeGroup) => (
-                      <SelectItem key={sizeGroup.id} value={sizeGroup.id}>
-                        {sizeGroup.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
-
-        <div className="grid grid-cols-2 gap-4">
-          <FormField
-            control={form.control}
-            name="category_id"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Category</FormLabel>
-                <Select onValueChange={field.onChange} value={field.value || ''}>
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select category" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    {categories.map((category) => (
-                      <SelectItem key={category.id} value={category.id}>
-                        {category.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="fabric_id"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Fabric</FormLabel>
-                <Select onValueChange={field.onChange} value={field.value || ''}>
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select fabric" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    {fabrics.map((fabric) => (
-                      <SelectItem key={fabric.id} value={fabric.id}>
-                        {fabric.name} ({fabric.fabric_type})
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
-
-        <FormItem>
-          <FormLabel>Parts</FormLabel>
-          <div className="space-y-2">
-            <Select onValueChange={addPart}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select parts to add" />
-              </SelectTrigger>
-              <SelectContent>
-                {parts
-                  .filter(part => !selectedParts.includes(part.id))
-                  .map((part) => (
-                    <SelectItem key={part.id} value={part.id}>
-                      {part.name}
-                    </SelectItem>
-                  ))}
-              </SelectContent>
-            </Select>
-            {selectedParts.length > 0 && (
-              <div className="flex flex-wrap gap-2">
-                {selectedParts.map((partId) => {
-                  const part = parts.find(p => p.id === partId);
-                  return (
-                    <Badge key={partId} variant="secondary" className="flex items-center gap-1">
-                      {part?.name || partId}
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        className="h-4 w-4 p-0"
-                        onClick={() => removePart(partId)}
-                      >
-                        <X className="h-3 w-3" />
-                      </Button>
-                    </Badge>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-        </FormItem>
-
-        <div className="grid grid-cols-3 gap-4">
-          <FormField
-            control={form.control}
-            name="base_price"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Base Price</FormLabel>
-                <FormControl>
-                  <Input 
-                    type="number" 
-                    step="0.01"
-                    placeholder="0.00" 
-                    {...field}
-                    onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="base_sn"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Base SN</FormLabel>
-                <FormControl>
-                  <Input 
-                    type="number" 
-                    step="0.01"
-                    placeholder="0.00" 
-                    {...field}
-                    value={field.value || ''}
-                    onChange={(e) => field.onChange(e.target.value ? parseFloat(e.target.value) : undefined)}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="trims_cost"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Trims Cost</FormLabel>
-                <FormControl>
-                  <Input 
-                    type="number" 
-                    step="0.01"
-                    placeholder="0.00" 
-                    {...field}
-                    onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
-
-        <div className="grid grid-cols-2 gap-4">
-          <FormField
-            control={form.control}
-            name="adult_consumption"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Adult Consumption</FormLabel>
-                <FormControl>
-                  <Input 
-                    type="number" 
-                    step="0.01"
-                    placeholder="0.00" 
-                    {...field}
-                    onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="kids_consumption"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Kids Consumption</FormLabel>
-                <FormControl>
-                  <Input 
-                    type="number" 
-                    step="0.01"
-                    placeholder="0.00" 
-                    {...field}
-                    onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
-
-        <div className="grid grid-cols-2 gap-4">
-          <FormField
-            control={form.control}
-            name="overhead_percentage"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Overhead Percentage (%)</FormLabel>
-                <FormControl>
-                  <Input 
-                    type="number" 
-                    step="0.01"
-                    max="100"
-                    placeholder="0.00" 
-                    {...field}
-                    onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="sample_rate"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Sample Rate</FormLabel>
-                <FormControl>
-                  <Input 
-                    type="number" 
-                    step="0.01"
-                    placeholder="0.00" 
-                    {...field}
-                    onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
-
-        <FormField
-          control={form.control}
-          name="branding_sides"
-          render={() => (
-            <FormItem>
-              <FormLabel>Branding Sides</FormLabel>
-              <div className="grid grid-cols-2 gap-3">
-                {BRANDING_SIDE_OPTIONS.map((option) => (
-                  <FormField
-                    key={option}
-                    control={form.control}
-                    name="branding_sides"
-                    render={({ field }) => {
-                      return (
-                        <FormItem
-                          key={option}
-                          className="flex flex-row items-start space-x-3 space-y-0"
-                        >
-                          <FormControl>
-                            <Checkbox
-                              checked={field.value?.includes(option)}
-                              onCheckedChange={(checked) => {
-                                return checked
-                                  ? field.onChange([...field.value, option])
-                                  : field.onChange(
-                                      field.value?.filter(
-                                        (value) => value !== option
-                                      )
-                                    )
-                              }}
-                            />
-                          </FormControl>
-                          <FormLabel className="text-sm font-normal">
-                            {option}
-                          </FormLabel>
-                        </FormItem>
-                      )
-                    }}
-                  />
-                ))}
-              </div>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <div className="grid grid-cols-2 gap-4">
-          <FormField
-            control={form.control}
-            name="base_icon_url"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Base Icon</FormLabel>
-                <FormControl>
-                  <ImageUpload
-                    value={field.value || ''}
-                    onChange={field.onChange}
-                    onRemove={() => field.onChange('')}
-                    placeholder="Upload base product icon"
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="image_url"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Product Image</FormLabel>
-                <FormControl>
-                  <ImageUpload
-                    value={field.value || ''}
-                    onChange={field.onChange}
-                    onRemove={() => field.onChange('')}
-                    placeholder="Upload base product image"
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
-
-        <FormField
-          control={form.control}
-          name="status"
-          render={({ field }) => (
-            <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
-              <div className="space-y-0.5">
-                <FormLabel>Active Status</FormLabel>
-                <div className="text-sm text-muted-foreground">
-                  Enable or disable this base product
-                </div>
-              </div>
-              <FormControl>
-                <Switch
-                  checked={field.value === 'active'}
-                  onCheckedChange={(checked) => field.onChange(checked ? 'active' : 'inactive')}
+        {/* Basic Information Tab */}
+        <TabsContent value="basic" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Basic Information</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Name *</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Enter base product name" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
                 />
-              </FormControl>
-            </FormItem>
-          )}
-        />
-      </div>
+                <FormField
+                  control={form.control}
+                  name="sort_order"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Sort Order</FormLabel>
+                      <FormControl>
+                        <Input 
+                          type="number" 
+                          placeholder="0" 
+                          {...field}
+                          onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="calculator"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Calculator</FormLabel>
+                      <FormControl>
+                        <Input 
+                          type="number" 
+                          step="0.01"
+                          placeholder="0.00" 
+                          {...field}
+                          onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="status"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
+                      <div className="space-y-0.5">
+                        <FormLabel>Active Status</FormLabel>
+                        <div className="text-sm text-muted-foreground">
+                          Enable or disable this base product
+                        </div>
+                      </div>
+                      <FormControl>
+                        <Switch
+                          checked={field.value === 'active'}
+                          onCheckedChange={(checked) => field.onChange(checked ? 'active' : 'inactive')}
+                        />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Categories & Groups Tab */}
+        <TabsContent value="categories" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Categories & Groups</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="category_id"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Category</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value || ''}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select category" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {categories.map((category) => (
+                            <SelectItem key={category.id} value={category.id}>
+                              {category.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="fabric_id"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Fabric</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value || ''}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select fabric" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {fabrics.map((fabric) => (
+                            <SelectItem key={fabric.id} value={fabric.id}>
+                              {fabric.name} ({fabric.fabric_type})
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <FormItem>
+                <FormLabel>Size Groups</FormLabel>
+                <div className="space-y-4">
+                  {/* Selected Size Groups */}
+                  {selectedSizeGroups.length > 0 && (
+                    <div className="space-y-2">
+                      <FormLabel className="text-sm">Selected Size Groups</FormLabel>
+                      <div className="flex flex-wrap gap-2">
+                        {selectedSizeGroups.map((sizeGroupId) => {
+                          const sizeGroup = sizeGroups.find(sg => sg.id === sizeGroupId);
+                          return sizeGroup ? (
+                            <Badge key={sizeGroupId} variant="secondary" className="flex items-center gap-1">
+                              {sizeGroup.name}
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                className="h-4 w-4 p-0 hover:bg-transparent"
+                                onClick={() => removeSizeGroup(sizeGroupId)}
+                              >
+                                <X className="h-3 w-3" />
+                              </Button>
+                            </Badge>
+                          ) : null;
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Available Size Groups */}
+                  <div className="space-y-2">
+                    <FormLabel className="text-sm">Available Size Groups</FormLabel>
+                    <div className="relative">
+                      <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        placeholder="Search size groups..."
+                        value={sizeGroupSearchTerm}
+                        onChange={(e) => setSizeGroupSearchTerm(e.target.value)}
+                        className="pl-8"
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-2 max-h-40 overflow-y-auto border rounded-md p-4">
+                      {filteredSizeGroups.map((sizeGroup) => (
+                        <div key={sizeGroup.id} className="flex items-center space-x-2">
+                          <Checkbox
+                            id={sizeGroup.id}
+                            checked={selectedSizeGroups.includes(sizeGroup.id)}
+                            onCheckedChange={(checked) => 
+                              handleSizeGroupToggle(sizeGroup.id, checked as boolean)
+                            }
+                          />
+                          <label
+                            htmlFor={sizeGroup.id}
+                            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                          >
+                            {sizeGroup.name}
+                          </label>
+                        </div>
+                      ))}
+                      {filteredSizeGroups.length === 0 && (
+                        <div className="col-span-2 text-center text-sm text-muted-foreground py-4">
+                          No size groups found
+                        </div>
+                      )}
+                    </div>
+                    {filteredSizeGroups.length > 0 && (
+                      <p className="text-xs text-muted-foreground">
+                        Showing {filteredSizeGroups.length} of {sizeGroups.length} size groups
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </FormItem>
+
+              <FormItem>
+                <FormLabel>Parts</FormLabel>
+                <div className="space-y-2">
+                  <Select onValueChange={addPart}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select parts to add" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {parts
+                        .filter(part => !selectedParts.includes(part.id))
+                        .map((part) => (
+                          <SelectItem key={part.id} value={part.id}>
+                            {part.name}
+                          </SelectItem>
+                        ))}
+                    </SelectContent>
+                  </Select>
+                  {selectedParts.length > 0 && (
+                    <div className="flex flex-wrap gap-2">
+                      {selectedParts.map((partId) => {
+                        const part = parts.find(p => p.id === partId);
+                        return (
+                          <Badge key={partId} variant="secondary" className="flex items-center gap-1">
+                            {part?.name || partId}
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              className="h-4 w-4 p-0"
+                              onClick={() => removePart(partId)}
+                            >
+                              <X className="h-3 w-3" />
+                            </Button>
+                          </Badge>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              </FormItem>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Pricing & Costs Tab */}
+        <TabsContent value="pricing" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Pricing & Costs</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-3 gap-4">
+                <FormField
+                  control={form.control}
+                  name="base_price"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Base Price</FormLabel>
+                      <FormControl>
+                        <Input 
+                          type="number" 
+                          step="0.01"
+                          placeholder="0.00" 
+                          {...field}
+                          onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="base_sn"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Base SN</FormLabel>
+                      <FormControl>
+                        <Input 
+                          type="number" 
+                          step="0.01"
+                          placeholder="0.00" 
+                          {...field}
+                          value={field.value || ''}
+                          onChange={(e) => field.onChange(e.target.value ? parseFloat(e.target.value) : undefined)}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="trims_cost"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Trims Cost</FormLabel>
+                      <FormControl>
+                        <Input 
+                          type="number" 
+                          step="0.01"
+                          placeholder="0.00" 
+                          {...field}
+                          onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="overhead_percentage"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Overhead Percentage (%)</FormLabel>
+                      <FormControl>
+                        <Input 
+                          type="number" 
+                          step="0.01"
+                          max="100"
+                          placeholder="0.00" 
+                          {...field}
+                          onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="sample_rate"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Sample Rate</FormLabel>
+                      <FormControl>
+                        <Input 
+                          type="number" 
+                          step="0.01"
+                          placeholder="0.00" 
+                          {...field}
+                          onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Consumption Tab */}
+        <TabsContent value="consumption" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Material Consumption</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="adult_consumption"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Adult Consumption</FormLabel>
+                      <FormControl>
+                        <Input 
+                          type="number" 
+                          step="0.01"
+                          placeholder="0.00" 
+                          {...field}
+                          onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="kids_consumption"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Kids Consumption</FormLabel>
+                      <FormControl>
+                        <Input 
+                          type="number" 
+                          step="0.01"
+                          placeholder="0.00" 
+                          {...field}
+                          onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Media & Branding Tab */}
+        <TabsContent value="media" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Media & Branding</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="base_icon_url"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Base Icon</FormLabel>
+                      <FormControl>
+                        <ImageUpload
+                          value={field.value || ''}
+                          onChange={field.onChange}
+                          onRemove={() => field.onChange('')}
+                          placeholder="Upload base product icon"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="image_url"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Product Image</FormLabel>
+                      <FormControl>
+                        <ImageUpload
+                          value={field.value || ''}
+                          onChange={field.onChange}
+                          onRemove={() => field.onChange('')}
+                          placeholder="Upload base product image"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <FormField
+                control={form.control}
+                name="branding_sides"
+                render={() => (
+                  <FormItem>
+                    <FormLabel>Branding Sides</FormLabel>
+                    <div className="grid grid-cols-2 gap-3">
+                      {BRANDING_SIDE_OPTIONS.map((option) => (
+                        <FormField
+                          key={option}
+                          control={form.control}
+                          name="branding_sides"
+                          render={({ field }) => {
+                            return (
+                              <FormItem
+                                key={option}
+                                className="flex flex-row items-start space-x-3 space-y-0"
+                              >
+                                <FormControl>
+                                  <Checkbox
+                                    checked={field.value?.includes(option)}
+                                    onCheckedChange={(checked) => {
+                                      return checked
+                                        ? field.onChange([...field.value, option])
+                                        : field.onChange(
+                                            field.value?.filter(
+                                              (value) => value !== option
+                                            )
+                                          )
+                                    }}
+                                  />
+                                </FormControl>
+                                <FormLabel className="text-sm font-normal">
+                                  {option}
+                                </FormLabel>
+                              </FormItem>
+                            )
+                          }}
+                        />
+                      ))}
+                    </div>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </BaseFormDialog>
   );
 };

@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Edit, Trash2, Users } from 'lucide-react';
-import { useVendors, useDeleteVendor } from '@/hooks/useMasters';
+import { useVendors, useDeleteVendor, useStyles, useStates, useCities } from '@/hooks/useMasters';
 import { Vendor } from '@/services/mastersService';
 import { useSearchParams } from 'react-router-dom';
 import VendorDialog from '@/components/masters/VendorDialog';
@@ -21,7 +21,21 @@ const VendorsPage = () => {
   const [isBulkImportOpen, setIsBulkImportOpen] = useState(false);
   
   const { data: vendors, isLoading } = useVendors();
+  const { data: styles = [] } = useStyles();
+  const { data: states = [] } = useStates();
+  const { data: cities = [] } = useCities();
   const deleteVendor = useDeleteVendor();
+
+  // Helper functions to get state and city names
+  const getStateName = (stateId: string) => {
+    const state = states.find(s => s.id === stateId);
+    return state ? state.name : '-';
+  };
+
+  const getCityName = (cityId: string) => {
+    const city = cities.find(c => c.id === cityId);
+    return city ? city.name : '-';
+  };
 
   const filteredVendors = vendors?.filter(vendor =>
     vendor.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -118,6 +132,9 @@ const VendorsPage = () => {
                     <TableHead>Contact Person</TableHead>
                     <TableHead>Email</TableHead>
                     <TableHead>Phone</TableHead>
+                    <TableHead>State</TableHead>
+                    <TableHead>City</TableHead>
+                    <TableHead>Specialisations</TableHead>
                     <TableHead className="w-24">Status</TableHead>
                     <TableHead className="w-32">Created At</TableHead>
                     <TableHead className="text-right w-32">Actions</TableHead>
@@ -134,6 +151,29 @@ const VendorsPage = () => {
                       <TableCell>{vendor.contact_person || '-'}</TableCell>
                       <TableCell>{vendor.email || '-'}</TableCell>
                       <TableCell>{vendor.phone || '-'}</TableCell>
+                      <TableCell>{vendor.state_id ? getStateName(vendor.state_id) : '-'}</TableCell>
+                      <TableCell>{vendor.city_id ? getCityName(vendor.city_id) : '-'}</TableCell>
+                      <TableCell>
+                        {vendor.style_specializations && vendor.style_specializations.length > 0 ? (
+                          <div className="flex flex-wrap gap-1">
+                            {vendor.style_specializations.slice(0, 3).map((styleId) => {
+                              const style = styles.find(s => s.id === styleId);
+                              return style ? (
+                                <Badge key={styleId} variant="outline" className="text-xs">
+                                  {style.name}
+                                </Badge>
+                              ) : null;
+                            })}
+                            {vendor.style_specializations.length > 3 && (
+                              <Badge variant="outline" className="text-xs">
+                                +{vendor.style_specializations.length - 3} more
+                              </Badge>
+                            )}
+                          </div>
+                        ) : (
+                          <span className="text-muted-foreground text-sm">-</span>
+                        )}
+                      </TableCell>
                       <TableCell>
                         <Badge variant={vendor.status === 'active' ? 'default' : 'secondary'}>
                           {vendor.status}

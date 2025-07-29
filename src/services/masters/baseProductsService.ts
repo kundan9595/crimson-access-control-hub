@@ -8,7 +8,7 @@ export interface BaseProduct {
   calculator?: number;
   category_id?: string;
   fabric_id?: string;
-  size_group_id?: string;
+  size_group_ids?: string[];
   parts: string[];
   base_price: number;
   base_sn?: number;
@@ -35,10 +35,10 @@ export interface BaseProduct {
     name: string;
     fabric_type: string;
   };
-  size_group?: {
+  size_groups?: {
     id: string;
     name: string;
-  };
+  }[];
 }
 
 export const fetchBaseProducts = async (): Promise<BaseProduct[]> => {
@@ -48,8 +48,7 @@ export const fetchBaseProducts = async (): Promise<BaseProduct[]> => {
     .select(`
       *,
       category:categories(id, name),
-      fabric:fabrics(id, name, fabric_type),
-      size_group:size_groups(id, name)
+      fabric:fabrics(id, name, fabric_type)
     `)
     .order('sort_order', { ascending: true });
 
@@ -66,9 +65,9 @@ export const fetchBaseProducts = async (): Promise<BaseProduct[]> => {
     base_sn: item.base_sn ? Number(item.base_sn) : undefined,
     parts: Array.isArray(item.parts) ? item.parts : [],
     branding_sides: Array.isArray(item.branding_sides) ? item.branding_sides : [],
+    size_group_ids: Array.isArray((item as any).size_group_ids) ? (item as any).size_group_ids : [],
     category: item.category && typeof item.category === 'object' && 'id' in item.category ? item.category : undefined,
     fabric: item.fabric && typeof item.fabric === 'object' && 'id' in item.fabric ? item.fabric : undefined,
-    size_group: item.size_group && typeof item.size_group === 'object' && item.size_group !== null && 'id' in item.size_group ? item.size_group : undefined,
   }));
   
   return processedData as BaseProduct[];
@@ -83,7 +82,7 @@ export const createBaseProduct = async (baseProductData: Omit<BaseProduct, 'id' 
     calculator: baseProductData.calculator || null,
     category_id: baseProductData.category_id || null,
     fabric_id: baseProductData.fabric_id || null,
-    size_group_id: baseProductData.size_group_id || null,
+    size_group_ids: baseProductData.size_group_ids || [],
     parts: baseProductData.parts || [],
     base_price: baseProductData.base_price,
     base_sn: baseProductData.base_sn || null,
@@ -139,7 +138,7 @@ export const updateBaseProduct = async (id: string, updates: Partial<BaseProduct
     calculator: updates.calculator || null,
     category_id: updates.category_id || null,
     fabric_id: updates.fabric_id || null,
-    size_group_id: updates.size_group_id || null,
+    size_group_ids: updates.size_group_ids || [],
     parts: updates.parts || [],
     base_price: updates.base_price,
     base_sn: updates.base_sn || null,

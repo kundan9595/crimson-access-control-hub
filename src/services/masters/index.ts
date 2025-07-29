@@ -56,6 +56,15 @@ export type {
   BaseProduct,
 } from './types';
 
+// Re-export state and city types
+export type {
+  IndianState,
+} from './statesService';
+
+export type {
+  IndianCity,
+} from './citiesService';
+
 // Re-export media types
 export type {
   MediaFolder,
@@ -70,6 +79,8 @@ export type {
 export * from './fabricsService';
 export * from './addOnsService';
 export * from './partsService';
+export * from './statesService';
+export * from './citiesService';
 
 // Re-export profit margin types
 export type {

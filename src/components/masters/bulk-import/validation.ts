@@ -391,7 +391,7 @@ function validateAddOnRow(row: string[], errors: string[], data: any): Validatio
 }
 
 function validateAppAssetRow(row: string[], errors: string[], data: any): ValidationResult {
-  const [name, dx, dy, mirrorDx, heightResp, status] = row;
+  const [name, dx, dy, mirrorDx, heightResp, connectedAddOn, status] = row;
 
   if (!name?.trim()) {
     errors.push('Name is required');
@@ -426,6 +426,13 @@ function validateAppAssetRow(row: string[], errors: string[], data: any): Valida
     errors.push('Height Resp must be a valid non-negative number');
   } else {
     data.asset_height_resp_to_box = heightRespNum;
+  }
+
+  // Handle connected add-on (optional field)
+  if (connectedAddOn?.trim()) {
+    data.add_on_name = connectedAddOn.trim();
+  } else {
+    data.add_on_name = null;
   }
 
   if (status?.trim()) {

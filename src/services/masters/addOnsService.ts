@@ -66,12 +66,12 @@ const parseColors = (colors: any): AddOnColor[] => {
 
 // Helper function to prepare options for database storage
 const prepareOptionsForDb = (options: AddOnOption[]): any => {
-  return JSON.parse(JSON.stringify(options || []));
+  return options || [];
 };
 
 // Helper function to prepare colors for database storage
 const prepareColorsForDb = (colors: AddOnColor[]): any => {
-  return JSON.parse(JSON.stringify(colors || []));
+  return colors || [];
 };
 
 export const addOnsService = {

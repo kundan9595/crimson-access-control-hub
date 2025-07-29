@@ -1,5 +1,5 @@
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -8,9 +8,13 @@ import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/comp
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Badge } from '@/components/ui/badge';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import ImageUpload from '@/components/ui/ImageUpload';
 import { AddOn } from '@/services/masters/addOnsService';
 import { useColors } from '@/hooks/masters/useColors';
+import { X, Search } from 'lucide-react';
 
 const addOnSchema = z.object({
   name: z.string().min(1, 'Name is required').max(255, 'Name is too long'),
@@ -25,7 +29,7 @@ const addOnSchema = z.object({
   has_colour: z.boolean().default(false),
   group_name: z.string().optional(),
   price: z.number().min(0).optional(),
-  selected_color_id: z.string().optional(), // Form-only field for color selection
+  selected_color_ids: z.array(z.string()).default([]), // Form-only field for multiple color selection
 });
 
 type AddOnFormData = z.infer<typeof addOnSchema>;
@@ -66,7 +70,7 @@ export const AddOnDialog: React.FC<AddOnDialogProps> = ({
       has_colour: false,
       group_name: '',
       price: 0,
-      selected_color_id: 'none',
+      selected_color_ids: [],
     },
   });
 
@@ -78,11 +82,10 @@ export const AddOnDialog: React.FC<AddOnDialogProps> = ({
         // Editing existing add-on
         console.log('✏️ AddOnDialog - Resetting form for editing');
         
-        // Find the selected color ID from the colors array
-        let selectedColorId = 'none';
-        if (addOn.has_colour && addOn.colors && addOn.colors.length > 0) {
-          selectedColorId = addOn.colors[0].id; // Use first color if multiple
-        }
+        // Extract color IDs from the colors array
+        const selectedColorIds = addOn.has_colour && addOn.colors && addOn.colors.length > 0 
+          ? addOn.colors.map(color => color.id)
+          : [];
         
         form.reset({
           name: addOn.name || '',
@@ -95,7 +98,7 @@ export const AddOnDialog: React.FC<AddOnDialogProps> = ({
           has_colour: addOn.has_colour || false,
           group_name: addOn.group_name || '',
           price: addOn.price || 0,
-          selected_color_id: selectedColorId,
+          selected_color_ids: selectedColorIds,
         });
       } else {
         // Creating new add-on
@@ -111,7 +114,7 @@ export const AddOnDialog: React.FC<AddOnDialogProps> = ({
           has_colour: false,
           group_name: '',
           price: 0,
-          selected_color_id: 'none',
+          selected_color_ids: [],
         });
       }
     }
@@ -121,19 +124,19 @@ export const AddOnDialog: React.FC<AddOnDialogProps> = ({
     console.log('📝 AddOnDialog - handleSubmit called with data:', data);
     
     // Transform the form data to match the database schema
-    const { selected_color_id, ...restData } = data;
+    const { selected_color_ids, ...restData } = data;
     
     // Build the colors array based on selection
     let colorsArray: any[] = [];
-    if (data.has_colour && selected_color_id && selected_color_id !== 'none') {
-      const selectedColor = colors.find(color => color.id === selected_color_id);
-      if (selectedColor) {
-        colorsArray = [{
+    if (data.has_colour && selected_color_ids && selected_color_ids.length > 0) {
+      colorsArray = selected_color_ids.map(colorId => {
+        const selectedColor = colors.find(color => color.id === colorId);
+        return selectedColor ? {
           id: selectedColor.id,
           name: selectedColor.name,
           hex_code: selectedColor.hex_code
-        }];
-      }
+        } : null;
+      }).filter(Boolean);
     }
     
     const submitData = {
@@ -321,43 +324,82 @@ export const AddOnDialog: React.FC<AddOnDialogProps> = ({
         />
 
         {hasColourValue && (
-          <FormField
-            control={form.control}
-            name="selected_color_id"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Color</FormLabel>
-                <Select onValueChange={field.onChange} value={field.value}>
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select a color" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    {colorsLoading ? (
-                      <SelectItem value="loading" disabled>Loading colors...</SelectItem>
-                    ) : (
-                      <>
-                        <SelectItem value="none">No color selected</SelectItem>
-                        {colors.map((color) => (
-                          <SelectItem key={color.id} value={color.id}>
-                            <div className="flex items-center gap-2">
-                              <div 
-                                className="w-4 h-4 rounded border border-gray-300" 
-                                style={{ backgroundColor: color.hex_code }}
-                              />
-                              {color.name}
-                            </div>
-                          </SelectItem>
-                        ))}
-                      </>
-                    )}
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+          <FormItem>
+            <FormLabel>Colors</FormLabel>
+            <div className="space-y-4">
+              {/* Selected Colors Display */}
+              {form.watch('selected_color_ids').length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {form.watch('selected_color_ids').map((colorId) => {
+                    const color = colors.find(c => c.id === colorId);
+                    return color ? (
+                      <Badge key={colorId} variant="secondary" className="flex items-center gap-1">
+                        <div 
+                          className="w-3 h-3 rounded border border-gray-300" 
+                          style={{ backgroundColor: color.hex_code }}
+                        />
+                        {color.name}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const currentIds = form.getValues('selected_color_ids');
+                            form.setValue('selected_color_ids', currentIds.filter(id => id !== colorId));
+                          }}
+                          className="ml-1 hover:bg-gray-200 rounded-full p-0.5"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </Badge>
+                    ) : null;
+                  })}
+                </div>
+              )}
+
+              {/* Color Selection */}
+              <ScrollArea className="h-48 border rounded-md p-4">
+                <div className="space-y-2">
+                  {colorsLoading ? (
+                    <div className="text-center text-muted-foreground">Loading colors...</div>
+                  ) : (
+                    colors.map((color) => (
+                      <div key={color.id} className="flex items-center space-x-2">
+                        <Checkbox
+                          id={`color-${color.id}`}
+                          checked={form.watch('selected_color_ids').includes(color.id)}
+                          onCheckedChange={(checked) => {
+                            const currentIds = form.getValues('selected_color_ids');
+                            if (checked) {
+                              form.setValue('selected_color_ids', [...currentIds, color.id]);
+                            } else {
+                              form.setValue('selected_color_ids', currentIds.filter(id => id !== color.id));
+                            }
+                          }}
+                        />
+                        <div className="flex items-center gap-2">
+                          <div 
+                            className="w-4 h-4 rounded border border-gray-300" 
+                            style={{ backgroundColor: color.hex_code }}
+                          />
+                          <label
+                            htmlFor={`color-${color.id}`}
+                            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                          >
+                            {color.name}
+                          </label>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </ScrollArea>
+              
+              {form.watch('selected_color_ids').length === 0 && (
+                <p className="text-sm text-muted-foreground">
+                  No colors selected. Select colors from the list above.
+                </p>
+              )}
+            </div>
+          </FormItem>
         )}
 
         <FormField
