@@ -7,6 +7,9 @@ import { BaseFormDialog } from './shared/BaseFormDialog';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Badge } from '@/components/ui/badge';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import ImageUpload from '@/components/ui/ImageUpload';
 import { useCreateFabric, useUpdateFabric } from '@/hooks/masters/useFabrics';
 import { useColors } from '@/hooks/masters/useColors';
@@ -22,7 +25,7 @@ const fabricSchema = z.object({
     required_error: 'Unit of measure is required',
   }),
   price: z.number().min(0, 'Price must be non-negative'),
-  color_id: z.string().optional(),
+  color_ids: z.array(z.string()).default([]),
   image_url: z.string().optional(),
   status: z.string().min(1, 'Status is required'),
 });
@@ -36,7 +39,7 @@ type CreateFabricData = {
   gsm: number;
   uom: 'kg' | 'meter';
   price: number;
-  color_id?: string;
+  color_ids?: string[];
   image_url?: string;
   status: string;
 };
@@ -64,7 +67,7 @@ export const FabricDialog: React.FC<FabricDialogProps> = ({
       gsm: 100,
       uom: 'kg',
       price: 0,
-      color_id: undefined,
+      color_ids: [],
       image_url: '',
       status: 'active',
     },
@@ -81,7 +84,7 @@ export const FabricDialog: React.FC<FabricDialogProps> = ({
           gsm: fabric.gsm || 100,
           uom: fabric.uom || 'kg',
           price: fabric.price || 0,
-          color_id: fabric.color_id || undefined,
+          color_ids: fabric.color_ids || [],
           image_url: fabric.image_url || '',
           status: fabric.status || 'active',
         });
@@ -93,7 +96,7 @@ export const FabricDialog: React.FC<FabricDialogProps> = ({
           gsm: 100,
           uom: 'kg',
           price: 0,
-          color_id: undefined,
+          color_ids: [],
           image_url: '',
           status: 'active',
         });
@@ -117,7 +120,7 @@ export const FabricDialog: React.FC<FabricDialogProps> = ({
           uom: data.uom,
           price: data.price,
           status: data.status,
-          ...(data.color_id && { color_id: data.color_id }),
+          ...(data.color_ids && data.color_ids.length > 0 && { color_ids: data.color_ids }),
           ...(data.image_url && { image_url: data.image_url }),
         };
         await createFabric.mutateAsync(createData);
@@ -243,34 +246,59 @@ export const FabricDialog: React.FC<FabricDialogProps> = ({
 
         <FormField
           control={form.control}
-          name="color_id"
+          name="color_ids"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Color (Optional)</FormLabel>
-              <Select 
-                onValueChange={(value) => field.onChange(value === 'none' ? undefined : value)} 
-                value={field.value || 'none'}
-              >
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select color" />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  <SelectItem value="none">No Color</SelectItem>
-                  {colors.map((color) => (
-                    <SelectItem key={color.id} value={color.id}>
-                      <div className="flex items-center gap-2">
-                        <div
-                          className="w-4 h-4 rounded border"
-                          style={{ backgroundColor: color.hex_code }}
+              <FormLabel>Colors (Optional)</FormLabel>
+              <div className="space-y-3">
+                <ScrollArea className="h-48 w-full border rounded-md p-4">
+                  <div className="space-y-2">
+                    {colors.map((color) => (
+                      <div key={color.id} className="flex items-center space-x-2">
+                        <Checkbox
+                          id={color.id}
+                          checked={field.value?.includes(color.id) || false}
+                          onCheckedChange={(checked) => {
+                            const currentValues = field.value || [];
+                            if (checked) {
+                              field.onChange([...currentValues, color.id]);
+                            } else {
+                              field.onChange(currentValues.filter(id => id !== color.id));
+                            }
+                          }}
                         />
-                        {color.name}
+                        <label
+                          htmlFor={color.id}
+                          className="flex items-center gap-2 text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                        >
+                          <div
+                            className="w-4 h-4 rounded border"
+                            style={{ backgroundColor: color.hex_code }}
+                          />
+                          {color.name}
+                        </label>
                       </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                    ))}
+                  </div>
+                </ScrollArea>
+                
+                {field.value && field.value.length > 0 && (
+                  <div className="flex flex-wrap gap-2">
+                    {field.value.map((colorId) => {
+                      const color = colors.find(c => c.id === colorId);
+                      return color ? (
+                        <Badge key={colorId} variant="secondary" className="flex items-center gap-1">
+                          <div
+                            className="w-3 h-3 rounded border"
+                            style={{ backgroundColor: color.hex_code }}
+                          />
+                          {color.name}
+                        </Badge>
+                      ) : null;
+                    })}
+                  </div>
+                )}
+              </div>
               <FormMessage />
             </FormItem>
           )}

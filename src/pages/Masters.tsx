@@ -21,7 +21,8 @@ import {
   Box,
   TrendingUp,
   Smartphone,
-  Search
+  Search,
+  Image as ImageIcon
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
@@ -148,6 +149,20 @@ const Masters = () => {
       icon: Smartphone,
       path: '/masters/app-assets',
       color: 'text-sky-600',
+    },
+    {
+      title: 'Promotional Banners',
+      description: 'Manage promotional banners with category, brand, and class associations',
+      icon: ImageIcon,
+      path: '/masters/promotional-banners',
+      color: 'text-purple-600',
+    },
+    {
+      title: 'Promotional Assets',
+      description: 'Manage promotional assets including videos, catalogues, and images',
+      icon: ImageIcon,
+      path: '/masters/promotional-assets',
+      color: 'text-blue-600',
     },
   ];
 

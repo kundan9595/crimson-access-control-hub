@@ -28,6 +28,8 @@ import AddOnsPage from "./pages/AddOnsPage";
 import BaseProductPage from "./pages/BaseProductPage";
 import ProfitMarginPage from "./pages/ProfitMarginPage";
 import AppAssetsPage from "./pages/AppAssetsPage";
+import PromotionalBannersPage from "./pages/PromotionalBannersPage";
+import PromotionalAssetsPage from "./pages/PromotionalAssetsPage";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 
@@ -68,6 +70,8 @@ const App = () => (
               <Route path="masters/base-product" element={<BaseProductPage />} />
               <Route path="masters/profit-margin" element={<ProfitMarginPage />} />
               <Route path="masters/app-assets" element={<AppAssetsPage />} />
+              <Route path="masters/promotional-banners" element={<PromotionalBannersPage />} />
+              <Route path="masters/promotional-assets" element={<PromotionalAssetsPage />} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>

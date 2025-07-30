@@ -29,6 +29,10 @@ export function validateRow(row: string[], index: number, type: BulkImportType):
       return validateAddOnRow(row, errors, data);
     case 'appAssets':
       return validateAppAssetRow(row, errors, data);
+    case 'promotionalBanners':
+      return validatePromotionalBannerRow(row, errors, data);
+    case 'promotionalAssets':
+      return validatePromotionalAssetRow(row, errors, data);
     case 'parts':
       return validatePartRow(row, errors, data);
     default:
@@ -479,6 +483,105 @@ function validatePartRow(row: string[], errors: string[], data: any): Validation
     }
   } else {
     data.sort_position = 0;
+  }
+
+  if (status?.trim()) {
+    if (!['active', 'inactive'].includes(status.toLowerCase())) {
+      errors.push('Status must be either "active" or "inactive"');
+    } else {
+      data.status = status.toLowerCase();
+    }
+  } else {
+    data.status = 'active';
+  }
+
+  return { valid: errors.length === 0, errors, data };
+}
+
+function validatePromotionalBannerRow(row: string[], errors: string[], data: any): ValidationResult {
+  const [title, categoryName, brandName, className, position, status] = row;
+
+  if (!title?.trim()) {
+    errors.push('Title is required');
+  } else {
+    data.title = title.trim();
+  }
+
+  // Handle category (optional field)
+  if (categoryName?.trim()) {
+    data.category_name = categoryName.trim();
+  } else {
+    data.category_name = null;
+  }
+
+  // Handle brand (required field)
+  if (!brandName?.trim()) {
+    errors.push('Brand is required');
+  } else {
+    data.brand_name = brandName.trim();
+  }
+
+  // Handle class (optional field)
+  if (className?.trim()) {
+    data.class_name = className.trim();
+  } else {
+    data.class_name = null;
+  }
+
+  // Handle position
+  if (position?.trim()) {
+    const positionNum = parseInt(position.trim());
+    if (isNaN(positionNum) || positionNum < 0) {
+      errors.push('Position must be a non-negative number');
+    } else {
+      data.position = positionNum;
+    }
+  } else {
+    data.position = 0;
+  }
+
+  if (status?.trim()) {
+    if (!['active', 'inactive'].includes(status.toLowerCase())) {
+      errors.push('Status must be either "active" or "inactive"');
+    } else {
+      data.status = status.toLowerCase();
+    }
+  } else {
+    data.status = 'active';
+  }
+
+  return { valid: errors.length === 0, errors, data };
+}
+
+function validatePromotionalAssetRow(row: string[], errors: string[], data: any): ValidationResult {
+  const [name, type, link, status] = row;
+
+  if (!name?.trim()) {
+    errors.push('Name is required');
+  } else {
+    data.name = name.trim();
+  }
+
+  if (type?.trim()) {
+    const validTypes = ['Video', 'Catalogue', 'Lifestyle Images', 'Images'];
+    if (!validTypes.includes(type.trim())) {
+      errors.push('Type must be one of: Video, Catalogue, Lifestyle Images, Images');
+    } else {
+      data.type = type.trim();
+    }
+  } else {
+    data.type = 'Images';
+  }
+
+  if (link?.trim()) {
+    try {
+      new URL(link.trim());
+      data.link = link.trim();
+    } catch {
+      errors.push('Link must be a valid URL');
+    }
+  } else {
+    data.link = null;
   }
 
   if (status?.trim()) {

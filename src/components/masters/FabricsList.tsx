@@ -93,16 +93,20 @@ export const FabricsList: React.FC<FabricsListProps> = ({ searchTerm }) => {
                 <TableCell>{fabric.uom}</TableCell>
                 <TableCell>₹{fabric.price}</TableCell>
                 <TableCell>
-                  {fabric.colors ? (
-                    <div className="flex items-center gap-2">
-                      <div
-                        className="w-4 h-4 rounded border"
-                        style={{ backgroundColor: fabric.colors.hex_code }}
-                      />
-                      {fabric.colors.name}
+                  {fabric.colors && fabric.colors.length > 0 ? (
+                    <div className="flex flex-wrap gap-1">
+                      {fabric.colors.map((color) => (
+                        <div key={color.id} className="flex items-center gap-1">
+                          <div
+                            className="w-3 h-3 rounded border"
+                            style={{ backgroundColor: color.hex_code }}
+                          />
+                          <span className="text-xs">{color.name}</span>
+                        </div>
+                      ))}
                     </div>
                   ) : (
-                    <span className="text-muted-foreground">No color</span>
+                    <span className="text-muted-foreground">No colors</span>
                   )}
                 </TableCell>
                 <TableCell>

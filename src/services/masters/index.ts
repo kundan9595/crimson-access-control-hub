@@ -81,6 +81,8 @@ export * from './addOnsService';
 export * from './partsService';
 export * from './statesService';
 export * from './citiesService';
+export * from './promotionalBannersService';
+export * from './promotionalAssetsService';
 
 // Re-export profit margin types
 export type {

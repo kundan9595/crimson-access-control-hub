@@ -61,6 +61,8 @@ export * from './useParts';
 // Export state and city hooks
 export * from './useStates';
 export * from './useCities';
+export * from './usePromotionalBanners';
+export * from './usePromotionalAssets';
 
 // Export profit margin hooks
 export * from './useProfitMargins';

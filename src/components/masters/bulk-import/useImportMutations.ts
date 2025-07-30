@@ -13,6 +13,8 @@ import { useCreateAddOn } from '@/hooks/masters/useAddOns';
 import { useCreateAppAsset } from '@/hooks/masters/useAppAssets';
 import { useCreatePart } from '@/hooks/masters/useParts';
 import { useCreateProfitMargin } from '@/hooks/masters/useProfitMargins';
+import { useCreatePromotionalBanner } from '@/hooks/masters/usePromotionalBanners';
+import { useCreatePromotionalAsset } from '@/hooks/masters/usePromotionalAssets';
 import { BulkImportType } from './types';
 
 export const useImportMutations = () => {
@@ -30,6 +32,8 @@ export const useImportMutations = () => {
   const createAppAssetMutation = useCreateAppAsset();
   const createPartMutation = useCreatePart();
   const createProfitMarginMutation = useCreateProfitMargin();
+  const createPromotionalBannerMutation = useCreatePromotionalBanner();
+  const createPromotionalAssetMutation = useCreatePromotionalAsset();
 
   const getMutationForType = (type: BulkImportType) => {
     switch (type) {
@@ -61,6 +65,10 @@ export const useImportMutations = () => {
         return createPartMutation;
       case 'profitMargins':
         return createProfitMarginMutation;
+      case 'promotionalBanners':
+        return createPromotionalBannerMutation;
+      case 'promotionalAssets':
+        return createPromotionalAssetMutation;
       default:
         throw new Error(`Unsupported import type: ${type}`);
     }

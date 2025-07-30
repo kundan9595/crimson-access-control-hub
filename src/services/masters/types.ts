@@ -229,7 +229,7 @@ export interface Fabric {
   gsm: number;
   uom: 'kg' | 'meter';
   price: number;
-  color_id?: string;
+  color_ids?: string[]; // Array of color IDs
   image_url?: string;
   status: string;
   created_at: string;
@@ -240,7 +240,7 @@ export interface Fabric {
     id: string;
     name: string;
     hex_code: string;
-  };
+  }[];
 }
 
 export interface AppAsset {
@@ -256,6 +256,46 @@ export interface AppAsset {
     id: string;
     name: string;
   };
+  status: string;
+  created_at: string;
+  updated_at: string;
+  created_by?: string;
+  updated_by?: string;
+}
+
+export interface PromotionalBanner {
+  id: string;
+  title: string;
+  banner_image?: string;
+  status: string;
+  position: number;
+  category_id?: string;
+  category?: {
+    id: string;
+    name: string;
+  };
+  brand_id: string;
+  brand?: {
+    id: string;
+    name: string;
+  };
+  class_id?: string;
+  class?: {
+    id: string;
+    name: string;
+  };
+  created_at: string;
+  updated_at: string;
+  created_by?: string;
+  updated_by?: string;
+}
+
+export interface PromotionalAsset {
+  id: string;
+  name: string;
+  thumbnail?: string;
+  link?: string;
+  type: 'Video' | 'Catalogue' | 'Lifestyle Images' | 'Images';
   status: string;
   created_at: string;
   updated_at: string;
