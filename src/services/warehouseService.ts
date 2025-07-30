@@ -79,8 +79,31 @@ export interface CreateWarehouseData {
 }
 
 // Data structure for updating warehouses
-export interface UpdateWarehouseData extends CreateWarehouseData {
+export interface UpdateWarehouseData {
   warehouse: WarehouseUpdate;
+  floors: Array<{
+    name: string;
+    floor_number: number;
+    description?: string;
+  }>;
+  lanes: Array<{
+    name: string;
+    lane_number: number;
+    floor_number: number;
+    description?: string;
+    config: {
+      left_side_enabled: boolean;
+      right_side_enabled: boolean;
+      default_direction: 'left' | 'right';
+      default_left_racks: number;
+      default_right_racks: number;
+    };
+    racks: Array<{
+      side: 'left' | 'right';
+      rack_name: string;
+      rack_number: number;
+    }>;
+  }>;
 }
 
 class WarehouseService {
@@ -645,10 +668,5 @@ export type {
   WarehouseRackUpdate,
   WarehouseLaneConfig,
   WarehouseLaneConfigInsert,
-  WarehouseLaneConfigUpdate,
-  WarehouseWithDetails,
-  WarehouseFloorWithDetails,
-  WarehouseLaneWithDetails,
-  CreateWarehouseData,
-  UpdateWarehouseData
-}; 
+  WarehouseLaneConfigUpdate
+};

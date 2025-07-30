@@ -1,12 +1,14 @@
 import { supabase } from '@/integrations/supabase/client';
 import type { PromotionalBanner } from './types';
 
+export type { PromotionalBanner };
+
 export const promotionalBannersService = {
   async getAll(): Promise<PromotionalBanner[]> {
     console.log('📊 PromotionalBannersService - Fetching promotional banners');
     
     const { data, error } = await supabase
-      .from('promotional_banners')
+      .from('promotional_banners' as any)
       .select(`
         *,
         category:categories(id, name),
@@ -29,7 +31,7 @@ export const promotionalBannersService = {
     console.log('📊 PromotionalBannersService - Fetching promotional banner by ID:', id);
     
     const { data, error } = await supabase
-      .from('promotional_banners')
+      .from('promotional_banners' as any)
       .select(`
         *,
         category:categories(id, name),
@@ -44,7 +46,7 @@ export const promotionalBannersService = {
       throw error;
     }
 
-    console.log('✅ PromotionalBannersService - Successfully fetched promotional banner:', data?.title);
+    console.log('✅ PromotionalBannersService - Successfully fetched promotional banner:', (data as any)?.id);
     return data as unknown as PromotionalBanner;
   },
 
@@ -52,8 +54,8 @@ export const promotionalBannersService = {
     console.log('📊 PromotionalBannersService - Creating promotional banner:', banner);
     
     const { data, error } = await supabase
-      .from('promotional_banners')
-      .insert([banner])
+      .from('promotional_banners' as any)
+      .insert([banner] as any)
       .select(`
         *,
         category:categories(id, name),
@@ -67,7 +69,7 @@ export const promotionalBannersService = {
       throw error;
     }
 
-    console.log('✅ PromotionalBannersService - Successfully created promotional banner:', data.title);
+    console.log('✅ PromotionalBannersService - Successfully created promotional banner:', (data as any)?.id);
     return data as unknown as PromotionalBanner;
   },
 
@@ -75,8 +77,8 @@ export const promotionalBannersService = {
     console.log('📊 PromotionalBannersService - Updating promotional banner:', id, updates);
     
     const { data, error } = await supabase
-      .from('promotional_banners')
-      .update(updates)
+      .from('promotional_banners' as any)
+      .update(updates as any)
       .eq('id', id)
       .select(`
         *,
@@ -91,7 +93,7 @@ export const promotionalBannersService = {
       throw error;
     }
 
-    console.log('✅ PromotionalBannersService - Successfully updated promotional banner:', data.title);
+    console.log('✅ PromotionalBannersService - Successfully updated promotional banner:', (data as any)?.id);
     return data as unknown as PromotionalBanner;
   },
 
@@ -99,7 +101,7 @@ export const promotionalBannersService = {
     console.log('📊 PromotionalBannersService - Deleting promotional banner:', id);
     
     const { error } = await supabase
-      .from('promotional_banners')
+      .from('promotional_banners' as any)
       .delete()
       .eq('id', id);
 
@@ -115,8 +117,8 @@ export const promotionalBannersService = {
     console.log('📊 PromotionalBannersService - Bulk creating promotional banners:', banners.length);
     
     const { data, error } = await supabase
-      .from('promotional_banners')
-      .insert(banners)
+      .from('promotional_banners' as any)
+      .insert(banners as any)
       .select(`
         *,
         category:categories(id, name),

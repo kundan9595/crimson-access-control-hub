@@ -111,9 +111,9 @@ export const BaseProductsList: React.FC = () => {
                         <span className="font-medium">Fabric:</span> {baseProduct.fabric.name} ({baseProduct.fabric.fabric_type})
                       </div>
                     )}
-                    {baseProduct.size_group && (
+                    {baseProduct.size_groups && baseProduct.size_groups.length > 0 && (
                       <div>
-                        <span className="font-medium">Size Group:</span> {baseProduct.size_group.name}
+                        <span className="font-medium">Size Groups:</span> {baseProduct.size_groups.map((sg: any) => sg.name).join(', ')}
                       </div>
                     )}
                     {baseProduct.calculator && (

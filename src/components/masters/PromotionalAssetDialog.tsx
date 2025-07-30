@@ -127,6 +127,7 @@ const PromotionalAssetDialog: React.FC<PromotionalAssetDialogProps> = ({
                     <ImageUpload
                       value={field.value}
                       onChange={field.onChange}
+                      onRemove={() => field.onChange('')}
                       placeholder="Upload thumbnail image"
                     />
                   </FormControl>

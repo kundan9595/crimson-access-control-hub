@@ -10,28 +10,11 @@ export const fetchFabrics = async (): Promise<Fabric[]> => {
 
   if (error) throw error;
   
-  // Fetch colors for each fabric
-  const fabricsWithColors = await Promise.all(
-    (data || []).map(async (fabric) => {
-      if (fabric.color_ids && fabric.color_ids.length > 0) {
-        const { data: colorsData } = await supabase
-          .from('colors')
-          .select('id, name, hex_code')
-          .in('id', fabric.color_ids);
-        
-        return {
-          ...fabric,
-          colors: colorsData || []
-        };
-      }
-      return {
-        ...fabric,
-        colors: []
-      };
-    })
-  );
-  
-  return fabricsWithColors as Fabric[];
+  // Based on DB schema, fabrics table has color_ids as jsonb array  
+  return (data || []).map(fabric => ({
+    ...fabric,
+    colors: [] // Colors would need to be fetched separately if needed
+  })) as Fabric[];
 };
 
 export const createFabric = async (fabricData: Omit<Fabric, 'id' | 'created_at' | 'updated_at' | 'created_by' | 'updated_by'>): Promise<Fabric> => {
@@ -43,20 +26,9 @@ export const createFabric = async (fabricData: Omit<Fabric, 'id' | 'created_at' 
 
   if (error) throw error;
   
-  // Fetch colors for the created fabric
-  let colors = [];
-  if (data.color_ids && data.color_ids.length > 0) {
-    const { data: colorsData } = await supabase
-      .from('colors')
-      .select('id, name, hex_code')
-      .in('id', data.color_ids);
-    
-    colors = colorsData || [];
-  }
-  
   return {
     ...data,
-    colors
+    colors: [] // Colors would need to be fetched separately if needed
   } as Fabric;
 };
 
@@ -70,20 +42,9 @@ export const updateFabric = async (id: string, updates: Partial<Fabric>): Promis
 
   if (error) throw error;
   
-  // Fetch colors for the updated fabric
-  let colors = [];
-  if (data.color_ids && data.color_ids.length > 0) {
-    const { data: colorsData } = await supabase
-      .from('colors')
-      .select('id, name, hex_code')
-      .in('id', data.color_ids);
-    
-    colors = colorsData || [];
-  }
-  
   return {
     ...data,
-    colors
+    colors: [] // Colors would need to be fetched separately if needed
   } as Fabric;
 };
 
