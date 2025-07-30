@@ -7,6 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { 
   Building2, 
   Plus, 
@@ -83,8 +84,12 @@ const CreateWarehouseDialog: React.FC<CreateWarehouseDialogProps> = ({
       }));
       setFloors(transformedFloors);
       
-      // Transform lanes data
+      // Transform lanes data with correct floor mapping
       const transformedLanes = initialData.lanes.map((lane: any, index: number) => {
+        // Find the correct floor index based on floor_number
+        const floorIndex = transformedFloors.findIndex(floor => floor.floor_number === lane.floor_number);
+        const correctFloorId = floorIndex >= 0 ? `floor-${floorIndex}` : `floor-0`;
+        
         // Reconstruct rack_config from the saved racks data
         const leftRacks = lane.racks?.filter((rack: any) => rack.side === 'left') || [];
         const rightRacks = lane.racks?.filter((rack: any) => rack.side === 'right') || [];
@@ -92,12 +97,13 @@ const CreateWarehouseDialog: React.FC<CreateWarehouseDialogProps> = ({
         const transformedLane = {
           id: `lane-${index}`,
           name: lane.name,
-          floor_id: `floor-${lane.floor_number - 1}`, // Map to the correct floor
+          floor_id: correctFloorId,
           lane_number: lane.lane_number,
           default_direction: lane.config?.default_direction || 'left',
           rack_config: {
             left_side_enabled: lane.config?.left_side_enabled ?? true,
             right_side_enabled: lane.config?.right_side_enabled ?? true,
+            default_direction: lane.config?.default_direction || 'left',
             left_racks: leftRacks.length > 0 ? leftRacks.map((rack: any, rackIndex: number) => ({
               id: `left-${rackIndex}`,
               rack_name: rack.rack_name,
@@ -122,6 +128,7 @@ const CreateWarehouseDialog: React.FC<CreateWarehouseDialogProps> = ({
         };
         
         console.log(`Transformed lane ${index}:`, transformedLane);
+        console.log(`Mapped to floor_id: ${correctFloorId} (floor_number: ${lane.floor_number})`);
         return transformedLane;
       });
       setLanes(transformedLanes);
@@ -323,6 +330,9 @@ const CreateWarehouseDialog: React.FC<CreateWarehouseDialogProps> = ({
   };
 
   const handleConfigureRacks = (laneId: string) => {
+    console.log('Configuring racks for lane:', laneId);
+    const selectedLane = lanes.find(l => l.id === laneId);
+    console.log('Selected lane config:', selectedLane?.rack_config);
     setSelectedLaneForRacks(laneId);
     setIsRackConfigOpen(true);
   };
@@ -435,19 +445,22 @@ const CreateWarehouseDialog: React.FC<CreateWarehouseDialogProps> = ({
                   </div>
                   <div>
                     <Label htmlFor="status">Status</Label>
-                    <select
-                      id="status"
+                    <Select
                       value={warehouseData.warehouse.status}
-                      onChange={(e) => setWarehouseData(prev => ({
+                      onValueChange={(value) => setWarehouseData(prev => ({
                         ...prev,
-                        warehouse: { ...prev.warehouse, status: e.target.value }
+                        warehouse: { ...prev.warehouse, status: value }
                       }))}
-                      className="w-full p-2 border border-gray-300 rounded-md"
                     >
-                      <option value="active">Active</option>
-                      <option value="inactive">Inactive</option>
-                      <option value="maintenance">Maintenance</option>
-                    </select>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select status" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="active">Active</SelectItem>
+                        <SelectItem value="inactive">Inactive</SelectItem>
+                        <SelectItem value="maintenance">Maintenance</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
                 </div>
 

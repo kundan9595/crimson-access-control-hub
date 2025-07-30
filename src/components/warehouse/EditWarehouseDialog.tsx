@@ -38,13 +38,13 @@ const EditWarehouseDialog: React.FC<EditWarehouseDialogProps> = ({
           address: warehouse.address || '',
           status: warehouse.status || 'active'
         },
-        floors: warehouse.floors?.map((floor: any) => ({
+        floors: warehouse.floors?.map((floor: any, floorIndex: number) => ({
           name: floor.name,
           floor_number: floor.floor_number,
           description: floor.description
         })) || [],
-        lanes: warehouse.floors?.flatMap((floor: any) => 
-          floor.lanes?.map((lane: any) => ({
+        lanes: warehouse.floors?.flatMap((floor: any, floorIndex: number) => 
+          floor.lanes?.map((lane: any, laneIndex: number) => ({
             name: lane.name,
             lane_number: lane.lane_number,
             floor_number: floor.floor_number,
