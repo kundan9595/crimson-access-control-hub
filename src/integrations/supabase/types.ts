@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instanciate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "12.2.3 (519615d)"
+    PostgrestVersion: "12.2.12 (cd3cf9e)"
   }
   public: {
     Tables: {
@@ -1223,6 +1223,257 @@ export type Database = {
         }
         Relationships: []
       }
+      warehouses: {
+        Row: {
+          address: string | null
+          city: string | null
+          contact_email: string | null
+          contact_person: string | null
+          contact_phone: string | null
+          country: string | null
+          created_at: string | null
+          created_by: string | null
+          description: string | null
+          id: string
+          name: string
+          postal_code: string | null
+          state: string | null
+          status: string | null
+          updated_at: string | null
+          updated_by: string | null
+        }
+        Insert: {
+          address?: string | null
+          city?: string | null
+          contact_email?: string | null
+          contact_person?: string | null
+          contact_phone?: string | null
+          country?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          name: string
+          postal_code?: string | null
+          state?: string | null
+          status?: string | null
+          updated_at?: string | null
+          updated_by?: string | null
+        }
+        Update: {
+          address?: string | null
+          city?: string | null
+          contact_email?: string | null
+          contact_person?: string | null
+          contact_phone?: string | null
+          country?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          name?: string
+          postal_code?: string | null
+          state?: string | null
+          status?: string | null
+          updated_at?: string | null
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
+      warehouse_floors: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          description: string | null
+          floor_number: number
+          id: string
+          name: string
+          status: string | null
+          updated_at: string | null
+          updated_by: string | null
+          warehouse_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          floor_number: number
+          id?: string
+          name: string
+          status?: string | null
+          updated_at?: string | null
+          updated_by?: string | null
+          warehouse_id: string
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          floor_number?: number
+          id?: string
+          name?: string
+          status?: string | null
+          updated_at?: string | null
+          updated_by?: string | null
+          warehouse_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "warehouse_floors_warehouse_id_fkey"
+            columns: ["warehouse_id"]
+            isOneToOne: false
+            referencedRelation: "warehouses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      warehouse_lanes: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          description: string | null
+          floor_id: string
+          id: string
+          lane_number: number
+          name: string
+          status: string | null
+          updated_at: string | null
+          updated_by: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          floor_id: string
+          id?: string
+          lane_number: number
+          name: string
+          status?: string | null
+          updated_at?: string | null
+          updated_by?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          floor_id?: string
+          id?: string
+          lane_number?: number
+          name?: string
+          status?: string | null
+          updated_at?: string | null
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "warehouse_lanes_floor_id_fkey"
+            columns: ["floor_id"]
+            isOneToOne: false
+            referencedRelation: "warehouse_floors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      warehouse_racks: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          id: string
+          is_enabled: boolean | null
+          lane_id: string
+          rack_name: string
+          rack_number: number
+          side: string
+          status: string | null
+          updated_at: string | null
+          updated_by: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          is_enabled?: boolean | null
+          lane_id: string
+          rack_name: string
+          rack_number: number
+          side: string
+          status?: string | null
+          updated_at?: string | null
+          updated_by?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          is_enabled?: boolean | null
+          lane_id?: string
+          rack_name?: string
+          rack_number?: number
+          side?: string
+          status?: string | null
+          updated_at?: string | null
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "warehouse_racks_lane_id_fkey"
+            columns: ["lane_id"]
+            isOneToOne: false
+            referencedRelation: "warehouse_lanes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      warehouse_lane_configs: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          default_direction: string | null
+          default_left_racks: number | null
+          default_right_racks: number | null
+          id: string
+          lane_id: string
+          left_side_enabled: boolean | null
+          right_side_enabled: boolean | null
+          updated_at: string | null
+          updated_by: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          default_direction?: string | null
+          default_left_racks?: number | null
+          default_right_racks?: number | null
+          id?: string
+          lane_id: string
+          left_side_enabled?: boolean | null
+          right_side_enabled?: boolean | null
+          updated_at?: string | null
+          updated_by?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          default_direction?: string | null
+          default_left_racks?: number | null
+          default_right_racks?: number | null
+          id?: string
+          lane_id?: string
+          left_side_enabled?: boolean | null
+          right_side_enabled?: boolean | null
+          updated_at?: string | null
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "warehouse_lane_configs_lane_id_fkey"
+            columns: ["lane_id"]
+            isOneToOne: true
+            referencedRelation: "warehouse_lanes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       zone_locations: {
         Row: {
           city: string
@@ -1312,6 +1563,13 @@ export type Database = {
       user_is_admin: {
         Args: { _user_id: string }
         Returns: boolean
+      }
+      delete_warehouse_cascade: {
+        Args: {
+          warehouse_id: string
+          user_id: string
+        }
+        Returns: undefined
       }
     }
     Enums: {

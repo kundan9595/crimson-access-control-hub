@@ -17,7 +17,7 @@ const DashboardLayout = () => {
   const menuItems = [
     { icon: Shield, label: 'Roles & Permissions', path: '/roles-permissions' },
     { icon: Users, label: 'Users', path: '/users' },
-    { icon: Building, label: 'Warehouses', path: '/warehouses' },
+    { icon: Building, label: 'Warehouses', path: '/warehouse' },
     { icon: Package, label: 'Inventory', path: '/inventory' },
     { icon: ShoppingCart, label: 'Orders', path: '/orders' },
     { icon: Palette, label: 'Masters', path: '/masters' },
