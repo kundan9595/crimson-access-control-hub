@@ -104,26 +104,16 @@ const CreateWarehouseDialog: React.FC<CreateWarehouseDialogProps> = ({
             left_side_enabled: lane.config?.left_side_enabled ?? true,
             right_side_enabled: lane.config?.right_side_enabled ?? true,
             default_direction: lane.config?.default_direction || 'left',
-            left_racks: leftRacks.length > 0 ? leftRacks.map((rack: any, rackIndex: number) => ({
+            left_racks: leftRacks.map((rack: any, rackIndex: number) => ({
               id: `left-${rackIndex}`,
               rack_name: rack.rack_name,
               rack_number: rack.rack_number
-            })) : [
-              { id: '1', rack_name: 'A', rack_number: 1 },
-              { id: '2', rack_name: 'B', rack_number: 2 },
-              { id: '3', rack_name: 'C', rack_number: 3 },
-              { id: '4', rack_name: 'D', rack_number: 4 }
-            ],
-            right_racks: rightRacks.length > 0 ? rightRacks.map((rack: any, rackIndex: number) => ({
+            })),
+            right_racks: rightRacks.map((rack: any, rackIndex: number) => ({
               id: `right-${rackIndex}`,
               rack_name: rack.rack_name,
               rack_number: rack.rack_number
-            })) : [
-              { id: '5', rack_name: 'A', rack_number: 1 },
-              { id: '6', rack_name: 'B', rack_number: 2 },
-              { id: '7', rack_name: 'C', rack_number: 3 },
-              { id: '8', rack_name: 'D', rack_number: 4 }
-            ]
+            }))
           }
         };
         
