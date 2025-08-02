@@ -1,9 +1,8 @@
 
 import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Edit, Trash2, ArrowUpDown, GripVertical } from 'lucide-react';
+import { Plus, Edit, Trash2, GripVertical } from 'lucide-react';
 import { DragDropContext, Droppable, Draggable, DropResult } from 'react-beautiful-dnd';
 import { useSizes, useDeleteSize, useUpdateSize } from '@/hooks/useMasters';
 import { Size } from '@/services/mastersService';
@@ -12,6 +11,7 @@ import SizeDialog from './SizeDialog';
 interface SizeGroupSizesProps {
   sizeGroupId: string;
   sizeGroupName: string;
+  onAddSize?: () => void;
 }
 
 const SizeGroupSizes = ({ sizeGroupId, sizeGroupName }: SizeGroupSizesProps) => {
@@ -71,42 +71,29 @@ const SizeGroupSizes = ({ sizeGroupId, sizeGroupName }: SizeGroupSizesProps) => 
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2">
-            <ArrowUpDown className="h-5 w-5" />
-            Sizes for {sizeGroupName}
-          </CardTitle>
-          <Button onClick={() => setIsDialogOpen(true)} size="sm">
+    <div className="space-y-4">
+      {groupSizes.length === 0 ? (
+        <div className="text-center py-6 text-muted-foreground border border-dashed border-muted-foreground/25 rounded-lg">
+          <p className="mb-3 text-sm">No sizes added yet for this size group.</p>
+          <Button onClick={() => setIsDialogOpen(true)} variant="outline" size="sm">
             <Plus className="h-4 w-4 mr-2" />
-            Add Size
+            Add First Size
           </Button>
         </div>
-      </CardHeader>
-      <CardContent>
-        {groupSizes.length === 0 ? (
-          <div className="text-center py-8 text-muted-foreground">
-            <ArrowUpDown className="h-12 w-12 mx-auto mb-4 opacity-50" />
-            <p className="mb-4">No sizes added yet for this size group.</p>
-            <Button onClick={() => setIsDialogOpen(true)} variant="outline">
-              <Plus className="h-4 w-4 mr-2" />
-              Add First Size
-            </Button>
-          </div>
-        ) : (
+      ) : (
+        <div className="space-y-1">
           <DragDropContext onDragEnd={handleDragEnd}>
             <Droppable droppableId="sizes">
               {(provided) => (
-                <div {...provided.droppableProps} ref={provided.innerRef} className="space-y-2">
+                <div {...provided.droppableProps} ref={provided.innerRef}>
                   {groupSizes.map((size, index) => (
                     <Draggable key={size.id} draggableId={size.id} index={index}>
                       {(provided, snapshot) => (
                         <div
                           ref={provided.innerRef}
                           {...provided.draggableProps}
-                          className={`flex items-center justify-between p-3 border rounded-lg ${
-                            snapshot.isDragging ? 'shadow-lg bg-background' : 'hover:bg-muted/50'
+                          className={`group flex items-center justify-between p-2 rounded ${
+                            snapshot.isDragging ? 'bg-muted/50 shadow-sm' : 'hover:bg-muted/30'
                           }`}
                         >
                           <div className="flex items-center gap-3">
@@ -116,32 +103,34 @@ const SizeGroupSizes = ({ sizeGroupId, sizeGroupName }: SizeGroupSizesProps) => 
                             >
                               <GripVertical className="h-4 w-4" />
                             </div>
-                            <div className="text-sm font-medium min-w-[2rem] text-center bg-muted px-2 py-1 rounded">
+                            <div className="text-sm font-medium min-w-[2rem] text-center bg-muted/50 px-2 py-1 rounded text-xs">
                               {index + 1}
                             </div>
                             <div>
-                              <div className="font-medium">{size.name}</div>
-                              <div className="text-sm text-muted-foreground">Code: {size.code}</div>
+                              <div className="font-medium text-sm">{size.name}</div>
+                              <div className="text-xs text-muted-foreground">Code: {size.code}</div>
                             </div>
-                            <Badge variant={size.status === 'active' ? 'default' : 'secondary'}>
+                            <Badge variant={size.status === 'active' ? 'default' : 'secondary'} className="text-xs">
                               {size.status}
                             </Badge>
                           </div>
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-1">
                             <Button
-                              variant="outline"
+                              variant="ghost"
                               size="sm"
                               onClick={() => handleEdit(size)}
+                              className="h-8 w-8 p-0"
                             >
-                              <Edit className="h-4 w-4" />
+                              <Edit className="h-3 w-3" />
                             </Button>
                             <Button
-                              variant="outline"
+                              variant="ghost"
                               size="sm"
                               onClick={() => handleDelete(size.id)}
                               disabled={deleteSize.isPending}
+                              className="h-8 w-8 p-0 text-destructive hover:text-destructive"
                             >
-                              <Trash2 className="h-4 w-4" />
+                              <Trash2 className="h-3 w-3" />
                             </Button>
                           </div>
                         </div>
@@ -153,16 +142,16 @@ const SizeGroupSizes = ({ sizeGroupId, sizeGroupName }: SizeGroupSizesProps) => 
               )}
             </Droppable>
           </DragDropContext>
-        )}
+        </div>
+      )}
 
-        <SizeDialog
-          size={editingSize}
-          sizeGroupId={sizeGroupId}
-          open={isDialogOpen}
-          onOpenChange={handleCloseDialog}
-        />
-      </CardContent>
-    </Card>
+      <SizeDialog
+        size={editingSize}
+        sizeGroupId={sizeGroupId}
+        open={isDialogOpen}
+        onOpenChange={handleCloseDialog}
+      />
+    </div>
   );
 };
 

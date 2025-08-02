@@ -35,7 +35,7 @@ const ProfitMarginPage = lazy(() => import("./pages/ProfitMarginPage"));
 const AppAssetsPage = lazy(() => import("./pages/AppAssetsPage"));
 const PromotionalBannersPage = lazy(() => import("./pages/PromotionalBannersPage"));
 const PromotionalAssetsPage = lazy(() => import("./pages/PromotionalAssetsPage"));
-const Warehouse = lazy(() => import("./pages/Warehouse"));
+const Warehouse = lazy(() => import("./pages/WarehouseOptimized"));
 const Auth = lazy(() => import("./pages/Auth"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 

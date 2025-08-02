@@ -1,31 +1,46 @@
 
 import React, { useState, useCallback } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { useToast } from '@/hooks/use-toast';
+import { Button } from '@/components/ui/button';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { toast } from 'sonner';
 import { parseCSV } from './bulk-import/csvUtils';
-import { validateRow } from './bulk-import/validation';
+import { validateRowEnhanced } from './bulk-import/enhancedValidation';
 import { useImportMutations } from './bulk-import/useImportMutations';
+import { createDependencyResolutionService, DuplicateHandlingStrategy } from '@/services/masters/dependencyResolutionService';
+import { getMasterConfig, getMasterDependencies, generateCompleteTemplateHeaders } from '@/constants/masterDependencies';
 import FileUploadStep from './bulk-import/FileUploadStep';
 import ReviewStep from './bulk-import/ReviewStep';
 import CompleteStep from './bulk-import/CompleteStep';
 import { BulkImportDialogProps, ProcessingResult, BulkImportStep } from './bulk-import/types';
 
+interface EnhancedProcessingResult extends ProcessingResult {
+  dependencySummary?: {
+    created: Record<string, number>;
+    updated: Record<string, number>;
+  };
+}
+
 const BulkImportDialog: React.FC<BulkImportDialogProps> = ({
   open,
   onOpenChange,
-  type,
-  templateHeaders,
-  sampleData
+  type
 }) => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [processingResult, setProcessingResult] = useState<ProcessingResult | null>(null);
+  const [processingResult, setProcessingResult] = useState<EnhancedProcessingResult | null>(null);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [step, setStep] = useState<BulkImportStep>('upload');
   const [isDragOver, setIsDragOver] = useState(false);
+  const [duplicateStrategy, setDuplicateStrategy] = useState<'overwrite' | 'ignore'>('overwrite');
   
   const { getMutationForType } = useImportMutations();
-  const { toast } = useToast();
+  const masterConfig = getMasterConfig(type);
 
   const processFile = async (file: File) => {
     setIsProcessing(true);
@@ -39,9 +54,9 @@ const BulkImportDialog: React.FC<BulkImportDialogProps> = ({
       const validRecords: any[] = [];
       const invalidRecords: Array<{ row: number; data: string[]; errors: string[] }> = [];
 
-      // Validate all rows
+      // Validate all rows using enhanced validation
       dataRows.forEach((row, index) => {
-        const validation = validateRow(row, index, type);
+        const validation = validateRowEnhanced(row, index, type);
         if (validation.valid) {
           validRecords.push(validation.data);
         } else {
@@ -62,11 +77,7 @@ const BulkImportDialog: React.FC<BulkImportDialogProps> = ({
 
       setStep('review');
     } catch (error) {
-      toast({
-        title: "File processing failed",
-        description: error instanceof Error ? error.message : 'Unknown error',
-        variant: "destructive"
-      });
+      toast.error(error instanceof Error ? error.message : 'Unknown error');
     } finally {
       setIsProcessing(false);
     }
@@ -77,11 +88,7 @@ const BulkImportDialog: React.FC<BulkImportDialogProps> = ({
       setSelectedFile(file);
       processFile(file);
     } else {
-      toast({
-        title: "Invalid file type",
-        description: "Please select a CSV file",
-        variant: "destructive"
-      });
+      toast.error("Please select a CSV file");
     }
   };
 
@@ -107,31 +114,79 @@ const BulkImportDialog: React.FC<BulkImportDialogProps> = ({
 
     setIsProcessing(true);
     let successCount = 0;
+    let dependencySummary: { created: Record<string, number>; updated: Record<string, number> } | undefined;
 
     try {
       const mutation = getMutationForType(type);
       
-      for (const record of processingResult.validRecords) {
-        try {
-          await mutation.mutateAsync(record);
-          successCount++;
-        } catch (error) {
-          console.error('Import error for record:', record, error);
+      // Check if this master has dependencies
+      const dependencies = getMasterDependencies(type);
+      
+      if (dependencies.length > 0) {
+        // Use dependency resolution service with the new strategy format
+        const dependencyService = createDependencyResolutionService({ 
+          ignore: duplicateStrategy === 'ignore' 
+        });
+        
+        // Resolve dependencies first
+        const resolutionResult = await dependencyService.resolveDependencies(type, processingResult.validRecords);
+        
+        if (!resolutionResult.success) {
+          toast.error(`Dependency resolution failed: ${resolutionResult.errors.join(', ')}`);
+          return;
+        }
+
+        // Transform records with resolved IDs
+        const transformedRecords = dependencyService.transformRecordsWithResolvedIds(
+          processingResult.validRecords,
+          type,
+          resolutionResult.resolvedIds
+        );
+
+        // Import the main records
+        for (const record of transformedRecords) {
+          try {
+            await mutation.mutateAsync(record);
+            successCount++;
+          } catch (error) {
+            console.error('Import error for record:', record, error);
+          }
+        }
+
+        dependencySummary = dependencyService.getSummary();
+      } else {
+        // No dependencies, import directly
+        for (const record of processingResult.validRecords) {
+          try {
+            await mutation.mutateAsync(record);
+            successCount++;
+          } catch (error) {
+            console.error('Import error for record:', record, error);
+          }
         }
       }
 
-      toast({
-        title: "Import Completed",
-        description: `Successfully imported ${successCount} ${type}`,
-      });
+      // Show success message with dependency summary
+      let description = `Successfully imported ${successCount} ${type}`;
+      if (dependencySummary) {
+        const createdSummary = Object.entries(dependencySummary.created)
+          .map(([table, count]) => `${count} ${table}`)
+          .join(', ');
+        const updatedSummary = Object.entries(dependencySummary.updated)
+          .map(([table, count]) => `${count} ${table}`)
+          .join(', ');
+        
+        if (createdSummary || updatedSummary) {
+          description += `. Dependencies: ${createdSummary ? `Created: ${createdSummary}` : ''}${updatedSummary ? ` Updated: ${updatedSummary}` : ''}`;
+        }
+      }
 
+      toast.success(description);
+
+      setProcessingResult(prev => prev ? { ...prev, dependencySummary } : null);
       setStep('complete');
     } catch (error) {
-      toast({
-        title: "Import failed",
-        description: error instanceof Error ? error.message : 'Unknown error',
-        variant: "destructive"
-      });
+      toast.error(error instanceof Error ? error.message : 'Unknown error');
     } finally {
       setIsProcessing(false);
     }
@@ -150,6 +205,78 @@ const BulkImportDialog: React.FC<BulkImportDialogProps> = ({
     onOpenChange(false);
   };
 
+  const renderDependencyInfo = () => {
+    if (!masterConfig || masterConfig.independent) return null;
+
+    const dependencies = masterConfig.dependencies;
+    if (dependencies.length === 0) return null;
+
+    return (
+      <div className="space-y-2">
+        <p className="text-sm text-muted-foreground">
+          This import will automatically create or update the following dependent masters:
+        </p>
+        <div className="space-y-1">
+          {dependencies.map((dep, index) => (
+            <div key={index} className="flex items-center justify-between text-xs">
+              <div className="flex items-center space-x-2">
+                <Badge variant="outline" className="text-xs">{dep.table}</Badge>
+                <span className="text-muted-foreground">
+                  {dep.required ? 'Required' : 'Optional'}
+                </span>
+              </div>
+              <span className="text-muted-foreground">
+                Lookup by: {dep.nameField}
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  };
+
+  const renderDuplicateStrategy = () => {
+    if (!masterConfig || masterConfig.independent) return null;
+
+    return (
+      <Card className="mb-4">
+        <CardHeader>
+          <CardTitle className="text-sm">Duplicate Handling</CardTitle>
+          <CardDescription>
+            Choose how to handle existing records with the same name
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <RadioGroup
+            value={duplicateStrategy}
+            onValueChange={(value: 'overwrite' | 'ignore') => setDuplicateStrategy(value)}
+            className="space-y-3"
+          >
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="overwrite" id="overwrite" />
+              <Label htmlFor="overwrite" className="text-sm font-normal">
+                Overwrite duplicates
+              </Label>
+            </div>
+            <p className="text-xs text-muted-foreground ml-6">
+              Existing records will be updated with new data
+            </p>
+            
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="ignore" id="ignore" />
+              <Label htmlFor="ignore" className="text-sm font-normal">
+                Ignore duplicates
+              </Label>
+            </div>
+            <p className="text-xs text-muted-foreground ml-6">
+              Existing records will be skipped
+            </p>
+          </RadioGroup>
+        </CardContent>
+      </Card>
+    );
+  };
+
   return (
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
@@ -159,38 +286,43 @@ const BulkImportDialog: React.FC<BulkImportDialogProps> = ({
 
         <div className="space-y-6">
           {step === 'upload' && (
-            <FileUploadStep
-              type={type}
-              templateHeaders={templateHeaders}
-              sampleData={sampleData}
-              selectedFile={selectedFile}
-              isProcessing={isProcessing}
-              uploadProgress={uploadProgress}
-              isDragOver={isDragOver}
-              onFileSelect={handleFileSelect}
-              onDragOver={handleDragOver}
-              onDragLeave={handleDragLeave}
-              onDrop={handleDrop}
-              onCancel={handleClose}
-              setIsDragOver={setIsDragOver}
-            />
+            <>
+              <FileUploadStep
+                type={type}
+                selectedFile={selectedFile}
+                isProcessing={isProcessing}
+                uploadProgress={uploadProgress}
+                isDragOver={isDragOver}
+                onFileSelect={handleFileSelect}
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
+                onCancel={handleClose}
+                setIsDragOver={setIsDragOver}
+                dependencyInfo={renderDependencyInfo()}
+              />
+            </>
           )}
 
           {step === 'review' && processingResult && (
-            <ReviewStep
-              type={type}
-              processingResult={processingResult}
-              templateHeaders={templateHeaders}
-              isProcessing={isProcessing}
-              onStartOver={resetDialog}
-              onConfirmImport={confirmImport}
-            />
+            <>
+              {renderDuplicateStrategy()}
+              <ReviewStep
+                type={type}
+                processingResult={processingResult}
+                templateHeaders={generateCompleteTemplateHeaders(type).headers}
+                isProcessing={isProcessing}
+                onStartOver={resetDialog}
+                onConfirmImport={confirmImport}
+              />
+            </>
           )}
 
           {step === 'complete' && (
             <CompleteStep
               type={type}
               onClose={handleClose}
+              dependencySummary={processingResult?.dependencySummary}
             />
           )}
         </div>

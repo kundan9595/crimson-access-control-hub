@@ -1,16 +1,16 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Building2, Save, X } from 'lucide-react';
-import CreateWarehouseDialog from './CreateWarehouseDialog';
+import { Building2 } from 'lucide-react';
+import CreateWarehouseDialog from './dialogs/CreateWarehouseDialog';
 import { toast } from 'sonner';
-import type { UpdateWarehouseData } from '@/services/warehouseService';
+import { type CreateWarehouseData } from '@/services/warehouseServiceOptimized';
 
 interface EditWarehouseDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   warehouse: any;
-  onSave: (warehouseData: UpdateWarehouseData) => Promise<void>;
+  onSave: (warehouseData: CreateWarehouseData) => Promise<void>;
 }
 
 const EditWarehouseDialog: React.FC<EditWarehouseDialogProps> = ({
@@ -19,64 +19,91 @@ const EditWarehouseDialog: React.FC<EditWarehouseDialogProps> = ({
   warehouse,
   onSave
 }) => {
-  const [initialData, setInitialData] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
-  // Transform warehouse data when warehouse changes or modal opens
-  useEffect(() => {
-    if (warehouse && open) {
-      console.log('Warehouse data for edit:', warehouse);
-      
+  // Memoize the transformed data to prevent unnecessary re-computations
+  const transformedData = useMemo(() => {
+    if (!warehouse || !open) return null;
+
+    try {
       // Transform warehouse data back to the format expected by CreateWarehouseDialog
-      const transformedData = {
+      const data = {
         warehouse: {
-          name: warehouse.name,
+          name: warehouse.name || '',
           description: warehouse.description || '',
           city: warehouse.city || '',
           state: warehouse.state || '',
-          country: warehouse.country || 'USA',
           postal_code: warehouse.postal_code || '',
           address: warehouse.address || '',
           status: warehouse.status || 'active'
         },
-        floors: warehouse.floors?.map((floor: any, floorIndex: number) => ({
-          name: floor.name,
-          floor_number: floor.floor_number,
-          description: floor.description
-        })) || [],
-        lanes: warehouse.floors?.flatMap((floor: any, floorIndex: number) => 
-          floor.lanes?.map((lane: any, laneIndex: number) => ({
-            name: lane.name,
-            lane_number: lane.lane_number,
-            floor_number: floor.floor_number,
-            description: lane.description,
-            config: {
-              left_side_enabled: lane.config?.left_side_enabled ?? true,
-              right_side_enabled: lane.config?.right_side_enabled ?? true,
-              default_direction: lane.config?.default_direction || 'left',
-              default_left_racks: lane.config?.default_left_racks || 4,
-              default_right_racks: lane.config?.default_right_racks || 4
-            },
-            racks: lane.racks?.map((rack: any) => ({
-              side: rack.side,
-              rack_name: rack.rack_name,
-              rack_number: rack.rack_number
-            })) || []
-          })) || []
-        ) || []
+        floors: (warehouse.floors || []).map((floor: any) => ({
+          id: floor.id,
+          name: floor.name || `Floor ${floor.floor_number}`,
+          floor_number: floor.floor_number || 1
+        })),
+        lanes: (warehouse.floors || []).flatMap((floor: any) => 
+          (floor.lanes || []).map((lane: any) => {
+            // Get rack configuration from the lane config or use defaults
+            const config = lane.config || {};
+            const racks = lane.racks || [];
+            
+            // Separate left and right racks and ensure they respect enablement settings
+            const leftRacks = racks
+              .filter((rack: any) => rack.side === 'left')
+              .map((rack: any) => ({
+                id: rack.id,
+                side: 'left' as const,
+                rack_name: rack.rack_name || 'A',
+                rack_number: rack.rack_number || 1
+              }));
+            
+            const rightRacks = racks
+              .filter((rack: any) => rack.side === 'right')
+              .map((rack: any) => ({
+                id: rack.id,
+                side: 'right' as const,
+                rack_name: rack.rack_name || 'A',
+                rack_number: rack.rack_number || 1
+              }));
+            
+            return {
+              id: lane.id,
+              name: lane.name || `Lane ${lane.lane_number}`,
+              lane_number: lane.lane_number || 1,
+              floor_number: floor.floor_number || 1,
+              config: {
+                left_side_enabled: config.left_side_enabled ?? true,
+                right_side_enabled: config.right_side_enabled ?? true,
+                default_direction: config.default_direction || 'left',
+                default_left_racks: config.default_left_racks || 4,
+                default_right_racks: config.default_right_racks || 4
+              },
+              racks: [...leftRacks, ...rightRacks]
+            };
+          })
+        )
       };
 
-      console.log('Transformed data:', transformedData);
-      setInitialData(transformedData);
+      return data;
+    } catch (error) {
+      console.error('Error transforming warehouse data:', error);
+      toast.error('Failed to load warehouse data for editing');
+      return null;
     }
   }, [warehouse, open]);
 
-  // Reset data when modal closes
+  // Set loading state when modal opens
   useEffect(() => {
-    if (!open) {
-      console.log('Dialog closed, resetting data');
-      setInitialData(null);
+    if (open && warehouse) {
+      setIsLoading(true);
+      // Use a small delay to ensure smooth transition and prevent glitch
+      const timer = setTimeout(() => {
+        setIsLoading(false);
+      }, 150);
+      return () => clearTimeout(timer);
     }
-  }, [open]);
+  }, [open, warehouse]);
 
   const handleSave = async (warehouseData: any) => {
     try {
@@ -90,7 +117,6 @@ const EditWarehouseDialog: React.FC<EditWarehouseDialogProps> = ({
   };
 
   const handleClose = () => {
-    console.log('Closing edit dialog');
     onOpenChange(false);
   };
 
@@ -98,7 +124,7 @@ const EditWarehouseDialog: React.FC<EditWarehouseDialogProps> = ({
 
   return (
     <>
-      {!initialData && open ? (
+      {(!transformedData || isLoading) && open ? (
         <Dialog open={open} onOpenChange={handleClose}>
           <DialogContent className="max-w-4xl">
             <DialogHeader>
@@ -110,17 +136,17 @@ const EditWarehouseDialog: React.FC<EditWarehouseDialogProps> = ({
 
             <div className="text-center py-8">
               <p className="text-gray-600 mb-4">
-                Loading warehouse configuration...
+                {isLoading ? 'Loading warehouse configuration...' : 'Preparing warehouse data...'}
               </p>
             </div>
           </DialogContent>
         </Dialog>
-      ) : initialData && (
+      ) : transformedData && (
         <CreateWarehouseDialog
           open={open}
           onOpenChange={onOpenChange}
           onSave={handleSave}
-          initialData={initialData}
+          initialData={transformedData}
           isEditMode={true}
         />
       )}

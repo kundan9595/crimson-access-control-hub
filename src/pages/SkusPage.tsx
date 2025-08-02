@@ -63,55 +63,6 @@ const SkusPage = () => {
     URL.revokeObjectURL(url);
   };
 
-  const importTemplateHeaders = [
-    'SKU Code',
-    'Class ID',
-    'Size ID',
-    'Base MRP',
-    'Cost Price',
-    'HSN Code',
-    'Description',
-    'Length (cm)',
-    'Breadth (cm)',
-    'Height (cm)',
-    'Weight (grams)',
-    'GST Rate (%)',
-    'Status'
-  ];
-
-  const importSampleData = [
-    [
-      'SKU001',
-      'class-uuid-here',
-      'size-uuid-here',
-      '1000',
-      '800',
-      '62011090',
-      'Sample SKU description',
-      '30',
-      '20',
-      '10',
-      '500',
-      '18',
-      'active'
-    ],
-    [
-      'SKU002',
-      'class-uuid-here',
-      'size-uuid-here',
-      '1500',
-      '1200',
-      '62011090',
-      'Another sample SKU',
-      '25',
-      '15',
-      '8',
-      '400',
-      '12',
-      'active'
-    ]
-  ];
-
   return (
     <div className="container mx-auto p-6 space-y-6">
       <MasterPageHeader
@@ -135,8 +86,6 @@ const SkusPage = () => {
         open={showImportDialog}
         onOpenChange={setShowImportDialog}
         type="skus"
-        templateHeaders={importTemplateHeaders}
-        sampleData={importSampleData}
       />
     </div>
   );

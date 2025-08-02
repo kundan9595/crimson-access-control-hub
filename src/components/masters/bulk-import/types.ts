@@ -18,6 +18,4 @@ export type BulkImportDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   type: BulkImportType;
-  templateHeaders: string[];
-  sampleData: string[][];
 };

@@ -6,11 +6,10 @@ import { Progress } from '@/components/ui/progress';
 import { Download, CloudUpload } from 'lucide-react';
 import { BulkImportType } from './types';
 import { createCSVContent, downloadCSV } from './csvUtils';
+import { generateCompleteTemplateHeaders, debugTemplateHeaders } from '@/constants/masterDependencies';
 
 type FileUploadStepProps = {
   type: BulkImportType;
-  templateHeaders: string[];
-  sampleData: string[][];
   selectedFile: File | null;
   isProcessing: boolean;
   uploadProgress: number;
@@ -21,12 +20,11 @@ type FileUploadStepProps = {
   onDrop: (e: React.DragEvent) => void;
   onCancel: () => void;
   setIsDragOver: (isDragOver: boolean) => void;
+  dependencyInfo?: React.ReactNode;
 };
 
 const FileUploadStep: React.FC<FileUploadStepProps> = ({
   type,
-  templateHeaders,
-  sampleData,
   selectedFile,
   isProcessing,
   uploadProgress,
@@ -36,12 +34,17 @@ const FileUploadStep: React.FC<FileUploadStepProps> = ({
   onDragLeave,
   onDrop,
   onCancel,
-  setIsDragOver
+  setIsDragOver,
+  dependencyInfo
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const downloadTemplate = () => {
-    const csvContent = createCSVContent(templateHeaders, sampleData);
+    // Debug: Log the generated headers
+    debugTemplateHeaders(type);
+    
+    const { headers, sampleData } = generateCompleteTemplateHeaders(type);
+    const csvContent = createCSVContent(headers, sampleData);
     downloadCSV(csvContent, `${type}-template.csv`);
   };
 
@@ -109,6 +112,12 @@ const FileUploadStep: React.FC<FileUploadStepProps> = ({
                 File will be processed automatically after selection
               </p>
             </div>
+            
+            {dependencyInfo && (
+              <div className="mt-4 p-3 bg-muted/30 rounded-lg border border-muted-foreground/20 w-full max-w-md">
+                {dependencyInfo}
+              </div>
+            )}
           </div>
         </div>
 

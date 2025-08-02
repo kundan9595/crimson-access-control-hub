@@ -1,15 +1,15 @@
 
 import React, { useState } from 'react';
-import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { Search, Edit, Trash2, Ruler, ChevronDown, ChevronRight } from 'lucide-react';
+import { Search, Edit, Trash2, Ruler, ChevronDown, ChevronRight, Plus } from 'lucide-react';
 import { useSizeGroups, useDeleteSizeGroup } from '@/hooks/useMasters';
 import { SizeGroup } from '@/services/mastersService';
 import { useSearchParams } from 'react-router-dom';
 import SizeGroupWithSizesDialog from '@/components/masters/SizeGroupWithSizesDialog';
 import SizeGroupSizes from '@/components/masters/SizeGroupSizes';
+import SizeDialog from '@/components/masters/SizeDialog';
 import BulkImportDialog from '@/components/masters/BulkImportDialog';
 import { MasterPageHeader } from '@/components/masters/shared/MasterPageHeader';
 
@@ -20,6 +20,7 @@ const SizeGroupsPage = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(searchParams.get('add') === 'true');
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
   const [isBulkImportOpen, setIsBulkImportOpen] = useState(false);
+  const [addingSizeToGroup, setAddingSizeToGroup] = useState<string | null>(null);
   
   const { data: sizeGroups, isLoading } = useSizeGroups();
   const deleteSizeGroup = useDeleteSizeGroup();
@@ -80,12 +81,6 @@ const SizeGroupsPage = () => {
     URL.revokeObjectURL(url);
   };
 
-  const templateHeaders = ['Name', 'Description', 'Status'];
-  const sampleData = [
-    ['XS-XL', 'Standard clothing sizes', 'active'],
-    ['Shoe Sizes', 'Footwear sizing', 'active']
-  ];
-
   if (isLoading) {
     return <div className="container mx-auto p-6">Loading...</div>;
   }
@@ -102,102 +97,98 @@ const SizeGroupsPage = () => {
         canExport={!!filteredSizeGroups?.length}
       />
 
-      <Card>
-        <CardContent className="p-6">
-          <div className="flex items-center justify-between mb-6">
-            <h3 className="text-lg font-semibold">Search Size Groups</h3>
-            <div className="relative">
-              <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search size groups..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-8 w-64"
-              />
-            </div>
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <h3 className="text-lg font-semibold">Search Size Groups</h3>
+          <div className="relative">
+            <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search size groups..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-8 w-64"
+            />
           </div>
+        </div>
 
-          <div className="grid gap-4">
-            {filteredSizeGroups?.map((sizeGroup) => (
-              <Card key={sizeGroup.id}>
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-2">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => toggleGroupExpansion(sizeGroup.id)}
-                          className="p-1"
-                        >
-                          {expandedGroups.has(sizeGroup.id) ? (
-                            <ChevronDown className="h-4 w-4" />
-                          ) : (
-                            <ChevronRight className="h-4 w-4" />
-                          )}
-                        </Button>
-                        <h3 className="text-lg font-semibold">{sizeGroup.name}</h3>
-                        <Badge variant={sizeGroup.status === 'active' ? 'default' : 'secondary'}>
-                          {sizeGroup.status}
-                        </Badge>
-                      </div>
-                      {sizeGroup.description && (
-                        <p className="text-muted-foreground mb-2 ml-10">{sizeGroup.description}</p>
+        <div className="space-y-4">
+          {filteredSizeGroups?.map((sizeGroup) => (
+            <div key={sizeGroup.id} className="p-4 border-b border-muted-foreground/20 hover:bg-muted/30 transition-colors">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex-1">
+                  <div className="flex items-center gap-3 mb-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => toggleGroupExpansion(sizeGroup.id)}
+                      className="p-1"
+                    >
+                      {expandedGroups.has(sizeGroup.id) ? (
+                        <ChevronDown className="h-4 w-4" />
+                      ) : (
+                        <ChevronRight className="h-4 w-4" />
                       )}
-                      <div className="text-sm text-muted-foreground ml-10">
-                        Created: {new Date(sizeGroup.created_at).toLocaleDateString()}
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleEdit(sizeGroup)}
-                      >
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleDelete(sizeGroup.id)}
-                        disabled={deleteSizeGroup.isPending}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                  
-                  {expandedGroups.has(sizeGroup.id) && (
-                    <div className="ml-10">
-                      <SizeGroupSizes 
-                        sizeGroupId={sizeGroup.id}
-                        sizeGroupName={sizeGroup.name}
-                      />
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            ))}
-
-            {filteredSizeGroups?.length === 0 && (
-              <Card>
-                <CardContent className="p-12 text-center">
-                  <Ruler className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                  <h3 className="text-lg font-semibold mb-2">No Size Groups Found</h3>
-                  <p className="text-muted-foreground mb-4">
-                    {searchTerm ? 'No size groups match your search criteria.' : 'Get started by creating your first size group.'}
-                  </p>
-                  {!searchTerm && (
-                    <Button onClick={() => setIsDialogOpen(true)}>
-                      Add Size Group
                     </Button>
-                  )}
-                </CardContent>
-              </Card>
-            )}
-          </div>
-        </CardContent>
-      </Card>
+                    <h3 className="text-lg font-semibold">{sizeGroup.name}</h3>
+                    <Badge variant={sizeGroup.status === 'active' ? 'default' : 'secondary'}>
+                      {sizeGroup.status}
+                    </Badge>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setAddingSizeToGroup(sizeGroup.id)}
+                    >
+                      <Plus className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleEdit(sizeGroup)}
+                    >
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleDelete(sizeGroup.id)}
+                      disabled={deleteSizeGroup.isPending}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+              </div>
+              
+              {expandedGroups.has(sizeGroup.id) && (
+                <div className="ml-10">
+                  <SizeGroupSizes 
+                    sizeGroupId={sizeGroup.id}
+                    sizeGroupName={sizeGroup.name}
+                    onAddSize={() => setAddingSizeToGroup(sizeGroup.id)}
+                  />
+                </div>
+              )}
+            </div>
+          ))}
+
+          {filteredSizeGroups?.length === 0 && (
+            <div className="p-12 text-center border border-muted-foreground/20 rounded-lg">
+              <Ruler className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <h3 className="text-lg font-semibold mb-2">No Size Groups Found</h3>
+              <p className="text-muted-foreground mb-4">
+                {searchTerm ? 'No size groups match your search criteria.' : 'Get started by creating your first size group.'}
+              </p>
+              {!searchTerm && (
+                <Button onClick={() => setIsDialogOpen(true)}>
+                  Add Size Group
+                </Button>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
 
       <SizeGroupWithSizesDialog
         sizeGroup={editingSizeGroup}
@@ -209,9 +200,15 @@ const SizeGroupsPage = () => {
         open={isBulkImportOpen}
         onOpenChange={setIsBulkImportOpen}
         type="sizeGroups"
-        templateHeaders={templateHeaders}
-        sampleData={sampleData}
       />
+
+      {addingSizeToGroup && (
+        <SizeDialog
+          sizeGroupId={addingSizeToGroup}
+          open={!!addingSizeToGroup}
+          onOpenChange={(open) => !open && setAddingSizeToGroup(null)}
+        />
+      )}
     </div>
   );
 };

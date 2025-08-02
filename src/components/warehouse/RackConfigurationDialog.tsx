@@ -129,12 +129,7 @@ const RackConfigurationDialog: React.FC<RackConfigurationDialogProps> = ({
     }));
   };
 
-  const toggleDirection = () => {
-    setConfig(prev => ({
-      ...prev,
-      default_direction: prev.default_direction === 'left' ? 'right' : 'left'
-    }));
-  };
+
 
   const handleSave = () => {
     onSave(config);
@@ -164,13 +159,7 @@ const RackConfigurationDialog: React.FC<RackConfigurationDialogProps> = ({
               {config.left_side_enabled ? 'Disable' : 'Enable'} Left Side
             </Button>
             
-            <Button
-              variant="outline"
-              onClick={toggleDirection}
-              className="flex items-center gap-2"
-            >
-              Default Direction: {config.default_direction === 'left' ? <ArrowLeft className="w-4 h-4" /> : <ArrowRight className="w-4 h-4" />}
-            </Button>
+
 
             <Button
               variant={config.right_side_enabled ? "default" : "outline"}

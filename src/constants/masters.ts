@@ -1,3 +1,5 @@
+// This file is now deprecated. Use masterDependencies.ts instead.
+// Keeping this for backward compatibility but all new functionality should use masterDependencies.ts
 
 export const MASTER_ENTITY_CONFIG = {
   brands: {
