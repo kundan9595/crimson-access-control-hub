@@ -23,6 +23,67 @@ export interface WarehouseInventory {
   reservations?: WarehouseInventoryReservation[];
 }
 
+// New types for Class and Style inventory views
+export interface ClassInventoryView {
+  class_id: string;
+  class_name: string;
+  style_name: string;
+  brand_name: string;
+  color_name: string;
+  size_group_name: string;
+  total_quantity: number;
+  reserved_quantity: number;
+  available_quantity: number;
+  sku_count: number;
+  warehouse_count: number;
+  locations_count: number;
+}
+
+export interface StyleInventoryView {
+  style_id: string;
+  style_name: string;
+  brand_name: string;
+  category_name: string;
+  total_quantity: number;
+  reserved_quantity: number;
+  available_quantity: number;
+  class_count: number;
+  sku_count: number;
+  warehouse_count: number;
+  locations_count: number;
+}
+
+export interface ClassInventorySearchResult {
+  inventory: ClassInventoryView[];
+  total: number;
+  hasMore: boolean;
+}
+
+export interface StyleInventorySearchResult {
+  inventory: StyleInventoryView[];
+  total: number;
+  hasMore: boolean;
+}
+
+export interface ClassInventoryStatistics {
+  total_classes: number;
+  total_quantity: number;
+  reserved_quantity: number;
+  available_quantity: number;
+  total_skus: number;
+  total_warehouses: number;
+}
+
+export interface StyleInventoryStatistics {
+  total_styles: number;
+  total_quantity: number;
+  reserved_quantity: number;
+  available_quantity: number;
+  total_classes: number;
+  total_skus: number;
+  total_warehouses: number;
+}
+
 export interface WarehouseInventoryLocation {
   id: string;
   warehouse_inventory_id: string;

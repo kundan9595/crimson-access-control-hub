@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Plus, Search, Eye, Settings, Package, AlertTriangle, Download, Upload } from 'lucide-react';
+import { Plus, Search, Eye, Package, AlertTriangle, Download, Upload, MapPin } from 'lucide-react';
 import { WarehouseInventory } from '@/services/inventory/types';
 import AddInventoryDialog from './AddInventoryDialog';
 import InventoryLocationsModal from './InventoryLocationsModal';
@@ -99,9 +99,10 @@ const InventoryTable: React.FC<InventoryTableProps> = ({
 
   // Get stock status color
   const getStockStatusColor = (availableQuantity: number, totalQuantity: number) => {
-    if (availableQuantity === 0) return 'bg-red-100 text-red-800';
-    if (availableQuantity <= totalQuantity * 0.1) return 'bg-yellow-100 text-yellow-800';
-    return 'bg-green-100 text-green-800';
+    if (availableQuantity === 0) return 'destructive';
+    if (availableQuantity < totalQuantity * 0.2) return 'destructive';
+    if (availableQuantity < totalQuantity * 0.5) return 'secondary';
+    return 'default';
   };
 
   // Get stock status text
@@ -240,13 +241,12 @@ const InventoryTable: React.FC<InventoryTableProps> = ({
                   {showWarehouseColumn && <TableHead>Warehouse</TableHead>}
                   <TableHead>Brand</TableHead>
                   <TableHead>SKU Code</TableHead>
-                  <TableHead>Product Name</TableHead>
+                  <TableHead>Class Name</TableHead>
                   <TableHead className="text-center">Total</TableHead>
                   <TableHead className="text-center">Reserve</TableHead>
                   <TableHead className="text-center">Balance</TableHead>
-                  <TableHead className="text-center">Status</TableHead>
                   <TableHead className="text-center">Locations</TableHead>
-                  <TableHead className="text-center">Actions</TableHead>
+                  <TableHead className="text-center">Status</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -261,14 +261,13 @@ const InventoryTable: React.FC<InventoryTableProps> = ({
                       <TableCell><Skeleton className="h-4 w-12 mx-auto" /></TableCell>
                       <TableCell><Skeleton className="h-4 w-12 mx-auto" /></TableCell>
                       <TableCell><Skeleton className="h-4 w-12 mx-auto" /></TableCell>
-                      <TableCell><Skeleton className="h-4 w-16 mx-auto" /></TableCell>
                       <TableCell><Skeleton className="h-4 w-20 mx-auto" /></TableCell>
-                      <TableCell><Skeleton className="h-4 w-8 mx-auto" /></TableCell>
+                      <TableCell><Skeleton className="h-4 w-16 mx-auto" /></TableCell>
                     </TableRow>
                   ))
                 ) : inventory.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={showWarehouseColumn ? 10 : 9} className="text-center py-12">
+                    <TableCell colSpan={showWarehouseColumn ? 9 : 8} className="text-center py-12">
                       <div className="flex flex-col items-center space-y-4">
                         <Package className="w-12 h-12 text-gray-400" />
                         <div className="text-center">
@@ -311,53 +310,28 @@ const InventoryTable: React.FC<InventoryTableProps> = ({
                             {item.sku?.class?.name || 'N/A'}
                           </div>
                           <div className="text-sm text-gray-500">
-                            {item.sku?.class?.style?.name} | {item.sku?.class?.color?.name} | {item.sku?.class?.size?.name}
+                            {item.sku?.class?.style?.name} | {item.sku?.class?.color?.name} | {item.sku?.size?.name}
                           </div>
                         </div>
                       </TableCell>
-                      <TableCell className="text-center">
-                        <Badge variant="secondary" className="bg-green-100 text-green-800">
-                          {item.total_quantity}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-center">
-                        {item.reserved_quantity > 0 ? (
-                          <Badge variant="secondary" className="bg-orange-100 text-orange-800">
-                            {item.reserved_quantity}
-                          </Badge>
-                        ) : (
-                          <Badge variant="secondary" className="bg-gray-100 text-gray-600">
-                            0
-                          </Badge>
-                        )}
-                      </TableCell>
-                      <TableCell className="text-center">
-                        <Badge variant="secondary" className="bg-green-100 text-green-800">
-                          {item.available_quantity}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-center">
-                        <Badge 
-                          variant="secondary" 
-                          className={getStockStatusColor(item.available_quantity, item.total_quantity)}
-                        >
-                          {getStockStatusText(item.available_quantity, item.total_quantity)}
-                        </Badge>
-                      </TableCell>
+                      <TableCell className="text-center font-medium">{item.total_quantity}</TableCell>
+                      <TableCell className="text-center">{item.reserved_quantity}</TableCell>
+                      <TableCell className="text-center font-medium">{item.available_quantity}</TableCell>
                       <TableCell className="text-center">
                         <Button
-                          variant="outline"
+                          variant="ghost"
                           size="sm"
                           onClick={() => handleViewLocations(item)}
+                          disabled={!item.locations || item.locations.length === 0}
                         >
-                          <Eye className="w-4 h-4 mr-1" />
-                          View locations ({item.locations?.length || 0})
+                          <MapPin className="w-4 h-4 mr-1" />
+                          {item.locations?.length || 0}
                         </Button>
                       </TableCell>
                       <TableCell className="text-center">
-                        <Button variant="outline" size="sm">
-                          <Settings className="w-4 h-4" />
-                        </Button>
+                        <Badge variant={getStockStatusColor(item.available_quantity, item.total_quantity)}>
+                          {getStockStatusText(item.available_quantity, item.total_quantity)}
+                        </Badge>
                       </TableCell>
                     </TableRow>
                   ))
@@ -397,10 +371,19 @@ const InventoryTable: React.FC<InventoryTableProps> = ({
 
       {/* Locations Modal */}
       <InventoryLocationsModal
-        open={isLocationsModalOpen}
-        onOpenChange={setIsLocationsModalOpen}
-        inventory={selectedInventory}
-        showWarehouseColumn={showWarehouseColumn}
+        isOpen={isLocationsModalOpen}
+        onClose={() => setIsLocationsModalOpen(false)}
+        viewType="sku"
+        itemId={selectedInventory?.id || ''}
+        itemName={selectedInventory?.sku?.sku_code || ''}
+        locations={selectedInventory?.locations?.map(location => ({
+          id: location.id,
+          warehouse_name: selectedInventory.warehouse?.name || 'N/A',
+          floor_name: location.floor?.name || 'N/A',
+          lane_name: location.lane?.name || 'N/A',
+          rack_name: location.rack?.rack_name || 'N/A',
+          quantity: location.quantity
+        })) || []}
       />
 
       {/* Bulk Import Dialog */}

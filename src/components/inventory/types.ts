@@ -1,0 +1,1 @@
+export type InventoryViewType = 'sku' | 'class' | 'style'; 

@@ -9,40 +9,27 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Skeleton } from '@/components/ui/skeleton';
-import { MapPin, X, Package, Layers, Palette } from 'lucide-react';
+import { Package, Layers, Palette, X } from 'lucide-react';
 import { InventoryViewType } from './types';
 
-interface InventoryLocation {
-  id: string;
-  warehouse_name: string;
-  floor_name: string;
-  lane_name: string;
-  rack_name: string;
-  quantity: number;
-  sku_code?: string;
-  size_name?: string;
-  class_name?: string;
-  style_name?: string;
-}
-
-interface InventoryLocationsModalProps {
+interface InventoryDrillDownModalProps {
   isOpen: boolean;
   onClose: () => void;
   viewType: InventoryViewType;
   itemId: string;
   itemName: string;
   loading?: boolean;
-  locations?: InventoryLocation[];
+  details?: any[];
 }
 
-const InventoryLocationsModal: React.FC<InventoryLocationsModalProps> = ({
+const InventoryDrillDownModal: React.FC<InventoryDrillDownModalProps> = ({
   isOpen,
   onClose,
   viewType,
   itemId,
   itemName,
   loading = false,
-  locations = []
+  details = []
 }) => {
   const getViewTypeIcon = () => {
     switch (viewType) {
@@ -60,28 +47,24 @@ const InventoryLocationsModal: React.FC<InventoryLocationsModalProps> = ({
   const getViewTypeTitle = () => {
     switch (viewType) {
       case 'sku':
-        return 'SKU Locations';
+        return 'SKU Details';
       case 'class':
-        return 'Class Locations';
+        return 'Class Details';
       case 'style':
-        return 'Style Locations';
+        return 'Style Details';
       default:
-        return 'Locations';
+        return 'Details';
     }
   };
 
   const getTableHeaders = () => {
-    const baseHeaders = ['Warehouse', 'Floor', 'Lane', 'Rack', 'Quantity'];
-    
     switch (viewType) {
-      case 'sku':
-        return baseHeaders;
       case 'class':
-        return ['SKU Code', 'Size', ...baseHeaders];
+        return ['SKU Code', 'Size', 'Total', 'Reserved', 'Available', 'Warehouse'];
       case 'style':
-        return ['Class Name', 'SKU Code', 'Size', ...baseHeaders];
+        return ['Class Name', 'Color', 'Size Group', 'Total', 'Reserved', 'Available'];
       default:
-        return baseHeaders;
+        return [];
     }
   };
 
@@ -119,9 +102,9 @@ const InventoryLocationsModal: React.FC<InventoryLocationsModalProps> = ({
                 </div>
               ))}
             </div>
-          ) : locations.length === 0 ? (
+          ) : details.length === 0 ? (
             <div className="text-center py-8 text-gray-500">
-              No locations found for this {viewType}
+              No details available for this {viewType}
             </div>
           ) : (
             <div className="border rounded-lg">
@@ -134,38 +117,26 @@ const InventoryLocationsModal: React.FC<InventoryLocationsModalProps> = ({
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {locations.map((location, index) => (
-                    <TableRow key={location.id || index}>
-                      {viewType === 'sku' && (
-                        <>
-                          <TableCell className="font-medium">{location.warehouse_name}</TableCell>
-                          <TableCell>{location.floor_name}</TableCell>
-                          <TableCell>{location.lane_name}</TableCell>
-                          <TableCell>{location.rack_name}</TableCell>
-                          <TableCell className="text-center font-medium">{location.quantity}</TableCell>
-                        </>
-                      )}
+                  {details.map((detail, index) => (
+                    <TableRow key={index}>
                       {viewType === 'class' && (
                         <>
-                          <TableCell className="font-medium">{location.sku_code}</TableCell>
-                          <TableCell>{location.size_name}</TableCell>
-                          <TableCell className="font-medium">{location.warehouse_name}</TableCell>
-                          <TableCell>{location.floor_name}</TableCell>
-                          <TableCell>{location.lane_name}</TableCell>
-                          <TableCell>{location.rack_name}</TableCell>
-                          <TableCell className="text-center font-medium">{location.quantity}</TableCell>
+                          <TableCell className="font-medium">{detail.sku_code}</TableCell>
+                          <TableCell>{detail.size_name}</TableCell>
+                          <TableCell className="text-center">{detail.total_quantity}</TableCell>
+                          <TableCell className="text-center">{detail.reserved_quantity}</TableCell>
+                          <TableCell className="text-center">{detail.available_quantity}</TableCell>
+                          <TableCell>{detail.warehouse_name}</TableCell>
                         </>
                       )}
                       {viewType === 'style' && (
                         <>
-                          <TableCell className="font-medium">{location.class_name}</TableCell>
-                          <TableCell className="font-medium">{location.sku_code}</TableCell>
-                          <TableCell>{location.size_name}</TableCell>
-                          <TableCell className="font-medium">{location.warehouse_name}</TableCell>
-                          <TableCell>{location.floor_name}</TableCell>
-                          <TableCell>{location.lane_name}</TableCell>
-                          <TableCell>{location.rack_name}</TableCell>
-                          <TableCell className="text-center font-medium">{location.quantity}</TableCell>
+                          <TableCell className="font-medium">{detail.class_name}</TableCell>
+                          <TableCell>{detail.color_name || '-'}</TableCell>
+                          <TableCell>{detail.size_group_name || '-'}</TableCell>
+                          <TableCell className="text-center">{detail.total_quantity}</TableCell>
+                          <TableCell className="text-center">{detail.reserved_quantity}</TableCell>
+                          <TableCell className="text-center">{detail.available_quantity}</TableCell>
                         </>
                       )}
                     </TableRow>
@@ -180,4 +151,4 @@ const InventoryLocationsModal: React.FC<InventoryLocationsModalProps> = ({
   );
 };
 
-export default InventoryLocationsModal; 
+export default InventoryDrillDownModal; 

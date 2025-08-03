@@ -8,7 +8,13 @@ import {
   InventorySearchParams,
   InventorySearchResult,
   InventoryStatistics,
-  InventoryFilters
+  InventoryFilters,
+  ClassInventoryView,
+  StyleInventoryView,
+  ClassInventorySearchResult,
+  StyleInventorySearchResult,
+  ClassInventoryStatistics,
+  StyleInventoryStatistics
 } from './types';
 
 class InventoryService {
@@ -686,6 +692,7 @@ class InventoryService {
           sku_code: item.sku_code,
           class: {
             id: '', // We don't have this from RPC
+            name: item.class_name,
             style: {
               id: '',
               name: item.style_name,
@@ -926,6 +933,200 @@ class InventoryService {
     } catch (error) {
       console.error('Error searching SKUs:', error);
       throw new Error('Failed to search SKUs');
+    }
+  }
+
+  // Get global class inventory
+  async getGlobalClassInventory(
+    params: InventorySearchParams = {}
+  ): Promise<ClassInventorySearchResult> {
+    try {
+      console.log('Getting global class inventory with params:', params);
+      
+      const { data, error } = await supabase
+        .rpc('get_global_class_inventory', {
+          search_query: params.query || null,
+          page_number: params.page || 1,
+          page_size: params.limit || 20
+        });
+
+      if (error) {
+        console.error('RPC error:', error);
+        throw error;
+      }
+
+      console.log('Global class inventory RPC result:', { data: data?.length });
+
+      return {
+        inventory: data as ClassInventoryView[],
+        total: data?.length || 0,
+        hasMore: (data?.length || 0) === (params.limit || 20)
+      };
+    } catch (error) {
+      console.error('Error fetching global class inventory:', error);
+      throw new Error('Failed to fetch global class inventory');
+    }
+  }
+
+  // Get global style inventory
+  async getGlobalStyleInventory(
+    params: InventorySearchParams = {}
+  ): Promise<StyleInventorySearchResult> {
+    try {
+      console.log('Getting global style inventory with params:', params);
+      
+      const { data, error } = await supabase
+        .rpc('get_global_style_inventory', {
+          search_query: params.query || null,
+          page_number: params.page || 1,
+          page_size: params.limit || 20
+        });
+
+      if (error) {
+        console.error('RPC error:', error);
+        throw error;
+      }
+
+      console.log('Global style inventory RPC result:', { data: data?.length });
+
+      return {
+        inventory: data as StyleInventoryView[],
+        total: data?.length || 0,
+        hasMore: (data?.length || 0) === (params.limit || 20)
+      };
+    } catch (error) {
+      console.error('Error fetching global style inventory:', error);
+      throw new Error('Failed to fetch global style inventory');
+    }
+  }
+
+  // Get global class inventory statistics
+  async getGlobalClassInventoryStatistics(): Promise<ClassInventoryStatistics> {
+    try {
+      console.log('Getting global class inventory statistics');
+      
+      const { data, error } = await supabase
+        .rpc('get_global_class_inventory_statistics');
+
+      if (error) {
+        console.error('RPC error:', error);
+        throw error;
+      }
+
+      const stats = data?.[0] || {};
+      
+      return {
+        total_classes: Number(stats.total_classes) || 0,
+        total_quantity: Number(stats.total_quantity) || 0,
+        reserved_quantity: Number(stats.reserved_quantity) || 0,
+        available_quantity: Number(stats.available_quantity) || 0,
+        total_skus: Number(stats.total_skus) || 0,
+        total_warehouses: Number(stats.total_warehouses) || 0
+      };
+    } catch (error) {
+      console.error('Error fetching global class inventory statistics:', error);
+      throw new Error('Failed to fetch global class inventory statistics');
+    }
+  }
+
+  // Get global style inventory statistics
+  async getGlobalStyleInventoryStatistics(): Promise<StyleInventoryStatistics> {
+    try {
+      console.log('Getting global style inventory statistics');
+      
+      const { data, error } = await supabase
+        .rpc('get_global_style_inventory_statistics');
+
+      if (error) {
+        console.error('RPC error:', error);
+        throw error;
+      }
+
+      const stats = data?.[0] || {};
+      
+      return {
+        total_styles: Number(stats.total_styles) || 0,
+        total_quantity: Number(stats.total_quantity) || 0,
+        reserved_quantity: Number(stats.reserved_quantity) || 0,
+        available_quantity: Number(stats.available_quantity) || 0,
+        total_classes: Number(stats.total_classes) || 0,
+        total_skus: Number(stats.total_skus) || 0,
+        total_warehouses: Number(stats.total_warehouses) || 0
+      };
+    } catch (error) {
+      console.error('Error fetching global style inventory statistics:', error);
+      throw new Error('Failed to fetch global style inventory statistics');
+    }
+  }
+
+  // Export global class inventory
+  async exportGlobalClassInventory(): Promise<any[]> {
+    try {
+      console.log('Exporting global class inventory');
+      
+      const { data, error } = await supabase
+        .rpc('get_global_class_inventory', {
+          search_query: null,
+          page_number: 1,
+          page_size: 10000 // Large limit to get all data
+        });
+
+      if (error) {
+        console.error('RPC error:', error);
+        throw error;
+      }
+
+      return (data || []).map((item: any) => ({
+        'Class Name': item.class_name,
+        'Style Name': item.style_name,
+        'Brand': item.brand_name,
+        'Color': item.color_name,
+        'Size Group': item.size_group_name,
+        'Total Quantity': item.total_quantity,
+        'Reserved Quantity': item.reserved_quantity,
+        'Available Quantity': item.available_quantity,
+        'SKU Count': item.sku_count,
+        'Warehouse Count': item.warehouse_count,
+        'Locations Count': item.locations_count
+      }));
+    } catch (error) {
+      console.error('Error exporting global class inventory:', error);
+      throw new Error('Failed to export global class inventory');
+    }
+  }
+
+  // Export global style inventory
+  async exportGlobalStyleInventory(): Promise<any[]> {
+    try {
+      console.log('Exporting global style inventory');
+      
+      const { data, error } = await supabase
+        .rpc('get_global_style_inventory', {
+          search_query: null,
+          page_number: 1,
+          page_size: 10000 // Large limit to get all data
+        });
+
+      if (error) {
+        console.error('RPC error:', error);
+        throw error;
+      }
+
+      return (data || []).map((item: any) => ({
+        'Style Name': item.style_name,
+        'Brand': item.brand_name,
+        'Category': item.category_name,
+        'Total Quantity': item.total_quantity,
+        'Reserved Quantity': item.reserved_quantity,
+        'Available Quantity': item.available_quantity,
+        'Class Count': item.class_count,
+        'SKU Count': item.sku_count,
+        'Warehouse Count': item.warehouse_count,
+        'Locations Count': item.locations_count
+      }));
+    } catch (error) {
+      console.error('Error exporting global style inventory:', error);
+      throw new Error('Failed to export global style inventory');
     }
   }
 }
