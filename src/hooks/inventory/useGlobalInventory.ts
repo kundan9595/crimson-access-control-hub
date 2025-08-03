@@ -52,7 +52,7 @@ export const useGlobalInventory = (options: UseGlobalInventoryOptions = {}) => {
     } finally {
       setLoading(false);
     }
-  }, [searchParams]);
+  }, []); // Remove searchParams from dependencies to prevent infinite loop
 
   // Fetch global statistics
   const fetchStatistics = useCallback(async () => {
@@ -70,18 +70,18 @@ export const useGlobalInventory = (options: UseGlobalInventoryOptions = {}) => {
     if (!pagination.hasMore || loading) return;
     
     const nextPage = pagination.page + 1;
-    await fetchInventory({ ...searchParams, page: nextPage });
-  }, [pagination.hasMore, pagination.page, loading, searchParams, fetchInventory]);
+    await fetchInventory({ page: nextPage });
+  }, [pagination.hasMore, pagination.page, loading, fetchInventory]);
 
   // Search inventory
   const searchInventory = useCallback(async (query: string) => {
-    await fetchInventory({ ...searchParams, query, page: 1 });
-  }, [fetchInventory, searchParams]);
+    await fetchInventory({ query, page: 1 });
+  }, [fetchInventory]);
 
   // Filter inventory
   const filterInventory = useCallback(async (filters: any) => {
-    await fetchInventory({ ...searchParams, filters, page: 1 });
-  }, [fetchInventory, searchParams]);
+    await fetchInventory({ filters, page: 1 });
+  }, [fetchInventory]);
 
   // Clear search and filters
   const clearSearch = useCallback(async () => {
