@@ -1,26 +1,42 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { WarehouseInventory } from '@/services/inventory/types';
+import { WarehouseInventory, WarehouseInventoryLocation } from '@/services/inventory/types';
+import { inventoryService } from '@/services/inventory/inventoryService';
 
 interface InventoryLocationsModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   inventory: WarehouseInventory | null;
+  showWarehouseColumn?: boolean;
 }
 
 const InventoryLocationsModal: React.FC<InventoryLocationsModalProps> = ({
   open,
   onOpenChange,
-  inventory
+  inventory,
+  showWarehouseColumn = false
 }) => {
+  const [locations, setLocations] = useState<WarehouseInventoryLocation[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  // Fetch locations when modal opens
+  useEffect(() => {
+    if (open && inventory?.id) {
+      setLoading(true);
+      inventoryService.getInventoryLocations(inventory.id)
+        .then(setLocations)
+        .catch(console.error)
+        .finally(() => setLoading(false));
+    }
+  }, [open, inventory?.id]);
+
   if (!inventory || !inventory.sku) {
     return null;
   }
 
   const sku = inventory.sku;
-  const locations = inventory.locations || [];
 
   const getLocationCode = (location: any) => {
     const floor = location.floor;
@@ -71,12 +87,21 @@ const InventoryLocationsModal: React.FC<InventoryLocationsModalProps> = ({
           </div>
 
           {/* Locations Table */}
-          {locations.length > 0 ? (
+          {loading ? (
+            <div>
+              <h4 className="font-medium mb-3">Storage Locations</h4>
+              <div className="text-center py-4">
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mx-auto mb-2"></div>
+                <p className="text-sm text-gray-600">Loading locations...</p>
+              </div>
+            </div>
+          ) : locations.length > 0 ? (
             <div>
               <h4 className="font-medium mb-3">Storage Locations</h4>
               <Table>
                 <TableHeader>
                   <TableRow>
+                    {showWarehouseColumn && <TableHead>Warehouse</TableHead>}
                     <TableHead>Location Code</TableHead>
                     <TableHead className="text-right">Quantity</TableHead>
                   </TableRow>
@@ -84,6 +109,11 @@ const InventoryLocationsModal: React.FC<InventoryLocationsModalProps> = ({
                 <TableBody>
                   {locations.map((location) => (
                     <TableRow key={location.id}>
+                      {showWarehouseColumn && (
+                        <TableCell className="font-medium">
+                          {inventory.warehouse?.name || 'N/A'}
+                        </TableCell>
+                      )}
                       <TableCell className="font-medium">
                         {getLocationCode(location)}
                       </TableCell>

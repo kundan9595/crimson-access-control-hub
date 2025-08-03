@@ -13,6 +13,12 @@ export interface WarehouseInventory {
   updated_by?: string;
   // Populated relation fields
   sku?: Sku;
+  warehouse?: {
+    id: string;
+    name: string;
+    city?: string;
+    state?: string;
+  };
   locations?: WarehouseInventoryLocation[];
   reservations?: WarehouseInventoryReservation[];
 }

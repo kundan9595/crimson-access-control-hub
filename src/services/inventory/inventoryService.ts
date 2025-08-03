@@ -643,6 +643,220 @@ class InventoryService {
     }
   }
 
+  // Get global inventory across all warehouses
+  async getGlobalInventory(
+    params: InventorySearchParams = {}
+  ): Promise<InventorySearchResult> {
+    try {
+      console.log('Getting global inventory with params:', params);
+      
+      // Use RPC function to bypass RLS
+      const { data, error } = await supabase
+        .rpc('get_global_inventory', {
+          search_query: params.query || null,
+          page_number: params.page || 1,
+          page_size: params.limit || 20
+        });
+
+      if (error) {
+        console.error('RPC error:', error);
+        throw error;
+      }
+
+      console.log('Global inventory RPC result:', { data: data?.length });
+
+      // Transform the RPC result to match WarehouseInventory interface
+      const transformedInventory: WarehouseInventory[] = (data || []).map((item: any) => ({
+        id: item.id,
+        warehouse_id: item.warehouse_id,
+        sku_id: item.sku_id,
+        total_quantity: item.total_quantity,
+        reserved_quantity: item.reserved_quantity,
+        available_quantity: item.available_quantity,
+        created_at: item.created_at,
+        updated_at: item.updated_at,
+        warehouse: {
+          id: item.warehouse_id,
+          name: item.warehouse_name,
+          city: item.warehouse_city,
+          state: item.warehouse_state
+        },
+        sku: {
+          id: item.sku_id,
+          sku_code: item.sku_code,
+          class: {
+            id: '', // We don't have this from RPC
+            style: {
+              id: '',
+              name: item.style_name,
+              brand: {
+                id: '',
+                name: item.brand_name
+              }
+            },
+            color: {
+              id: '',
+              name: item.color_name
+            }
+          },
+          size: {
+            id: '',
+            name: item.size_name
+          }
+        },
+        locations: [], // We'll fetch this separately when viewing locations
+        reservations: []
+      }));
+
+      return {
+        inventory: transformedInventory,
+        total: transformedInventory.length, // We'll need to get total count separately
+        hasMore: (data?.length || 0) === (params.limit || 20)
+      };
+    } catch (error) {
+      console.error('Error fetching global inventory:', error);
+      throw new Error('Failed to fetch global inventory');
+    }
+  }
+
+  // Get global inventory statistics
+  async getGlobalInventoryStatistics(): Promise<InventoryStatistics> {
+    try {
+      console.log('Getting global inventory statistics');
+      
+      const { data, error } = await supabase
+        .rpc('get_global_inventory_statistics');
+
+      if (error) {
+        console.error('RPC error:', error);
+        throw error;
+      }
+
+      const stats = data?.[0] || {};
+      const total_items = Number(stats.total_items) || 0;
+      const total_quantity = Number(stats.total_quantity) || 0;
+      const reserved_quantity = Number(stats.reserved_quantity) || 0;
+      const available_quantity = Number(stats.available_quantity) || 0;
+
+      console.log('Global inventory statistics:', {
+        total_items,
+        total_quantity,
+        reserved_quantity,
+        available_quantity
+      });
+
+      return {
+        total_items,
+        total_quantity,
+        reserved_quantity,
+        available_quantity
+      };
+    } catch (error) {
+      console.error('Error fetching global inventory statistics:', error);
+      throw new Error('Failed to fetch global inventory statistics');
+    }
+  }
+
+  // Get inventory locations for a specific inventory item
+  async getInventoryLocations(inventoryId: string): Promise<WarehouseInventoryLocation[]> {
+    try {
+      console.log('Getting inventory locations for:', inventoryId);
+      
+      const { data, error } = await supabase
+        .from('warehouse_inventory_locations')
+        .select(`
+          *,
+          floor:warehouse_floors(*),
+          lane:warehouse_lanes(*),
+          rack:warehouse_racks(*)
+        `)
+        .eq('warehouse_inventory_id', inventoryId);
+
+      if (error) {
+        console.error('Database error:', error);
+        throw error;
+      }
+
+      return data as WarehouseInventoryLocation[];
+    } catch (error) {
+      console.error('Error fetching inventory locations:', error);
+      throw new Error('Failed to fetch inventory locations');
+    }
+  }
+
+  // Export global inventory
+  async exportGlobalInventory(): Promise<any[]> {
+    try {
+      console.log('Exporting global inventory');
+      
+      const { data: inventory, error } = await supabase
+        .from('warehouse_inventory')
+        .select(`
+          *,
+          warehouse:warehouses(
+            id,
+            name,
+            city,
+            state
+          ),
+          sku:skus(
+            *,
+            class:classes(
+              *,
+              style:styles(
+                *,
+                brand:brands(*)
+              ),
+              color:colors(*)
+            ),
+            size:sizes(*)
+          ),
+          locations:warehouse_inventory_locations(
+            *,
+            floor:warehouse_floors(*),
+            lane:warehouse_lanes(*),
+            rack:warehouse_racks(*)
+          )
+        `)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Database error:', error);
+        throw error;
+      }
+
+      if (!inventory || inventory.length === 0) {
+        return [];
+      }
+
+      // Transform data for export
+      const exportData = inventory.map(item => {
+        const sku = item.sku;
+        const warehouse = item.warehouse;
+        
+        return {
+          warehouse_name: warehouse?.name || 'N/A',
+          warehouse_location: warehouse ? `${warehouse.city || ''}, ${warehouse.state || ''}`.trim() || 'N/A' : 'N/A',
+          sku_code: sku?.sku_code || '',
+          brand: sku?.class?.style?.brand?.name || '',
+          product_name: sku?.class?.style?.name || '',
+          color: sku?.class?.color?.name || '',
+          size: sku?.size?.name || '',
+          total_quantity: item.total_quantity || 0,
+          reserved_quantity: item.reserved_quantity || 0,
+          available_quantity: item.available_quantity || 0,
+          created_at: item.created_at || ''
+        };
+      });
+
+      console.log('Global export data prepared:', exportData.length, 'records');
+      return exportData;
+    } catch (error) {
+      console.error('Error exporting global inventory:', error);
+      throw new Error('Failed to export global inventory');
+    }
+  }
+
   // Search SKUs for adding inventory
   async searchSkus(query: string, limit: number = 10): Promise<any[]> {
     try {
