@@ -308,10 +308,10 @@ const InventoryTable: React.FC<InventoryTableProps> = ({
                       <TableCell>
                         <div>
                           <div className="font-medium">
-                            {item.sku?.class?.style?.name || 'N/A'}
+                            {item.sku?.class?.name || 'N/A'}
                           </div>
                           <div className="text-sm text-gray-500">
-                            {item.sku?.class?.color?.name} | {item.sku?.class?.size?.name}
+                            {item.sku?.class?.style?.name} | {item.sku?.class?.color?.name} | {item.sku?.class?.size?.name}
                           </div>
                         </div>
                       </TableCell>
