@@ -185,7 +185,7 @@ const InventoryTable: React.FC<InventoryTableProps> = ({
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
-            <CardTitle>{title}</CardTitle>
+            {title && <CardTitle>{title}</CardTitle>}
             <div className="flex items-center gap-2">
               {showExport && (
                 <Button variant="outline" onClick={onExport}>
@@ -210,7 +210,7 @@ const InventoryTable: React.FC<InventoryTableProps> = ({
         </CardHeader>
         <CardContent>
           {/* Search Form */}
-          <form onSubmit={handleSearch} className="mb-6">
+          <form onSubmit={handleSearch} className={title ? "mb-6" : "mb-4"}>
             <div className="flex gap-2">
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />

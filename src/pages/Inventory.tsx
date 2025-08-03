@@ -103,8 +103,8 @@ const Inventory: React.FC = () => {
         onAddSuccess={handleAddSuccess}
         onBulkImportSuccess={handleBulkImportSuccess}
         onExport={handleExport}
-        showWarehouseColumn={true}
-        title="Global Inventory"
+        showWarehouseColumn={false}
+        title=""
         showAddButton={false} // Disable add button for global view
         showBulkImport={true}
         showExport={true}
