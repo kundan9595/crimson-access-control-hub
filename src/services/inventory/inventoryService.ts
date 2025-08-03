@@ -704,7 +704,7 @@ class InventoryService {
             name: item.size_name
           }
         },
-        locations: [], // We'll fetch this separately when viewing locations
+        locations: Array(item.location_count || 0).fill(null), // Create array with correct length for count display
         reservations: []
       }));
 
