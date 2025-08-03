@@ -35,6 +35,19 @@ const ViewWarehouseDialog: React.FC<ViewWarehouseDialogProps> = ({
     }, 0);
   };
 
+  // Calculate total floors count
+  const getFloorsCount = (): number => {
+    return warehouse.floors?.length || 0;
+  };
+
+  // Calculate total lanes count across all floors
+  const getLanesCount = (): number => {
+    if (!warehouse.floors || !Array.isArray(warehouse.floors)) return 0;
+    return warehouse.floors.reduce((total: number, floor: any) => {
+      return total + (floor.lanes?.length || 0);
+    }, 0);
+  };
+
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
       year: 'numeric',
@@ -78,14 +91,14 @@ const ViewWarehouseDialog: React.FC<ViewWarehouseDialogProps> = ({
                   <Building2 className="w-4 h-4 text-blue-600" />
                   <div>
                     <p className="text-sm text-gray-600">Floors</p>
-                    <p className="font-semibold">{warehouse.floors_count || 0}</p>
+                    <p className="font-semibold">{getFloorsCount()}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
                   <MapPin className="w-4 h-4 text-green-600" />
                   <div>
                     <p className="text-sm text-gray-600">Lanes</p>
-                    <p className="font-semibold">{warehouse.lanes_count || 0}</p>
+                    <p className="font-semibold">{getLanesCount()}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -26,7 +27,6 @@ import { usePerformanceMonitoring } from '@/hooks/warehouse/usePerformanceMonito
 import WarehouseCard from '@/components/warehouse/components/WarehouseCard';
 import CreateWarehouseDialog from '@/components/warehouse/dialogs/CreateWarehouseDialog';
 import EditWarehouseDialog from '@/components/warehouse/EditWarehouseDialog';
-import ViewWarehouseDialog from '@/components/warehouse/ViewWarehouseDialog';
 import WarehouseErrorBoundary from '@/components/warehouse/ErrorBoundary';
 import { warehouseServiceOptimized } from '@/services/warehouseServiceOptimized';
 
@@ -37,6 +37,8 @@ const WarehousePageOptimized: React.FC = () => {
     threshold: 200
   });
 
+  const navigate = useNavigate();
+
   // State management
   const [pagination, setPagination] = useState({
     page: 1,
@@ -46,7 +48,6 @@ const WarehousePageOptimized: React.FC = () => {
   // Dialog states
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
   const [selectedWarehouse, setSelectedWarehouse] = useState<any>(null);
   
   // Delete confirmation state
@@ -133,40 +134,61 @@ const WarehousePageOptimized: React.FC = () => {
     }
   };
 
-  const handleViewWarehouse = async (warehouse: any) => {
-    try {
-      const completeWarehouse = await getWarehouseById(warehouse.id);
-      if (completeWarehouse) {
-        setSelectedWarehouse(completeWarehouse);
-        setIsViewDialogOpen(true);
-      } else {
-        toast.error('Failed to load warehouse details');
-      }
-    } catch (error) {
-      console.error('Error loading warehouse for view:', error);
-      toast.error('Failed to load warehouse details');
-    }
+  const handleViewWarehouse = (warehouse: any) => {
+    // Navigate to the warehouse details page
+    navigate(`/warehouse/${warehouse.id}`);
   };
 
   const handleDeleteWarehouse = async (warehouse: any) => {
-    // Show confirmation dialog instead of deleting immediately
     setWarehouseToDelete(warehouse);
     setIsDeleteDialogOpen(true);
   };
 
+  const handleSetPrimaryWarehouse = async (warehouse: any) => {
+    try {
+      // First check if the primary warehouse feature is available
+      const isFeatureAvailable = await warehouseServiceOptimized.isPrimaryWarehouseFeatureAvailable();
+      
+      if (!isFeatureAvailable) {
+        toast.error('Primary warehouse feature is not available. Please run the database migration first.');
+        return;
+      }
+
+      await warehouseServiceOptimized.setPrimaryWarehouse(warehouse.id);
+      toast.success(`${warehouse.name} is now the primary warehouse`);
+      
+      // Clear cache and refresh data to show updated primary status
+      clearCache();
+      await refreshData();
+      
+      // Force multiple refreshes to ensure UI updates properly
+      setTimeout(() => {
+        refreshData();
+      }, 200);
+      
+      setTimeout(() => {
+        refreshData();
+      }, 500);
+    } catch (error) {
+      console.error('Error setting primary warehouse:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to set primary warehouse';
+      toast.error(errorMessage);
+    }
+  };
+
   const confirmDeleteWarehouse = async () => {
     if (!warehouseToDelete) return;
-    
+
     try {
       await deleteWarehouse(warehouseToDelete.id);
       toast.success('Warehouse deleted successfully');
       clearCache();
       await refreshData();
-    } catch (error) {
-      toast.error('Failed to delete warehouse');
-    } finally {
       setIsDeleteDialogOpen(false);
       setWarehouseToDelete(null);
+    } catch (error) {
+      console.error('Error deleting warehouse:', error);
+      toast.error('Failed to delete warehouse');
     }
   };
 
@@ -251,6 +273,7 @@ const WarehousePageOptimized: React.FC = () => {
                     onView={handleViewWarehouse}
                     onEdit={handleEditWarehouse}
                     onDelete={handleDeleteWarehouse}
+                    onSetPrimary={handleSetPrimaryWarehouse}
                     loading={operationsLoading}
                   />
                 ))}
@@ -292,14 +315,10 @@ const WarehousePageOptimized: React.FC = () => {
               warehouse={selectedWarehouse}
               onSave={(data) => handleUpdateWarehouse(selectedWarehouse.id, data)}
             />
-
-            <ViewWarehouseDialog
-              open={isViewDialogOpen}
-              onOpenChange={setIsViewDialogOpen}
-              warehouse={selectedWarehouse}
-            />
           </>
         )}
+
+
 
         {/* Delete Confirmation Dialog */}
         <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>

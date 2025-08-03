@@ -9,7 +9,10 @@ import {
   Trash2, 
   Package,
   MapPin,
-  Calendar
+  Calendar,
+  Star,
+  StarOff,
+  User
 } from 'lucide-react';
 import { type Warehouse } from '@/services/warehouseServiceOptimized';
 
@@ -18,6 +21,7 @@ interface WarehouseCardProps {
   onView: (warehouse: Warehouse) => void;
   onEdit: (warehouse: Warehouse) => void;
   onDelete: (warehouse: Warehouse) => void;
+  onSetPrimary?: (warehouse: Warehouse) => void;
   loading?: boolean;
 }
 
@@ -26,6 +30,7 @@ const WarehouseCard: React.FC<WarehouseCardProps> = memo(({
   onView,
   onEdit,
   onDelete,
+  onSetPrimary,
   loading = false
 }) => {
   const getStatusColor = (status: string) => {
@@ -49,19 +54,45 @@ const WarehouseCard: React.FC<WarehouseCardProps> = memo(({
     });
   };
 
+  // Check if primary warehouse feature is available
+  const isPrimaryFeatureAvailable = warehouse.hasOwnProperty('is_primary');
+  const isPrimary = warehouse.is_primary === true;
+
   return (
     <Card className="hover:shadow-md transition-shadow duration-200">
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between">
-          <div className="flex items-center gap-2">
-            <Building2 className="h-5 w-5 text-blue-600" />
-            <CardTitle className="text-lg font-semibold truncate">
-              {warehouse.name}
-            </CardTitle>
+          <div className="flex flex-col gap-1">
+            <Badge className={`w-fit ${getStatusColor(warehouse.status)}`}>
+              {warehouse.status}
+            </Badge>
+            <div className="flex items-center gap-2">
+              <Building2 className="h-5 w-5 text-blue-600" />
+              <CardTitle className="text-lg font-semibold truncate">
+                {warehouse.name}
+              </CardTitle>
+              {isPrimaryFeatureAvailable && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => onSetPrimary?.(warehouse)}
+                  disabled={loading}
+                  className="p-1 h-auto text-yellow-600 hover:text-yellow-700 hover:bg-yellow-50"
+                  title={isPrimary ? "Primary Warehouse" : "Set as Primary"}
+                >
+                  <Star className={`h-4 w-4 ${isPrimary ? 'fill-current' : ''}`} />
+                </Button>
+              )}
+              {warehouse.warehouse_admin_id && (
+                <div className="p-1 text-green-600" title="Has Warehouse Admin">
+                  <div className="relative">
+                    <User className="h-4 w-4" />
+                    <div className="absolute -top-1 -right-1 w-2 h-2 bg-green-500 rounded-full"></div>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
-          <Badge className={getStatusColor(warehouse.status)}>
-            {warehouse.status}
-          </Badge>
         </div>
       </CardHeader>
       
@@ -95,8 +126,6 @@ const WarehouseCard: React.FC<WarehouseCardProps> = memo(({
             <span>{formatDate(warehouse.created_at)}</span>
           </div>
         </div>
-
-
 
         {/* Actions */}
         <div className="flex gap-2 pt-2">

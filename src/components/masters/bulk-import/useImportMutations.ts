@@ -15,6 +15,7 @@ import { useCreatePart } from '@/hooks/masters/useParts';
 import { useCreateProfitMargin } from '@/hooks/masters/useProfitMargins';
 import { useCreatePromotionalBanner } from '@/hooks/masters/usePromotionalBanners';
 import { useCreatePromotionalAsset } from '@/hooks/masters/usePromotionalAssets';
+import { inventoryService } from '@/services/inventory/inventoryService';
 import { BulkImportType } from './types';
 
 export const useImportMutations = () => {
@@ -69,6 +70,14 @@ export const useImportMutations = () => {
         return createPromotionalBannerMutation;
       case 'promotionalAssets':
         return createPromotionalAssetMutation;
+      case 'inventory':
+        // For inventory, we'll use a custom mutation since it's not a standard master
+        return {
+          mutateAsync: async (data: any) => {
+            // This will be handled specially in the bulk import process
+            return data;
+          }
+        };
       default:
         throw new Error(`Unsupported import type: ${type}`);
     }

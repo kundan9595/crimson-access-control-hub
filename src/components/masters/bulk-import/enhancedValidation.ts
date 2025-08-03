@@ -99,6 +99,46 @@ export function validateRowEnhanced(row: string[], index: number, type: BulkImpo
       } else {
         data.category = 'customer';
       }
+    } else if (header.toLowerCase().includes('quantity')) {
+      // Quantity field (for inventory)
+      if (value) {
+        const quantity = parseInt(value);
+        if (isNaN(quantity) || quantity < 0) {
+          errors.push(`${header} must be a positive number`);
+        } else {
+          data.quantity = quantity;
+        }
+      } else {
+        errors.push(`${header} is required`);
+      }
+    } else if (header.toLowerCase().includes('sku code')) {
+      // SKU Code field (for inventory)
+      if (value) {
+        data.sku_code = value;
+      } else {
+        errors.push(`${header} is required`);
+      }
+    } else if (header.toLowerCase().includes('floor name')) {
+      // Floor Name field (for inventory)
+      if (value) {
+        data.floor_name = value;
+      } else {
+        errors.push(`${header} is required`);
+      }
+    } else if (header.toLowerCase().includes('lane name')) {
+      // Lane Name field (for inventory)
+      if (value) {
+        data.lane_name = value;
+      } else {
+        errors.push(`${header} is required`);
+      }
+    } else if (header.toLowerCase().includes('rack name')) {
+      // Rack Name field (for inventory)
+      if (value) {
+        data.rack_name = value;
+      } else {
+        errors.push(`${header} is required`);
+      }
     } else if (header.toLowerCase().includes('type')) {
       // Type field
       if (value) {

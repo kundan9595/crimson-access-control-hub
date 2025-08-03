@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { warehouseServiceOptimized, type CreateWarehouseData, type WarehouseWithDetails } from '@/services/warehouseServiceOptimized';
+import { warehouseServiceOptimized, type CreateWarehouseData, type WarehouseWithDetails, type Warehouse } from '@/services/warehouseServiceOptimized';
 import { toast } from 'sonner';
 
 interface UseWarehouseOperationsReturn {
@@ -7,6 +7,8 @@ interface UseWarehouseOperationsReturn {
   updateWarehouse: (id: string, data: CreateWarehouseData) => Promise<WarehouseWithDetails | null>;
   deleteWarehouse: (id: string) => Promise<void>;
   getWarehouseById: (id: string) => Promise<WarehouseWithDetails | null>;
+  setPrimaryWarehouse: (id: string) => Promise<Warehouse | null>;
+  getPrimaryWarehouse: () => Promise<Warehouse | null>;
   loading: boolean;
   error: string | null;
 }
@@ -80,11 +82,43 @@ export const useWarehouseOperations = (): UseWarehouseOperationsReturn => {
     }
   }, []);
 
+  const setPrimaryWarehouse = useCallback(async (id: string): Promise<Warehouse | null> => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const warehouse = await warehouseServiceOptimized.setPrimaryWarehouse(id);
+      toast.success('Primary warehouse updated successfully!');
+      return warehouse;
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to set primary warehouse';
+      setError(errorMessage);
+      toast.error(errorMessage);
+      return null;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const getPrimaryWarehouse = useCallback(async (): Promise<Warehouse | null> => {
+    try {
+      setError(null);
+      return await warehouseServiceOptimized.getPrimaryWarehouse();
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch primary warehouse';
+      setError(errorMessage);
+      toast.error(errorMessage);
+      return null;
+    }
+  }, []);
+
   return {
     createWarehouse,
     updateWarehouse,
     deleteWarehouse,
     getWarehouseById,
+    setPrimaryWarehouse,
+    getPrimaryWarehouse,
     loading,
     error
   };

@@ -273,6 +273,47 @@ export const MASTER_DEPENDENCIES: Record<string, MasterConfig> = {
     ],
     exportFields: ['name', 'type', 'link', 'status', 'created_at'] as const,
   },
+  // Inventory (dependent on SKUs and warehouse structure)
+  inventory: {
+    dependencies: [
+      {
+        table: 'skus',
+        lookupField: 'sku_code',
+        nameField: 'sku_code',
+        description: 'SKU to add inventory for',
+        required: true
+      },
+      {
+        table: 'warehouse_floors',
+        lookupField: 'name',
+        nameField: 'name',
+        description: 'Floor name where inventory is stored',
+        required: true
+      },
+      {
+        table: 'warehouse_lanes',
+        lookupField: 'name',
+        nameField: 'name',
+        description: 'Lane name where inventory is stored',
+        required: true
+      },
+      {
+        table: 'warehouse_racks',
+        lookupField: 'rack_name',
+        nameField: 'rack_name',
+        description: 'Rack name where inventory is stored',
+        required: true
+      }
+    ],
+    independent: false,
+    level: 1,
+    templateHeaders: ['SKU Code', 'Floor Name', 'Lane Name', 'Rack Name', 'Quantity'],
+    sampleData: [
+      ['SKU001', 'Floor 1', 'Lane A', 'Rack 1', '100'],
+      ['SKU002', 'Floor 1', 'Lane B', 'Rack 2', '50']
+    ],
+    exportFields: ['sku_code', 'floor_name', 'lane_name', 'rack_name', 'quantity', 'total_quantity', 'reserved_quantity', 'available_quantity', 'created_at'] as const,
+  },
 };
 
 // Helper functions

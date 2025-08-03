@@ -36,6 +36,7 @@ const AppAssetsPage = lazy(() => import("./pages/AppAssetsPage"));
 const PromotionalBannersPage = lazy(() => import("./pages/PromotionalBannersPage"));
 const PromotionalAssetsPage = lazy(() => import("./pages/PromotionalAssetsPage"));
 const Warehouse = lazy(() => import("./pages/WarehouseOptimized"));
+const WarehouseDetails = lazy(() => import("./pages/WarehouseDetails"));
 const Auth = lazy(() => import("./pages/Auth"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
@@ -112,6 +113,7 @@ const App = () => (
                   <Route path="masters/promotional-banners" element={<PromotionalBannersPage />} />
                   <Route path="masters/promotional-assets" element={<PromotionalAssetsPage />} />
                   <Route path="warehouse" element={<Warehouse />} />
+                  <Route path="warehouse/:id" element={<WarehouseDetails />} />
                 </Route>
                 <Route path="*" element={<NotFound />} />
               </Routes>

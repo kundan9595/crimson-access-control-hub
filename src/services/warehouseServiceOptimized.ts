@@ -11,6 +11,8 @@ export interface Warehouse {
   postal_code?: string;
   address?: string;
   status: string;
+  is_primary?: boolean;
+  warehouse_admin_id?: string;
   created_at: string;
   updated_at: string;
   created_by: string;
@@ -78,6 +80,8 @@ export interface CreateWarehouseData {
     postal_code?: string;
     address?: string;
     status?: string;
+    is_primary?: boolean;
+    warehouse_admin_id?: string;
   };
   floors: Array<{
     name: string;
@@ -112,6 +116,8 @@ export interface UpdateWarehouseData {
   postal_code?: string;
   address?: string;
   status?: string;
+  is_primary?: boolean;
+  warehouse_admin_id?: string;
 }
 
 export interface WarehouseFilters {
@@ -214,7 +220,7 @@ class WarehouseServiceOptimized {
       const offset = (pagination.page - 1) * pagination.limit;
       query = query
         .range(offset, offset + pagination.limit - 1)
-        .order(pagination.sortBy || 'created_at', { ascending: pagination.sortOrder !== 'desc' });
+        .order(pagination.sortBy || 'name', { ascending: pagination.sortOrder !== 'desc' });
 
       const { data: warehouses, error, count } = await query;
 
@@ -295,6 +301,154 @@ class WarehouseServiceOptimized {
       throw new Error('Failed to fetch warehouse details');
     }
   }
+
+  // Check if primary warehouse feature is available
+  async isPrimaryWarehouseFeatureAvailable(): Promise<boolean> {
+    try {
+      const { data, error } = await supabase
+        .from('warehouses')
+        .select('is_primary')
+        .limit(1);
+
+      if (error) {
+        console.log('Primary warehouse feature check error:', error);
+        return false;
+      }
+
+      console.log('Primary warehouse feature is available');
+      return true;
+    } catch (error) {
+      console.log('Primary warehouse feature not available:', error);
+      return false;
+    }
+  }
+
+  // Set warehouse as primary
+  async setPrimaryWarehouse(id: string): Promise<Warehouse> {
+    try {
+      console.log('Setting warehouse as primary:', id);
+      
+      // First, manually set all other warehouses to not primary
+      // This is a fallback in case the database trigger isn't working
+      const { error: resetError } = await supabase
+        .from('warehouses')
+        .update({ 
+          is_primary: false
+        } as any)
+        .neq('id', id);
+
+      if (resetError) {
+        console.error('Error resetting other warehouses:', resetError);
+        // Don't throw here, continue with setting the primary warehouse
+      }
+      
+      // Then set the selected warehouse as primary
+      const { data, error } = await supabase
+        .from('warehouses')
+        .update({ 
+          is_primary: true
+        } as any)
+        .eq('id', id)
+        .select('*')
+        .single();
+
+      console.log('Update result:', { data, error });
+
+      if (error) {
+        console.error('Supabase error:', error);
+        // Check if the error is due to missing column
+        if (error.message?.includes('column "is_primary" does not exist')) {
+          throw new Error('Primary warehouse feature is not yet available. Please run the database migration first.');
+        }
+        throw error;
+      }
+
+      if (!data) {
+        throw new Error('No warehouse returned after update');
+      }
+
+      console.log('Successfully set warehouse as primary:', data);
+
+      // Clear cache to reflect changes
+      this.cache.invalidatePattern('warehouses:*');
+      this.cache.delete(`warehouse:${id}`);
+      
+      // Also clear any related cache entries
+      this.cache.clear();
+
+      return data as Warehouse;
+    } catch (error) {
+      console.error('Error setting primary warehouse:', error);
+      if (error instanceof Error) {
+        throw new Error(error.message);
+      }
+      throw new Error('Failed to set primary warehouse');
+    }
+  }
+
+  // Get primary warehouse
+  async getPrimaryWarehouse(): Promise<Warehouse | null> {
+    try {
+      const { data: warehouse, error } = await supabase
+        .from('warehouses')
+        .select('*')
+        .eq('is_primary', true)
+        .single();
+
+      if (error) {
+        if (error.code === 'PGRST116') return null; // Not found
+        // Check if the error is due to missing column
+        if (error.message?.includes('column "is_primary" does not exist')) {
+          console.warn('Primary warehouse feature is not available - column does not exist');
+          return null;
+        }
+        throw error;
+      }
+
+      return warehouse;
+    } catch (error) {
+      console.error('Error fetching primary warehouse:', error);
+      throw new Error('Failed to fetch primary warehouse');
+    }
+  }
+
+  // Update warehouse admin
+  async updateWarehouseAdmin(warehouseId: string, adminId: string | null): Promise<Warehouse> {
+    try {
+      const userId = await this.getCurrentUserId();
+      
+      const { data, error } = await supabase
+        .from('warehouses')
+        .update({ 
+          warehouse_admin_id: adminId,
+          updated_at: new Date().toISOString(),
+          updated_by: userId
+        })
+        .eq('id', warehouseId)
+        .select('*')
+        .single();
+      
+      if (error) {
+        console.error('Supabase error:', error);
+        throw error;
+      }
+
+      if (!data) {
+        throw new Error('Warehouse not found');
+      }
+
+      // Clear cache to reflect changes
+      this.cache.invalidatePattern('warehouses:*');
+      this.cache.delete(`warehouse:${warehouseId}`);
+      
+      return data as Warehouse;
+    } catch (error) {
+      console.error('Error updating warehouse admin:', error);
+      throw new Error('Failed to update warehouse admin');
+    }
+  }
+
+
 
   // Create warehouse with full hierarchy
   async createWarehouse(data: CreateWarehouseData): Promise<WarehouseWithDetails> {

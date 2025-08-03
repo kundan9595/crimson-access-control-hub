@@ -1,4 +1,4 @@
-export type BulkImportType = 'brands' | 'categories' | 'colors' | 'sizeGroups' | 'zones' | 'priceTypes' | 'vendors' | 'styles' | 'classes' | 'skus' | 'add-ons' | 'appAssets' | 'parts' | 'profitMargins' | 'promotionalBanners' | 'promotionalAssets';
+export type BulkImportType = 'brands' | 'categories' | 'colors' | 'sizeGroups' | 'zones' | 'priceTypes' | 'vendors' | 'styles' | 'classes' | 'skus' | 'add-ons' | 'appAssets' | 'parts' | 'profitMargins' | 'promotionalBanners' | 'promotionalAssets' | 'inventory';
 
 export type ValidationResult = {
   valid: boolean;

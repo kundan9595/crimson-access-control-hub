@@ -61,6 +61,22 @@ export const updateClass = async (id: string, updates: Partial<Class>): Promise<
 };
 
 export const deleteClass = async (id: string): Promise<void> => {
+  // First, delete dependent records
+  const { error: skuError } = await supabase
+    .from('skus')
+    .delete()
+    .eq('class_id', id);
+
+  if (skuError) throw skuError;
+
+  const { error: bannerError } = await supabase
+    .from('promotional_banners')
+    .delete()
+    .eq('class_id', id);
+
+  if (bannerError) throw bannerError;
+
+  // Then delete the class
   const { error } = await supabase
     .from('classes')
     .delete()
