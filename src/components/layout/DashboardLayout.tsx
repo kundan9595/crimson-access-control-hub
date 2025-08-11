@@ -2,7 +2,7 @@
 import React from 'react';
 import { Outlet, useLocation, Link } from 'react-router-dom';
 import { SidebarProvider, Sidebar, SidebarContent, SidebarHeader, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
-import { Users, Settings, Shield, Building, Package, ShoppingCart, LogOut, Palette, Truck, UserCheck } from 'lucide-react';
+import { Users, Settings, Shield, Building, Package, ShoppingCart, LogOut, Palette, Truck, UserCheck, FileText } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 
@@ -20,6 +20,7 @@ const DashboardLayout = () => {
     { icon: Building, label: 'Warehouses', path: '/warehouse' },
     { icon: Package, label: 'Inventory', path: '/inventory' },
     { icon: Truck, label: 'Inbound', path: '/inbound' },
+    { icon: FileText, label: 'Purchase Orders', path: '/purchase-orders' },
     { icon: UserCheck, label: 'Customers', path: '/customers' },
     { icon: ShoppingCart, label: 'Orders', path: '/orders' },
     { icon: Palette, label: 'Masters', path: '/masters' },
@@ -74,7 +75,7 @@ const DashboardLayout = () => {
             <SidebarTrigger className="-ml-1" />
             <div className="flex-1" />
           </header>
-          <main className="flex-1 p-6">
+          <main className="flex-1 p-4">
             <Outlet />
           </main>
         </SidebarInset>

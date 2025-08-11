@@ -1,5 +1,6 @@
 
 import React, { useState } from 'react';
+
 import { Card, CardContent } from '@/components/ui/card';
 import { Scissors } from 'lucide-react';
 import { MasterPageHeader } from '@/components/masters/shared/MasterPageHeader';
@@ -19,12 +20,12 @@ const FabricPage = () => {
 
   const handleExport = () => {
     // TODO: Implement export functionality
-    console.log('Export fabric clicked');
+    // Export fabric clicked
   };
 
   const handleImport = () => {
     // TODO: Implement import functionality
-    console.log('Import fabric clicked');
+    // Import fabric clicked
   };
 
   const filteredFabrics = fabrics.filter((fabric) =>
@@ -33,7 +34,7 @@ const FabricPage = () => {
   );
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
+    <div className="space-y-6">
       <MasterPageHeader
         title="Fabric"
         description="Manage fabric types, properties, and specifications"

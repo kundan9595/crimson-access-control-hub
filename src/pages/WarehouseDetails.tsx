@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+
 import { useParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -251,9 +252,15 @@ const WarehouseDetails: React.FC<WarehouseDetailsProps> = () => {
     setIsRackModalOpen(true);
   };
 
+  // Handle rack inventory added
+  const handleRackInventoryAdded = async () => {
+    // Refresh rack inventory counts when inventory is added from rack modal
+    await fetchRackInventoryQuantities();
+  };
+
   if (loading) {
     return (
-      <div className="container mx-auto p-6 space-y-6">
+      <div className="space-y-6">
         <div className="flex items-center gap-4">
           <Skeleton className="h-8 w-48" />
           <Skeleton className="h-8 w-24" />
@@ -271,7 +278,7 @@ const WarehouseDetails: React.FC<WarehouseDetailsProps> = () => {
 
   if (error || !warehouse) {
     return (
-      <div className="container mx-auto p-6">
+      <div>
         <div className="text-center space-y-4">
           <h1 className="text-2xl font-bold text-gray-900">Warehouse Not Found</h1>
           <p className="text-gray-600">{error || 'The requested warehouse could not be found.'}</p>
@@ -285,7 +292,7 @@ const WarehouseDetails: React.FC<WarehouseDetailsProps> = () => {
   }
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
+    <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
@@ -334,80 +341,80 @@ const WarehouseDetails: React.FC<WarehouseDetailsProps> = () => {
       {/* Warehouse Overview */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Warehouse Overview</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div className="flex items-center gap-2">
-                  <Building2 className="w-4 h-4 text-blue-600" />
-                  <div>
-                    <p className="text-sm text-gray-600">Floors</p>
-                    <p className="font-semibold">{getFloorsCount()}</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <MapPin className="w-4 h-4 text-green-600" />
-                  <div>
-                    <p className="text-sm text-gray-600">Lanes</p>
-                    <p className="font-semibold">{getLanesCount()}</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Package className="w-4 h-4 text-purple-600" />
-                  <div>
-                    <p className="text-sm text-gray-600">Total Racks</p>
-                    <p className="font-semibold">
-                      {warehouse.floors?.reduce((total: number, floor: any) =>
-                        total + getTotalRacks(floor), 0
-                      ) || 0}
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Calendar className="w-4 h-4 text-orange-600" />
-                  <div>
-                    <p className="text-sm text-gray-600">Created</p>
-                    <p className="font-semibold text-sm">
-                      {warehouse.created_at ? formatDate(warehouse.created_at) : 'N/A'}
-                    </p>
-                  </div>
-                </div>
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">Warehouse Overview</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="flex items-center gap-2">
+              <Building2 className="w-4 h-4 text-blue-600" />
+              <div>
+                <p className="text-sm text-gray-600">Floors</p>
+                <p className="font-semibold">{getFloorsCount()}</p>
               </div>
-
-              <div className="flex items-center gap-2">
-                <Badge className={getStatusColor(warehouse.status || 'active')}>
-                  {warehouse.status || 'Active'}
-                </Badge>
-                {warehouse.is_primary && (
-                  <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">
-                    <Star className="w-3 h-3 mr-1" />
-                    Primary
-                  </Badge>
-                )}
-                {warehouse.city && warehouse.state && (
-                  <span className="text-sm text-gray-600">
-                    📍 {warehouse.city}, {warehouse.state}
-                  </span>
-                )}
+            </div>
+            <div className="flex items-center gap-2">
+              <MapPin className="w-4 h-4 text-green-600" />
+              <div>
+                <p className="text-sm text-gray-600">Lanes</p>
+                <p className="font-semibold">{getLanesCount()}</p>
               </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <Package className="w-4 h-4 text-purple-600" />
+              <div>
+                <p className="text-sm text-gray-600">Total Racks</p>
+                <p className="font-semibold">
+                  {warehouse.floors?.reduce((total: number, floor: any) =>
+                    total + getTotalRacks(floor), 0
+                  ) || 0}
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <Calendar className="w-4 h-4 text-orange-600" />
+              <div>
+                <p className="text-sm text-gray-600">Created</p>
+                <p className="font-semibold text-sm">
+                  {warehouse.created_at ? formatDate(warehouse.created_at) : 'N/A'}
+                </p>
+              </div>
+            </div>
+          </div>
 
-              {warehouse.description && (
-                <div>
-                  <p className="text-sm text-gray-600 mb-1">Description</p>
-                  <p className="text-sm">{warehouse.description}</p>
-                </div>
-              )}
+          <div className="flex items-center gap-2">
+            <Badge className={getStatusColor(warehouse.status || 'active')}>
+              {warehouse.status || 'Active'}
+            </Badge>
+            {warehouse.is_primary && (
+              <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">
+                <Star className="w-3 h-3 mr-1" />
+                Primary
+              </Badge>
+            )}
+            {warehouse.city && warehouse.state && (
+              <span className="text-sm text-gray-600">
+                📍 {warehouse.city}, {warehouse.state}
+              </span>
+            )}
+          </div>
 
-              {warehouse.address && (
-                <div>
-                  <p className="text-sm text-gray-600 mb-1">Address</p>
-                  <p className="text-sm">{warehouse.address}</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+          {warehouse.description && (
+            <div>
+              <p className="text-sm text-gray-600 mb-1">Description</p>
+              <p className="text-sm">{warehouse.description}</p>
+            </div>
+          )}
+
+          {warehouse.address && (
+            <div>
+              <p className="text-sm text-gray-600 mb-1">Address</p>
+              <p className="text-sm">{warehouse.address}</p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
         </div>
 
         {/* Warehouse Admin Card */}
@@ -456,22 +463,22 @@ const WarehouseDetails: React.FC<WarehouseDetailsProps> = () => {
                         <Card key={lane.id || laneIndex}>
                           <CardHeader>
                             <CardTitle className="text-md">
-                              Lane {lane.lane_number || laneIndex + 1}: {lane.name}
+                            Lane {lane.lane_number || laneIndex + 1}: {lane.name}
                             </CardTitle>
                           </CardHeader>
                           <CardContent>
-                            {lane.racks && lane.racks.length > 0 ? (
-                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                {/* Left Side Racks */}
-                                {lane.config?.left_side_enabled && (
-                                  <div>
-                                    <h5 className="font-medium text-sm mb-2 flex items-center gap-1">
-                                      <ArrowLeft className="w-3 h-3" />
-                                      Left Side
-                                    </h5>
-                                    <div className="grid grid-cols-2 gap-2">
-                                      {lane.racks
-                                        .filter((rack: any) => rack.side === 'left')
+                          {lane.racks && lane.racks.length > 0 ? (
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                              {/* Left Side Racks */}
+                              {lane.config?.left_side_enabled && (
+                                <div>
+                                  <h5 className="font-medium text-sm mb-2 flex items-center gap-1">
+                                    <ArrowLeft className="w-3 h-3" />
+                                    Left Side
+                                  </h5>
+                                  <div className="grid grid-cols-2 gap-2">
+                                    {lane.racks
+                                      .filter((rack: any) => rack.side === 'left')
                                         .map((rack: any, rackIndex: number) => {
                                           const inventoryQuantity = rackInventoryQuantities[rack.id] || 0;
                                           return (
@@ -486,7 +493,7 @@ const WarehouseDetails: React.FC<WarehouseDetailsProps> = () => {
                                               onClick={() => handleRackClick(rack, floor, lane)}
                                             >
                                               <span className="text-sm font-medium">
-                                                {rack.rack_name || `Rack ${rack.rack_number || rackIndex + 1}`}
+                                          {rack.rack_name || `Rack ${rack.rack_number || rackIndex + 1}`}
                                               </span>
                                               {inventoryQuantity > 0 && (
                                                 <Badge variant="secondary" className="text-xs bg-green-100 text-green-800">
@@ -496,20 +503,20 @@ const WarehouseDetails: React.FC<WarehouseDetailsProps> = () => {
                                             </Button>
                                           );
                                         })}
-                                    </div>
                                   </div>
-                                )}
+                                </div>
+                              )}
 
-                                {/* Right Side Racks */}
-                                {lane.config?.right_side_enabled && (
-                                  <div>
-                                    <h5 className="font-medium text-sm mb-2 flex items-center gap-1">
-                                      <ArrowRight className="w-3 h-3" />
-                                      Right Side
-                                    </h5>
-                                    <div className="grid grid-cols-2 gap-2">
-                                      {lane.racks
-                                        .filter((rack: any) => rack.side === 'right')
+                              {/* Right Side Racks */}
+                              {lane.config?.right_side_enabled && (
+                                <div>
+                                  <h5 className="font-medium text-sm mb-2 flex items-center gap-1">
+                                    <ArrowRight className="w-3 h-3" />
+                                    Right Side
+                                  </h5>
+                                  <div className="grid grid-cols-2 gap-2">
+                                    {lane.racks
+                                      .filter((rack: any) => rack.side === 'right')
                                         .map((rack: any, rackIndex: number) => {
                                           const inventoryQuantity = rackInventoryQuantities[rack.id] || 0;
                                           return (
@@ -524,7 +531,7 @@ const WarehouseDetails: React.FC<WarehouseDetailsProps> = () => {
                                               onClick={() => handleRackClick(rack, floor, lane)}
                                             >
                                               <span className="text-sm font-medium">
-                                                {rack.rack_name || `Rack ${rack.rack_number || rackIndex + 1}`}
+                                          {rack.rack_name || `Rack ${rack.rack_number || rackIndex + 1}`}
                                               </span>
                                               {inventoryQuantity > 0 && (
                                                 <Badge variant="secondary" className="text-xs bg-green-100 text-green-800">
@@ -534,13 +541,13 @@ const WarehouseDetails: React.FC<WarehouseDetailsProps> = () => {
                                             </Button>
                                           );
                                         })}
-                                    </div>
                                   </div>
-                                )}
-                              </div>
-                            ) : (
-                              <p className="text-gray-500 text-sm">No racks configured</p>
-                            )}
+                                </div>
+                              )}
+                            </div>
+                          ) : (
+                            <p className="text-gray-500 text-sm">No racks configured</p>
+                          )}
                           </CardContent>
                         </Card>
                       ))}
@@ -598,6 +605,7 @@ const WarehouseDetails: React.FC<WarehouseDetailsProps> = () => {
           laneName={selectedRack.laneName}
           warehouseId={warehouse.id}
           warehouseStructure={warehouse}
+          onInventoryAdded={handleRackInventoryAdded}
         />
       )}
 

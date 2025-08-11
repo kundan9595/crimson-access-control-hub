@@ -5,7 +5,7 @@ export type { PromotionalBanner };
 
 export const promotionalBannersService = {
   async getAll(): Promise<PromotionalBanner[]> {
-    console.log('📊 PromotionalBannersService - Fetching promotional banners');
+    // PromotionalBannersService - Fetching promotional banners
     
     const { data, error } = await supabase
       .from('promotional_banners' as any)
@@ -23,12 +23,12 @@ export const promotionalBannersService = {
       throw error;
     }
 
-    console.log('✅ PromotionalBannersService - Successfully fetched promotional banners:', data?.length || 0);
+          // PromotionalBannersService - Successfully fetched promotional banners
     return data as unknown as PromotionalBanner[];
   },
 
   async getById(id: string): Promise<PromotionalBanner | null> {
-    console.log('📊 PromotionalBannersService - Fetching promotional banner by ID:', id);
+          // PromotionalBannersService - Fetching promotional banner by ID
     
     const { data, error } = await supabase
       .from('promotional_banners' as any)
@@ -46,12 +46,12 @@ export const promotionalBannersService = {
       throw error;
     }
 
-    console.log('✅ PromotionalBannersService - Successfully fetched promotional banner:', (data as any)?.id);
+          // PromotionalBannersService - Successfully fetched promotional banner
     return data as unknown as PromotionalBanner;
   },
 
   async create(banner: Omit<PromotionalBanner, 'id' | 'created_at' | 'updated_at' | 'created_by' | 'updated_by' | 'category' | 'brand' | 'class'>): Promise<PromotionalBanner> {
-    console.log('📊 PromotionalBannersService - Creating promotional banner:', banner);
+          // PromotionalBannersService - Creating promotional banner
     
     const { data, error } = await supabase
       .from('promotional_banners' as any)
@@ -69,12 +69,12 @@ export const promotionalBannersService = {
       throw error;
     }
 
-    console.log('✅ PromotionalBannersService - Successfully created promotional banner:', (data as any)?.id);
+          // PromotionalBannersService - Successfully created promotional banner
     return data as unknown as PromotionalBanner;
   },
 
   async update(id: string, updates: Partial<PromotionalBanner>): Promise<PromotionalBanner> {
-    console.log('📊 PromotionalBannersService - Updating promotional banner:', id, updates);
+          // PromotionalBannersService - Updating promotional banner
     
     const { data, error } = await supabase
       .from('promotional_banners' as any)
@@ -93,12 +93,12 @@ export const promotionalBannersService = {
       throw error;
     }
 
-    console.log('✅ PromotionalBannersService - Successfully updated promotional banner:', (data as any)?.id);
+          // PromotionalBannersService - Successfully updated promotional banner
     return data as unknown as PromotionalBanner;
   },
 
   async delete(id: string): Promise<void> {
-    console.log('📊 PromotionalBannersService - Deleting promotional banner:', id);
+          // PromotionalBannersService - Deleting promotional banner
     
     const { error } = await supabase
       .from('promotional_banners' as any)
@@ -110,11 +110,11 @@ export const promotionalBannersService = {
       throw error;
     }
 
-    console.log('✅ PromotionalBannersService - Successfully deleted promotional banner');
+          // PromotionalBannersService - Successfully deleted promotional banner
   },
 
   async bulkCreate(banners: Omit<PromotionalBanner, 'id' | 'created_at' | 'updated_at' | 'created_by' | 'updated_by' | 'category' | 'brand' | 'class'>[]): Promise<PromotionalBanner[]> {
-    console.log('📊 PromotionalBannersService - Bulk creating promotional banners:', banners.length);
+          // PromotionalBannersService - Bulk creating promotional banners
     
     const { data, error } = await supabase
       .from('promotional_banners' as any)
@@ -131,7 +131,7 @@ export const promotionalBannersService = {
       throw error;
     }
 
-    console.log('✅ PromotionalBannersService - Successfully bulk created promotional banners:', data?.length || 0);
+          // PromotionalBannersService - Successfully bulk created promotional banners
     return data as unknown as PromotionalBanner[];
   }
 }; 

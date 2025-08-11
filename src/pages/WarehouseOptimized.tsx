@@ -23,19 +23,14 @@ import { toast } from 'sonner';
 // Import optimized hooks and components
 import { useWarehouseData } from '@/hooks/warehouse/useWarehouseData';
 import { useWarehouseOperations } from '@/hooks/warehouse/useWarehouseOperations';
-import { usePerformanceMonitoring } from '@/hooks/warehouse/usePerformanceMonitoring';
+
 import WarehouseCard from '@/components/warehouse/components/WarehouseCard';
 import CreateWarehouseDialog from '@/components/warehouse/dialogs/CreateWarehouseDialog';
 import EditWarehouseDialog from '@/components/warehouse/EditWarehouseDialog';
 import WarehouseErrorBoundary from '@/components/warehouse/ErrorBoundary';
 import { warehouseServiceOptimized } from '@/services/warehouseServiceOptimized';
 
-// Performance monitoring
 const WarehousePageOptimized: React.FC = () => {
-  const { startRender, endRender } = usePerformanceMonitoring({
-    componentName: 'WarehousePageOptimized',
-    threshold: 200
-  });
 
   const navigate = useNavigate();
 
@@ -82,11 +77,7 @@ const WarehousePageOptimized: React.FC = () => {
     error: operationsError
   } = useWarehouseOperations();
 
-  // Performance monitoring
-  useEffect(() => {
-    startRender();
-    return () => endRender();
-  }, [startRender, endRender]);
+  // Performance monitoring - removed to prevent infinite re-renders
 
   // Handle warehouse operations
   const handleCreateWarehouse = async (data: any) => {
@@ -210,7 +201,7 @@ const WarehousePageOptimized: React.FC = () => {
     ));
 
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {skeletons}
       </div>
     );
@@ -265,7 +256,7 @@ const WarehousePageOptimized: React.FC = () => {
             </Card>
           ) : (
             <>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {warehouses.map((warehouse) => (
                   <WarehouseCard
                     key={warehouse.id}

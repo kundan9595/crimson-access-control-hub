@@ -68,8 +68,7 @@ serve(async (req) => {
       selectedRoles 
     } = await req.json()
 
-    console.log('Creating user with data:', { firstName, lastName, email, department, designation })
-    console.log('Selected roles received:', selectedRoles, 'Type:', typeof selectedRoles, 'Length:', selectedRoles?.length)
+    // Creating user with data
 
     // Create user with admin client
     const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
@@ -103,7 +102,7 @@ serve(async (req) => {
       )
     }
 
-    console.log('User created successfully:', newUser.user.id)
+    // User created successfully
 
     // Create or update profile entry using upsert to handle duplicates
     const { data: profile, error: profileError } = await supabaseAdmin
@@ -134,15 +133,15 @@ serve(async (req) => {
       )
     }
 
-    console.log('Profile created/updated successfully:', profile?.id)
+    // Profile created/updated successfully
     
     // Assign roles to the user
     if (selectedRoles && Array.isArray(selectedRoles) && selectedRoles.length > 0) {
-      console.log('Processing roles - Count:', selectedRoles.length)
+      // Processing roles
       
       // Remove duplicates and filter out any invalid values
       const uniqueRoleIds = [...new Set(selectedRoles.filter(roleId => roleId && typeof roleId === 'string'))]
-      console.log('Unique role IDs after filtering:', uniqueRoleIds)
+      // Unique role IDs after filtering
       
       if (uniqueRoleIds.length > 0) {
         const userRoles = uniqueRoleIds.map((roleId: string) => ({
@@ -151,7 +150,7 @@ serve(async (req) => {
           assigned_by: user.id,
         }))
 
-        console.log('User roles to insert:', userRoles)
+        // User roles to insert
 
         const { error: rolesError } = await supabaseAdmin
           .from('user_roles')
@@ -168,15 +167,15 @@ serve(async (req) => {
           )
         }
 
-        console.log('Roles assigned successfully - inserted', uniqueRoleIds.length, 'roles')
+        // Roles assigned successfully
       } else {
-        console.log('No valid roles to assign after filtering')
+                  // No valid roles to assign after filtering
       }
     } else {
-      console.log('No roles provided or selectedRoles is not an array:', selectedRoles)
+      // No roles provided or selectedRoles is not an array
     }
     
-    console.log('User creation process completed successfully')
+    // User creation process completed successfully
     
     return new Response(
       JSON.stringify({ 

@@ -60,10 +60,10 @@ const RackConfigurationDialog: React.FC<RackConfigurationDialogProps> = ({
 
   useEffect(() => {
     if (initialConfig) {
-      console.log('Loading initial rack configuration:', initialConfig);
+      // Loading initial rack configuration
       setConfig(initialConfig);
     } else {
-      console.log('No initial config provided, using defaults');
+              // No initial config provided, using defaults
     }
   }, [initialConfig]);
 

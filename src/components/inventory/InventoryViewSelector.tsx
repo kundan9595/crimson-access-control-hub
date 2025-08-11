@@ -15,22 +15,24 @@ const InventoryViewSelector: React.FC<InventoryViewSelectorProps> = ({
   loading = false
 }) => {
   return (
-    <Tabs value={currentView} onValueChange={(value) => onViewChange(value as InventoryViewType)}>
-      <TabsList className="grid w-full grid-cols-3">
-        <TabsTrigger value="sku" disabled={loading} className="flex items-center gap-2">
-          <Package className="w-4 h-4" />
-          SKU View
-        </TabsTrigger>
-        <TabsTrigger value="class" disabled={loading} className="flex items-center gap-2">
-          <Layers className="w-4 h-4" />
-          Class View
-        </TabsTrigger>
-        <TabsTrigger value="style" disabled={loading} className="flex items-center gap-2">
-          <Palette className="w-4 h-4" />
-          Style View
-        </TabsTrigger>
-      </TabsList>
-    </Tabs>
+    <div className="flex justify-start">
+      <Tabs value={currentView} onValueChange={(value) => onViewChange(value as InventoryViewType)}>
+        <TabsList className="inline-flex h-10 items-center justify-center rounded-md bg-muted p-1 text-muted-foreground">
+          <TabsTrigger value="sku" disabled={loading} className="flex items-center gap-2 px-3 py-2">
+            <Package className="w-4 h-4" />
+            SKU View
+          </TabsTrigger>
+          <TabsTrigger value="class" disabled={loading} className="flex items-center gap-2 px-3 py-2">
+            <Layers className="w-4 h-4" />
+            Class View
+          </TabsTrigger>
+          <TabsTrigger value="style" disabled={loading} className="flex items-center gap-2 px-3 py-2">
+            <Palette className="w-4 h-4" />
+            Style View
+          </TabsTrigger>
+        </TabsList>
+      </Tabs>
+    </div>
   );
 };
 

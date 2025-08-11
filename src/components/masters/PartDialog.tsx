@@ -37,7 +37,7 @@ export const PartDialog: React.FC<PartDialogProps> = ({
   onSubmit,
   isSubmitting = false,
 }) => {
-  console.log('🏗️ PartDialog - Rendering with part:', part);
+  // PartDialog - Rendering with part
   
   const { data: addOns = [] } = useAddOns();
   const { data: colors = [] } = useColors();
@@ -55,7 +55,7 @@ export const PartDialog: React.FC<PartDialogProps> = ({
   });
 
   useEffect(() => {
-    console.log('🔄 PartDialog - Resetting form with part:', part);
+    // PartDialog - Resetting form with part
     if (part) {
       form.reset({
         name: part.name,

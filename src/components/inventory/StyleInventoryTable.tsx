@@ -9,6 +9,7 @@ import { Search, Download, AlertTriangle, MapPin } from 'lucide-react';
 import { StyleInventoryView } from '@/services/inventory/types';
 import { exportToCSV } from '@/utils/exportUtils';
 import { toast } from 'sonner';
+import StatisticsCards from './StatisticsCards';
 
 interface StyleInventoryTableProps {
   // Data
@@ -88,55 +89,7 @@ const StyleInventoryTable: React.FC<StyleInventoryTableProps> = ({
   return (
     <div className="space-y-6">
       {/* Statistics Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center space-x-2">
-              <div className="w-3 h-3 bg-blue-600 rounded-full" />
-              <div>
-                <p className="text-sm text-gray-600">Total Styles</p>
-                <p className="text-2xl font-bold">{statistics?.total_styles || 0}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center space-x-2">
-              <div className="w-3 h-3 bg-green-600 rounded-full" />
-              <div>
-                <p className="text-sm text-gray-600">Total Quantity</p>
-                <p className="text-2xl font-bold">{statistics?.total_quantity || 0}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center space-x-2">
-              <div className="w-3 h-3 bg-orange-600 rounded-full" />
-              <div>
-                <p className="text-sm text-gray-600">Reserved</p>
-                <p className="text-2xl font-bold">{statistics?.reserved_quantity || 0}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center space-x-2">
-              <div className="w-3 h-3 bg-purple-600 rounded-full" />
-              <div>
-                <p className="text-sm text-gray-600">Available</p>
-                <p className="text-2xl font-bold">{statistics?.available_quantity || 0}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+      <StatisticsCards statistics={statistics} viewType="style" />
 
       {/* Search and Actions */}
       <Card>

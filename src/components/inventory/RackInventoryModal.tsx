@@ -19,6 +19,7 @@ interface RackInventoryModalProps {
   laneName: string;
   warehouseId: string;
   warehouseStructure: any;
+  onInventoryAdded?: () => void; // Optional callback when inventory is added
 }
 
 const RackInventoryModal: React.FC<RackInventoryModalProps> = ({
@@ -29,7 +30,8 @@ const RackInventoryModal: React.FC<RackInventoryModalProps> = ({
   floorName,
   laneName,
   warehouseId,
-  warehouseStructure
+  warehouseStructure,
+  onInventoryAdded
 }) => {
   const [inventory, setInventory] = useState<WarehouseInventory[]>([]);
   const [loading, setLoading] = useState(false);
@@ -69,10 +71,15 @@ const RackInventoryModal: React.FC<RackInventoryModalProps> = ({
     return 'In Stock';
   };
 
-  const handleAddSuccess = () => {
+  const handleAddSuccess = async () => {
     // Refresh the inventory data
-    fetchRackInventory();
+    await fetchRackInventory();
     toast.success('Inventory added successfully');
+    
+    // Notify parent component that inventory was added
+    if (onInventoryAdded) {
+      onInventoryAdded();
+    }
   };
 
   return (

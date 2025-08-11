@@ -22,16 +22,24 @@ const InventoryTab: React.FC<InventoryTabProps> = ({
     pagination,
     searchInventory,
     clearSearch,
-    loadMore
+    loadMore,
+    addInventory,
+    fetchInventory
   } = useInventory({
     warehouseId,
     autoFetch: true
   });
 
   // Handle add inventory success
-  const handleAddSuccess = () => {
-    // The hook will automatically refresh the data
-    toast.success('Inventory added successfully');
+  const handleAddSuccess = async () => {
+    try {
+      // Refresh the inventory data
+      await fetchInventory();
+      toast.success('Inventory added successfully');
+    } catch (error) {
+      console.error('Error refreshing inventory:', error);
+      toast.error('Inventory added but failed to refresh the list');
+    }
   };
 
   // Handle export inventory
@@ -86,12 +94,7 @@ const InventoryTab: React.FC<InventoryTabProps> = ({
     }
   };
 
-  // Handle bulk import success
-  const handleBulkImportSuccess = () => {
-    // Refresh the inventory data
-    // The hook will automatically refresh the data
-    toast.success('Bulk import completed successfully');
-  };
+
 
   return (
     <InventoryTable
@@ -104,7 +107,6 @@ const InventoryTab: React.FC<InventoryTabProps> = ({
       onClearSearch={clearSearch}
       onLoadMore={loadMore}
       onAddSuccess={handleAddSuccess}
-      onBulkImportSuccess={handleBulkImportSuccess}
       onExport={handleExport}
       warehouseId={warehouseId}
       warehouseStructure={warehouseStructure}

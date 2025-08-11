@@ -99,10 +99,10 @@ export const SkuDialog = ({ open, onOpenChange, sku }: SkuDialogProps) => {
   // Update available sizes when class selection changes
   useEffect(() => {
     if (selectedClassId && classes.length > 0 && allSizes.length > 0) {
-      console.log('Selected class ID:', selectedClassId);
+      // Selected class ID
       
       const selectedClass = classes.find(c => c.id === selectedClassId);
-      console.log('Selected class:', selectedClass);
+              // Selected class
       
       if (selectedClass?.selected_sizes && Array.isArray(selectedClass.selected_sizes)) {
         // Filter sizes based on the selected_sizes array from the class
@@ -114,8 +114,7 @@ export const SkuDialog = ({ open, onOpenChange, sku }: SkuDialogProps) => {
           classSizeIds.includes(size.id) && size.status === 'active'
         );
         
-        console.log('Class size IDs:', classSizeIds);
-        console.log('Filtered sizes:', filteredSizes);
+                  // Class size IDs and filtered sizes
         
         setAvailableSizes(filteredSizes);
         
@@ -125,7 +124,7 @@ export const SkuDialog = ({ open, onOpenChange, sku }: SkuDialogProps) => {
           form.setValue('size_id', '');
         }
       } else {
-        console.log('No selected sizes found for class');
+                  // No selected sizes found for class
         setAvailableSizes([]);
         form.setValue('size_id', '');
       }

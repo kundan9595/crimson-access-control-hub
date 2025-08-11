@@ -101,9 +101,9 @@ const AddInventoryDialog: React.FC<AddInventoryDialogProps> = ({
 
     try {
       setSearchingSkus(true);
-      console.log('Searching SKUs with query:', query);
+      // Searching SKUs with query
       const results = await inventoryService.searchSkus(query, 10);
-      console.log('SKU search results:', results);
+              // SKU search results
       setSkuOptions(results);
     } catch (error) {
       console.error('Error searching SKUs:', error);

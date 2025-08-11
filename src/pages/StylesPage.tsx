@@ -1,5 +1,6 @@
 
 import React, { useState } from 'react';
+
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -50,7 +51,7 @@ const StylesPage = () => {
   ];
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
+    <div className="space-y-6">
       <MasterPageHeader
         title="Styles"
         description="Manage your product styles and their variations"

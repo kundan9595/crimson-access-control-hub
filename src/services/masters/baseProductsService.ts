@@ -42,7 +42,7 @@ export interface BaseProduct {
 }
 
 export const fetchBaseProducts = async (): Promise<BaseProduct[]> => {
-  console.log('🔍 Fetching base products from database');
+  // Fetching base products from database
   const { data, error } = await supabase
     .from('base_products')
     .select(`
@@ -57,7 +57,7 @@ export const fetchBaseProducts = async (): Promise<BaseProduct[]> => {
     throw error;
   }
   
-  console.log('✅ Fetched base products:', data);
+      // Fetched base products successfully
   
   const processedData = (data || []).map(item => ({
     ...item,
@@ -74,7 +74,7 @@ export const fetchBaseProducts = async (): Promise<BaseProduct[]> => {
 };
 
 export const createBaseProduct = async (baseProductData: Omit<BaseProduct, 'id' | 'created_at' | 'updated_at' | 'created_by' | 'updated_by' | 'category' | 'fabric' | 'size_group'>): Promise<BaseProduct> => {
-  console.log('🆕 Creating base product:', baseProductData);
+  // Creating base product
   
   const insertData = {
     name: baseProductData.name,
@@ -113,7 +113,7 @@ export const createBaseProduct = async (baseProductData: Omit<BaseProduct, 'id' 
     throw error;
   }
   
-  console.log('✅ Created base product:', data);
+      // Created base product successfully
   
   const processedData = {
     ...data,
@@ -130,7 +130,7 @@ export const createBaseProduct = async (baseProductData: Omit<BaseProduct, 'id' 
 };
 
 export const updateBaseProduct = async (id: string, updates: Partial<BaseProduct>): Promise<BaseProduct> => {
-  console.log('📝 Updating base product:', id, updates);
+  // Updating base product
   
   const updateData = {
     name: updates.name,
@@ -170,7 +170,7 @@ export const updateBaseProduct = async (id: string, updates: Partial<BaseProduct
     throw error;
   }
   
-  console.log('✅ Updated base product:', data);
+      // Updated base product successfully
   
   const processedData = {
     ...data,
@@ -187,7 +187,7 @@ export const updateBaseProduct = async (id: string, updates: Partial<BaseProduct
 };
 
 export const deleteBaseProduct = async (id: string): Promise<void> => {
-  console.log('🗑️ Deleting base product:', id);
+  // Deleting base product
   const { error } = await supabase
     .from('base_products')
     .delete()
@@ -198,5 +198,5 @@ export const deleteBaseProduct = async (id: string): Promise<void> => {
     throw error;
   }
   
-  console.log('✅ Deleted base product:', id);
+      // Deleted base product successfully
 };

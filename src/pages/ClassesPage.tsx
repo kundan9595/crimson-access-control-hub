@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -36,7 +37,7 @@ const ClassesPage = () => {
   };
 
   const handleAdd = () => {
-    console.log('Opening add dialog - clearing editingClass');
+    // Opening add dialog - clearing editingClass
     setEditingClass(null);
     setDialogOpen(true);
   };
@@ -100,7 +101,7 @@ const ClassesPage = () => {
   }
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
+    <div className="space-y-6">
       <MasterPageHeader
         title="Classes"
         description="Manage product classes with styles, colors, and images"

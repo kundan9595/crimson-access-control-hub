@@ -1,5 +1,6 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -17,11 +18,18 @@ const ZonesPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [searchTerm, setSearchTerm] = useState('');
   const [editingZone, setEditingZone] = useState<Zone | null>(null);
-  const [isDialogOpen, setIsDialogOpen] = useState(searchParams.get('add') === 'true');
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isBulkImportOpen, setIsBulkImportOpen] = useState(false);
   
   const { data: zones, isLoading } = useZones();
   const deleteZone = useDeleteZone();
+
+  useEffect(() => {
+    if (searchParams.get('add') === 'true') {
+      setIsDialogOpen(true);
+      setSearchParams({});
+    }
+  }, [searchParams, setSearchParams]);
 
   const filteredZones = zones?.filter(zone =>
     zone.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -45,7 +53,10 @@ const ZonesPage = () => {
   const handleCloseDialog = () => {
     setIsDialogOpen(false);
     setEditingZone(null);
-    setSearchParams({});
+    // Only clear search params if they contain 'add=true'
+    if (searchParams.get('add') === 'true') {
+      setSearchParams({});
+    }
   };
 
   const handleExport = () => {
@@ -83,7 +94,7 @@ const ZonesPage = () => {
   }
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
+    <div className="space-y-6">
       <MasterPageHeader
         title="Zones"
         description="Manage geographical zones and their locations"

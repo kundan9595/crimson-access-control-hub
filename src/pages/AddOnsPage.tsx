@@ -1,5 +1,6 @@
 
 import React, { useState, useRef } from 'react';
+
 import { Card, CardContent } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
@@ -96,7 +97,7 @@ const AddOnsPage = () => {
   }
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
+    <div className="space-y-6">
       <MasterPageHeader
         title="Add Ons"
         description="Configure additional features and add-on components"

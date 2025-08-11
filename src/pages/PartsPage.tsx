@@ -1,5 +1,6 @@
 
 import React, { useState } from 'react';
+
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -15,7 +16,7 @@ import { exportToCSV, generateExportFilename } from '@/utils/exportUtils';
 import { Part } from '@/services/masters/partsService';
 
 const PartsPage = () => {
-  console.log('🏗️ PartsPage - Rendering');
+  // Component rendering
   
   const [searchTerm, setSearchTerm] = useState('');
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -56,19 +57,19 @@ const PartsPage = () => {
   };
 
   const handleAdd = () => {
-    console.log('➕ Adding new part');
+    // Adding new part
     setEditingPart(undefined);
     setDialogOpen(true);
   };
 
   const handleEdit = (part: Part) => {
-    console.log('✏️ Editing part:', part);
+    // Editing part
     setEditingPart(part);
     setDialogOpen(true);
   };
 
   const handleDelete = async (part: Part) => {
-    console.log('🗑️ Deleting part:', part);
+    // Deleting part
     if (window.confirm(`Are you sure you want to delete "${part.name}"?`)) {
       try {
         await deletePartMutation.mutateAsync(part.id);
@@ -79,7 +80,7 @@ const PartsPage = () => {
   };
 
   const handleSubmit = async (data: any) => {
-    console.log('💾 Submitting part data:', data);
+    // Submitting part data
     try {
       if (editingPart) {
         await updatePartMutation.mutateAsync({
@@ -102,7 +103,7 @@ const PartsPage = () => {
   };
 
   const handleExport = () => {
-    console.log('📤 Export parts clicked');
+    // Export parts clicked
     if (!parts || parts.length === 0) return;
 
     exportToCSV({
@@ -122,7 +123,7 @@ const PartsPage = () => {
   };
 
   const handleImport = () => {
-    console.log('📥 Import parts clicked');
+    // Import parts clicked
     setImportDialogOpen(true);
   };
 
@@ -134,7 +135,7 @@ const PartsPage = () => {
 
   if (isLoading) {
     return (
-      <div className="container mx-auto p-6 space-y-6">
+      <div className="space-y-6">
         <MasterPageHeader
           title="Parts"
           description="Define and manage product parts and components"
@@ -156,7 +157,7 @@ const PartsPage = () => {
   }
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
+    <div className="space-y-6">
       <MasterPageHeader
         title="Parts"
         description="Define and manage product parts and components"

@@ -1,5 +1,6 @@
 
 import React, { useState } from 'react';
+
 import { Package } from 'lucide-react';
 import { SkusList } from '@/components/masters/SkusList';
 import { SkuDialog } from '@/components/masters/SkuDialog';
@@ -64,7 +65,7 @@ const SkusPage = () => {
   };
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
+    <div className="space-y-6">
       <MasterPageHeader
         title="SKUs"
         description="Manage your product SKUs with pricing, dimensions, and specifications"

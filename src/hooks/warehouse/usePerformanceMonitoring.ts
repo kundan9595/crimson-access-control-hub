@@ -64,13 +64,13 @@ export const usePerformanceMonitoring = ({
     renderStartTime.current = 0;
   }, [enabled, componentName, threshold, onMetrics]);
 
-  // Monitor component lifecycle
+  // Monitor component lifecycle - only run once on mount
   useEffect(() => {
     startRender();
     return () => {
       endRender();
     };
-  }, [startRender, endRender]);
+  }, []); // Empty dependency array to run only once
 
   // Monitor specific dependencies
   const monitorDependencies = useCallback((dependencies: any[]) => {
@@ -80,7 +80,7 @@ export const usePerformanceMonitoring = ({
         endRender();
       };
     }, dependencies);
-  }, [startRender, endRender]);
+  }, []); // Remove dependencies to prevent infinite re-renders
 
   return {
     startRender,

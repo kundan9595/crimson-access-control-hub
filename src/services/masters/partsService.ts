@@ -16,7 +16,7 @@ export interface Part {
 }
 
 export const fetchParts = async (): Promise<Part[]> => {
-  console.log('🔍 Fetching parts from database');
+  // Fetching parts from database
   const { data, error } = await supabase
     .from('parts')
     .select('*')
@@ -27,12 +27,12 @@ export const fetchParts = async (): Promise<Part[]> => {
     throw error;
   }
   
-  console.log('✅ Fetched parts:', data);
+      // Fetched parts successfully
   return (data || []) as Part[];
 };
 
 export const createPart = async (partData: Omit<Part, 'id' | 'created_at' | 'updated_at' | 'created_by' | 'updated_by'>): Promise<Part> => {
-  console.log('🆕 Creating part:', partData);
+  // Creating part
   const { data, error } = await supabase
     .from('parts')
     .insert([partData])
@@ -44,12 +44,12 @@ export const createPart = async (partData: Omit<Part, 'id' | 'created_at' | 'upd
     throw error;
   }
   
-  console.log('✅ Created part:', data);
+      // Created part successfully
   return data as Part;
 };
 
 export const updatePart = async (id: string, updates: Partial<Part>): Promise<Part> => {
-  console.log('📝 Updating part:', id, updates);
+  // Updating part
   const { data, error } = await supabase
     .from('parts')
     .update(updates)
@@ -62,12 +62,12 @@ export const updatePart = async (id: string, updates: Partial<Part>): Promise<Pa
     throw error;
   }
   
-  console.log('✅ Updated part:', data);
+      // Updated part successfully
   return data as Part;
 };
 
 export const deletePart = async (id: string): Promise<void> => {
-  console.log('🗑️ Deleting part:', id);
+  // Deleting part
   const { error } = await supabase
     .from('parts')
     .delete()
@@ -78,5 +78,5 @@ export const deletePart = async (id: string): Promise<void> => {
     throw error;
   }
   
-  console.log('✅ Deleted part:', id);
+      // Deleted part successfully
 };

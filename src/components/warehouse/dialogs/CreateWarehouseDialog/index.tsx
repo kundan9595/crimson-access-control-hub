@@ -268,7 +268,7 @@ const CreateWarehouseDialog: React.FC<CreateWarehouseDialogProps> = ({
           lanes: `Duplicate lane names found: ${duplicateErrors.join('. ')}`
         }));
         setValidationStatus({ hasDuplicates: true, isValid: false });
-        console.log('Duplicate lane names detected:', duplicateErrors);
+        // Duplicate lane names detected
       } else {
         setErrors(prev => {
           const newErrors = { ...prev };
@@ -503,7 +503,7 @@ const CreateWarehouseDialog: React.FC<CreateWarehouseDialogProps> = ({
     
     // Check for duplicate lane names using validation status
     if (validationStatus.hasDuplicates) {
-      console.log('Duplicate lane names detected via validation status, save button should be disabled');
+              // Duplicate lane names detected via validation status, save button should be disabled
       return true;
     }
     

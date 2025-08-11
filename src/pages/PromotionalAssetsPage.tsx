@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -87,7 +88,7 @@ const PromotionalAssetsPage = () => {
 
   if (isLoading) {
     return (
-      <div className="container mx-auto p-6 space-y-6">
+      <div className="space-y-6">
         <div className="text-center py-8">
           <p>Loading promotional assets...</p>
         </div>
@@ -96,7 +97,7 @@ const PromotionalAssetsPage = () => {
   }
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
+    <div className="space-y-6">
       <MasterPageHeader
         title="Promotional Assets"
         description="Manage promotional assets including videos, catalogues, and images"

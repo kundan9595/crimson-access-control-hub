@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -99,7 +100,7 @@ const PromotionalBannersPage = () => {
 
   if (isLoading) {
     return (
-      <div className="container mx-auto p-6 space-y-6">
+      <div className="space-y-6">
         <div className="text-center py-8">
           <p>Loading promotional banners...</p>
         </div>
@@ -108,7 +109,7 @@ const PromotionalBannersPage = () => {
   }
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
+    <div className="space-y-6">
       <MasterPageHeader
         title="Promotional Banners"
         description="Manage promotional banners with category, brand, and class associations"

@@ -44,12 +44,12 @@ const CreateUserForm: React.FC<CreateUserFormProps> = ({ roles, onSuccess }) => 
       return;
     }
 
-    console.log('Submitting form with roles:', selectedRoles);
+    // Submitting form with roles
     createUser({ ...formData, selectedRoles });
   };
 
   const handleRoleChange = (roleId: string, checked: boolean) => {
-    console.log('Role change:', roleId, checked);
+    // Role change
     if (checked) {
       setSelectedRoles(prev => [...prev, roleId]);
     } else {

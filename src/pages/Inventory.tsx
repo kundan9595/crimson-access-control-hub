@@ -1,17 +1,18 @@
-import React, { useState, useEffect } from 'react';
-import { useGlobalInventory } from '@/hooks/inventory/useGlobalInventory';
+import React, { useState, useEffect, useRef } from 'react';
+import { useConsolidatedSkuInventory } from '@/hooks/inventory/useConsolidatedSkuInventory';
 import { useClassInventory } from '@/hooks/inventory/useClassInventory';
 import { useStyleInventory } from '@/hooks/inventory/useStyleInventory';
-import InventoryTable from '@/components/inventory/InventoryTable';
+import ConsolidatedSkuInventoryTable from '@/components/inventory/ConsolidatedSkuInventoryTable';
 import ClassInventoryTable from '@/components/inventory/ClassInventoryTable';
 import StyleInventoryTable from '@/components/inventory/StyleInventoryTable';
 import InventoryViewSelector from '@/components/inventory/InventoryViewSelector';
+import InventoryFilters, { InventoryFilterState } from '@/components/inventory/InventoryFilters';
 import { InventoryViewType } from '@/components/inventory/types';
 import InventoryDrillDownModal from '@/components/inventory/InventoryDrillDownModal';
 import { inventoryService } from '@/services/inventory/inventoryService';
 import { exportToCSV } from '@/utils/exportUtils';
 import { toast } from 'sonner';
-import InventoryLocationsModal from '@/components/inventory/InventoryLocationsModal';
+import EnhancedInventoryLocationsModal from '@/components/inventory/EnhancedInventoryLocationsModal';
 import BulkImportDialog from '@/components/masters/BulkImportDialog';
 import { Button } from '@/components/ui/button';
 import { Upload } from 'lucide-react';
@@ -19,6 +20,9 @@ import { Upload } from 'lucide-react';
 const Inventory: React.FC = () => {
   const [currentView, setCurrentView] = useState<InventoryViewType>('sku');
   const [isBulkImportOpen, setIsBulkImportOpen] = useState(false);
+  const [filters, setFilters] = useState<InventoryFilterState>({});
+  const [hasError, setHasError] = useState(false);
+  const initialFetchDone = useRef(false);
   const [drillDownModal, setDrillDownModal] = useState({
     isOpen: false,
     viewType: 'sku' as InventoryViewType,
@@ -32,11 +36,11 @@ const Inventory: React.FC = () => {
     viewType: 'sku' as InventoryViewType,
     itemId: '',
     itemName: '',
-    locations: [] as any[]
+    itemCode: ''
   });
 
   // SKU View Hook
-  const skuInventory = useGlobalInventory({
+  const skuInventory = useConsolidatedSkuInventory({
     autoFetch: false // We'll manually control fetching
   });
 
@@ -54,27 +58,55 @@ const Inventory: React.FC = () => {
   useEffect(() => {
     switch (currentView) {
       case 'sku':
-        if (skuInventory.inventory.length === 0) {
-          skuInventory.searchInventory('');
+        skuInventory.searchInventory('');
+        skuInventory.fetchStatistics();
+        break;
+      case 'class':
+        classInventory.searchInventory('');
+        classInventory.fetchStatistics();
+        break;
+      case 'style':
+        styleInventory.searchInventory('');
+        styleInventory.fetchStatistics();
+        break;
+    }
+  }, [currentView]);
+
+  // Handle filter changes
+  useEffect(() => {
+    const hasFilters = Object.keys(filters).length > 0;
+    
+    switch (currentView) {
+      case 'sku':
+        if (hasFilters) {
+          // Apply filters to consolidated SKU view
+          skuInventory.filterInventory(filters);
+        } else {
+          // Clear filters and refresh data
+          skuInventory.clearSearch();
         }
         break;
       case 'class':
-        if (classInventory.inventory.length === 0) {
-          classInventory.searchInventory('');
-        }
+        // For now, class view doesn't support complex filtering
+        // Just refresh data when filters change
+        classInventory.clearSearch();
         break;
       case 'style':
-        if (styleInventory.inventory.length === 0) {
-          styleInventory.searchInventory('');
-        }
+        // For now, style view doesn't support complex filtering
+        // Just refresh data when filters change
+        styleInventory.clearSearch();
         break;
     }
-  }, [currentView, skuInventory, classInventory, styleInventory]);
+  }, [filters, currentView]);
 
   // Initial data fetch
   useEffect(() => {
-    // Load SKU data by default
-    skuInventory.searchInventory('');
+    if (!initialFetchDone.current) {
+      // Load SKU data by default
+      skuInventory.searchInventory('');
+      skuInventory.fetchStatistics();
+      initialFetchDone.current = true;
+    }
   }, []); // Empty dependency array - only run once on mount
 
   // Get current view data
@@ -82,50 +114,104 @@ const Inventory: React.FC = () => {
     switch (currentView) {
       case 'sku':
         return {
-          inventory: skuInventory.inventory,
-          statistics: skuInventory.statistics,
-          loading: skuInventory.loading,
-          error: skuInventory.error,
-          pagination: skuInventory.pagination,
+          inventory: skuInventory.inventory || [],
+          statistics: skuInventory.statistics || null,
+          loading: skuInventory.loading || false,
+          error: skuInventory.error || null,
+          pagination: skuInventory.pagination || { page: 1, total: 0, hasMore: false },
           searchInventory: skuInventory.searchInventory,
           clearSearch: skuInventory.clearSearch,
           loadMore: skuInventory.loadMore,
           exportInventory: skuInventory.exportInventory
         };
+        
       case 'class':
         return {
-          inventory: classInventory.inventory,
-          statistics: classInventory.statistics,
-          loading: classInventory.loading,
-          error: classInventory.error,
-          pagination: classInventory.pagination,
+          inventory: classInventory.inventory || [],
+          statistics: classInventory.statistics || null,
+          loading: classInventory.loading || false,
+          error: classInventory.error || null,
+          pagination: classInventory.pagination || { page: 1, total: 0, hasMore: false },
           searchInventory: classInventory.searchInventory,
           clearSearch: classInventory.clearSearch,
           loadMore: classInventory.loadMore,
           exportInventory: classInventory.exportInventory
         };
+        
       case 'style':
         return {
-          inventory: styleInventory.inventory,
-          statistics: styleInventory.statistics,
-          loading: styleInventory.loading,
-          error: styleInventory.error,
-          pagination: styleInventory.pagination,
+          inventory: styleInventory.inventory || [],
+          statistics: styleInventory.statistics || null,
+          loading: styleInventory.loading || false,
+          error: styleInventory.error || null,
+          pagination: styleInventory.pagination || { page: 1, total: 0, hasMore: false },
           searchInventory: styleInventory.searchInventory,
           clearSearch: styleInventory.clearSearch,
           loadMore: styleInventory.loadMore,
           exportInventory: styleInventory.exportInventory
         };
+        
       default:
-        return skuInventory;
+        return {
+          inventory: skuInventory.inventory || [],
+          statistics: skuInventory.statistics || null,
+          loading: skuInventory.loading || false,
+          error: skuInventory.error || null,
+          pagination: skuInventory.pagination || { page: 1, total: 0, hasMore: false },
+          searchInventory: skuInventory.searchInventory,
+          clearSearch: skuInventory.clearSearch,
+          loadMore: skuInventory.loadMore,
+          exportInventory: skuInventory.exportInventory
+        };
     }
   };
 
-  const currentData = getCurrentViewData();
+  // Use useMemo to recalculate currentData when dependencies change
+  const currentData = React.useMemo(() => getCurrentViewData(), [
+    currentView,
+    skuInventory.inventory,
+    skuInventory.statistics,
+    skuInventory.loading,
+    skuInventory.error,
+    skuInventory.pagination,
+    classInventory.inventory,
+    classInventory.statistics,
+    classInventory.loading,
+    classInventory.error,
+    classInventory.pagination,
+    styleInventory.inventory,
+    styleInventory.statistics,
+    styleInventory.loading,
+    styleInventory.error,
+    styleInventory.pagination,
+  ]);
+
+  // Error boundary for the component
+  if (hasError) {
+    return (
+      <div className="space-y-4">
+        <div className="text-center space-y-4">
+          <h1 className="text-2xl font-bold text-gray-900">Something went wrong</h1>
+          <p className="text-gray-600">There was an error loading the inventory data.</p>
+          <Button onClick={() => window.location.reload()}>
+            Reload Page
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   // Handle view change
   const handleViewChange = (view: InventoryViewType) => {
     setCurrentView(view);
+  };
+
+  const handleFiltersChange = (newFilters: InventoryFilterState) => {
+    setFilters(newFilters);
+  };
+
+  const handleClearFilters = () => {
+    setFilters({});
   };
 
   // Handle add inventory success (not applicable for global view)
@@ -149,19 +235,19 @@ const Inventory: React.FC = () => {
 
       switch (currentView) {
         case 'sku':
-          filename = `global-sku-inventory-export-${new Date().toISOString().split('T')[0]}.csv`;
+          filename = `consolidated-sku-inventory-export-${new Date().toISOString().split('T')[0]}.csv`;
           headers = [
-            'Warehouse',
-            'Warehouse Location',
             'SKU Code',
             'Brand',
-            'Product Name',
+            'Style',
+            'Class',
             'Color',
             'Size',
             'Total Quantity',
             'Reserved Quantity',
             'Available Quantity',
-            'Created Date'
+            'Warehouse Count',
+            'Locations Count'
           ];
           break;
         case 'class':
@@ -267,47 +353,34 @@ const Inventory: React.FC = () => {
       const currentInventory = currentData.inventory;
       let item: any = null;
       let itemName = 'Unknown';
+      let itemCode = '';
 
       // Type-safe way to find the item based on current view
       if (currentView === 'sku') {
-        item = (currentInventory as any[]).find((inv: any) => inv.id === id);
-        itemName = item?.sku?.sku_code || 'Unknown SKU';
+        item = (currentInventory as any[]).find((inv: any) => inv.sku_id === id);
+        itemName = item?.sku_code || 'Unknown SKU';
+        itemCode = item?.sku_code || '';
       } else if (currentView === 'class') {
         item = (currentInventory as any[]).find((inv: any) => inv.class_id === id);
         itemName = item?.class_name || 'Unknown Class';
+        itemCode = item?.class_name || '';
       } else if (currentView === 'style') {
         item = (currentInventory as any[]).find((inv: any) => inv.style_id === id);
         itemName = item?.style_name || 'Unknown Style';
+        itemCode = item?.style_name || '';
       }
 
       if (!item) {
         toast.error('Item not found');
         return;
       }
-
-      // For now, we'll show placeholder data. In a real implementation,
-      // you would fetch location data from the API based on the view type
-      const placeholderLocations = [
-        {
-          id: '1',
-          warehouse_name: 'Main Warehouse',
-          floor_name: 'Floor 1',
-          lane_name: 'Lane A',
-          rack_name: 'Rack 1 (Left)',
-          quantity: 50,
-          sku_code: item.sku_code || 'SKU001',
-          size_name: item.size_name || 'M',
-          class_name: item.class_name,
-          style_name: item.style_name
-        }
-      ];
       
       setLocationsModal({
         isOpen: true,
         viewType: currentView,
         itemId: id,
         itemName,
-        locations: placeholderLocations
+        itemCode
       });
 
       toast.info(`Viewing locations for ${itemName}`);
@@ -327,22 +400,23 @@ const Inventory: React.FC = () => {
     setLocationsModal(prev => ({ ...prev, isOpen: false }));
   };
 
-  return (
-    <div className="container mx-auto py-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Global Inventory</h1>
-          <p className="text-gray-600 mt-2">
-            View and manage inventory across all warehouses
-          </p>
+  try {
+    return (
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">Global Inventory</h1>
+            <p className="text-gray-600 mt-2">
+              View and manage inventory across all warehouses
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" onClick={() => setIsBulkImportOpen(true)}>
+              <Upload className="w-4 h-4 mr-2" />
+              Bulk Import
+            </Button>
+          </div>
         </div>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" onClick={() => setIsBulkImportOpen(true)}>
-            <Upload className="w-4 h-4 mr-2" />
-            Bulk Import
-          </Button>
-        </div>
-      </div>
 
       {/* View Selector */}
       <InventoryViewSelector
@@ -351,9 +425,17 @@ const Inventory: React.FC = () => {
         loading={currentData.loading}
       />
 
+      {/* Filters */}
+      <InventoryFilters
+        filters={filters}
+        onFiltersChange={handleFiltersChange}
+        onClearFilters={handleClearFilters}
+        loading={currentData.loading}
+      />
+
       {/* Render appropriate table based on current view */}
       {currentView === 'sku' && (
-        <InventoryTable
+        <ConsolidatedSkuInventoryTable
           inventory={currentData.inventory as any}
           statistics={currentData.statistics}
           loading={currentData.loading}
@@ -362,13 +444,9 @@ const Inventory: React.FC = () => {
           onSearch={currentData.searchInventory}
           onClearSearch={currentData.clearSearch}
           onLoadMore={currentData.loadMore}
-          onAddSuccess={handleAddSuccess}
-          onBulkImportSuccess={handleBulkImportSuccess}
           onExport={handleExport}
-          showWarehouseColumn={false}
-          title="SKU Inventory"
-          showAddButton={false} // Disable add button for global view
-          showBulkImport={false} // Disable bulk import since it's at top level
+          onViewLocations={handleViewLocations}
+          title="Consolidated SKU Inventory"
           showExport={true}
         />
       )}
@@ -415,14 +493,14 @@ const Inventory: React.FC = () => {
         details={drillDownModal.details}
       />
 
-      {/* Locations Modal */}
-      <InventoryLocationsModal
+      {/* Enhanced Locations Modal */}
+      <EnhancedInventoryLocationsModal
         isOpen={locationsModal.isOpen}
         onClose={closeLocationsModal}
         viewType={locationsModal.viewType}
         itemId={locationsModal.itemId}
         itemName={locationsModal.itemName}
-        locations={locationsModal.locations}
+        itemCode={locationsModal.itemCode}
       />
 
       {/* Bulk Import Dialog */}
@@ -433,6 +511,21 @@ const Inventory: React.FC = () => {
       />
     </div>
   );
+  } catch (error) {
+    console.error('Error in Inventory component:', error);
+    setHasError(true);
+    return (
+      <div className="space-y-4">
+        <div className="text-center space-y-4">
+          <h1 className="text-2xl font-bold text-gray-900">Something went wrong</h1>
+          <p className="text-gray-600">There was an error loading the inventory data.</p>
+          <Button onClick={() => window.location.reload()}>
+            Reload Page
+          </Button>
+        </div>
+      </div>
+    );
+  }
 };
 
 export default Inventory; 

@@ -7,21 +7,11 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
 import { useCreateBrand, useUpdateBrand } from '@/hooks/masters/useBrands';
 import ImageUpload from '@/components/ui/ImageUpload';
 import { BaseFormDialog } from './shared/BaseFormDialog';
 import type { Brand } from '@/services/mastersService';
-
-const brandSchema = z.object({
-  name: z.string().min(1, 'Name is required'),
-  description: z.string().optional(),
-  logo_url: z.string().optional(),
-  status: z.string(),
-  sort_order: z.number().min(0, 'Sort order must be 0 or greater').optional(),
-});
-
-type BrandFormData = z.infer<typeof brandSchema>;
+import { brandSchema, type BrandFormData } from '@/lib/validation/schemas';
 
 type BrandDialogProps = {
   open: boolean;

@@ -23,7 +23,7 @@ export const AddOnsList = forwardRef<AddOnsListRef, AddOnsListProps>(({ searchTe
   const [selectedAddOn, setSelectedAddOn] = useState<AddOn | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
 
-  console.log('🔄 AddOnsList - Render state:', {
+  // AddOnsList - Render state
     searchTerm,
     selectedAddOn: selectedAddOn?.id || null,
     dialogOpen
@@ -43,25 +43,23 @@ export const AddOnsList = forwardRef<AddOnsListRef, AddOnsListProps>(({ searchTe
   );
 
   const handleCreate = () => {
-    console.log('🚀 AddOnsList - handleCreate called!');
-    console.log('🚀 AddOnsList - User check:', user ? 'User exists' : 'No user');
+    // AddOnsList - handleCreate called
     
     if (!user) {
-      console.log('❌ AddOnsList - No user, showing toast and returning');
+              // AddOnsList - No user, showing toast and returning
       toast.error('Please sign in to create add-ons');
       return;
     }
     
-    console.log('✅ AddOnsList - Setting selectedAddOn to null');
+    // AddOnsList - Setting dialog state
     setSelectedAddOn(null);
-    console.log('✅ AddOnsList - Setting dialogOpen to true');
     setDialogOpen(true);
-    console.log('✅ AddOnsList - handleCreate completed, dialogOpen should be true');
+    // AddOnsList - handleCreate completed
   };
 
   // Expose the create function to parent component
   useImperativeHandle(ref, () => {
-    console.log('🔗 AddOnsList - useImperativeHandle creating ref object');
+    // AddOnsList - useImperativeHandle creating ref object
     return {
       triggerCreate: handleCreate
     };
@@ -136,7 +134,7 @@ export const AddOnsList = forwardRef<AddOnsListRef, AddOnsListProps>(({ searchTe
     );
   }
 
-  console.log('🎨 AddOnsList - About to render, dialogOpen:', dialogOpen);
+  // AddOnsList - About to render
 
   return (
     <>

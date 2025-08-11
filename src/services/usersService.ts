@@ -24,7 +24,7 @@ export async function fetchWarehouseAdmins(): Promise<Profile[]> {
       throw error;
     }
 
-    console.log('Found warehouse admins via RPC:', data);
+    // Found warehouse admins via RPC
     return data || [];
   } catch (error) {
     console.error('Error in fetchWarehouseAdmins:', error);

@@ -1,5 +1,6 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
@@ -17,13 +18,20 @@ const SizeGroupsPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [searchTerm, setSearchTerm] = useState('');
   const [editingSizeGroup, setEditingSizeGroup] = useState<SizeGroup | null>(null);
-  const [isDialogOpen, setIsDialogOpen] = useState(searchParams.get('add') === 'true');
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
   const [isBulkImportOpen, setIsBulkImportOpen] = useState(false);
   const [addingSizeToGroup, setAddingSizeToGroup] = useState<string | null>(null);
   
   const { data: sizeGroups, isLoading } = useSizeGroups();
   const deleteSizeGroup = useDeleteSizeGroup();
+
+  useEffect(() => {
+    if (searchParams.get('add') === 'true') {
+      setIsDialogOpen(true);
+      setSearchParams({});
+    }
+  }, [searchParams, setSearchParams]);
 
   const filteredSizeGroups = sizeGroups?.filter(sizeGroup =>
     sizeGroup.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -44,7 +52,10 @@ const SizeGroupsPage = () => {
   const handleCloseDialog = () => {
     setIsDialogOpen(false);
     setEditingSizeGroup(null);
-    setSearchParams({});
+    // Only clear search params if they contain 'add=true'
+    if (searchParams.get('add') === 'true') {
+      setSearchParams({});
+    }
   };
 
   const toggleGroupExpansion = (groupId: string) => {
@@ -82,11 +93,11 @@ const SizeGroupsPage = () => {
   };
 
   if (isLoading) {
-    return <div className="container mx-auto p-6">Loading...</div>;
+    return <div>Loading...</div>;
   }
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
+    <div className="space-y-6">
       <MasterPageHeader
         title="Size Groups"
         description="Manage size groupings and individual sizes"

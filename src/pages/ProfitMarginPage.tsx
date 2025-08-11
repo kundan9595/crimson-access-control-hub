@@ -1,5 +1,6 @@
 
 import React, { useState } from 'react';
+
 import { Card, CardContent } from '@/components/ui/card';
 import { TrendingUp } from 'lucide-react';
 import { MasterPageHeader } from '@/components/masters/shared/MasterPageHeader';
@@ -119,7 +120,7 @@ const ProfitMarginPage = () => {
   }
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
+    <div className="space-y-6">
       <MasterPageHeader
         title="Profit Margins"
         description="Configure profit margins and pricing strategies"

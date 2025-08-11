@@ -22,7 +22,7 @@ export interface AppAsset {
 }
 
 export const getAppAssets = async (): Promise<AppAsset[]> => {
-  console.log('📊 AppAssetsService - Fetching app assets');
+  // AppAssetsService - Fetching app assets
   
   const { data, error } = await supabase
     .from('app_assets')
@@ -37,12 +37,12 @@ export const getAppAssets = async (): Promise<AppAsset[]> => {
     throw error;
   }
   
-  console.log('✅ AppAssetsService - Successfully fetched app assets:', data?.length);
+      // AppAssetsService - Successfully fetched app assets
   return (data as unknown as AppAsset[]) || [];
 };
 
 export const createAppAsset = async (asset: Omit<AppAsset, 'id' | 'created_at' | 'updated_at' | 'created_by' | 'updated_by' | 'add_on'>): Promise<AppAsset> => {
-  console.log('📊 AppAssetsService - Creating app asset:', asset);
+  // AppAssetsService - Creating app asset
   
   const { data, error } = await supabase
     .from('app_assets')
@@ -58,12 +58,12 @@ export const createAppAsset = async (asset: Omit<AppAsset, 'id' | 'created_at' |
     throw error;
   }
   
-  console.log('✅ AppAssetsService - Successfully created app asset:', data);
+      // AppAssetsService - Successfully created app asset
   return data as unknown as AppAsset;
 };
 
 export const updateAppAsset = async (id: string, updates: Partial<Omit<AppAsset, 'id' | 'created_at' | 'updated_at' | 'created_by' | 'updated_by' | 'add_on'>>): Promise<AppAsset> => {
-  console.log('📊 AppAssetsService - Updating app asset:', { id, updates });
+  // AppAssetsService - Updating app asset
   
   const { data, error } = await supabase
     .from('app_assets')
@@ -80,12 +80,12 @@ export const updateAppAsset = async (id: string, updates: Partial<Omit<AppAsset,
     throw error;
   }
   
-  console.log('✅ AppAssetsService - Successfully updated app asset:', data);
+      // AppAssetsService - Successfully updated app asset
   return data as unknown as AppAsset;
 };
 
 export const deleteAppAsset = async (id: string): Promise<void> => {
-  console.log('📊 AppAssetsService - Deleting app asset:', id);
+  // AppAssetsService - Deleting app asset
   
   const { error } = await supabase
     .from('app_assets')
@@ -97,5 +97,5 @@ export const deleteAppAsset = async (id: string): Promise<void> => {
     throw error;
   }
   
-  console.log('✅ AppAssetsService - Successfully deleted app asset');
+      // AppAssetsService - Successfully deleted app asset
 };

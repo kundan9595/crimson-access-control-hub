@@ -26,7 +26,7 @@ export const useWarehousePerformance = (options: UseWarehousePerformanceOptions)
     if (trackMemory && 'memory' in performance) {
       memoryStart.current = (performance as any).memory.usedJSHeapSize;
     }
-  }, [trackMemory]);
+  }, []); // Remove dependencies to prevent infinite re-renders
 
   const endRender = useCallback(() => {
     const renderTime = performance.now() - renderStartTime.current;
@@ -57,13 +57,13 @@ export const useWarehousePerformance = (options: UseWarehousePerformanceOptions)
     }
 
     return metrics;
-  }, [componentName, threshold, onPerformanceIssue, trackMemory]);
+  }, []); // Remove dependencies to prevent infinite re-renders
 
   const startDataFetch = useCallback(() => {
     if (trackDataFetch) {
       dataFetchStartTime.current = performance.now();
     }
-  }, [trackDataFetch]);
+  }, []); // Remove dependencies to prevent infinite re-renders
 
   const endDataFetch = useCallback(() => {
     if (!trackDataFetch) return;
@@ -75,15 +75,15 @@ export const useWarehousePerformance = (options: UseWarehousePerformanceOptions)
     }
 
     return dataFetchTime;
-  }, [componentName, trackDataFetch]);
+  }, []); // Remove dependencies to prevent infinite re-renders
 
-  // Auto-track render performance
+  // Auto-track render performance - only run once on mount
   useEffect(() => {
     startRender();
     return () => {
       endRender();
     };
-  }, [startRender, endRender]);
+  }, []); // Empty dependency array to run only once
 
   return {
     startRender,

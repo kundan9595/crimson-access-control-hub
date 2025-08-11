@@ -38,9 +38,9 @@ export const useInventory = (options: UseInventoryOptions = {}) => {
       setError(null);
       
       const mergedParams = { ...searchParams, ...params };
-      console.log('Fetching inventory with params:', mergedParams);
+      // Fetching inventory with params
       const result = await inventoryService.getWarehouseInventory(warehouseId, mergedParams);
-      console.log('Inventory fetch result:', result);
+              // Inventory fetch result
       
       setInventory(result.inventory);
       setPagination({

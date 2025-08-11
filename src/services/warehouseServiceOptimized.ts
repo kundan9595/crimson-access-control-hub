@@ -311,14 +311,14 @@ class WarehouseServiceOptimized {
         .limit(1);
 
       if (error) {
-        console.log('Primary warehouse feature check error:', error);
+        // Primary warehouse feature check error
         return false;
       }
 
-      console.log('Primary warehouse feature is available');
+      // Primary warehouse feature is available
       return true;
     } catch (error) {
-      console.log('Primary warehouse feature not available:', error);
+              // Primary warehouse feature not available
       return false;
     }
   }
@@ -326,7 +326,7 @@ class WarehouseServiceOptimized {
   // Set warehouse as primary
   async setPrimaryWarehouse(id: string): Promise<Warehouse> {
     try {
-      console.log('Setting warehouse as primary:', id);
+      // Setting warehouse as primary
       
       // First, manually set all other warehouses to not primary
       // This is a fallback in case the database trigger isn't working
@@ -352,7 +352,7 @@ class WarehouseServiceOptimized {
         .select('*')
         .single();
 
-      console.log('Update result:', { data, error });
+              // Update result
 
       if (error) {
         console.error('Supabase error:', error);
@@ -367,7 +367,7 @@ class WarehouseServiceOptimized {
         throw new Error('No warehouse returned after update');
       }
 
-      console.log('Successfully set warehouse as primary:', data);
+              // Successfully set warehouse as primary
 
       // Clear cache to reflect changes
       this.cache.invalidatePattern('warehouses:*');

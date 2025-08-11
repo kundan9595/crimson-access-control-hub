@@ -82,14 +82,14 @@ const ClassDialog: React.FC<ClassDialogProps> = ({ classItem, trigger, open, onO
   // Reset form when dialog opens and there's no classItem (add mode)
   useEffect(() => {
     if (isOpen && !classItem) {
-      console.log('Dialog opened in add mode - resetting form');
+      // Dialog opened in add mode - resetting form
       resetForm();
     }
   }, [isOpen, classItem]);
 
   useEffect(() => {
     if (classItem) {
-      console.log('Loading class item for editing:', classItem);
+      // Loading class item for editing
       setFormData({
         name: classItem.name,
         style_id: classItem.style_id,
@@ -110,7 +110,7 @@ const ClassDialog: React.FC<ClassDialogProps> = ({ classItem, trigger, open, onO
       });
     } else if (isOpen) {
       // Explicitly reset when no classItem and dialog is open
-      console.log('No class item and dialog is open - resetting form');
+      // No class item and dialog is open - resetting form
       resetForm();
     }
   }, [classItem, isOpen]);
@@ -118,7 +118,7 @@ const ClassDialog: React.FC<ClassDialogProps> = ({ classItem, trigger, open, onO
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    console.log('Submitting class data:', formData);
+    // Submitting class data
     
     const submitData = {
       name: formData.name,
@@ -159,7 +159,7 @@ const ClassDialog: React.FC<ClassDialogProps> = ({ classItem, trigger, open, onO
 
   const handleSizeGroupChange = (value: string) => {
     const newValue = value === 'none' ? null : value;
-    console.log('Size group changed:', newValue);
+    // Size group changed
     setFormData(prev => ({
       ...prev,
       size_group_id: newValue,
@@ -169,7 +169,7 @@ const ClassDialog: React.FC<ClassDialogProps> = ({ classItem, trigger, open, onO
   };
 
   const toggleSizeSelection = (sizeId: string) => {
-    console.log('Toggling size selection:', sizeId);
+    // Toggling size selection
     setFormData(prev => {
       const newSelectedSizes = prev.selected_sizes.includes(sizeId)
         ? prev.selected_sizes.filter(id => id !== sizeId)
@@ -181,7 +181,7 @@ const ClassDialog: React.FC<ClassDialogProps> = ({ classItem, trigger, open, onO
         delete newSizeRatios[sizeId];
       }
       
-      console.log('Updated selected sizes:', newSelectedSizes);
+      // Updated selected sizes
       return {
         ...prev,
         selected_sizes: newSelectedSizes,
@@ -191,7 +191,7 @@ const ClassDialog: React.FC<ClassDialogProps> = ({ classItem, trigger, open, onO
   };
 
   const updateSizeRatio = (sizeId: string, ratio: number) => {
-    console.log('Updating size ratio:', sizeId, ratio);
+    // Updating size ratio
     setFormData(prev => ({
       ...prev,
       size_ratios: {

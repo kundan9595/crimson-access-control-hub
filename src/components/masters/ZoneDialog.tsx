@@ -145,7 +145,7 @@ const ZoneDialog = ({ zone, open, onOpenChange }: ZoneDialogProps) => {
         savedZone = await createZone.mutateAsync(zoneData);
       }
 
-      console.log('Zone saved:', savedZone);
+      // Zone saved
 
       // Handle locations - delete existing ones and create new ones for updates
       if (zone) {
@@ -168,7 +168,7 @@ const ZoneDialog = ({ zone, open, onOpenChange }: ZoneDialogProps) => {
             state: location.state,
             city: location.city,
           });
-          console.log('Location created:', location);
+          // Location created
         } catch (error) {
           console.error('Error creating location:', error);
           toast({
@@ -179,7 +179,7 @@ const ZoneDialog = ({ zone, open, onOpenChange }: ZoneDialogProps) => {
         }
       }
 
-      console.log('All operations completed, closing dialog');
+      // All operations completed, closing dialog
       
       // Invalidate zones query to refresh the data in the UI
       queryClient.invalidateQueries({ queryKey: ['zones'] });

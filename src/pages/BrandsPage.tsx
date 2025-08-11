@@ -11,6 +11,8 @@ import BrandDialog from '@/components/masters/BrandDialog';
 import BulkImportDialog from '@/components/masters/BulkImportDialog';
 import { MasterPageHeader } from '@/components/masters/shared/MasterPageHeader';
 import { SearchFilter } from '@/components/masters/shared/SearchFilter';
+import { VirtualList, VirtualListItem } from '@/components/common';
+
 import type { Brand } from '@/services/mastersService';
 
 const BrandsPage = () => {
@@ -34,9 +36,9 @@ const BrandsPage = () => {
     setDialogOpen(true);
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     if (confirm('Are you sure you want to delete this brand?')) {
-      deleteBrandMutation.mutate(id);
+      await deleteBrandMutation.mutateAsync(id);
     }
   };
 
@@ -45,7 +47,7 @@ const BrandsPage = () => {
     setEditingBrand(null);
   };
 
-  const handleExport = () => {
+  const handleExport = async () => {
     if (!brands || brands.length === 0) return;
 
     const csvContent = [
@@ -83,12 +85,64 @@ const BrandsPage = () => {
     return a.name.localeCompare(b.name);
   });
 
+  // Render brand row for virtual list
+  const renderBrandRow = (brand: Brand) => (
+    <TableRow key={brand.id} className="hover:bg-muted/50">
+      <TableCell>
+        <div className="w-10 h-10 relative">
+          {brand.logo_url ? (
+            <img
+              src={brand.logo_url}
+              alt={`${brand.name} logo`}
+              className="w-full h-full object-contain rounded border bg-muted"
+              onError={(e) => {
+                e.currentTarget.style.display = 'none';
+                e.currentTarget.nextElementSibling?.classList.remove('hidden');
+              }}
+            />
+          ) : null}
+          <div className={`w-full h-full flex items-center justify-center bg-muted rounded border text-muted-foreground text-xs ${brand.logo_url ? 'hidden' : ''}`}>
+            <Package className="h-4 w-4" />
+          </div>
+        </div>
+      </TableCell>
+      <TableCell className="font-medium">{brand.name}</TableCell>
+      <TableCell className="max-w-xs truncate">{brand.description || '-'}</TableCell>
+      <TableCell className="text-center">{brand.sort_order || 0}</TableCell>
+      <TableCell>
+        <Badge variant={brand.status === 'active' ? 'default' : 'secondary'}>
+          {brand.status}
+        </Badge>
+      </TableCell>
+      <TableCell>{new Date(brand.created_at).toLocaleDateString()}</TableCell>
+      <TableCell className="text-right">
+        <div className="flex items-center justify-end gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => handleEdit(brand)}
+          >
+            <Edit className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => handleDelete(brand.id)}
+            disabled={deleteBrandMutation.isPending}
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        </div>
+      </TableCell>
+    </TableRow>
+  );
+
   if (isLoading) {
     return <div className="text-center">Loading brands...</div>;
   }
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
+    <div className="space-y-6">
       <MasterPageHeader
         title="Brands"
         description="Manage your product brands"
@@ -124,56 +178,18 @@ const BrandsPage = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {sortedBrands.map((brand) => (
-                    <TableRow key={brand.id}>
-                      <TableCell>
-                        <div className="w-10 h-10 relative">
-                          {brand.logo_url ? (
-                            <img
-                              src={brand.logo_url}
-                              alt={`${brand.name} logo`}
-                              className="w-full h-full object-contain rounded border bg-muted"
-                              onError={(e) => {
-                                e.currentTarget.style.display = 'none';
-                                e.currentTarget.nextElementSibling?.classList.remove('hidden');
-                              }}
-                            />
-                          ) : null}
-                          <div className={`w-full h-full flex items-center justify-center bg-muted rounded border text-muted-foreground text-xs ${brand.logo_url ? 'hidden' : ''}`}>
-                            <Package className="h-4 w-4" />
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell className="font-medium">{brand.name}</TableCell>
-                      <TableCell className="max-w-xs truncate">{brand.description || '-'}</TableCell>
-                      <TableCell className="text-center">{brand.sort_order || 0}</TableCell>
-                      <TableCell>
-                        <Badge variant={brand.status === 'active' ? 'default' : 'secondary'}>
-                          {brand.status}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>{new Date(brand.created_at).toLocaleDateString()}</TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex items-center justify-end gap-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleEdit(brand)}
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleDelete(brand.id)}
-                            disabled={deleteBrandMutation.isPending}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                  {/* Use virtual scrolling for large datasets */}
+                  {sortedBrands.length > 100 ? (
+                    <VirtualList
+                      items={sortedBrands}
+                      height={600}
+                      itemHeight={60}
+                      renderItem={renderBrandRow}
+                      className="w-full"
+                    />
+                  ) : (
+                    sortedBrands.map(renderBrandRow)
+                  )}
                 </TableBody>
               </Table>
             ) : (
@@ -196,11 +212,6 @@ const BrandsPage = () => {
         open={bulkImportOpen}
         onOpenChange={setBulkImportOpen}
         type="brands"
-        templateHeaders={['Name', 'Description', 'Sort Order', 'Status']}
-        sampleData={[
-          ['Apple', 'Technology company', '1', 'active'],
-          ['Samsung', 'Electronics manufacturer', '2', 'active']
-        ]}
       />
     </div>
   );

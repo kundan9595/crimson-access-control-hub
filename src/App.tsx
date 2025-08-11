@@ -8,7 +8,7 @@ import { Suspense, lazy } from "react";
 import { AuthProvider } from "@/contexts/AuthContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import DashboardLayout from "@/components/layout/DashboardLayout";
-import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { GlobalErrorBoundary } from "@/components/common/ErrorBoundary/GlobalErrorBoundary";
 import { Skeleton } from "@/components/ui/skeleton";
 
 // Lazy load pages for better performance
@@ -39,6 +39,7 @@ const Warehouse = lazy(() => import("./pages/WarehouseOptimized"));
 const WarehouseDetails = lazy(() => import("./pages/WarehouseDetails"));
 const Inventory = lazy(() => import("./pages/Inventory"));
 const Inbound = lazy(() => import("./pages/Inbound"));
+const PurchaseOrders = lazy(() => import("./pages/PurchaseOrders"));
 const Customers = lazy(() => import("./pages/Customers"));
 const Auth = lazy(() => import("./pages/Auth"));
 const NotFound = lazy(() => import("./pages/NotFound"));
@@ -77,13 +78,13 @@ const PageLoader = () => (
 );
 
 const App = () => (
-  <ErrorBoundary>
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <AuthProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
+  <QueryClientProvider client={queryClient}>
+    <TooltipProvider>
+      <AuthProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <GlobalErrorBoundary>
             <Suspense fallback={<PageLoader />}>
               <Routes>
                 <Route path="/auth" element={<Auth />} />
@@ -119,16 +120,17 @@ const App = () => (
                   <Route path="warehouse/:id" element={<WarehouseDetails />} />
                   <Route path="inventory" element={<Inventory />} />
                   <Route path="inbound" element={<Inbound />} />
+                  <Route path="purchase-orders" element={<PurchaseOrders />} />
                   <Route path="customers" element={<Customers />} />
                 </Route>
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </Suspense>
-          </BrowserRouter>
-        </AuthProvider>
-      </TooltipProvider>
-    </QueryClientProvider>
-  </ErrorBoundary>
+          </GlobalErrorBoundary>
+        </BrowserRouter>
+      </AuthProvider>
+    </TooltipProvider>
+  </QueryClientProvider>
 );
 
 export default App;

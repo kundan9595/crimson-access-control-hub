@@ -483,6 +483,5 @@ export function generateCompleteTemplateHeaders(masterType: string): { headers: 
 // Debug function to see what columns would be generated
 export function debugTemplateHeaders(masterType: string): void {
   const result = generateCompleteTemplateHeaders(masterType);
-  console.log(`Template headers for ${masterType}:`, result.headers);
-  console.log(`Sample data for ${masterType}:`, result.sampleData);
+      // Template headers and sample data generated
 } 

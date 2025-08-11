@@ -225,7 +225,11 @@ export const StylesList: React.FC<StylesListProps> = ({ searchTerm = '' }) => {
                   </TableCell>
                 </TableRow>
               ) : (
-                sortedStyles?.map((style, index) => renderStyleRow(style, index, false))
+                sortedStyles?.map((style, index) => (
+                  <React.Fragment key={style.id}>
+                    {renderStyleRow(style, index, false)}
+                  </React.Fragment>
+                ))
               )}
             </TableBody>
           </Table>

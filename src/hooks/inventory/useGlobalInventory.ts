@@ -35,9 +35,9 @@ export const useGlobalInventory = (options: UseGlobalInventoryOptions = {}) => {
       setError(null);
       
       const mergedParams = { ...searchParams, ...params };
-      console.log('Fetching global inventory with params:', mergedParams);
+      // Fetching global inventory with params
       const result = await inventoryService.getGlobalInventory(mergedParams);
-      console.log('Global inventory fetch result:', result);
+              // Global inventory fetch result
       
       setInventory(result.inventory);
       setPagination({
@@ -55,9 +55,9 @@ export const useGlobalInventory = (options: UseGlobalInventoryOptions = {}) => {
   }, []); // Remove searchParams from dependencies to prevent infinite loop
 
   // Fetch global statistics
-  const fetchStatistics = useCallback(async () => {
+  const fetchStatistics = useCallback(async (filters?: any) => {
     try {
-      const stats = await inventoryService.getGlobalInventoryStatistics();
+      const stats = await inventoryService.getGlobalInventoryStatistics(filters);
       setStatistics(stats);
     } catch (err) {
       console.error('Error fetching global statistics:', err);
@@ -81,12 +81,14 @@ export const useGlobalInventory = (options: UseGlobalInventoryOptions = {}) => {
   // Filter inventory
   const filterInventory = useCallback(async (filters: any) => {
     await fetchInventory({ filters, page: 1 });
-  }, [fetchInventory]);
+    await fetchStatistics(filters);
+  }, [fetchInventory, fetchStatistics]);
 
   // Clear search and filters
   const clearSearch = useCallback(async () => {
     await fetchInventory({ page: 1 });
-  }, [fetchInventory]);
+    await fetchStatistics();
+  }, [fetchInventory, fetchStatistics]);
 
   // Export global inventory
   const exportInventory = useCallback(async () => {

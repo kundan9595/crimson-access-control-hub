@@ -20,6 +20,7 @@ interface UseClassInventoryReturn {
   clearSearch: () => void;
   loadMore: () => void;
   exportInventory: () => Promise<any[]>;
+  fetchStatistics: () => Promise<void>;
 }
 
 export const useClassInventory = (options: UseClassInventoryOptions = {}): UseClassInventoryReturn => {
@@ -60,7 +61,7 @@ export const useClassInventory = (options: UseClassInventoryOptions = {}): UseCl
         hasMore: result.hasMore
       });
     } catch (err) {
-      console.error('Error fetching class inventory:', err);
+      console.error('❌ [useClassInventory] Error fetching class inventory:', err);
       setError(err instanceof Error ? err.message : 'Failed to fetch class inventory');
     } finally {
       setLoading(false);
@@ -73,7 +74,7 @@ export const useClassInventory = (options: UseClassInventoryOptions = {}): UseCl
       const stats = await inventoryService.getGlobalClassInventoryStatistics();
       setStatistics(stats);
     } catch (err) {
-      console.error('Error fetching class inventory statistics:', err);
+      console.error('❌ [useClassInventory] Error fetching class inventory statistics:', err);
     }
   }, []);
 
@@ -126,6 +127,7 @@ export const useClassInventory = (options: UseClassInventoryOptions = {}): UseCl
     searchInventory,
     clearSearch,
     loadMore,
-    exportInventory
+    exportInventory,
+    fetchStatistics
   };
 }; 

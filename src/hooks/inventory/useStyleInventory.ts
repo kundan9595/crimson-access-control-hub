@@ -20,6 +20,7 @@ interface UseStyleInventoryReturn {
   clearSearch: () => void;
   loadMore: () => void;
   exportInventory: () => Promise<any[]>;
+  fetchStatistics: () => Promise<void>;
 }
 
 export const useStyleInventory = (options: UseStyleInventoryOptions = {}): UseStyleInventoryReturn => {
@@ -60,7 +61,7 @@ export const useStyleInventory = (options: UseStyleInventoryOptions = {}): UseSt
         hasMore: result.hasMore
       });
     } catch (err) {
-      console.error('Error fetching style inventory:', err);
+      console.error('❌ [useStyleInventory] Error fetching style inventory:', err);
       setError(err instanceof Error ? err.message : 'Failed to fetch style inventory');
     } finally {
       setLoading(false);
@@ -73,7 +74,7 @@ export const useStyleInventory = (options: UseStyleInventoryOptions = {}): UseSt
       const stats = await inventoryService.getGlobalStyleInventoryStatistics();
       setStatistics(stats);
     } catch (err) {
-      console.error('Error fetching style inventory statistics:', err);
+      console.error('❌ [useStyleInventory] Error fetching style inventory statistics:', err);
     }
   }, []);
 
@@ -126,6 +127,7 @@ export const useStyleInventory = (options: UseStyleInventoryOptions = {}): UseSt
     searchInventory,
     clearSearch,
     loadMore,
-    exportInventory
+    exportInventory,
+    fetchStatistics
   };
 }; 

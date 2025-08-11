@@ -1,5 +1,6 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -17,7 +18,7 @@ const VendorsPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [searchTerm, setSearchTerm] = useState('');
   const [editingVendor, setEditingVendor] = useState<Vendor | null>(null);
-  const [isDialogOpen, setIsDialogOpen] = useState(searchParams.get('add') === 'true');
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isBulkImportOpen, setIsBulkImportOpen] = useState(false);
   
   const { data: vendors, isLoading } = useVendors();
@@ -25,6 +26,13 @@ const VendorsPage = () => {
   const { data: states = [] } = useStates();
   const { data: cities = [] } = useCities();
   const deleteVendor = useDeleteVendor();
+
+  useEffect(() => {
+    if (searchParams.get('add') === 'true') {
+      setIsDialogOpen(true);
+      setSearchParams({});
+    }
+  }, [searchParams, setSearchParams]);
 
   // Helper functions to get state and city names
   const getStateName = (stateId: string) => {
@@ -58,7 +66,10 @@ const VendorsPage = () => {
   const handleCloseDialog = () => {
     setIsDialogOpen(false);
     setEditingVendor(null);
-    setSearchParams({});
+    // Only clear search params if they contain 'add=true'
+    if (searchParams.get('add') === 'true') {
+      setSearchParams({});
+    }
   };
 
   const handleExport = () => {
@@ -100,7 +111,7 @@ const VendorsPage = () => {
   }
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
+    <div className="space-y-6">
       <MasterPageHeader
         title="Vendors"
         description="Manage supplier and vendor information"

@@ -150,10 +150,17 @@ export interface InventoryFilters {
   warehouse_id?: string;
   sku_code?: string;
   brand?: string;
+  category?: string;
+  color?: string;
+  size?: string;
   product_name?: string;
   min_quantity?: number;
   max_quantity?: number;
+  stock_status?: 'all' | 'in_stock' | 'low_stock' | 'out_of_stock';
   has_stock?: boolean;
+  has_reservations?: boolean;
+  date_from?: string;
+  date_to?: string;
 }
 
 export interface InventorySearchParams {

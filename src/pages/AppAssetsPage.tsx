@@ -1,5 +1,6 @@
 
 import React, { useState } from 'react';
+
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Smartphone, Edit, Trash2 } from 'lucide-react';
@@ -73,7 +74,7 @@ const AppAssetsPage = () => {
 
   if (isLoading) {
     return (
-      <div className="container mx-auto p-6 space-y-6">
+      <div className="space-y-6">
         <div className="text-center py-8">
           <p>Loading app assets...</p>
         </div>
@@ -82,7 +83,7 @@ const AppAssetsPage = () => {
   }
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
+    <div className="space-y-6">
       <MasterPageHeader
         title="App Assets"
         description="Manage application assets, icons, and media resources"

@@ -49,11 +49,7 @@ export const AddOnDialog: React.FC<AddOnDialogProps> = ({
   addOn,
   isSubmitting = false,
 }) => {
-  console.log('🎪 AddOnDialog - Render with props:', {
-    open,
-    addOn: addOn?.id || null,
-    isSubmitting
-  });
+  // AddOnDialog - Render with props
 
   const { data: colors = [], isLoading: colorsLoading } = useColors();
 
@@ -76,11 +72,11 @@ export const AddOnDialog: React.FC<AddOnDialogProps> = ({
 
   // Reset form values when addOn changes or dialog opens
   useEffect(() => {
-    console.log('🔄 AddOnDialog - useEffect triggered, open:', open, 'addOn:', addOn?.id || null);
+    // AddOnDialog - useEffect triggered
     if (open) {
       if (addOn) {
         // Editing existing add-on
-        console.log('✏️ AddOnDialog - Resetting form for editing');
+                  // AddOnDialog - Resetting form for editing
         
         // Extract color IDs from the colors array
         const selectedColorIds = addOn.has_colour && addOn.colors && addOn.colors.length > 0 
@@ -102,7 +98,7 @@ export const AddOnDialog: React.FC<AddOnDialogProps> = ({
         });
       } else {
         // Creating new add-on
-        console.log('➕ AddOnDialog - Resetting form for creating');
+                  // AddOnDialog - Resetting form for creating
         form.reset({
           name: '',
           select_type: 'single',
@@ -121,7 +117,7 @@ export const AddOnDialog: React.FC<AddOnDialogProps> = ({
   }, [addOn, open, form]);
 
   const handleSubmit = (data: AddOnFormData) => {
-    console.log('📝 AddOnDialog - handleSubmit called with data:', data);
+    // AddOnDialog - handleSubmit called with data
     
     // Transform the form data to match the database schema
     const { selected_color_ids, ...restData } = data;
@@ -145,13 +141,13 @@ export const AddOnDialog: React.FC<AddOnDialogProps> = ({
       options: [], // Initialize with empty options array
     };
 
-    console.log('📝 AddOnDialog - Submitting transformed data:', submitData);
+          // AddOnDialog - Submitting transformed data
     onSubmit(submitData);
   };
 
   const hasColourValue = form.watch('has_colour');
 
-  console.log('🎨 AddOnDialog - About to render BaseFormDialog, open:', open);
+  // AddOnDialog - About to render BaseFormDialog
 
   return (
     <BaseFormDialog
