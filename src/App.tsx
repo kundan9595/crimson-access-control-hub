@@ -39,7 +39,6 @@ const Warehouse = lazy(() => import("./pages/WarehouseOptimized"));
 const WarehouseDetails = lazy(() => import("./pages/WarehouseDetails"));
 const Inventory = lazy(() => import("./pages/Inventory"));
 const Inbound = lazy(() => import("./pages/Inbound"));
-const PurchaseOrders = lazy(() => import("./pages/PurchaseOrders"));
 const Customers = lazy(() => import("./pages/Customers"));
 const Auth = lazy(() => import("./pages/Auth"));
 const NotFound = lazy(() => import("./pages/NotFound"));
@@ -120,7 +119,6 @@ const App = () => (
                   <Route path="warehouse/:id" element={<WarehouseDetails />} />
                   <Route path="inventory" element={<Inventory />} />
                   <Route path="inbound" element={<Inbound />} />
-                  <Route path="purchase-orders" element={<PurchaseOrders />} />
                   <Route path="customers" element={<Customers />} />
                 </Route>
                 <Route path="*" element={<NotFound />} />

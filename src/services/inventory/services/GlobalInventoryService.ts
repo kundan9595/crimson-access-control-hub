@@ -409,7 +409,7 @@ export class GlobalInventoryService {
   async getSkuLocationsByWarehouse(skuId: string): Promise<any[]> {
     try {
       const { data: locations, error } = await supabase
-        .rpc('get_sku_locations_by_warehouse', { sku_id: skuId });
+        .rpc('get_sku_locations_by_warehouse', { sku_id_param: skuId });
 
       if (error) {
         console.error('Database error:', error);
