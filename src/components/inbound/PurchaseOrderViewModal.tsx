@@ -5,6 +5,16 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { 
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { 
   Eye, 
   Edit, 
   Send, 
@@ -38,6 +48,7 @@ const PurchaseOrderViewModal: React.FC<PurchaseOrderViewModalProps> = ({
   const [poDetails, setPoDetails] = useState<PurchaseOrderDetails | null>(null);
   const [loading, setLoading] = useState(false);
   const [updating, setUpdating] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
   useEffect(() => {
     if (isOpen && poId) {
@@ -89,12 +100,12 @@ const PurchaseOrderViewModal: React.FC<PurchaseOrderViewModalProps> = ({
     }
   };
 
-  const handleDelete = async () => {
-    if (!poId) return;
+  const handleDeleteClick = () => {
+    setIsDeleteDialogOpen(true);
+  };
 
-    if (!confirm('Are you sure you want to delete this purchase order? This action cannot be undone.')) {
-      return;
-    }
+  const confirmDelete = async () => {
+    if (!poId) return;
 
     try {
       setUpdating(true);
@@ -107,6 +118,7 @@ const PurchaseOrderViewModal: React.FC<PurchaseOrderViewModalProps> = ({
       toast.error('Failed to delete purchase order');
     } finally {
       setUpdating(false);
+      setIsDeleteDialogOpen(false);
     }
   };
 
@@ -121,6 +133,10 @@ const PurchaseOrderViewModal: React.FC<PurchaseOrderViewModalProps> = ({
   const canSendForApproval = poDetails?.po.status === PurchaseOrderStatus.DRAFT;
   const canSendToVendor = poDetails?.po.status === PurchaseOrderStatus.APPROVED;
   const canCancel = [PurchaseOrderStatus.DRAFT, PurchaseOrderStatus.SENT_FOR_APPROVAL].includes(poDetails?.po.status || PurchaseOrderStatus.DRAFT);
+  
+  // Check if there's at least one item (SKU/class or miscellaneous)
+  const hasItems = poDetails && (poDetails.items.length > 0 || poDetails.misc_items.length > 0);
+  const canSendForApprovalWithItems = canSendForApproval && hasItems;
 
   if (loading) {
     return (
@@ -153,7 +169,8 @@ const PurchaseOrderViewModal: React.FC<PurchaseOrderViewModalProps> = ({
   }
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <>
+      <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
@@ -205,21 +222,22 @@ const PurchaseOrderViewModal: React.FC<PurchaseOrderViewModalProps> = ({
             </CardContent>
           </Card>
 
-          {/* SKU Items */}
-          {poDetails.items.length > 0 && (
+          {/* Combined Items Table */}
+          {(poDetails.items.length > 0 || poDetails.misc_items.length > 0) && (
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Package className="w-5 h-5" />
-                  SKU Items ({poDetails.items.length})
+                  Order Items ({poDetails.items.length + poDetails.misc_items.length})
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>SKU Code</TableHead>
-                      <TableHead>Name</TableHead>
+                      <TableHead>Type</TableHead>
+                      <TableHead>Code/Name</TableHead>
+                      <TableHead>Description</TableHead>
                       <TableHead>Size</TableHead>
                       <TableHead>Quantity</TableHead>
                       <TableHead>Unit Price</TableHead>
@@ -227,8 +245,15 @@ const PurchaseOrderViewModal: React.FC<PurchaseOrderViewModalProps> = ({
                     </TableRow>
                   </TableHeader>
                   <TableBody>
+                    {/* SKU Items */}
                     {poDetails.items.map((item) => (
-                      <TableRow key={item.id}>
+                      <TableRow key={`sku-${item.id}`}>
+                        <TableCell>
+                          <Badge variant="outline" className="text-xs">
+                            <Package className="w-3 h-3 mr-1" />
+                            SKU
+                          </Badge>
+                        </TableCell>
                         <TableCell className="font-medium">{item.sku_code}</TableCell>
                         <TableCell>{item.sku_name}</TableCell>
                         <TableCell>{item.size_name}</TableCell>
@@ -237,35 +262,18 @@ const PurchaseOrderViewModal: React.FC<PurchaseOrderViewModalProps> = ({
                         <TableCell className="font-medium">₹{item.total_price.toLocaleString()}</TableCell>
                       </TableRow>
                     ))}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Misc Items */}
-          {poDetails.misc_items.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <FileText className="w-5 h-5" />
-                  Miscellaneous Items ({poDetails.misc_items.length})
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Name</TableHead>
-                      <TableHead>Quantity</TableHead>
-                      <TableHead>Unit Price</TableHead>
-                      <TableHead>Total</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
+                    {/* Misc Items */}
                     {poDetails.misc_items.map((item) => (
-                      <TableRow key={item.id}>
-                        <TableCell className="font-medium">{item.name}</TableCell>
+                      <TableRow key={`misc-${item.id}`}>
+                        <TableCell>
+                          <Badge variant="secondary" className="text-xs">
+                            <FileText className="w-3 h-3 mr-1" />
+                            Misc
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="font-medium">-</TableCell>
+                        <TableCell>{item.name}</TableCell>
+                        <TableCell>-</TableCell>
                         <TableCell>{item.quantity}</TableCell>
                         <TableCell>₹{item.unit_price.toLocaleString()}</TableCell>
                         <TableCell className="font-medium">₹{item.total_price.toLocaleString()}</TableCell>
@@ -288,13 +296,19 @@ const PurchaseOrderViewModal: React.FC<PurchaseOrderViewModalProps> = ({
             <CardContent>
               <div className="space-y-3">
                 <div className="flex justify-between items-center">
-                  <span className="text-sm font-medium text-muted-foreground">SKU Items Total:</span>
+                  <span className="text-sm font-medium text-muted-foreground">Total Items:</span>
+                  <span className="font-medium">
+                    {poDetails.items.length + poDetails.misc_items.length} items
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm font-medium text-muted-foreground">SKU Items ({poDetails.items.length}):</span>
                   <span className="font-medium">
                     ₹{poDetails.items.reduce((sum, item) => sum + item.total_price, 0).toLocaleString()}
                   </span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-sm font-medium text-muted-foreground">Miscellaneous Items Total:</span>
+                  <span className="text-sm font-medium text-muted-foreground">Miscellaneous Items ({poDetails.misc_items.length}):</span>
                   <span className="font-medium">
                     ₹{poDetails.misc_items.reduce((sum, item) => sum + item.total_price, 0).toLocaleString()}
                   </span>
@@ -312,11 +326,22 @@ const PurchaseOrderViewModal: React.FC<PurchaseOrderViewModalProps> = ({
           {/* Action Buttons */}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              {canSendForApproval && (
+              {canSendForApprovalWithItems && (
                 <Button
                   onClick={() => handleStatusUpdate(PurchaseOrderStatus.SENT_FOR_APPROVAL)}
                   disabled={updating}
                   className="flex items-center gap-2"
+                >
+                  <Send className="w-4 h-4" />
+                  Send for Approval
+                </Button>
+              )}
+              
+              {canSendForApproval && !hasItems && (
+                <Button
+                  disabled={true}
+                  className="flex items-center gap-2 opacity-50 cursor-not-allowed"
+                  title="Add at least one item (SKU/class or miscellaneous) to send for approval"
                 >
                   <Send className="w-4 h-4" />
                   Send for Approval
@@ -357,10 +382,10 @@ const PurchaseOrderViewModal: React.FC<PurchaseOrderViewModalProps> = ({
                 Print
               </Button>
               
-              {poDetails.po.status === PurchaseOrderStatus.DRAFT && (
+              {(poDetails.po.status === PurchaseOrderStatus.DRAFT || poDetails.po.status === PurchaseOrderStatus.SENT_FOR_APPROVAL) && (
                 <Button
                   variant="destructive"
-                  onClick={handleDelete}
+                  onClick={handleDeleteClick}
                   disabled={updating}
                   className="flex items-center gap-2"
                 >
@@ -377,6 +402,34 @@ const PurchaseOrderViewModal: React.FC<PurchaseOrderViewModalProps> = ({
         </div>
       </DialogContent>
     </Dialog>
+
+    {/* Delete Confirmation Dialog */}
+    <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Delete Purchase Order</AlertDialogTitle>
+          <AlertDialogDescription>
+            Are you sure you want to delete this purchase order? This action cannot be undone.
+            <br />
+            <br />
+            <strong>Purchase Order:</strong> {poDetails?.po.po_number || 'Unknown'}
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel onClick={() => setIsDeleteDialogOpen(false)}>
+            Cancel
+          </AlertDialogCancel>
+          <AlertDialogAction 
+            onClick={confirmDelete}
+            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            disabled={updating}
+          >
+            {updating ? 'Deleting...' : 'Delete'}
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+    </>
   );
 };
 

@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { Suspense, lazy } from "react";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { ThemeProvider } from "@/contexts/ThemeContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { GlobalErrorBoundary } from "@/components/common/ErrorBoundary/GlobalErrorBoundary";
@@ -78,56 +79,58 @@ const PageLoader = () => (
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <AuthProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <GlobalErrorBoundary>
-            <Suspense fallback={<PageLoader />}>
-              <Routes>
-                <Route path="/auth" element={<Auth />} />
-                <Route path="/" element={
-                  <ProtectedRoute>
-                    <DashboardLayout />
-                  </ProtectedRoute>
-                }>
-                  <Route index element={<Dashboard />} />
-                  <Route path="roles-permissions" element={<RolesPermissions />} />
-                  <Route path="users" element={<Users />} />
-                  <Route path="masters" element={<Masters />} />
-                  <Route path="masters/brands" element={<BrandsPage />} />
-                  <Route path="masters/categories" element={<CategoriesPage />} />
-                  <Route path="masters/colors" element={<ColorsPage />} />
-                  <Route path="masters/size-groups" element={<SizeGroupsPage />} />
-                  <Route path="masters/zones" element={<ZonesPage />} />
-                  <Route path="masters/price-types" element={<PriceTypesPage />} />
-                  <Route path="masters/vendors" element={<VendorsPage />} />
-                  <Route path="masters/styles" element={<StylesPage />} />
-                  <Route path="masters/classes" element={<ClassesPage />} />
-                  <Route path="masters/skus" element={<SkusPage />} />
-                  <Route path="masters/media" element={<MediaPage />} />
-                  <Route path="masters/fabric" element={<FabricPage />} />
-                  <Route path="masters/parts" element={<PartsPage />} />
-                  <Route path="masters/add-ons" element={<AddOnsPage />} />
-                  <Route path="masters/base-product" element={<BaseProductPage />} />
-                  <Route path="masters/profit-margin" element={<ProfitMarginPage />} />
-                  <Route path="masters/app-assets" element={<AppAssetsPage />} />
-                  <Route path="masters/promotional-banners" element={<PromotionalBannersPage />} />
-                  <Route path="masters/promotional-assets" element={<PromotionalAssetsPage />} />
-                  <Route path="warehouse" element={<Warehouse />} />
-                  <Route path="warehouse/:id" element={<WarehouseDetails />} />
-                  <Route path="inventory" element={<Inventory />} />
-                  <Route path="inbound" element={<Inbound />} />
-                  <Route path="customers" element={<Customers />} />
-                </Route>
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </Suspense>
-          </GlobalErrorBoundary>
-        </BrowserRouter>
-      </AuthProvider>
-    </TooltipProvider>
+    <ThemeProvider defaultTheme="system" storageKey="crimson-theme">
+      <TooltipProvider>
+        <AuthProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <GlobalErrorBoundary>
+              <Suspense fallback={<PageLoader />}>
+                <Routes>
+                  <Route path="/auth" element={<Auth />} />
+                  <Route path="/" element={
+                    <ProtectedRoute>
+                      <DashboardLayout />
+                    </ProtectedRoute>
+                  }>
+                    <Route index element={<Dashboard />} />
+                    <Route path="roles-permissions" element={<RolesPermissions />} />
+                    <Route path="users" element={<Users />} />
+                    <Route path="masters" element={<Masters />} />
+                    <Route path="masters/brands" element={<BrandsPage />} />
+                    <Route path="masters/categories" element={<CategoriesPage />} />
+                    <Route path="masters/colors" element={<ColorsPage />} />
+                    <Route path="masters/size-groups" element={<SizeGroupsPage />} />
+                    <Route path="masters/zones" element={<ZonesPage />} />
+                    <Route path="masters/price-types" element={<PriceTypesPage />} />
+                    <Route path="masters/vendors" element={<VendorsPage />} />
+                    <Route path="masters/styles" element={<StylesPage />} />
+                    <Route path="masters/classes" element={<ClassesPage />} />
+                    <Route path="masters/skus" element={<SkusPage />} />
+                    <Route path="masters/media" element={<MediaPage />} />
+                    <Route path="masters/fabric" element={<FabricPage />} />
+                    <Route path="masters/parts" element={<PartsPage />} />
+                    <Route path="masters/add-ons" element={<AddOnsPage />} />
+                    <Route path="masters/base-product" element={<BaseProductPage />} />
+                    <Route path="masters/profit-margin" element={<ProfitMarginPage />} />
+                    <Route path="masters/app-assets" element={<AppAssetsPage />} />
+                    <Route path="masters/promotional-banners" element={<PromotionalBannersPage />} />
+                    <Route path="masters/promotional-assets" element={<PromotionalAssetsPage />} />
+                    <Route path="warehouse" element={<Warehouse />} />
+                    <Route path="warehouse/:id" element={<WarehouseDetails />} />
+                    <Route path="inventory" element={<Inventory />} />
+                    <Route path="inbound" element={<Inbound />} />
+                    <Route path="customers" element={<Customers />} />
+                  </Route>
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </Suspense>
+            </GlobalErrorBoundary>
+          </BrowserRouter>
+        </AuthProvider>
+      </TooltipProvider>
+    </ThemeProvider>
   </QueryClientProvider>
 );
 

@@ -310,7 +310,11 @@ const InventoryTable: React.FC<InventoryTableProps> = ({
                             {item.sku?.class?.name || 'N/A'}
                           </div>
                           <div className="text-sm text-gray-500">
-                            {item.sku?.class?.style?.name} | {item.sku?.class?.color?.name} | {item.sku?.size?.name}
+                            {[
+                              item.sku?.class?.style?.name,
+                              item.sku?.class?.color?.name,
+                              item.sku?.size?.name
+                            ].filter(Boolean).join(' | ') || 'Product details not available'}
                           </div>
                         </div>
                       </TableCell>

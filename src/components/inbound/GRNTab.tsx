@@ -3,67 +3,60 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import GRNModal from './GRNModal';
+import PurchaseOrderViewModal from './PurchaseOrderViewModal';
+import { useGRNData } from '@/hooks/useGRNData';
 
 const GRNTab: React.FC = () => {
-  // Mock data for GRN entries
-  const grnEntries = [
-    {
-      poNumber: 'PO-2024-001',
-      date: '10/08/2025',
-      vendor: 'Vendor A',
-      items: 2,
-      grnRatio: '130:20',
-      qcPercentage: '-',
-      putAway: '-',
-      r2vAccept: '-',
-      status: 'Partially Received'
-    },
-    {
-      poNumber: 'PO-2024-002',
-      date: '10/08/2025',
-      vendor: 'Vendor B',
-      items: 1,
-      grnRatio: '60:15',
-      qcPercentage: '-',
-      putAway: '-',
-      r2vAccept: '-',
-      status: 'Sent'
-    },
-    {
-      poNumber: 'PO-2024-003',
-      date: '10/08/2025',
-      vendor: 'Vendor A',
-      items: 1,
-      grnRatio: '200:0',
-      qcPercentage: '-',
-      putAway: '-',
-      r2vAccept: '-',
-      status: 'Received'
-    }
-  ];
+  const [isGRNModalOpen, setIsGRNModalOpen] = useState(false);
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  const [selectedPO, setSelectedPO] = useState<{
+    id: string;
+    po_number: string;
+    vendor_name: string;
+  } | null>(null);
+  const [selectedPOId, setSelectedPOId] = useState<string | null>(null);
+
+  const { grnEntries, loading, error, refetch } = useGRNData();
 
   const getStatusBadge = (status: string) => {
     const statusConfig = {
-      'Partially Received': { variant: 'secondary' as const, className: 'bg-orange-100 text-orange-800' },
-      'Sent': { variant: 'secondary' as const, className: 'bg-blue-100 text-blue-800' },
-      'Received': { variant: 'secondary' as const, className: 'bg-green-100 text-green-800' }
+      'partially_received': { variant: 'secondary' as const, className: 'bg-orange-100 text-orange-800' },
+      'sent_to_vendor': { variant: 'secondary' as const, className: 'bg-blue-100 text-blue-800' },
+      'received': { variant: 'secondary' as const, className: 'bg-green-100 text-green-800' }
     };
 
-    const config = statusConfig[status as keyof typeof statusConfig] || statusConfig['Sent'];
+    const config = statusConfig[status as keyof typeof statusConfig] || statusConfig['sent_to_vendor'];
     
     return (
       <Badge variant={config.variant} className={config.className}>
-        {status}
+        {status.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
       </Badge>
     );
   };
 
+  const handleGRNClick = (entry: any) => {
+    setSelectedPO({
+      id: entry.id,
+      po_number: entry.po_number,
+      vendor_name: entry.vendor_name
+    });
+    setIsGRNModalOpen(true);
+  };
+
+  const handlePOClick = (poId: string) => {
+    setSelectedPOId(poId);
+    setIsViewModalOpen(true);
+  };
+
+  const handleCloseViewModal = () => {
+    setIsViewModalOpen(false);
+    setSelectedPOId(null);
+  };
+
   return (
     <div className="space-y-4">
-      {/* Header */}
-      <div>
-        <h2 className="text-2xl font-bold tracking-tight">GRN</h2>
-      </div>
+
 
       {/* GRN Table */}
       <Card>
@@ -84,39 +77,93 @@ const GRNTab: React.FC = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {grnEntries.map((entry) => (
-                <TableRow key={entry.poNumber}>
-                  <TableCell className="font-medium">{entry.poNumber}</TableCell>
-                  <TableCell>{entry.date}</TableCell>
-                  <TableCell>{entry.vendor}</TableCell>
-                  <TableCell>{entry.items}</TableCell>
-                  <TableCell>{entry.grnRatio}</TableCell>
-                  <TableCell>{entry.qcPercentage}</TableCell>
-                  <TableCell>{entry.putAway}</TableCell>
-                  <TableCell>{entry.r2vAccept}</TableCell>
-                  <TableCell>{getStatusBadge(entry.status)}</TableCell>
-                  <TableCell>
-                    <div className="flex gap-1">
-                      <Button variant="outline" size="sm">
-                        GRN
-                      </Button>
-                      <Button variant="outline" size="sm">
-                        Put Away
-                      </Button>
-                      <Button variant="outline" size="sm">
-                        Return
-                      </Button>
-                      <Button variant="outline" size="sm">
-                        QC
-                      </Button>
-                    </div>
+              {loading ? (
+                <TableRow>
+                  <TableCell colSpan={10} className="text-center py-8">
+                    <div className="text-muted-foreground">Loading GRN data...</div>
                   </TableCell>
                 </TableRow>
-              ))}
+              ) : error ? (
+                <TableRow>
+                  <TableCell colSpan={10} className="text-center py-8">
+                    <div className="text-destructive">Error loading data: {error}</div>
+                  </TableCell>
+                </TableRow>
+              ) : grnEntries.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={10} className="text-center py-8">
+                    <div className="text-muted-foreground">No GRN entries found</div>
+                  </TableCell>
+                </TableRow>
+              ) : (
+                grnEntries.map((entry) => (
+                  <TableRow key={entry.id}>
+                    <TableCell className="font-medium">
+                      <button
+                        onClick={() => handlePOClick(entry.id)}
+                        className="text-primary hover:text-primary/80 hover:underline cursor-pointer"
+                      >
+                        {entry.po_number}
+                      </button>
+                    </TableCell>
+                    <TableCell>{new Date(entry.created_at).toLocaleDateString()}</TableCell>
+                    <TableCell>{entry.vendor_name}</TableCell>
+                    <TableCell>{entry.items}</TableCell>
+                    <TableCell>{entry.grn_ratio}</TableCell>
+                    <TableCell>{entry.qc_percentage}</TableCell>
+                    <TableCell>{entry.put_away}</TableCell>
+                    <TableCell>{entry.r2v_accept}</TableCell>
+                    <TableCell>{getStatusBadge(entry.status)}</TableCell>
+                    <TableCell>
+                      <div className="flex gap-1">
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => handleGRNClick(entry)}
+                        >
+                          GRN
+                        </Button>
+                        <Button variant="outline" size="sm">
+                          Put Away
+                        </Button>
+                        <Button variant="outline" size="sm">
+                          Return
+                        </Button>
+                        <Button variant="outline" size="sm">
+                          QC
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
             </TableBody>
           </Table>
         </CardContent>
       </Card>
+
+      {/* GRN Modal */}
+      {selectedPO && (
+        <GRNModal
+          isOpen={isGRNModalOpen}
+          onClose={() => {
+            setIsGRNModalOpen(false);
+            setSelectedPO(null);
+          }}
+          poId={selectedPO.id}
+          poNumber={selectedPO.po_number}
+          vendorName={selectedPO.vendor_name}
+          onRefresh={refetch}
+        />
+      )}
+
+      {/* Purchase Order View Modal */}
+      <PurchaseOrderViewModal
+        isOpen={isViewModalOpen}
+        onClose={handleCloseViewModal}
+        poId={selectedPOId}
+        onRefresh={refetch}
+      />
     </div>
   );
 };

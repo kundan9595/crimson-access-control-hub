@@ -433,7 +433,6 @@ export class GlobalInventoryService {
         .select(`
           id,
           sku_code,
-          name,
           description,
           class:classes(
             id,
@@ -444,7 +443,7 @@ export class GlobalInventoryService {
               brand:brands(id, name),
               category:categories(id, name)
             ),
-            color:colors(id, name, code)
+            color:colors(id, name, hex_code)
           ),
           size:sizes(id, name, code)
         `)
@@ -458,13 +457,12 @@ export class GlobalInventoryService {
 
       // Basic SKU search results
       if (!basicData || basicData.length === 0) {
-        // Try searching by name if no results by SKU code
+        // Try searching by description if no results by SKU code
         const { data: nameData, error: nameError } = await supabase
           .from('skus')
           .select(`
             id,
             sku_code,
-            name,
             description,
             class:classes(
               id,
@@ -475,15 +473,15 @@ export class GlobalInventoryService {
                 brand:brands(id, name),
                 category:categories(id, name)
               ),
-              color:colors(id, name, code)
+              color:colors(id, name, hex_code)
             ),
             size:sizes(id, name, code)
           `)
-          .ilike('name', `%${query}%`)
+          .ilike('description', `%${query}%`)
           .limit(limit);
 
         if (nameError) {
-          console.error('Error in name-based SKU search:', nameError);
+          console.error('Error in description-based SKU search:', nameError);
           throw nameError;
         }
 

@@ -5,6 +5,7 @@ import { SidebarProvider, Sidebar, SidebarContent, SidebarHeader, SidebarMenu, S
 import { Users, Settings, Shield, Building, Package, ShoppingCart, LogOut, Palette, Truck, UserCheck } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
+import { ThemeSwitcher } from '@/components/ui/theme-switcher';
 
 const DashboardLayout = () => {
   const { signOut } = useAuth();
@@ -73,6 +74,7 @@ const DashboardLayout = () => {
           <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
             <SidebarTrigger className="-ml-1" />
             <div className="flex-1" />
+            <ThemeSwitcher />
           </header>
           <main className="flex-1 p-4">
             <Outlet />

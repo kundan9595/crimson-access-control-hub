@@ -135,7 +135,7 @@ export class InventoryExportService {
           // Color details
           color_id: sku?.class?.color?.id,
           color_name: sku?.class?.color?.name,
-          color_code: sku?.class?.color?.code,
+          color_code: sku?.class?.color?.hex_code,
 
           // Size details
           size_id: sku?.size?.id,
@@ -241,7 +241,7 @@ export class InventoryExportService {
         // Color details
         color_id: item.sku?.class?.color?.id,
         color_name: item.sku?.class?.color?.name,
-        color_code: item.sku?.class?.color?.code,
+        color_code: item.sku?.class?.color?.hex_code,
 
         // Size details
         size_id: item.sku?.size?.id,
@@ -429,7 +429,7 @@ export class InventoryExportService {
           // Color details
           color_id: sku?.class?.color?.id,
           color_name: sku?.class?.color?.name,
-          color_code: sku?.class?.color?.code,
+          color_code: sku?.class?.color?.hex_code,
 
           // Size details
           size_id: sku?.size?.id,

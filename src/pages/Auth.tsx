@@ -10,6 +10,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
 import SignInForm from '@/components/auth/SignInForm';
 import SignUpForm from '@/components/auth/SignUpForm';
+import { ThemeSwitcher } from '@/components/ui/theme-switcher';
 
 const Auth = () => {
   const { user } = useAuth();
@@ -23,6 +24,9 @@ const Auth = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background px-4">
+      <div className="absolute top-4 right-4">
+        <ThemeSwitcher />
+      </div>
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <CardTitle className="text-2xl font-bold text-red-600">Scott One</CardTitle>
