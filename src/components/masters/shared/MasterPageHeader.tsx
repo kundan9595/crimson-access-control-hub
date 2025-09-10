@@ -12,6 +12,7 @@ interface MasterPageHeaderProps {
   onExport?: () => void;
   onImport?: () => void;
   canExport?: boolean;
+  showBackButton?: boolean;
 }
 
 export const MasterPageHeader: React.FC<MasterPageHeaderProps> = ({
@@ -22,6 +23,7 @@ export const MasterPageHeader: React.FC<MasterPageHeaderProps> = ({
   onExport,
   onImport,
   canExport = true,
+  showBackButton = true,
 }) => {
   const navigate = useNavigate();
 
@@ -31,18 +33,20 @@ export const MasterPageHeader: React.FC<MasterPageHeaderProps> = ({
 
   return (
     <div className="space-y-4">
-      {/* Back button row */}
-      <div className="flex items-center">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => navigate('/masters')}
-          className="text-muted-foreground hover:text-foreground"
-        >
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Back to Masters
-        </Button>
-      </div>
+      {/* Back button row - only show if showBackButton is true */}
+      {showBackButton && (
+        <div className="flex items-center">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => navigate('/masters')}
+            className="text-muted-foreground hover:text-foreground"
+          >
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back to Masters
+          </Button>
+        </div>
+      )}
       
       {/* Title and actions row */}
       <div className="flex items-center justify-between">

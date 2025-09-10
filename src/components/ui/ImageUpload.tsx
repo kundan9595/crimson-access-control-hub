@@ -1,9 +1,7 @@
 
 import React, { useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Upload, X, Image as ImageIcon } from 'lucide-react';
+import { Upload, X } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
 interface ImageUploadProps {
@@ -99,9 +97,6 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
     }
   };
 
-  const handleUrlChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    onChange(e.target.value);
-  };
 
   const handleRemove = async () => {
     // If it's a Supabase URL, try to delete it from storage
@@ -133,90 +128,58 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
   return (
     <div className="space-y-4">
       {!value ? (
-        <>
-          <div
-            className={`
-              relative border-2 border-dashed rounded-lg p-6 text-center hover:bg-muted/50 transition-colors
-              ${dragActive ? 'border-primary bg-primary/10' : 'border-muted-foreground/25'}
-              ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
-            `}
-            onDragEnter={handleDrag}
-            onDragLeave={handleDrag}
-            onDragOver={handleDrag}
-            onDrop={handleDrop}
-            onClick={() => !disabled && inputRef.current?.click()}
-          >
-            <input
-              ref={inputRef}
-              type="file"
-              accept={accept}
-              onChange={handleChange}
-              className="hidden"
-              disabled={disabled}
-            />
-            
-            <div className="flex flex-col items-center gap-2">
-              <Upload className="h-8 w-8 text-muted-foreground" />
-              <div>
-                <p className="text-sm font-medium">{placeholder}</p>
-                <p className="text-xs text-muted-foreground">
-                  Drag and drop or click to select
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  Max size: {maxSize}MB
-                </p>
-              </div>
+        <div
+          className={`
+            relative border-2 border-dashed rounded-full w-32 h-32 flex items-center justify-center hover:bg-muted/50 transition-colors mx-auto
+            ${dragActive ? 'border-primary bg-primary/10' : 'border-muted-foreground/25'}
+            ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
+          `}
+          onDragEnter={handleDrag}
+          onDragLeave={handleDrag}
+          onDragOver={handleDrag}
+          onDrop={handleDrop}
+          onClick={() => !disabled && inputRef.current?.click()}
+        >
+          <input
+            ref={inputRef}
+            type="file"
+            accept={accept}
+            onChange={handleChange}
+            className="hidden"
+            disabled={disabled}
+          />
+          
+          <div className="flex flex-col items-center gap-1 text-center">
+            <Upload className="h-6 w-6 text-muted-foreground" />
+            <p className="text-xs text-muted-foreground">Upload</p>
+          </div>
+          
+          {uploading && (
+            <div className="absolute inset-0 bg-background/80 flex items-center justify-center rounded-full">
+              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
             </div>
-            
-            {uploading && (
-              <div className="absolute inset-0 bg-background/80 flex items-center justify-center rounded-lg">
-                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
-              </div>
-            )}
-          </div>
-          
-          <div className="space-y-2">
-            <Label>Or enter image URL</Label>
-            <Input
-              type="url"
-              placeholder="https://example.com/image.jpg"
-              onChange={handleUrlChange}
-              disabled={disabled}
-            />
-          </div>
-        </>
+          )}
+        </div>
       ) : (
-        <div className="space-y-4">
-          <div className="relative inline-block">
-            <img
-              src={value}
-              alt="Preview"
-              className="w-32 h-32 object-cover rounded-lg border"
-              onError={() => {
-                console.error('Failed to load image:', value);
-              }}
-            />
-            <Button
-              type="button"
-              variant="destructive"
-              size="sm"
-              className="absolute -top-2 -right-2 rounded-full p-1 h-6 w-6"
-              onClick={handleRemove}
-              disabled={disabled}
-            >
-              <X className="h-3 w-3" />
-            </Button>
-          </div>
-          
-          <div className="space-y-2">
-            <Label>Image URL</Label>
-            <Input
-              type="url"
-              value={value}
-              onChange={handleUrlChange}
-              disabled={disabled}
-            />
-          </div>
+        <div className="relative inline-block mx-auto">
+          <img
+            src={value}
+            alt="Preview"
+            className="w-32 h-32 object-cover rounded-full border-2 border-border"
+            onError={() => {
+              console.error('Failed to load image:', value);
+            }}
+          />
+          <Button
+            type="button"
+            variant="destructive"
+            size="sm"
+            className="absolute -top-2 -right-2 rounded-full p-1 h-6 w-6"
+            onClick={handleRemove}
+            disabled={disabled}
+          >
+            <X className="h-3 w-3" />
+          </Button>
         </div>
       )}
     </div>

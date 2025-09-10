@@ -41,6 +41,7 @@ const WarehouseDetails = lazy(() => import("./pages/WarehouseDetails"));
 const Inventory = lazy(() => import("./pages/Inventory"));
 const Inbound = lazy(() => import("./pages/Inbound"));
 const Customers = lazy(() => import("./pages/Customers"));
+const Orders = lazy(() => import("./pages/Orders"));
 const Auth = lazy(() => import("./pages/Auth"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
@@ -84,7 +85,12 @@ const App = () => (
         <AuthProvider>
           <Toaster />
           <Sonner />
-          <BrowserRouter>
+          <BrowserRouter 
+            future={{
+              v7_startTransition: true,
+              v7_relativeSplatPath: true
+            }}
+          >
             <GlobalErrorBoundary>
               <Suspense fallback={<PageLoader />}>
                 <Routes>
@@ -122,6 +128,7 @@ const App = () => (
                     <Route path="inventory" element={<Inventory />} />
                     <Route path="inbound" element={<Inbound />} />
                     <Route path="customers" element={<Customers />} />
+                    <Route path="orders" element={<Orders />} />
                   </Route>
                   <Route path="*" element={<NotFound />} />
                 </Routes>

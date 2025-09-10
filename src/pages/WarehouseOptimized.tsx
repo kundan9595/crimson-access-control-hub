@@ -25,9 +25,9 @@ import { useWarehouseData } from '@/hooks/warehouse/useWarehouseData';
 import { useWarehouseOperations } from '@/hooks/warehouse/useWarehouseOperations';
 
 import WarehouseCard from '@/components/warehouse/components/WarehouseCard';
-import CreateWarehouseDialog from '@/components/warehouse/dialogs/CreateWarehouseDialog';
+import CreateWarehouseDialog from '@/components/warehouse/dialogs/CreateWarehouseDialog/index';
 import EditWarehouseDialog from '@/components/warehouse/EditWarehouseDialog';
-import WarehouseErrorBoundary from '@/components/warehouse/ErrorBoundary';
+import WarehouseErrorBoundary from '@/components/warehouse/components/WarehouseErrorBoundary';
 import { warehouseServiceOptimized } from '@/services/warehouseServiceOptimized';
 
 const WarehousePageOptimized: React.FC = () => {

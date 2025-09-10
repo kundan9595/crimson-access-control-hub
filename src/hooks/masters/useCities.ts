@@ -1,28 +1,13 @@
 import { useQuery } from '@tanstack/react-query';
-import { citiesService, IndianCity } from '@/services/masters/citiesService';
+import { fetchCitiesByState } from '@/services/masters/citiesService';
 
-export const useCities = () => {
-  return useQuery<IndianCity[]>({
-    queryKey: ['cities'],
-    queryFn: citiesService.getAll,
-    staleTime: 5 * 60 * 1000, // 5 minutes
-  });
-};
-
-export const useCitiesByState = (stateId: string) => {
-  return useQuery<IndianCity[]>({
-    queryKey: ['cities', 'state', stateId],
-    queryFn: () => citiesService.getByStateId(stateId),
+export const useCities = (stateId: string) => {
+  return useQuery({
+    queryKey: ['cities', stateId],
+    queryFn: () => fetchCitiesByState(stateId),
     enabled: !!stateId,
-    staleTime: 5 * 60 * 1000, // 5 minutes
   });
 };
 
-export const useCity = (id: string) => {
-  return useQuery<IndianCity | null>({
-    queryKey: ['cities', id],
-    queryFn: () => citiesService.getById(id),
-    enabled: !!id,
-    staleTime: 5 * 60 * 1000, // 5 minutes
-  });
-}; 
+// Alias for backward compatibility
+export const useCitiesByState = useCities;

@@ -29,6 +29,29 @@ export const MASTER_DEPENDENCIES: Record<string, MasterConfig> = {
     ],
     exportFields: ['name', 'description', 'status', 'created_at'] as const,
   },
+  customers: {
+    dependencies: [],
+    independent: true,
+    level: 0,
+    templateHeaders: [
+      'Customer Code', 'Company Name', 'Contact Person', 'Email', 'Phone', 
+      'Address', 'City', 'State', 'Postal Code', 'Customer Type', 'GST', 'Status'
+    ],
+    sampleData: [
+      [
+        'CUST001', 'Smith Retail Pvt Ltd', 'John Smith', 'john@smithretail.com', '+91-9876543210',
+        '123 Main Street, Mumbai', 'Mumbai', 'Maharashtra', '400001', 'retail', '27AABCU9603R1ZX', 'active'
+      ],
+      [
+        'CUST002', 'Wholesale Distributors', 'Priya Sharma', 'priya@wholesale.com', '+91-9876543211',
+        '456 Business Park, Delhi', 'Delhi', 'Delhi', '110001', 'wholesale', '07AABCU9603R1ZY', 'active'
+      ]
+    ],
+    exportFields: [
+      'customer_code', 'company_name', 'contact_person', 'email', 'phone', 
+      'address', 'city', 'state', 'postal_code', 'customer_type', 'gst', 'status', 'created_at'
+    ] as const,
+  },
   categories: {
     dependencies: [],
     independent: true,

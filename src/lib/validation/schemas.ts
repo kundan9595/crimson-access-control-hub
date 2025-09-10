@@ -83,6 +83,33 @@ export const vendorSchema = z.object({
   status: commonFields.status,
 });
 
+export const addressSchema = z.object({
+  id: z.string().optional(),
+  label: z.string().min(1, 'Address label is required').max(100, 'Address label is too long'),
+  type: z.enum(['office', 'delivery', 'billing', 'other']),
+  address: z.string().min(1, 'Address is required').max(500, 'Address is too long'),
+  city_id: z.string().min(1, 'City is required'),
+  state_id: z.string().min(1, 'State is required'),
+  postal_code: z.string().regex(/^[0-9]{6}$/, 'Postal code must be 6 digits'),
+  is_primary: z.boolean().default(false),
+});
+
+export const customerSchema = z.object({
+  customer_code: z.string().min(1, 'Customer code is required').max(50, 'Customer code is too long'),
+  company_name: z.string().min(1, 'Company name is required').max(255, 'Company name is too long'),
+  contact_person: z.string().min(1, 'Contact person is required').max(255, 'Contact person name is too long'),
+  email: z.string().email('Invalid email format'),
+  phone: z.string().regex(/^[\+]?[0-9\s\-\(\)]{10,15}$/, 'Invalid phone number format'),
+  price_type_id: z.string().optional(),
+  status: z.enum(['active', 'inactive']).default('active'),
+  credit_limit: z.number().min(0, 'Credit limit must be non-negative').default(0),
+  payment_terms: z.string().max(255, 'Payment terms is too long').optional(),
+  gst: z.string().regex(/^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}[Z]{1}[0-9A-Z]{1}$/, 'Invalid GST format (e.g., 27AABCU9603R1ZX)').optional().or(z.literal('')),
+  notes: z.string().max(1000, 'Notes are too long').optional(),
+  avatar_url: z.string().url('Invalid avatar URL').optional().or(z.literal('')),
+  addresses: z.array(addressSchema).min(1, 'At least one address is required'),
+});
+
 export const priceTypeSchema = z.object({
   name: commonFields.name,
   description: commonFields.description,
@@ -230,6 +257,7 @@ export const schemas = {
   sizeGroup: sizeGroupSchema,
   size: sizeSchema,
   vendor: vendorSchema,
+  customer: customerSchema,
   priceType: priceTypeSchema,
   zone: zoneSchema,
   fabric: fabricSchema,
@@ -252,6 +280,7 @@ export type StyleFormData = z.infer<typeof styleSchema>;
 export type SizeGroupFormData = z.infer<typeof sizeGroupSchema>;
 export type SizeFormData = z.infer<typeof sizeSchema>;
 export type VendorFormData = z.infer<typeof vendorSchema>;
+export type CustomerFormData = z.infer<typeof customerSchema>;
 export type PriceTypeFormData = z.infer<typeof priceTypeSchema>;
 export type ZoneFormData = z.infer<typeof zoneSchema>;
 export type FabricFormData = z.infer<typeof fabricSchema>;

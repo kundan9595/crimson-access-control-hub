@@ -1,31 +1,103 @@
-import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import React, { useState } from 'react';
+import { Users } from 'lucide-react';
+import { CustomersList } from '@/components/masters/CustomersList';
+import { CustomerDialog } from '@/components/masters/CustomerDialogNew';
+import BulkImportDialog from '@/components/masters/BulkImportDialog';
+import { useCustomers } from '@/hooks/masters/useCustomers';
+import { MasterPageHeader } from '@/components/masters/shared/MasterPageHeader';
+import type { Customer } from '@/services/masters/types';
 
 const Customers: React.FC = () => {
+  const [showCustomerDialog, setShowCustomerDialog] = useState(false);
+  const [showImportDialog, setShowImportDialog] = useState(false);
+  const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
+  const { data: customers = [] } = useCustomers();
+
+  const handleEdit = (customer: Customer) => {
+    setEditingCustomer(customer);
+    setShowCustomerDialog(true);
+  };
+
+  const handleDialogClose = () => {
+    setShowCustomerDialog(false);
+    setEditingCustomer(null);
+  };
+
+  const handleExport = () => {
+    if (customers.length === 0) {
+      return;
+    }
+
+    const headers = [
+      'Customer Code',
+      'Company Name',
+      'Contact Person',
+      'Email',
+      'Phone',
+      'City',
+      'State',
+      'Customer Type',
+      'Orders Count',
+      'Lifetime Value',
+      'Status',
+      'Created At'
+    ];
+
+    const csvContent = [
+      headers.join(','),
+      ...customers.map(customer => [
+        `"${customer.customer_code}"`,
+        `"${customer.company_name || ''}"`,
+        `"${customer.contact_person || ''}"`,
+        `"${customer.email || ''}"`,
+        `"${customer.phone || ''}"`,
+        `"${customer.addresses?.[0]?.city?.name || ''}"`,
+        `"${customer.addresses?.[0]?.state?.name || ''}"`,
+        `"${customer.customer_type || ''}"`,
+        `"${customer.orders_count || 0}"`,
+        `"${customer.lifetime_value || 0}"`,
+        `"${customer.status}"`,
+        new Date(customer.created_at).toLocaleDateString()
+      ].join(','))
+    ].join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `customers-${new Date().toISOString().split('T')[0]}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Customers</h1>
-          <p className="text-gray-600 mt-2">
-            Manage customer information and relationships
-          </p>
-        </div>
-      </div>
+      <MasterPageHeader
+        title="Customers"
+        description="Manage customer information and relationships"
+        icon={<Users className="h-6 w-6 text-blue-600" />}
+        onAdd={() => setShowCustomerDialog(true)}
+        onExport={handleExport}
+        onImport={() => setShowImportDialog(true)}
+        canExport={!!customers?.length}
+        showBackButton={false}
+      />
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Customer Management</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="text-center py-12">
-            <div className="text-gray-500">
-              <p className="text-lg mb-2">Customer functionality coming soon</p>
-              <p className="text-sm">This page will contain customer management features.</p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      <CustomersList onEdit={handleEdit} />
+
+      <CustomerDialog
+        open={showCustomerDialog}
+        onOpenChange={handleDialogClose}
+        customer={editingCustomer}
+      />
+
+      <BulkImportDialog
+        open={showImportDialog}
+        onOpenChange={setShowImportDialog}
+        type="customers"
+      />
     </div>
   );
 };

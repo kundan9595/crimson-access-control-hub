@@ -5,11 +5,16 @@ import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import GRNModal from './GRNModal';
 import PurchaseOrderViewModal from './PurchaseOrderViewModal';
+import { PutAwayModal, ReturnModal } from '@/components/warehouse';
+import { QCModal } from './QCModal';
 import { useGRNData } from '@/hooks/useGRNData';
 
 const GRNTab: React.FC = () => {
   const [isGRNModalOpen, setIsGRNModalOpen] = useState(false);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  const [isPutAwayModalOpen, setIsPutAwayModalOpen] = useState(false);
+  const [isReturnModalOpen, setIsReturnModalOpen] = useState(false);
+  const [isQCModalOpen, setIsQCModalOpen] = useState(false);
   const [selectedPO, setSelectedPO] = useState<{
     id: string;
     po_number: string;
@@ -52,6 +57,33 @@ const GRNTab: React.FC = () => {
   const handleCloseViewModal = () => {
     setIsViewModalOpen(false);
     setSelectedPOId(null);
+  };
+
+  const handlePutAwayClick = (entry: any) => {
+    setSelectedPO({
+      id: entry.id,
+      po_number: entry.po_number,
+      vendor_name: entry.vendor_name
+    });
+    setIsPutAwayModalOpen(true);
+  };
+
+  const handleReturnClick = (entry: any) => {
+    setSelectedPO({
+      id: entry.id,
+      po_number: entry.po_number,
+      vendor_name: entry.vendor_name
+    });
+    setIsReturnModalOpen(true);
+  };
+
+  const handleQCClick = (entry: any) => {
+    setSelectedPO({
+      id: entry.id,
+      po_number: entry.po_number,
+      vendor_name: entry.vendor_name
+    });
+    setIsQCModalOpen(true);
   };
 
   return (
@@ -123,13 +155,28 @@ const GRNTab: React.FC = () => {
                         >
                           GRN
                         </Button>
-                        <Button variant="outline" size="sm">
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => handlePutAwayClick(entry)}
+                          disabled={entry.status === 'sent_to_vendor'}
+                        >
                           Put Away
                         </Button>
-                        <Button variant="outline" size="sm">
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => handleReturnClick(entry)}
+                          disabled={entry.status === 'sent_to_vendor'}
+                        >
                           Return
                         </Button>
-                        <Button variant="outline" size="sm">
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => handleQCClick(entry)}
+                          disabled={entry.status === 'sent_to_vendor'}
+                        >
                           QC
                         </Button>
                       </div>
@@ -164,6 +211,50 @@ const GRNTab: React.FC = () => {
         poId={selectedPOId}
         onRefresh={refetch}
       />
+
+      {/* Put Away Modal */}
+      {selectedPO && (
+        <PutAwayModal
+          isOpen={isPutAwayModalOpen}
+          onClose={() => {
+            setIsPutAwayModalOpen(false);
+            setSelectedPO(null);
+          }}
+          poId={selectedPO.id}
+          poNumber={selectedPO.po_number}
+          onRefresh={refetch}
+        />
+      )}
+
+      {/* Return Modal */}
+      {selectedPO && (
+        <ReturnModal
+          isOpen={isReturnModalOpen}
+          onClose={() => {
+            setIsReturnModalOpen(false);
+            setSelectedPO(null);
+          }}
+          referenceId={selectedPO.id}
+          referenceType="grn"
+          referenceNumber={selectedPO.po_number}
+          onRefresh={refetch}
+        />
+      )}
+
+      {/* QC Modal */}
+      {selectedPO && (
+        <QCModal
+          isOpen={isQCModalOpen}
+          onClose={() => {
+            setIsQCModalOpen(false);
+            setSelectedPO(null);
+          }}
+          poId={selectedPO.id}
+          poNumber={selectedPO.po_number}
+          vendorName={selectedPO.vendor_name}
+          onRefresh={refetch}
+        />
+      )}
     </div>
   );
 };

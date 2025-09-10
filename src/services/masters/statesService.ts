@@ -1,37 +1,18 @@
 import { supabase } from '@/integrations/supabase/client';
 
-export interface IndianState {
+export interface State {
   id: string;
   name: string;
   code: string;
   created_at: string;
 }
 
-export const statesService = {
-  async getAll(): Promise<IndianState[]> {
-    const { data, error } = await supabase
-      .from('indian_states')
-      .select('*')
-      .order('name');
+export const fetchStates = async (): Promise<State[]> => {
+  const { data, error } = await supabase
+    .from('indian_states')
+    .select('*')
+    .order('name', { ascending: true });
 
-    if (error) {
-      throw new Error(`Error fetching states: ${error.message}`);
-    }
-
-    return data || [];
-  },
-
-  async getById(id: string): Promise<IndianState | null> {
-    const { data, error } = await supabase
-      .from('indian_states')
-      .select('*')
-      .eq('id', id)
-      .single();
-
-    if (error) {
-      throw new Error(`Error fetching state: ${error.message}`);
-    }
-
-    return data;
-  }
-}; 
+  if (error) throw error;
+  return (data || []) as State[];
+};

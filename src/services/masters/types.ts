@@ -152,6 +152,60 @@ export interface Vendor {
   updated_by?: string;
 }
 
+export interface CustomerAddress {
+  id?: string;
+  customer_id?: string;
+  label: string;
+  type: 'office' | 'delivery' | 'billing' | 'other';
+  address: string;
+  city_id: string;
+  state_id: string;
+  postal_code: string;
+  is_primary: boolean;
+  created_at?: string;
+  updated_at?: string;
+  created_by?: string;
+  updated_by?: string;
+  // Populated relation fields
+  city?: {
+    id: string;
+    name: string;
+  };
+  state?: {
+    id: string;
+    name: string;
+  };
+}
+
+export interface Customer {
+  id: string;
+  customer_code: string;
+  company_name: string;
+  contact_person: string;
+  email: string;
+  phone: string;
+  price_type_id?: string;
+  status: 'active' | 'inactive';
+  credit_limit?: number;
+  payment_terms?: string;
+  gst?: string;
+  notes?: string;
+  avatar_url?: string;
+  created_at: string;
+  updated_at: string;
+  created_by?: string;
+  updated_by?: string;
+  // Populated relation fields
+  addresses?: CustomerAddress[];
+  price_type?: {
+    id: string;
+    name: string;
+  };
+  // Computed fields
+  orders_count?: number;
+  lifetime_value?: number;
+}
+
 export type PriceTypeCategory = 'zone' | 'customer';
 
 export interface PriceType {
