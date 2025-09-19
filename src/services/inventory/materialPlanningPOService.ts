@@ -239,9 +239,21 @@ export class MaterialPlanningPOService {
       // Generate PO number
       const poNumber = await this.generatePONumber();
 
+      // Validate vendor_id is provided
+      if (!request.preferred_vendor_id) {
+        await this.updateReorderHistory(reorderHistoryId, { 
+          status: 'failed', 
+          notes: 'No vendor selected for reorder' 
+        });
+        return {
+          success: false,
+          error: 'Vendor must be selected before creating reorder'
+        };
+      }
+
       // Create PO request with enhanced tracking
       const poRequest: CreatePORequest = {
-        vendor_id: request.preferred_vendor_id || '',
+        vendor_id: request.preferred_vendor_id,
         items: [{
           sku_id: request.sku_id,
           size_id: request.size_id,

@@ -93,7 +93,8 @@ export const useManualReorder = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (skuId: string) => materialPlanningService.createManualReorder(skuId),
+    mutationFn: ({ skuId, vendorId }: { skuId: string; vendorId: string }) => 
+      materialPlanningService.createManualReorder(skuId, vendorId),
     onSuccess: (result) => {
       if (result.success) {
         toast.success(`Purchase Order created successfully! PO ID: ${result.po_id}`);

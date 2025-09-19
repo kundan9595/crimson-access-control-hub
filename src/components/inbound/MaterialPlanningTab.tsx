@@ -114,8 +114,18 @@ const MaterialPlanningTab: React.FC = () => {
 
   // Handle manual reorder
   const handleManualReorder = useCallback((skuId: string) => {
-    manualReorder(skuId);
-  }, [manualReorder]);
+    // Check if vendor is selected for this SKU
+    const currentVendorSelection = vendorSelections[skuId];
+    const item = data?.items?.find(item => item.id === skuId);
+    const selectedVendorId = currentVendorSelection || item?.preferred_vendor_id;
+    
+    if (!selectedVendorId) {
+      toast.error('Please select a vendor before creating a reorder');
+      return;
+    }
+    
+    manualReorder({ skuId, vendorId: selectedVendorId });
+  }, [manualReorder, vendorSelections, data?.items]);
 
   // Handle auto reorder toggle
   const handleAutoReorderToggle = useCallback((skuId: string, enabled: boolean) => {

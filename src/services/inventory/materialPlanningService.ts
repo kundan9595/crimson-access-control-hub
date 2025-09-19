@@ -402,9 +402,9 @@ export class MaterialPlanningService {
   }
 
   /**
-   * Create a manual reorder PO for a specific SKU
+   * Create a manual reorder PO for a specific SKU with selected vendor
    */
-  async createManualReorder(skuId: string): Promise<{ success: boolean; po_id?: string; error?: string }> {
+  async createManualReorder(skuId: string, vendorId: string): Promise<{ success: boolean; po_id?: string; error?: string }> {
     try {
       // Get the SKU data
       const { data: skuData, error: skuError } = await supabase
@@ -447,7 +447,7 @@ export class MaterialPlanningService {
       const classData = skuData.class as ClassWithThresholds;
       const thresholds = this.calculateThresholds(classData);
 
-      // Create reorder request
+      // Create reorder request with the selected vendor
       const reorderRequest: ReorderRequest = {
         sku_id: skuData.id,
         sku_code: skuData.sku_code,
@@ -456,6 +456,7 @@ export class MaterialPlanningService {
         current_inventory: inventory.available,
         min_threshold: thresholds.min_threshold,
         optimal_threshold: thresholds.optimal_threshold,
+        preferred_vendor_id: vendorId,
         auto_reorder: false
       };
 

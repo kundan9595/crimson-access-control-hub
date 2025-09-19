@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Supabase Fix Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .test { margin: 10px 0; padding: 10px; border: 1px solid #ccc; border-radius: 5px; }
+        .success { background-color: #d4edda; border-color: #c3e6cb; }
+        .error { background-color: #f8d7da; border-color: #f5c6cb; }
+        .info { background-color: #d1ecf1; border-color: #bee5eb; }
+    </style>
+</head>
+<body>
+    <h1>🧪 Supabase Polyfill Test</h1>
+    <div id="results"></div>
+    
+    <script src="/polyfills.js"></script>
+    <script>
+        const results = document.getElementById('results');
+        
+        function addResult(message, type = 'info') {
+            const div = document.createElement('div');
+            div.className = `test ${type}`;
+            div.innerHTML = message;
+            results.appendChild(div);
+        }
+        
+        // Test 1: Check if global exists
+        try {
+            if (typeof global !== 'undefined') {
+                addResult('✅ global is defined: ' + typeof global, 'success');
+            } else {
+                addResult('❌ global is not defined', 'error');
+            }
+        } catch (e) {
+            addResult('❌ Error checking global: ' + e.message, 'error');
+        }
+        
+        // Test 2: Check if process exists
+        try {
+            if (typeof process !== 'undefined') {
+                addResult('✅ process is defined with env: ' + JSON.stringify(process.env), 'success');
+            } else {
+                addResult('❌ process is not defined', 'error');
+            }
+        } catch (e) {
+            addResult('❌ Error checking process: ' + e.message, 'error');
+        }
+        
+        // Test 3: Check if Buffer exists
+        try {
+            if (typeof Buffer !== 'undefined') {
+                addResult('✅ Buffer is defined: ' + typeof Buffer, 'success');
+            } else {
+                addResult('❌ Buffer is not defined', 'error');
+            }
+        } catch (e) {
+            addResult('❌ Error checking Buffer: ' + e.message, 'error');
+        }
+        
+        // Test 4: Check if util exists
+        try {
+            if (typeof util !== 'undefined' && util.inherits) {
+                addResult('✅ util.inherits is available', 'success');
+            } else {
+                addResult('❌ util.inherits is not available', 'error');
+            }
+        } catch (e) {
+            addResult('❌ Error checking util: ' + e.message, 'error');
+        }
+        
+        // Test 5: Try to access a prototype (common error source)
+        try {
+            const TestConstructor = function() {};
+            if (TestConstructor.prototype) {
+                addResult('✅ Prototype access works: ' + typeof TestConstructor.prototype, 'success');
+            } else {
+                addResult('❌ Prototype access failed', 'error');
+            }
+        } catch (e) {
+            addResult('❌ Error accessing prototype: ' + e.message, 'error');
+        }
+        
+        // Test 6: Test events polyfill
+        try {
+            if (typeof events !== 'undefined' && events.EventEmitter) {
+                const emitter = new events.EventEmitter();
+                emitter.on('test', function() {});
+                addResult('✅ EventEmitter polyfill works', 'success');
+            } else {
+                addResult('❌ EventEmitter polyfill not available', 'error');
+            }
+        } catch (e) {
+            addResult('❌ Error testing EventEmitter: ' + e.message, 'error');
+        }
+        
+        addResult('🎉 Polyfill test completed! If all tests pass, Supabase errors should be fixed.', 'info');
+    </script>
+</body>
+</html>

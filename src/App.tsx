@@ -4,13 +4,15 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { Suspense, lazy } from "react";
+import { Suspense, lazy, useEffect } from "react";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { GlobalErrorBoundary } from "@/components/common/ErrorBoundary/GlobalErrorBoundary";
 import { Skeleton } from "@/components/ui/skeleton";
+import PWAInstallPrompt from "@/components/common/PWAInstallPrompt";
+import { registerSW } from "@/lib/pwa";
 
 // Lazy load pages for better performance
 const Dashboard = lazy(() => import("./pages/Dashboard"));
@@ -78,22 +80,29 @@ const PageLoader = () => (
   </div>
 );
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <ThemeProvider defaultTheme="system" storageKey="crimson-theme">
-      <TooltipProvider>
-        <AuthProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter 
-            future={{
-              v7_startTransition: true,
-              v7_relativeSplatPath: true
-            }}
-          >
-            <GlobalErrorBoundary>
-              <Suspense fallback={<PageLoader />}>
-                <Routes>
+const App = () => {
+  useEffect(() => {
+    // Register service worker for PWA functionality
+    registerSW();
+  }, []);
+
+  return (
+    <QueryClientProvider client={queryClient}>
+      <ThemeProvider defaultTheme="system" storageKey="crimson-theme">
+        <TooltipProvider>
+          <AuthProvider>
+            <Toaster />
+            <Sonner />
+            <PWAInstallPrompt />
+            <BrowserRouter 
+              future={{
+                v7_startTransition: true,
+                v7_relativeSplatPath: true
+              }}
+            >
+              <GlobalErrorBoundary>
+                <Suspense fallback={<PageLoader />}>
+                  <Routes>
                   <Route path="/auth" element={<Auth />} />
                   <Route path="/" element={
                     <ProtectedRoute>
@@ -132,13 +141,14 @@ const App = () => (
                   </Route>
                   <Route path="*" element={<NotFound />} />
                 </Routes>
-              </Suspense>
-            </GlobalErrorBoundary>
-          </BrowserRouter>
-        </AuthProvider>
-      </TooltipProvider>
-    </ThemeProvider>
-  </QueryClientProvider>
-);
+                </Suspense>
+              </GlobalErrorBoundary>
+            </BrowserRouter>
+          </AuthProvider>
+        </TooltipProvider>
+      </ThemeProvider>
+    </QueryClientProvider>
+  );
+};
 
 export default App;
