@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Form } from '@/components/ui/form';
 import { UseFormReturn } from 'react-hook-form';
@@ -32,6 +32,9 @@ export const BaseFormDialog: React.FC<BaseFormDialogProps> = ({
       <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
+          <DialogDescription>
+            {isEditing ? 'Update the information below to modify this item.' : 'Fill in the information below to create a new item.'}
+          </DialogDescription>
         </DialogHeader>
 
         <Form {...form}>

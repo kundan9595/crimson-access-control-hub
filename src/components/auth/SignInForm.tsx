@@ -65,6 +65,7 @@ const SignInForm: React.FC<SignInFormProps> = ({ onSuccess }) => {
           placeholder="Enter your password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
+          autoComplete="current-password"
           required
         />
       </div>

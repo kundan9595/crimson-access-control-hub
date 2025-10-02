@@ -34,8 +34,15 @@ export const useCreateMutation = <T = any>({
 
   return useMutation({
     mutationFn,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey });
+    onSuccess: async (data) => {
+      // Invalidate and refetch the query
+      await queryClient.invalidateQueries({ queryKey });
+      
+      // Force a refetch to ensure fresh data
+      await queryClient.refetchQueries({ queryKey });
+      
+      console.log('Cache invalidated for queryKey:', queryKey);
+      
       toast({
         title: "Success",
         description: successMessage,
@@ -63,8 +70,15 @@ export const useUpdateMutation = <T = any>({
 
   return useMutation({
     mutationFn,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey });
+    onSuccess: async (data) => {
+      // Invalidate and refetch the query
+      await queryClient.invalidateQueries({ queryKey });
+      
+      // Force a refetch to ensure fresh data
+      await queryClient.refetchQueries({ queryKey });
+      
+      console.log('Cache invalidated for queryKey:', queryKey);
+      
       toast({
         title: "Success",
         description: successMessage,
@@ -92,8 +106,15 @@ export const useDeleteMutation = ({
 
   return useMutation({
     mutationFn,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey });
+    onSuccess: async (data) => {
+      // Invalidate and refetch the query
+      await queryClient.invalidateQueries({ queryKey });
+      
+      // Force a refetch to ensure fresh data
+      await queryClient.refetchQueries({ queryKey });
+      
+      console.log('Cache invalidated for queryKey:', queryKey);
+      
       toast({
         title: "Success",
         description: successMessage,

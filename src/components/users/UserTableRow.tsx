@@ -4,7 +4,7 @@ import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/dropdown-menu';
 import { Edit2, MoreVertical, UserCheck, UserX, Key, Trash2 } from 'lucide-react';
-import { getUserInitials, getUserStatusBadge, getUserRoleBadges, formatDate } from '@/lib/userUtils.tsx';
+import { getUserInitials, getUserStatusBadge, formatDate } from '@/lib/userUtils.tsx';
 import { Badge } from '@/components/ui/badge';
 
 type User = any; // Replace with your Profile type
@@ -12,11 +12,10 @@ type User = any; // Replace with your Profile type
 type UserTableRowProps = {
   user: User;
   onEditProfile: (user: User) => void;
-  onManageRoles: (user: User) => void;
   onUserAction: (action: string, userId: string) => void;
 };
 
-const UserTableRow: React.FC<UserTableRowProps> = ({ user, onEditProfile, onManageRoles, onUserAction }) => {
+const UserTableRow: React.FC<UserTableRowProps> = ({ user, onEditProfile, onUserAction }) => {
   return (
     <TableRow>
       <TableCell>
@@ -43,9 +42,7 @@ const UserTableRow: React.FC<UserTableRowProps> = ({ user, onEditProfile, onMana
         )}
       </TableCell>
       <TableCell>
-        <div className="flex flex-wrap gap-1">
-          {getUserRoleBadges(user.user_roles)}
-        </div>
+        <span className="text-muted-foreground">-</span>
       </TableCell>
       <TableCell>{formatDate(user.created_at)}</TableCell>
       <TableCell>
@@ -56,13 +53,6 @@ const UserTableRow: React.FC<UserTableRowProps> = ({ user, onEditProfile, onMana
             onClick={() => onEditProfile(user)}
           >
             <Edit2 className="w-4 h-4" />
-          </Button>
-          <Button 
-            variant="outline"
-            size="sm"
-            onClick={() => onManageRoles(user)}
-          >
-            Manage Roles
           </Button>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>

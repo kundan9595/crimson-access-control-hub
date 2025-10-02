@@ -16,7 +16,6 @@ import { registerSW } from "@/lib/pwa";
 
 // Lazy load pages for better performance
 const Dashboard = lazy(() => import("./pages/Dashboard"));
-const RolesPermissions = lazy(() => import("./pages/RolesPermissions"));
 const Users = lazy(() => import("./pages/Users"));
 const Masters = lazy(() => import("./pages/Masters"));
 const BrandsPage = lazy(() => import("./pages/BrandsPage"));
@@ -110,7 +109,6 @@ const App = () => {
                     </ProtectedRoute>
                   }>
                     <Route index element={<Dashboard />} />
-                    <Route path="roles-permissions" element={<RolesPermissions />} />
                     <Route path="users" element={<Users />} />
                     <Route path="masters" element={<Masters />} />
                     <Route path="masters/brands" element={<BrandsPage />} />

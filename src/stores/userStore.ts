@@ -1,11 +1,11 @@
 import { create } from 'zustand';
-import type { UserWithRoles } from '@/hooks/useUsers';
+import type { Profile } from '@/services/usersService';
 
 interface UserStoreState {
-  users: UserWithRoles[];
-  selectedUser: UserWithRoles | null;
-  setUsers: (users: UserWithRoles[]) => void;
-  selectUser: (user: UserWithRoles | null) => void;
+  users: Profile[];
+  selectedUser: Profile | null;
+  setUsers: (users: Profile[]) => void;
+  selectUser: (user: Profile | null) => void;
 }
 
 export const useUserStore = create<UserStoreState>((set) => ({

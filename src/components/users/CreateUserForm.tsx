@@ -11,16 +11,14 @@ import { useToast } from '@/hooks/use-toast';
 import type { Tables } from '@/integrations/supabase/types';
 import { departmentOptions } from '@/lib/userConstants';
 
-type Role = Tables<'roles'>;
 type DepartmentType = 'operations' | 'logistics' | 'warehouse' | 'customer_service' | 'administration' | 'finance' | 'it' | 'human_resources';
 
 interface CreateUserFormProps {
-  roles: Role[];
   onSuccess: () => void;
 }
 
-const CreateUserForm: React.FC<CreateUserFormProps> = ({ roles, onSuccess }) => {
-  const { formData, setFormData, selectedRoles, setSelectedRoles, createUser, isLoading } = useCreateUserForm(onSuccess);
+const CreateUserForm: React.FC<CreateUserFormProps> = ({ onSuccess }) => {
+  const { formData, setFormData, createUser, isLoading } = useCreateUserForm(onSuccess);
   const { toast } = useToast();
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -35,27 +33,10 @@ const CreateUserForm: React.FC<CreateUserFormProps> = ({ roles, onSuccess }) => 
       return;
     }
 
-    if (selectedRoles.length === 0) {
-      toast({
-        title: "Error",
-        description: "Please select at least one role",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    // Submitting form with roles
-    createUser({ ...formData, selectedRoles });
+    // Submitting form
+    createUser(formData);
   };
 
-  const handleRoleChange = (roleId: string, checked: boolean) => {
-    // Role change
-    if (checked) {
-      setSelectedRoles(prev => [...prev, roleId]);
-    } else {
-      setSelectedRoles(prev => prev.filter(id => id !== roleId));
-    }
-  };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
@@ -129,42 +110,6 @@ const CreateUserForm: React.FC<CreateUserFormProps> = ({ roles, onSuccess }) => 
         </div>
       </div>
 
-      <div className="space-y-4">
-        <Label className="text-base font-medium">Assign Roles *</Label>
-        <div className="space-y-3 max-h-60 overflow-y-auto">
-          {roles.map((role) => (
-            <div key={role.id} className="flex items-start space-x-3 p-3 border rounded-lg">
-              <Checkbox
-                id={role.id}
-                checked={selectedRoles.includes(role.id)}
-                onCheckedChange={(checked) => 
-                  handleRoleChange(role.id, checked as boolean)
-                }
-              />
-              <div className="space-y-1">
-                <Label htmlFor={role.id} className="font-medium cursor-pointer">
-                  {role.name}
-                  {role.is_warehouse_admin && (
-                    <span className="ml-2 text-xs bg-red-100 text-red-800 px-2 py-1 rounded">
-                      Admin
-                    </span>
-                  )}
-                </Label>
-                {role.description && (
-                  <p className="text-sm text-muted-foreground">
-                    {role.description}
-                  </p>
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
-        {selectedRoles.length > 0 && (
-          <p className="text-sm text-muted-foreground">
-            Selected {selectedRoles.length} role{selectedRoles.length !== 1 ? 's' : ''}
-          </p>
-        )}
-      </div>
 
       <div className="flex justify-end space-x-2">
         <Button type="button" variant="outline" onClick={onSuccess}>

@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Shield, Users, Building, Package } from 'lucide-react';
+import { Users, Building, Package } from 'lucide-react';
 
 const Dashboard = () => {
   return (
@@ -13,20 +13,7 @@ const Dashboard = () => {
         </p>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Roles</CardTitle>
-            <Shield className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">4</div>
-            <p className="text-xs text-muted-foreground">
-              Active roles configured
-            </p>
-          </CardContent>
-        </Card>
-        
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Users</CardTitle>
@@ -85,8 +72,8 @@ const Dashboard = () => {
               <span className="text-sm">Authentication configured</span>
             </div>
             <div className="flex items-center space-x-2">
-              <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
-              <span className="text-sm">Next: Configure roles and permissions</span>
+              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+              <span className="text-sm">System ready for use</span>
             </div>
           </CardContent>
         </Card>
@@ -100,7 +87,7 @@ const Dashboard = () => {
           </CardHeader>
           <CardContent className="space-y-2">
             <p className="text-sm text-muted-foreground">
-              • Manage user roles and permissions
+              • Manage user accounts
             </p>
             <p className="text-sm text-muted-foreground">
               • Add new users to the system

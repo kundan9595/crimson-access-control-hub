@@ -133,7 +133,7 @@ const AppointWarehouseAdminDialog: React.FC<AppointWarehouseAdminDialogProps> = 
                 <div>
                   <h4 className="font-medium text-amber-900 mb-1">No Warehouse Admins Available</h4>
                   <p className="text-sm text-amber-700">
-                    No users with warehouse admin roles found. Please create users with warehouse admin roles first.
+                    No users available for warehouse admin appointment. Please create users first.
                   </p>
                 </div>
               </div>

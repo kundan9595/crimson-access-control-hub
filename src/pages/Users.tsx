@@ -7,54 +7,42 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { UserPlus, Edit2, Shield, Mail, Calendar, Search, MoreVertical, UserCheck, UserX, Key, Trash2 } from 'lucide-react';
+import { UserPlus, Edit2, Mail, Calendar, Search, MoreVertical, UserCheck, UserX, Key, Trash2 } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import UserRoleForm from '@/components/users/UserRoleForm';
 import CreateUserForm from '@/components/users/CreateUserForm';
 import UserProfileEditor from '@/components/users/UserProfileEditor';
 import type { Tables } from '@/integrations/supabase/types';
-import { formatDate, getUserInitials, getUserRoleBadges, getUserStatusBadge } from '@/lib/userUtils.tsx';
+import { formatDate, getUserInitials, getUserStatusBadge } from '@/lib/userUtils.tsx';
 import UserCard from '@/components/users/UserCard';
 import UserTableRow from '@/components/users/UserTableRow';
 import UserProfileEditDialog from '@/components/users/UserProfileEditDialog';
-import UserRoleDialog from '@/components/users/UserRoleDialog';
 import CreateUserDialog from '@/components/users/CreateUserDialog';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useUsers, UserWithRoles } from '@/hooks/useUsers';
-import { useRoles } from '@/hooks/useRoles';
+import { useUsers } from '@/hooks/useUsers';
 
 type Profile = Tables<'profiles'>;
-type Role = Tables<'roles'>;
 
 const Users = () => {
   const [selectedUser, setSelectedUser] = useState<Profile | null>(null);
   const [isCreateUserOpen, setIsCreateUserOpen] = useState(false);
-  const [isRoleFormOpen, setIsRoleFormOpen] = useState(false);
   const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [viewMode, setViewMode] = useState<'cards' | 'table'>('table');
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const { data: roles } = useRoles();
 
   // Mutation for updating user activation status
   const updateUserStatusMutation = useMutation({
     mutationFn: async ({ userId, isActive }: { userId: string; isActive: boolean }) => {
       // Starting user status update
       
-      // First, let's check the current user's permissions
+      // Get current user for logging
       const { data: currentUser } = await supabase.auth.getUser();
       // Current authenticated user
-      
-      // Check if current user has admin permissions
-      const { data: adminCheck, error: adminError } = await supabase
-        .rpc('user_is_admin', { _user_id: currentUser.user?.id });
-      
-      // Admin check completed
       
       // Try to fetch the user first to see current state
       const { data: beforeUpdate, error: fetchError } = await supabase
@@ -94,7 +82,7 @@ const Users = () => {
       
       if (!data || data.length === 0) {
         console.error('=== No rows were updated ===');
-        throw new Error('No user was updated. This might be due to insufficient permissions.');
+        throw new Error('No user was updated. Please try again.');
       }
       
       // Update completed successfully
@@ -122,7 +110,7 @@ const Users = () => {
     },
   });
 
-  // Fetch users with their roles
+  // Fetch users
   const { data: users, isLoading: usersLoading, error: usersError } = useUsers();
 
   // Filter users based on search term
@@ -194,7 +182,7 @@ const Users = () => {
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Users</h1>
           <p className="text-muted-foreground">
-            Manage system users and their roles ({filteredUsers.length} users)
+            Manage system users ({filteredUsers.length} users)
           </p>
         </div>
         <div className="flex items-center space-x-2">
@@ -215,11 +203,10 @@ const Users = () => {
               <DialogHeader>
                 <DialogTitle>Create New User</DialogTitle>
                 <DialogDescription>
-                  Add a new user to the system and assign roles
+                  Add a new user to the system
                 </DialogDescription>
               </DialogHeader>
               <CreateUserForm 
-                roles={roles || []}
                 onSuccess={() => {
                   setIsCreateUserOpen(false);
                   queryClient.invalidateQueries({ queryKey: ['users'] });
@@ -260,7 +247,6 @@ const Users = () => {
                   <th className="px-4 py-2">Email</th>
                   <th className="px-4 py-2">Status</th>
                   <th className="px-4 py-2">Department</th>
-                  <th className="px-4 py-2">Roles</th>
                   <th className="px-4 py-2">Joined</th>
                   <th className="px-4 py-2">Actions</th>
                 </tr>
@@ -289,10 +275,6 @@ const Users = () => {
                 setSelectedUser(user);
                 setIsEditProfileOpen(true);
               }}
-              onManageRoles={() => {
-                setSelectedUser(user);
-                setIsRoleFormOpen(true);
-              }}
               onUserAction={handleUserAction}
             />
           ))}
@@ -306,7 +288,6 @@ const Users = () => {
                 <TableHead>Email</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Department</TableHead>
-                <TableHead>Roles</TableHead>
                 <TableHead>Joined</TableHead>
                 <TableHead>Actions</TableHead>
               </TableRow>
@@ -319,10 +300,6 @@ const Users = () => {
                   onEditProfile={() => {
                     setSelectedUser(user);
                     setIsEditProfileOpen(true);
-                  }}
-                  onManageRoles={() => {
-                    setSelectedUser(user);
-                    setIsRoleFormOpen(true);
                   }}
                   onUserAction={handleUserAction}
                 />
@@ -354,28 +331,6 @@ const Users = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Role Management Dialog */}
-      <Dialog open={isRoleFormOpen} onOpenChange={setIsRoleFormOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Manage User Roles</DialogTitle>
-            <DialogDescription>
-              Assign or remove roles for {selectedUser?.first_name} {selectedUser?.last_name}
-            </DialogDescription>
-          </DialogHeader>
-          {selectedUser && (
-            <UserRoleForm 
-              user={selectedUser}
-              roles={roles || []}
-              onSuccess={() => {
-                queryClient.invalidateQueries({ queryKey: ['users'] });
-                setIsRoleFormOpen(false);
-                setSelectedUser(null);
-              }}
-            />
-          )}
-        </DialogContent>
-      </Dialog>
     </div>
   );
 };

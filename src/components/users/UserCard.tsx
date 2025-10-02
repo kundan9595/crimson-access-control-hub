@@ -4,7 +4,7 @@ import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/dropdown-menu';
 import { Mail, Calendar, Edit2, MoreVertical, UserPlus, UserCheck, UserX, Key, Trash2 } from 'lucide-react';
-import { getUserInitials, getUserStatusBadge, getUserRoleBadges, formatDate } from '@/lib/userUtils.tsx';
+import { getUserInitials, getUserStatusBadge, formatDate } from '@/lib/userUtils.tsx';
 import { Badge } from '@/components/ui/badge';
 
 type User = any; // Replace with your Profile type
@@ -12,11 +12,10 @@ type User = any; // Replace with your Profile type
 type UserCardProps = {
   user: User;
   onEditProfile: (user: User) => void;
-  onManageRoles: (user: User) => void;
   onUserAction: (action: string, userId: string) => void;
 };
 
-const UserCard: React.FC<UserCardProps> = ({ user, onEditProfile, onManageRoles, onUserAction }) => {
+const UserCard: React.FC<UserCardProps> = ({ user, onEditProfile, onUserAction }) => {
   return (
     <Card>
       <CardHeader>
@@ -65,13 +64,6 @@ const UserCard: React.FC<UserCardProps> = ({ user, onEditProfile, onManageRoles,
               <Edit2 className="w-4 h-4 mr-2" />
               Edit Profile
             </Button>
-            <Button 
-              variant="outline" 
-              onClick={() => onManageRoles(user)}
-            >
-              <Edit2 className="w-4 h-4 mr-2" />
-              Manage Roles
-            </Button>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" size="sm">
@@ -110,9 +102,13 @@ const UserCard: React.FC<UserCardProps> = ({ user, onEditProfile, onManageRoles,
       <CardContent>
         <div className="space-y-2">
           <div>
-            <p className="text-sm font-medium mb-2">Current Roles:</p>
+            <p className="text-sm font-medium mb-2">Department:</p>
             <div className="flex flex-wrap gap-2">
-              {getUserRoleBadges(user.user_roles)}
+              {user.department ? (
+                <Badge variant="outline">{user.department}</Badge>
+              ) : (
+                <span className="text-muted-foreground">No department assigned</span>
+              )}
             </div>
           </div>
         </div>

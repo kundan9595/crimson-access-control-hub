@@ -5,7 +5,6 @@ import { useToast } from '@/hooks/use-toast';
 import type { Tables } from '@/integrations/supabase/types';
 import { createUser } from '@/services/usersService';
 
-type Role = Tables<'roles'>;
 
 type FormData = {
   firstName: string;
@@ -25,13 +24,12 @@ export function useCreateUserForm(onSuccess: () => void) {
     department: '',
     designation: '',
   });
-  const [selectedRoles, setSelectedRoles] = useState<string[]>([]);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
   const createUserMutation = useMutation({
-    mutationFn: async (userData: FormData & { selectedRoles: string[] }) => {
-      return createUser({ ...userData, selectedRoles: userData.selectedRoles });
+    mutationFn: async (userData: FormData) => {
+      return createUser(userData);
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['users'] });
@@ -47,7 +45,6 @@ export function useCreateUserForm(onSuccess: () => void) {
         department: '',
         designation: '',
       });
-      setSelectedRoles([]);
       onSuccess();
     },
     onError: (error: any) => {
@@ -62,8 +59,6 @@ export function useCreateUserForm(onSuccess: () => void) {
   return {
     formData,
     setFormData,
-    selectedRoles,
-    setSelectedRoles,
     createUser: createUserMutation.mutate,
     isLoading: createUserMutation.isPending,
     error: createUserMutation.error,
