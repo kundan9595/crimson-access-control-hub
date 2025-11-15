@@ -7,7 +7,8 @@ import {
   ClassInventorySearchResult,
   StyleInventorySearchResult,
   ClassInventoryStatistics,
-  StyleInventoryStatistics
+  StyleInventoryStatistics,
+  SkuInventoryLocation
 } from '../types';
 
 export class GlobalInventoryService {
@@ -192,22 +193,60 @@ export class GlobalInventoryService {
     params: InventorySearchParams = {}
   ): Promise<ClassInventorySearchResult> {
     try {
+      const searchQuery = params.query || null;
+      const pageNumber = params.page || 1;
+      const pageSize = params.limit || 20;
+
+      console.log('🟢 [GlobalInventoryService] getGlobalClassInventory called with params:', {
+        query: searchQuery,
+        page: pageNumber,
+        limit: pageSize,
+        originalParams: params
+      });
+
+      const rpcParams = {
+        search_query: searchQuery,
+        page_number: pageNumber,
+        page_size: pageSize
+      };
+      console.log('🟢 [GlobalInventoryService] Calling RPC get_global_class_inventory with:', rpcParams);
+
       const { data, error } = await supabase
-        .rpc('get_global_class_inventory');
+        .rpc('get_global_class_inventory', rpcParams);
+
+      console.log('🟢 [GlobalInventoryService] RPC response:', {
+        hasData: !!data,
+        dataType: Array.isArray(data) ? 'array' : typeof data,
+        dataLength: Array.isArray(data) ? data.length : 'N/A',
+        error: error || null,
+        firstItem: Array.isArray(data) && data.length > 0 ? data[0] : null
+      });
 
       if (error) {
-        console.error('Database error:', error);
+        console.error('❌ [GlobalInventoryService] Database error:', error);
         throw error;
       }
 
-      // Global class inventory RPC result
-      return {
-        inventory: data as any[],
-        total: data?.length || 0,
-        hasMore: false
+      const inventory = (data as any[]) || [];
+      console.log('🟢 [GlobalInventoryService] Processed inventory:', {
+        count: inventory.length,
+        hasMore: inventory.length === pageSize
+      });
+      
+      // Determine if there are more results
+      // If we got a full page, there might be more
+      const hasMore = inventory.length === pageSize;
+
+      const result = {
+        inventory,
+        total: inventory.length,
+        hasMore
       };
+      
+      console.log('🟢 [GlobalInventoryService] Returning result:', result);
+      return result;
     } catch (error) {
-      console.error('Error fetching global class inventory:', error);
+      console.error('❌ [GlobalInventoryService] Error fetching global class inventory:', error);
       throw new Error('Failed to fetch global class inventory');
     }
   }
@@ -217,22 +256,60 @@ export class GlobalInventoryService {
     params: InventorySearchParams = {}
   ): Promise<StyleInventorySearchResult> {
     try {
+      const searchQuery = params.query || null;
+      const pageNumber = params.page || 1;
+      const pageSize = params.limit || 20;
+
+      console.log('🟠 [GlobalInventoryService] getGlobalStyleInventory called with params:', {
+        query: searchQuery,
+        page: pageNumber,
+        limit: pageSize,
+        originalParams: params
+      });
+
+      const rpcParams = {
+        search_query: searchQuery,
+        page_number: pageNumber,
+        page_size: pageSize
+      };
+      console.log('🟠 [GlobalInventoryService] Calling RPC get_global_style_inventory with:', rpcParams);
+
       const { data, error } = await supabase
-        .rpc('get_global_style_inventory');
+        .rpc('get_global_style_inventory', rpcParams);
+
+      console.log('🟠 [GlobalInventoryService] RPC response:', {
+        hasData: !!data,
+        dataType: Array.isArray(data) ? 'array' : typeof data,
+        dataLength: Array.isArray(data) ? data.length : 'N/A',
+        error: error || null,
+        firstItem: Array.isArray(data) && data.length > 0 ? data[0] : null
+      });
 
       if (error) {
-        console.error('Database error:', error);
+        console.error('❌ [GlobalInventoryService] Database error:', error);
         throw error;
       }
 
-      // Global style inventory RPC result
-      return {
-        inventory: data as any[],
-        total: data?.length || 0,
-        hasMore: false
+      const inventory = (data as any[]) || [];
+      console.log('🟠 [GlobalInventoryService] Processed inventory:', {
+        count: inventory.length,
+        hasMore: inventory.length === pageSize
+      });
+      
+      // Determine if there are more results
+      // If we got a full page, there might be more
+      const hasMore = inventory.length === pageSize;
+
+      const result = {
+        inventory,
+        total: inventory.length,
+        hasMore
       };
+      
+      console.log('🟠 [GlobalInventoryService] Returning result:', result);
+      return result;
     } catch (error) {
-      console.error('Error fetching global style inventory:', error);
+      console.error('❌ [GlobalInventoryService] Error fetching global style inventory:', error);
       throw new Error('Failed to fetch global style inventory');
     }
   }
@@ -248,7 +325,9 @@ export class GlobalInventoryService {
         throw error;
       }
 
-      return data as ClassInventoryStatistics;
+      // RPC functions that return TABLE return an array, even for single row
+      const result = Array.isArray(data) && data.length > 0 ? data[0] : data;
+      return result as ClassInventoryStatistics;
     } catch (error) {
       console.error('Error fetching global class inventory statistics:', error);
       throw new Error('Failed to fetch global class inventory statistics');
@@ -266,7 +345,9 @@ export class GlobalInventoryService {
         throw error;
       }
 
-      return data as StyleInventoryStatistics;
+      // RPC functions that return TABLE return an array, even for single row
+      const result = Array.isArray(data) && data.length > 0 ? data[0] : data;
+      return result as StyleInventoryStatistics;
     } catch (error) {
       console.error('Error fetching global style inventory statistics:', error);
       throw new Error('Failed to fetch global style inventory statistics');
@@ -512,6 +593,96 @@ export class GlobalInventoryService {
     } catch (error) {
       console.error('Error fetching warehouses:', error);
       throw new Error('Failed to fetch warehouses');
+    }
+  }
+
+  // Get all inventory locations for a specific SKU
+  async getSkuInventoryLocations(skuId: string): Promise<SkuInventoryLocation[]> {
+    try {
+      // First get all warehouse_inventory records for this SKU
+      const { data: inventoryRecords, error: inventoryError } = await supabase
+        .from('warehouse_inventory')
+        .select(`
+          id,
+          warehouse_id,
+          available_quantity,
+          warehouse:warehouses(
+            id,
+            name
+          )
+        `)
+        .eq('sku_id', skuId);
+
+      if (inventoryError) {
+        console.error('Database error fetching inventory records:', inventoryError);
+        throw inventoryError;
+      }
+
+      if (!inventoryRecords || inventoryRecords.length === 0) {
+        return [];
+      }
+
+      // Get all locations for these inventory records
+      const inventoryIds = inventoryRecords.map(record => record.id);
+      const { data: locations, error: locationsError } = await supabase
+        .from('warehouse_inventory_locations')
+        .select(`
+          id,
+          quantity,
+          warehouse_inventory_id,
+          floor:warehouse_floors(
+            id,
+            name,
+            floor_number
+          ),
+          lane:warehouse_lanes(
+            id,
+            name,
+            lane_number
+          ),
+          rack:warehouse_racks(
+            id,
+            rack_name,
+            rack_number,
+            side
+          )
+        `)
+        .in('warehouse_inventory_id', inventoryIds);
+
+      if (locationsError) {
+        console.error('Database error fetching locations:', locationsError);
+        throw locationsError;
+      }
+
+      if (!locations) return [];
+
+      // Map locations to include warehouse info
+      const inventoryMap = new Map(inventoryRecords.map(record => [record.id, record]));
+
+      return locations.map((item: any) => {
+        const inventoryRecord = inventoryMap.get(item.warehouse_inventory_id);
+        return {
+          location_id: item.id,
+          warehouse_id: inventoryRecord?.warehouse_id || '',
+          warehouse_name: (inventoryRecord?.warehouse as any)?.name || '',
+          warehouse_inventory_id: item.warehouse_inventory_id,
+          floor_id: item.floor?.id || '',
+          floor_name: item.floor?.name || '',
+          floor_number: item.floor?.floor_number || 0,
+          lane_id: item.lane?.id || '',
+          lane_name: item.lane?.name || '',
+          lane_number: item.lane?.lane_number || 0,
+          rack_id: item.rack?.id || '',
+          rack_name: item.rack?.rack_name || '',
+          rack_number: item.rack?.rack_number || 0,
+          rack_side: item.rack?.side || 'left',
+          quantity: item.quantity || 0,
+          available_quantity: inventoryRecord?.available_quantity || 0
+        };
+      });
+    } catch (error) {
+      console.error('Error fetching SKU inventory locations:', error);
+      throw new Error('Failed to fetch SKU inventory locations');
     }
   }
 }

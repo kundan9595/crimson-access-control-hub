@@ -163,9 +163,7 @@ export class WarehouseInventoryService {
             warehouse_id: request.warehouse_id,
             sku_id: request.sku_id,
             total_quantity: request.quantity,
-            available_quantity: request.quantity,
             reserved_quantity: 0,
-            damaged_quantity: 0,
             created_by: request.created_by,
             updated_by: request.updated_by
           })
@@ -187,7 +185,7 @@ export class WarehouseInventoryService {
           const { data: existingLocation } = await supabase
             .from('warehouse_inventory_locations')
             .select('*')
-            .eq('inventory_id', inventoryId)
+            .eq('warehouse_inventory_id', inventoryId)
             .eq('floor_id', location.floor_id)
             .eq('lane_id', location.lane_id)
             .eq('rack_id', location.rack_id)
@@ -213,7 +211,7 @@ export class WarehouseInventoryService {
             const { error: insertError } = await supabase
               .from('warehouse_inventory_locations')
               .insert({
-                inventory_id: inventoryId,
+                warehouse_inventory_id: inventoryId,
                 floor_id: location.floor_id,
                 lane_id: location.lane_id,
                 rack_id: location.rack_id,
@@ -275,12 +273,12 @@ export class WarehouseInventoryService {
       await supabase
         .from('warehouse_inventory_locations')
         .delete()
-        .eq('inventory_id', inventoryId);
+        .eq('warehouse_inventory_id', inventoryId);
 
       await supabase
         .from('warehouse_inventory_reservations')
         .delete()
-        .eq('inventory_id', inventoryId);
+        .eq('warehouse_inventory_id', inventoryId);
 
       // Then delete the inventory
       const { error } = await supabase
@@ -310,7 +308,7 @@ export class WarehouseInventoryService {
       const { data, error } = await supabase
         .from('warehouse_inventory_reservations')
         .insert({
-          inventory_id: inventoryId,
+          warehouse_inventory_id: inventoryId,
           quantity,
           reservation_type: reservationType,
           order_id: orderId,
@@ -441,7 +439,7 @@ export class WarehouseInventoryService {
       // First, get all inventory locations for this rack
       const { data: locationData, error: locationError } = await supabase
         .from('warehouse_inventory_locations')
-        .select('inventory_id')
+        .select('warehouse_inventory_id')
         .eq('rack_id', rackId);
 
       if (locationError) {
@@ -454,7 +452,7 @@ export class WarehouseInventoryService {
       }
 
       // Get inventory IDs
-      const inventoryIds = locationData.map(loc => loc.inventory_id);
+      const inventoryIds = locationData.map(loc => loc.warehouse_inventory_id);
 
       // Get full inventory data for these IDs
       const { data: inventoryData, error: inventoryError } = await supabase

@@ -1,6 +1,6 @@
 
 import { useQuery } from '@tanstack/react-query';
-import { fetchStyles, createStyle, updateStyle, deleteStyle, Style } from '@/services/mastersService';
+import { fetchStyles, fetchStylesByBrand, fetchStylesByCategory, createStyle, updateStyle, deleteStyle, Style } from '@/services/mastersService';
 import { useCreateMutation, useUpdateMutation, useDeleteMutation } from './shared/utils';
 
 export const useStyles = () => {
@@ -34,5 +34,21 @@ export const useDeleteStyle = () => {
     successMessage: "Style deleted successfully",
     errorMessage: "Failed to delete style",
     mutationFn: deleteStyle,
+  });
+};
+
+export const useStylesByBrand = (brandId: string | null) => {
+  return useQuery({
+    queryKey: ['styles', 'brand', brandId],
+    queryFn: () => fetchStylesByBrand(brandId!),
+    enabled: !!brandId,
+  });
+};
+
+export const useStylesByCategory = (categoryId: string | null) => {
+  return useQuery({
+    queryKey: ['styles', 'category', categoryId],
+    queryFn: () => fetchStylesByCategory(categoryId!),
+    enabled: !!categoryId,
   });
 };

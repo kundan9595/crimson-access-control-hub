@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { User, Users, AlertTriangle, Building2, CheckCircle } from 'lucide-react';
+import { User, Users, UserX, AlertTriangle, Building2, CheckCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { fetchWarehouseAdmins } from '@/services/usersService';
 import { warehouseServiceOptimized } from '@/services/warehouseServiceOptimized';
@@ -98,6 +98,11 @@ const AppointWarehouseAdminDialog: React.FC<AppointWarehouseAdminDialogProps> = 
     return admin ? `${admin.first_name} ${admin.last_name}` : 'Unknown Admin';
   };
 
+  const getSelectedAdmin = () => {
+    if (!selectedAdminId) return null;
+    return warehouseAdmins.find(a => a.id === selectedAdminId);
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-lg">
@@ -106,6 +111,9 @@ const AppointWarehouseAdminDialog: React.FC<AppointWarehouseAdminDialogProps> = 
             <Users className="h-6 w-6 text-blue-600" />
             Appoint Warehouse Admin
           </DialogTitle>
+          <DialogDescription>
+            Select a warehouse admin to manage {warehouseName}
+          </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-6">
@@ -155,7 +163,28 @@ const AppointWarehouseAdminDialog: React.FC<AppointWarehouseAdminDialogProps> = 
                   disabled={fetchingAdmins}
                 >
                   <SelectTrigger className="h-12">
-                    <SelectValue placeholder={fetchingAdmins ? "Loading..." : "Choose a warehouse admin"} />
+                    {getSelectedAdmin() ? (
+                      <div className="flex items-center gap-3 flex-1 min-w-0 mr-2">
+                        <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
+                          <User className="h-4 w-4 text-blue-600" />
+                        </div>
+                        <div className="flex-1 min-w-0 text-left">
+                          <div className="font-medium text-gray-900 truncate">
+                            {getSelectedAdmin()?.first_name} {getSelectedAdmin()?.last_name}
+                          </div>
+                          <div className="text-sm text-gray-500 truncate">
+                            {getSelectedAdmin()?.email}
+                          </div>
+                          {getSelectedAdmin()?.department && (
+                            <div className="text-xs text-gray-400 capitalize">
+                              {getSelectedAdmin()?.department.replace('_', ' ')}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ) : (
+                      <SelectValue placeholder={fetchingAdmins ? "Loading..." : "Choose a warehouse admin"} />
+                    )}
                   </SelectTrigger>
                   <SelectContent>
                     {warehouseAdmins.map((admin) => (

@@ -5,11 +5,12 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { Edit, Trash2, Tags, Image as ImageIcon } from 'lucide-react';
+import { Edit, Trash2, Tags, Image as ImageIcon, Eye } from 'lucide-react';
 import { useCategories, useDeleteCategory } from '@/hooks/useMasters';
 import { useSearchParams } from 'react-router-dom';
 import CategoryDialog from '@/components/masters/CategoryDialog';
 import BulkImportDialog from '@/components/masters/BulkImportDialog';
+import CategoryStylesModal from '@/components/masters/CategoryStylesModal';
 import { MasterPageHeader } from '@/components/masters/shared/MasterPageHeader';
 import { SearchFilter } from '@/components/masters/shared/SearchFilter';
 import type { Category } from '@/services/mastersService';
@@ -21,6 +22,7 @@ const CategoriesPage = () => {
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [bulkImportOpen, setBulkImportOpen] = useState(false);
+  const [viewingCategoryStyles, setViewingCategoryStyles] = useState<Category | null>(null);
   const [searchParams, setSearchParams] = useSearchParams();
 
   useEffect(() => {
@@ -44,6 +46,14 @@ const CategoriesPage = () => {
   const handleDialogClose = () => {
     setDialogOpen(false);
     setEditingCategory(null);
+  };
+
+  const handleViewStyles = (category: Category) => {
+    setViewingCategoryStyles(category);
+  };
+
+  const handleStylesModalClose = () => {
+    setViewingCategoryStyles(null);
   };
 
   const handleExport = () => {
@@ -118,7 +128,6 @@ const CategoriesPage = () => {
                     <TableHead className="w-16">Image</TableHead>
                     <TableHead>Name</TableHead>
                     <TableHead>Description</TableHead>
-                    <TableHead className="w-20">Sort Order</TableHead>
                     <TableHead className="w-24">Status</TableHead>
                     <TableHead className="w-32">Created At</TableHead>
                     <TableHead className="text-right w-32">Actions</TableHead>
@@ -147,7 +156,6 @@ const CategoriesPage = () => {
                       </TableCell>
                       <TableCell className="font-medium">{category.name}</TableCell>
                       <TableCell className="max-w-xs truncate">{category.description || '-'}</TableCell>
-                      <TableCell className="text-center">{category.sort_order || 0}</TableCell>
                       <TableCell>
                         <Badge variant={category.status === 'active' ? 'default' : 'secondary'}>
                           {category.status}
@@ -156,6 +164,14 @@ const CategoriesPage = () => {
                       <TableCell>{new Date(category.created_at).toLocaleDateString()}</TableCell>
                       <TableCell className="text-right">
                         <div className="flex items-center justify-end gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleViewStyles(category)}
+                            title="View Styles"
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
                           <Button
                             variant="outline"
                             size="sm"
@@ -197,11 +213,21 @@ const CategoriesPage = () => {
         open={bulkImportOpen}
         onOpenChange={setBulkImportOpen}
         type="categories"
-        templateHeaders={['Name', 'Description', 'Sort Order', 'Status']}
+        templateHeaders={['Name', 'Description', 'Image URL', 'Sort Order', 'Status']}
         sampleData={[
-          ['Electronics', 'Electronic devices and gadgets', '1', 'active'],
-          ['Clothing', 'Apparel and accessories', '2', 'active']
+          ['Electronics', 'Electronic devices and gadgets', 'https://example.com/electronics.jpg', '1', 'active'],
+          ['Clothing', 'Apparel and accessories', 'https://example.com/clothing.jpg', '2', 'active']
         ]}
+      />
+
+      <CategoryStylesModal
+        open={!!viewingCategoryStyles}
+        onOpenChange={(open) => {
+          if (!open) {
+            handleStylesModalClose();
+          }
+        }}
+        category={viewingCategoryStyles}
       />
     </div>
   );

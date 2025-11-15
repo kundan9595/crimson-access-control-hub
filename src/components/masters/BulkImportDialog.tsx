@@ -14,6 +14,7 @@ import { validateRowEnhanced } from './bulk-import/enhancedValidation';
 import { useImportMutations } from './bulk-import/useImportMutations';
 import { createDependencyResolutionService, DuplicateHandlingStrategy } from '@/services/masters/dependencyResolutionService';
 import { getMasterConfig, getMasterDependencies, generateCompleteTemplateHeaders } from '@/constants/masterDependencies';
+import { supabase } from '@/integrations/supabase/client';
 import FileUploadStep from './bulk-import/FileUploadStep';
 import ReviewStep from './bulk-import/ReviewStep';
 import CompleteStep from './bulk-import/CompleteStep';
@@ -109,6 +110,43 @@ const BulkImportDialog: React.FC<BulkImportDialogProps> = ({
     }
   }, []);
 
+  // Helper function to resolve color names to IDs
+  const resolveColorNamesToIds = async (colorNames: string[]): Promise<string[]> => {
+    if (!colorNames || colorNames.length === 0) return [];
+    
+    const { data: colors, error } = await supabase
+      .from('colors')
+      .select('id, name')
+      .in('name', colorNames);
+    
+    if (error) {
+      console.error('Error fetching colors:', error);
+      return [];
+    }
+    
+    // Create a map of name to id
+    const nameToIdMap = new Map(colors?.map(c => [c.name.toLowerCase(), c.id]) || []);
+    
+    // Return IDs for the provided names (in order)
+    const resolvedIds: string[] = [];
+    const notFound: string[] = [];
+    
+    for (const name of colorNames) {
+      const id = nameToIdMap.get(name.toLowerCase());
+      if (id) {
+        resolvedIds.push(id);
+      } else {
+        notFound.push(name);
+      }
+    }
+    
+    if (notFound.length > 0) {
+      toast.warning(`Some colors not found: ${notFound.join(', ')}`);
+    }
+    
+    return resolvedIds;
+  };
+
   const confirmImport = async () => {
     if (!processingResult?.validRecords.length) return;
 
@@ -118,6 +156,24 @@ const BulkImportDialog: React.FC<BulkImportDialogProps> = ({
 
     try {
       const mutation = getMutationForType(type);
+      
+      // Special handling for fabrics - resolve color names to IDs
+      let recordsToImport = processingResult.validRecords;
+      if (type === 'fabrics') {
+        recordsToImport = await Promise.all(
+          processingResult.validRecords.map(async (record) => {
+            if (record.color_names && Array.isArray(record.color_names)) {
+              const colorIds = await resolveColorNamesToIds(record.color_names);
+              const { color_names, ...recordWithoutColorNames } = record;
+              return {
+                ...recordWithoutColorNames,
+                color_ids: colorIds
+              };
+            }
+            return record;
+          })
+        );
+      }
       
       // Check if this master has dependencies
       const dependencies = getMasterDependencies(type);
@@ -129,7 +185,7 @@ const BulkImportDialog: React.FC<BulkImportDialogProps> = ({
         });
         
         // Resolve dependencies first
-        const resolutionResult = await dependencyService.resolveDependencies(type, processingResult.validRecords);
+        const resolutionResult = await dependencyService.resolveDependencies(type, recordsToImport);
         
         if (!resolutionResult.success) {
           toast.error(`Dependency resolution failed: ${resolutionResult.errors.join(', ')}`);
@@ -138,7 +194,7 @@ const BulkImportDialog: React.FC<BulkImportDialogProps> = ({
 
         // Transform records with resolved IDs
         const transformedRecords = dependencyService.transformRecordsWithResolvedIds(
-          processingResult.validRecords,
+          recordsToImport,
           type,
           resolutionResult.resolvedIds
         );
@@ -156,7 +212,7 @@ const BulkImportDialog: React.FC<BulkImportDialogProps> = ({
         dependencySummary = dependencyService.getSummary();
       } else {
         // No dependencies, import directly
-        for (const record of processingResult.validRecords) {
+        for (const record of recordsToImport) {
           try {
             await mutation.mutateAsync(record);
             successCount++;

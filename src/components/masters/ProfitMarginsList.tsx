@@ -45,6 +45,7 @@ export const ProfitMarginsList: React.FC<ProfitMarginsListProps> = ({ searchTerm
   };
 
   const formatPercentage = (value: number) => `${value.toFixed(2)}%`;
+  const formatNumber = (value: number) => value.toFixed(2);
   const formatRange = (min: number, max: number) => `${min} - ${max}`;
 
   if (isLoading) {
@@ -80,8 +81,8 @@ export const ProfitMarginsList: React.FC<ProfitMarginsListProps> = ({ searchTerm
                     <TableHead>Name</TableHead>
                     <TableHead>Range</TableHead>
                     <TableHead>Margin %</TableHead>
-                    <TableHead>Print %</TableHead>
-                    <TableHead>Embroidery %</TableHead>
+                    <TableHead>Print</TableHead>
+                    <TableHead>Embroidery</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Created</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
@@ -93,8 +94,8 @@ export const ProfitMarginsList: React.FC<ProfitMarginsListProps> = ({ searchTerm
                       <TableCell className="font-medium">{profitMargin.name}</TableCell>
                       <TableCell>{formatRange(profitMargin.min_range, profitMargin.max_range)}</TableCell>
                       <TableCell>{formatPercentage(profitMargin.margin_percentage)}</TableCell>
-                      <TableCell>{formatPercentage(profitMargin.branding_print)}</TableCell>
-                      <TableCell>{formatPercentage(profitMargin.branding_embroidery)}</TableCell>
+                      <TableCell>{formatNumber(profitMargin.branding_print)}</TableCell>
+                      <TableCell>{formatNumber(profitMargin.branding_embroidery)}</TableCell>
                       <TableCell>
                         <Badge variant={profitMargin.status === 'active' ? 'default' : 'secondary'}>
                           {profitMargin.status}

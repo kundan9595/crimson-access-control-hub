@@ -18,7 +18,11 @@
     "test:e2e:ui": "playwright test --ui",
     "type-check": "tsc --noEmit",
     "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "logs:watch": "node scripts/watch-edge-logs.js",
+    "logs:reset-password": "node scripts/watch-edge-logs.js reset-password",
+    "logs:reset-password:api": "SUPABASE_PROJECT_REF=pyvlvnuupagaumaacgyz node scripts/watch-edge-logs-api.js reset-password",
+    "deploy:reset-password": "supabase functions deploy reset-password --project-ref pyvlvnuupagaumaacgyz"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.0",

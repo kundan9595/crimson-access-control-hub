@@ -56,3 +56,35 @@ export const deleteStyle = async (id: string): Promise<void> => {
 
   if (error) throw error;
 };
+
+export const fetchStylesByBrand = async (brandId: string): Promise<Style[]> => {
+  const { data, error } = await supabase
+    .from('styles')
+    .select(`
+      *,
+      brand:brands(*),
+      category:categories(*)
+    `)
+    .eq('brand_id', brandId)
+    .order('sort_order', { ascending: true })
+    .order('created_at', { ascending: false });
+
+  if (error) throw error;
+  return (data || []) as Style[];
+};
+
+export const fetchStylesByCategory = async (categoryId: string): Promise<Style[]> => {
+  const { data, error } = await supabase
+    .from('styles')
+    .select(`
+      *,
+      brand:brands(*),
+      category:categories(*)
+    `)
+    .eq('category_id', categoryId)
+    .order('sort_order', { ascending: true })
+    .order('created_at', { ascending: false });
+
+  if (error) throw error;
+  return (data || []) as Style[];
+};

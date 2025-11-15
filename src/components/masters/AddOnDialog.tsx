@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -146,6 +146,26 @@ export const AddOnDialog: React.FC<AddOnDialogProps> = ({
   };
 
   const hasColourValue = form.watch('has_colour');
+
+  const handleSelectAllColors = (checked: boolean) => {
+    if (checked) {
+      const allColorIds = colors.map(color => color.id);
+      form.setValue('selected_color_ids', allColorIds);
+    } else {
+      form.setValue('selected_color_ids', []);
+    }
+  };
+
+  const selectedColorIds = form.watch('selected_color_ids');
+  const allColorsSelected = colors.length > 0 && selectedColorIds.length === colors.length;
+  const someColorsSelected = selectedColorIds.length > 0 && selectedColorIds.length < colors.length;
+  const selectAllRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    if (selectAllRef.current) {
+      (selectAllRef.current as any).indeterminate = someColorsSelected;
+    }
+  }, [someColorsSelected]);
 
   // AddOnDialog - About to render BaseFormDialog
 
@@ -324,9 +344,9 @@ export const AddOnDialog: React.FC<AddOnDialogProps> = ({
             <FormLabel>Colors</FormLabel>
             <div className="space-y-4">
               {/* Selected Colors Display */}
-              {form.watch('selected_color_ids').length > 0 && (
+              {selectedColorIds.length > 0 && (
                 <div className="flex flex-wrap gap-2">
-                  {form.watch('selected_color_ids').map((colorId) => {
+                  {selectedColorIds.map((colorId) => {
                     const color = colors.find(c => c.id === colorId);
                     return color ? (
                       <Badge key={colorId} variant="secondary" className="flex items-center gap-1">
@@ -357,39 +377,56 @@ export const AddOnDialog: React.FC<AddOnDialogProps> = ({
                   {colorsLoading ? (
                     <div className="text-center text-muted-foreground">Loading colors...</div>
                   ) : (
-                    colors.map((color) => (
-                      <div key={color.id} className="flex items-center space-x-2">
+                    <>
+                      {/* Select All Option */}
+                      <div className="flex items-center space-x-2 pb-2 border-b">
                         <Checkbox
-                          id={`color-${color.id}`}
-                          checked={form.watch('selected_color_ids').includes(color.id)}
-                          onCheckedChange={(checked) => {
-                            const currentIds = form.getValues('selected_color_ids');
-                            if (checked) {
-                              form.setValue('selected_color_ids', [...currentIds, color.id]);
-                            } else {
-                              form.setValue('selected_color_ids', currentIds.filter(id => id !== color.id));
-                            }
-                          }}
+                          id="select-all-colors"
+                          checked={allColorsSelected}
+                          ref={selectAllRef as any}
+                          onCheckedChange={handleSelectAllColors}
                         />
-                        <div className="flex items-center gap-2">
-                          <div 
-                            className="w-4 h-4 rounded border border-gray-300" 
-                            style={{ backgroundColor: color.hex_code }}
-                          />
-                          <label
-                            htmlFor={`color-${color.id}`}
-                            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                          >
-                            {color.name}
-                          </label>
-                        </div>
+                        <label
+                          htmlFor="select-all-colors"
+                          className="text-sm font-semibold leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                        >
+                          Select All
+                        </label>
                       </div>
-                    ))
+                      {colors.map((color) => (
+                        <div key={color.id} className="flex items-center space-x-2">
+                          <Checkbox
+                            id={`color-${color.id}`}
+                            checked={selectedColorIds.includes(color.id)}
+                            onCheckedChange={(checked) => {
+                              const currentIds = form.getValues('selected_color_ids');
+                              if (checked) {
+                                form.setValue('selected_color_ids', [...currentIds, color.id]);
+                              } else {
+                                form.setValue('selected_color_ids', currentIds.filter(id => id !== color.id));
+                              }
+                            }}
+                          />
+                          <div className="flex items-center gap-2">
+                            <div 
+                              className="w-4 h-4 rounded border border-gray-300" 
+                              style={{ backgroundColor: color.hex_code }}
+                            />
+                            <label
+                              htmlFor={`color-${color.id}`}
+                              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                            >
+                              {color.name}
+                            </label>
+                          </div>
+                        </div>
+                      ))}
+                    </>
                   )}
                 </div>
               </ScrollArea>
               
-              {form.watch('selected_color_ids').length === 0 && (
+              {selectedColorIds.length === 0 && (
                 <p className="text-sm text-muted-foreground">
                   No colors selected. Select colors from the list above.
                 </p>

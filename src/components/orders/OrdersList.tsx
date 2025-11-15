@@ -9,6 +9,7 @@ import { useOrders, useDeleteOrder } from '@/hooks/orders/useOrders';
 import { usePriceTypes } from '@/hooks/masters/usePriceTypes';
 import { SearchFilter } from '@/components/masters/shared/SearchFilter';
 import { VirtualList } from '@/components/common';
+import { OrderDetailsModal } from './OrderDetailsModal';
 import type { Order } from '@/services/orders/types';
 
 interface OrdersListProps {
@@ -26,6 +27,7 @@ const OrdersList: React.FC<OrdersListProps> = ({ onEdit }) => {
     paymentMode: 'all',
   });
   const [showFilters, setShowFilters] = useState(false);
+  const [viewingOrder, setViewingOrder] = useState<Order | null>(null);
 
   const handleEdit = (order: Order) => {
     if (onEdit) {
@@ -33,9 +35,21 @@ const OrdersList: React.FC<OrdersListProps> = ({ onEdit }) => {
     }
   };
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = async (id: string, e?: React.MouseEvent) => {
+    e?.stopPropagation(); // Prevent row click from triggering
     if (confirm('Are you sure you want to delete this order?')) {
       await deleteOrderMutation.mutateAsync(id);
+    }
+  };
+
+  const handleRowClick = (order: Order) => {
+    setViewingOrder(order);
+  };
+
+  const handleEditFromDetails = (order: Order) => {
+    setViewingOrder(null);
+    if (onEdit) {
+      onEdit(order);
     }
   };
 
@@ -68,6 +82,13 @@ const OrdersList: React.FC<OrdersListProps> = ({ onEdit }) => {
     }
   };
 
+  const getOrderGST = (order: Order) => {
+    if (!order.order_items || order.order_items.length === 0) {
+      return 0;
+    }
+    return order.order_items.reduce((total, item) => total + (item.gst_amount || 0), 0);
+  };
+
   const filteredOrders = orders?.filter(order => {
     // Search filter
     const matchesSearch = searchTerm === '' || 
@@ -98,7 +119,11 @@ const OrdersList: React.FC<OrdersListProps> = ({ onEdit }) => {
 
   // Render order row for virtual list
   const renderOrderRow = (order: Order) => (
-    <TableRow key={order.id} className="hover:bg-muted/50">
+    <TableRow 
+      key={order.id} 
+      className="hover:bg-muted/50 cursor-pointer"
+      onClick={() => handleRowClick(order)}
+    >
       <TableCell className="font-medium">{order.order_number}</TableCell>
       <TableCell>
         <div>
@@ -117,6 +142,25 @@ const OrdersList: React.FC<OrdersListProps> = ({ onEdit }) => {
         </Badge>
       </TableCell>
       <TableCell className="text-right">
+        ₹{order.subtotal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+      </TableCell>
+      <TableCell className="text-right">
+        {order.discount_amount > 0 ? (
+          <span className="text-green-600">
+            -₹{order.discount_amount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+          </span>
+        ) : (
+          <span className="text-muted-foreground">-</span>
+        )}
+      </TableCell>
+      <TableCell className="text-right">
+        {getOrderGST(order) > 0 ? (
+          <span>₹{getOrderGST(order).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+        ) : (
+          <span className="text-muted-foreground">-</span>
+        )}
+      </TableCell>
+      <TableCell className="text-right font-medium">
         ₹{order.total_amount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
       </TableCell>
       <TableCell>
@@ -129,18 +173,21 @@ const OrdersList: React.FC<OrdersListProps> = ({ onEdit }) => {
         <Badge variant="outline">{order.payment_mode}</Badge>
       </TableCell>
       <TableCell className="text-right">
-        <div className="flex items-center justify-end gap-2">
+        <div className="flex items-center justify-end gap-2" onClick={(e) => e.stopPropagation()}>
           <Button
             variant="outline"
             size="sm"
-            onClick={() => handleEdit(order)}
+            onClick={(e) => {
+              e.stopPropagation();
+              handleEdit(order);
+            }}
           >
             <Edit className="h-4 w-4" />
           </Button>
           <Button
             variant="outline"
             size="sm"
-            onClick={() => handleDelete(order.id)}
+            onClick={(e) => handleDelete(order.id, e)}
             disabled={deleteOrderMutation.isPending}
           >
             <Trash2 className="h-4 w-4" />
@@ -278,6 +325,9 @@ const OrdersList: React.FC<OrdersListProps> = ({ onEdit }) => {
                   <TableHead>Customer</TableHead>
                   <TableHead>Price Type</TableHead>
                   <TableHead>Status</TableHead>
+                  <TableHead className="text-right">Subtotal</TableHead>
+                  <TableHead className="text-right">Discount</TableHead>
+                  <TableHead className="text-right">GST</TableHead>
                   <TableHead className="text-right">Total Amount</TableHead>
                   <TableHead>Expected Delivery</TableHead>
                   <TableHead>Payment Mode</TableHead>
@@ -307,6 +357,17 @@ const OrdersList: React.FC<OrdersListProps> = ({ onEdit }) => {
           )}
         </div>
       </CardContent>
+
+      <OrderDetailsModal
+        open={!!viewingOrder}
+        onOpenChange={(open) => {
+          if (!open) {
+            setViewingOrder(null);
+          }
+        }}
+        order={viewingOrder}
+        onEdit={handleEditFromDetails}
+      />
     </Card>
   );
 };

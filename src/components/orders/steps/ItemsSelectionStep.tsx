@@ -72,6 +72,7 @@ export const ItemsSelectionStep: React.FC<ItemsSelectionStepProps> = ({
               name,
               description,
               primary_image_url,
+              gst_rate,
               style:styles(
                 id,
                 name,
@@ -100,6 +101,7 @@ export const ItemsSelectionStep: React.FC<ItemsSelectionStepProps> = ({
             name,
             description,
             primary_image_url,
+            gst_rate,
             status,
             style:styles(
               id,
@@ -149,6 +151,13 @@ export const ItemsSelectionStep: React.FC<ItemsSelectionStepProps> = ({
       unitPrice = sku.price_type_prices[defaultPriceTypeId];
     }
     
+    // Get GST rate from class
+    const gstRate = sku.class?.gst_rate || 0;
+    const itemSubtotal = unitPrice;
+    const discountAmount = 0; // No discount initially
+    const subtotal = itemSubtotal - discountAmount;
+    const gstAmount = (subtotal * gstRate) / 100;
+    
     const newItem: OrderItemFormData = {
       id: `sku-${sku.id}-${Date.now()}`,
       item_type: 'sku',
@@ -158,7 +167,9 @@ export const ItemsSelectionStep: React.FC<ItemsSelectionStepProps> = ({
       price_type_id: defaultPriceTypeId,
       unit_price: unitPrice,
       discount_percentage: 0,
-      subtotal: unitPrice,
+      subtotal: subtotal,
+      gst_rate: gstRate,
+      gst_amount: gstAmount,
       sku: sku,
       size: sku.size
     };
@@ -173,22 +184,27 @@ export const ItemsSelectionStep: React.FC<ItemsSelectionStepProps> = ({
   };
 
   const handleClassSelect = async (classItem: Class) => {
-    // Get all SKUs for this class
-    try {
-      const { data: skusData, error } = await supabase
-        .from('skus')
-        .select(`
-          id,
-          sku_code,
-          description,
-          base_mrp,
-          cost_price,
-          price_type_prices,
-          status,
-          size:sizes(id, name, code)
-        `)
-        .eq('class_id', classItem.id)
-        .eq('status', 'active');
+      // Get all SKUs for this class
+      try {
+        const { data: skusData, error } = await supabase
+          .from('skus')
+          .select(`
+            id,
+            sku_code,
+            description,
+            base_mrp,
+            cost_price,
+            price_type_prices,
+            status,
+            class:classes(
+              id,
+              name,
+              gst_rate
+            ),
+            size:sizes(id, name, code)
+          `)
+          .eq('class_id', classItem.id)
+          .eq('status', 'active');
 
       if (error) {
         console.error('Error fetching class SKUs:', error);
@@ -217,12 +233,18 @@ export const ItemsSelectionStep: React.FC<ItemsSelectionStepProps> = ({
 
       // Add all new SKUs from the class
       const defaultPriceTypeId = formData.price_type_id;
+      const gstRate = classItem.gst_rate || 0;
       const newItems: OrderItemFormData[] = newSkus.map(sku => {
         // Calculate price based on price type
         let unitPrice = sku.base_mrp || 0;
         if (defaultPriceTypeId && sku.price_type_prices && sku.price_type_prices[defaultPriceTypeId]) {
           unitPrice = sku.price_type_prices[defaultPriceTypeId];
         }
+        
+        const itemSubtotal = unitPrice;
+        const discountAmount = 0; // No discount initially
+        const subtotal = itemSubtotal - discountAmount;
+        const gstAmount = (subtotal * gstRate) / 100;
         
         return {
           id: `sku-${sku.id}-${Date.now()}`,
@@ -233,7 +255,9 @@ export const ItemsSelectionStep: React.FC<ItemsSelectionStepProps> = ({
           price_type_id: defaultPriceTypeId,
           unit_price: unitPrice,
           discount_percentage: 0,
-          subtotal: unitPrice,
+          subtotal: subtotal,
+          gst_rate: gstRate,
+          gst_amount: gstAmount,
           sku: {
             ...sku,
             class: classItem
@@ -288,6 +312,10 @@ export const ItemsSelectionStep: React.FC<ItemsSelectionStepProps> = ({
         const discountAmount = (itemSubtotal * updatedItem.discount_percentage) / 100;
         updatedItem.subtotal = itemSubtotal - discountAmount;
         
+        // Recalculate GST amount (GST is calculated on subtotal after discount)
+        const gstRate = updatedItem.gst_rate || 0;
+        updatedItem.gst_amount = (updatedItem.subtotal * gstRate) / 100;
+        
         return updatedItem;
       }
       return item;
@@ -317,7 +345,11 @@ export const ItemsSelectionStep: React.FC<ItemsSelectionStepProps> = ({
   };
 
   const getTotalAmount = () => {
-    return formData.items.reduce((total, item) => total + item.subtotal, 0);
+    return formData.items.reduce((total, item) => total + item.subtotal + (item.gst_amount || 0), 0);
+  };
+
+  const getTotalGST = () => {
+    return formData.items.reduce((total, item) => total + (item.gst_amount || 0), 0);
   };
 
   return (
@@ -432,17 +464,9 @@ export const ItemsSelectionStep: React.FC<ItemsSelectionStepProps> = ({
 
       {/* Selected Items */}
       <div>
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2">
-            <ShoppingCart className="h-5 w-5" />
-            Selected Items ({formData.items.length})
-          </div>
-          <div className="flex items-center gap-2">
-            <Calculator className="h-4 w-4" />
-            <span className="text-lg font-semibold">
-              Total: ₹{getTotalAmount().toLocaleString('en-IN', { minimumFractionDigits: 2 })}
-            </span>
-          </div>
+        <div className="flex items-center gap-2 mb-4">
+          <ShoppingCart className="h-5 w-5" />
+          <h3 className="text-lg font-semibold">Selected Items ({formData.items.length})</h3>
         </div>
           {formData.items.length > 0 ? (
             <Table>
@@ -454,6 +478,8 @@ export const ItemsSelectionStep: React.FC<ItemsSelectionStepProps> = ({
                   <TableHead className="w-32">Unit Price</TableHead>
                   <TableHead className="w-24">Discount %</TableHead>
                   <TableHead className="w-32 text-right">Subtotal</TableHead>
+                  <TableHead className="w-24 text-right">GST Rate</TableHead>
+                  <TableHead className="w-32 text-right">GST Amount</TableHead>
                   <TableHead className="w-16">Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -551,6 +577,24 @@ export const ItemsSelectionStep: React.FC<ItemsSelectionStepProps> = ({
                       ₹{item.subtotal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                     </TableCell>
                     
+                    <TableCell className="text-right">
+                      {item.item_type === 'sku' ? (
+                        <span className="text-sm">
+                          {item.gst_rate ? `${item.gst_rate}%` : '0%'}
+                        </span>
+                      ) : (
+                        <span className="text-muted-foreground">-</span>
+                      )}
+                    </TableCell>
+                    
+                    <TableCell className="text-right font-medium">
+                      {item.item_type === 'sku' ? (
+                        <span>₹{(item.gst_amount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                      ) : (
+                        <span className="text-muted-foreground">-</span>
+                      )}
+                    </TableCell>
+                    
                     <TableCell>
                       <Button
                         variant="ghost"
@@ -572,6 +616,42 @@ export const ItemsSelectionStep: React.FC<ItemsSelectionStepProps> = ({
             </div>
           )}
       </div>
+
+      {/* Order Summary */}
+      {formData.items.length > 0 && (
+        <Card className="mt-6">
+          <CardContent className="p-6">
+            <div className="flex items-center gap-2 mb-4">
+              <Calculator className="h-5 w-5" />
+              <h3 className="text-lg font-semibold">Order Summary</h3>
+            </div>
+            <div className="flex justify-end">
+              <div className="w-full max-w-md space-y-3">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-muted-foreground">Subtotal</span>
+                  <span className="text-sm font-medium">
+                    ₹{formData.items.reduce((total, item) => total + item.subtotal, 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-muted-foreground">GST</span>
+                  <span className="text-sm font-medium">
+                    ₹{getTotalGST().toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                  </span>
+                </div>
+                <div className="border-t pt-3 mt-3">
+                  <div className="flex justify-between items-center">
+                    <span className="text-lg font-semibold">Total</span>
+                    <span className="text-lg font-bold text-primary">
+                      ₹{getTotalAmount().toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 };

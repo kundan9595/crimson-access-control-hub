@@ -13,6 +13,7 @@ type FormData = {
   phoneNumber: string;
   department: string;
   designation: string;
+  selectedRoles: string[];
 };
 
 export function useCreateUserForm(onSuccess: () => void) {
@@ -23,6 +24,7 @@ export function useCreateUserForm(onSuccess: () => void) {
     phoneNumber: '',
     department: '',
     designation: '',
+    selectedRoles: [],
   });
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -44,6 +46,7 @@ export function useCreateUserForm(onSuccess: () => void) {
         phoneNumber: '',
         department: '',
         designation: '',
+        selectedRoles: [],
       });
       onSuccess();
     },

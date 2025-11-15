@@ -37,6 +37,8 @@ export interface OrderItem {
   discount_percentage: number;
   discount_amount: number;
   subtotal: number;
+  gst_rate?: number;
+  gst_amount?: number;
   created_at: string;
   
   // Relations
@@ -104,6 +106,7 @@ export interface Class {
   style_id?: string;
   color_id?: string;
   primary_image_url?: string;
+  gst_rate?: number;
   status: string;
   
   // Relations
@@ -184,6 +187,8 @@ export interface CreateOrderItemData {
   price_type_id?: string;
   unit_price: number;
   discount_percentage?: number;
+  gst_rate?: number;
+  gst_amount?: number;
 }
 
 export interface OrderFormData {
@@ -214,6 +219,8 @@ export interface OrderItemFormData {
   unit_price: number;
   discount_percentage: number;
   subtotal: number;
+  gst_rate?: number;
+  gst_amount?: number;
   
   // Additional data for display
   sku?: SKU;

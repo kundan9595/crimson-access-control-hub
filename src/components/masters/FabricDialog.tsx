@@ -1,5 +1,5 @@
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -134,6 +134,15 @@ export const FabricDialog: React.FC<FabricDialogProps> = ({
 
   const isLoading = createFabric.isPending || updateFabric.isPending;
 
+  const handleSelectAllColors = (checked: boolean, currentValue: string[]) => {
+    if (checked) {
+      const allColorIds = colors.map(color => color.id);
+      form.setValue('color_ids', allColorIds);
+    } else {
+      form.setValue('color_ids', []);
+    }
+  };
+
   return (
     <BaseFormDialog
       open={open}
@@ -247,17 +256,44 @@ export const FabricDialog: React.FC<FabricDialogProps> = ({
         <FormField
           control={form.control}
           name="color_ids"
-          render={({ field }) => (
+          render={({ field }) => {
+            const selectedColors = field.value || [];
+            const allColorsSelected = colors.length > 0 && selectedColors.length === colors.length;
+            const someColorsSelected = selectedColors.length > 0 && selectedColors.length < colors.length;
+            const selectAllRef = useRef<HTMLButtonElement>(null);
+            
+            useEffect(() => {
+              if (selectAllRef.current) {
+                (selectAllRef.current as any).indeterminate = someColorsSelected;
+              }
+            }, [someColorsSelected]);
+            
+            return (
             <FormItem>
               <FormLabel>Colors (Optional)</FormLabel>
               <div className="space-y-3">
                 <ScrollArea className="h-48 w-full border rounded-md p-4">
                   <div className="space-y-2">
+                    {/* Select All Option */}
+                    <div className="flex items-center space-x-2 pb-2 border-b">
+                      <Checkbox
+                        id="select-all-colors"
+                        checked={allColorsSelected}
+                        ref={selectAllRef as any}
+                        onCheckedChange={(checked) => handleSelectAllColors(checked as boolean, selectedColors)}
+                      />
+                      <label
+                        htmlFor="select-all-colors"
+                        className="text-sm font-semibold leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                      >
+                        Select All
+                      </label>
+                    </div>
                     {colors.map((color) => (
                       <div key={color.id} className="flex items-center space-x-2">
                         <Checkbox
                           id={color.id}
-                          checked={field.value?.includes(color.id) || false}
+                          checked={selectedColors.includes(color.id)}
                           onCheckedChange={(checked) => {
                             const currentValues = field.value || [];
                             if (checked) {
@@ -282,9 +318,9 @@ export const FabricDialog: React.FC<FabricDialogProps> = ({
                   </div>
                 </ScrollArea>
                 
-                {field.value && field.value.length > 0 && (
+                {selectedColors && selectedColors.length > 0 && (
                   <div className="flex flex-wrap gap-2">
-                    {field.value.map((colorId) => {
+                    {selectedColors.map((colorId) => {
                       const color = colors.find(c => c.id === colorId);
                       return color ? (
                         <Badge key={colorId} variant="secondary" className="flex items-center gap-1">
@@ -301,7 +337,8 @@ export const FabricDialog: React.FC<FabricDialogProps> = ({
               </div>
               <FormMessage />
             </FormItem>
-          )}
+            );
+          }}
         />
 
         <FormField

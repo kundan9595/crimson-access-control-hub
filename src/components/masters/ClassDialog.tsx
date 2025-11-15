@@ -53,9 +53,11 @@ const ClassDialog: React.FC<ClassDialogProps> = ({ classItem, trigger, open, onO
   const isOpen = open !== undefined ? open : internalOpen;
   const setIsOpen = onOpenChange || setInternalOpen;
 
-  // Filter sizes based on selected size group
+  // Filter sizes based on selected size group and sort by sort_order
   const availableSizes = formData.size_group_id 
-    ? allSizes.filter(size => size.size_group_id === formData.size_group_id && size.status === 'active')
+    ? allSizes
+        .filter(size => size.size_group_id === formData.size_group_id && size.status === 'active')
+        .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0))
     : [];
 
   const resetForm = () => {
@@ -605,22 +607,22 @@ const ClassDialog: React.FC<ClassDialogProps> = ({ classItem, trigger, open, onO
                     />
                     
                     {formData.images.length > 0 && (
-                      <div className="mt-4 grid grid-cols-4 gap-2">
+                      <div className="mt-4 grid grid-cols-6 gap-2">
                         {formData.images.map((image, index) => (
-                          <div key={index} className="relative">
+                          <div key={index} className="relative aspect-square">
                             <img
                               src={image}
                               alt={`Additional ${index + 1}`}
-                              className="w-full h-20 object-cover rounded border"
+                              className="w-full h-full object-cover rounded-lg border"
                             />
                             <Button
                               type="button"
                               variant="destructive"
                               size="sm"
-                              className="absolute -top-2 -right-2 rounded-full p-1 h-6 w-6"
+                              className="absolute -top-2 -right-2 rounded-full p-1 h-5 w-5"
                               onClick={() => removeImage(index)}
                             >
-                              <X className="h-3 w-3" />
+                              <X className="h-2.5 w-2.5" />
                             </Button>
                           </div>
                         ))}

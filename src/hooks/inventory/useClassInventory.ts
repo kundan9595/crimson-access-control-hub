@@ -40,19 +40,35 @@ export const useClassInventory = (options: UseClassInventoryOptions = {}): UseCl
   // Fetch inventory data
   const fetchInventory = useCallback(async (page: number = 1, query?: string) => {
     try {
+      console.log('🔵 [useClassInventory] fetchInventory called', { page, query });
       setLoading(true);
       setError(null);
 
-      const result = await inventoryService.getGlobalClassInventory({
+      const params = {
         query,
         page,
         limit: 20
+      };
+      console.log('🔵 [useClassInventory] Calling getGlobalClassInventory with params:', params);
+
+      const result = await inventoryService.getGlobalClassInventory(params);
+
+      console.log('🔵 [useClassInventory] Received result:', {
+        inventoryCount: result.inventory?.length || 0,
+        total: result.total,
+        hasMore: result.hasMore,
+        firstItem: result.inventory?.[0] || null
       });
 
       if (page === 1) {
         setInventory(result.inventory);
+        console.log('🔵 [useClassInventory] Set inventory (page 1):', result.inventory.length, 'items');
       } else {
-        setInventory(prev => [...prev, ...result.inventory]);
+        setInventory(prev => {
+          const newInventory = [...prev, ...result.inventory];
+          console.log('🔵 [useClassInventory] Appended inventory (page', page, '):', newInventory.length, 'total items');
+          return newInventory;
+        });
       }
 
       setPagination({
@@ -60,18 +76,22 @@ export const useClassInventory = (options: UseClassInventoryOptions = {}): UseCl
         total: result.total,
         hasMore: result.hasMore
       });
+      console.log('🔵 [useClassInventory] Updated pagination:', { page, total: result.total, hasMore: result.hasMore });
     } catch (err) {
       console.error('❌ [useClassInventory] Error fetching class inventory:', err);
       setError(err instanceof Error ? err.message : 'Failed to fetch class inventory');
     } finally {
       setLoading(false);
+      console.log('🔵 [useClassInventory] fetchInventory completed, loading set to false');
     }
   }, []);
 
   // Fetch statistics
   const fetchStatistics = useCallback(async () => {
     try {
+      console.log('🔵 [useClassInventory] fetchStatistics called');
       const stats = await inventoryService.getGlobalClassInventoryStatistics();
+      console.log('🔵 [useClassInventory] Received statistics:', stats);
       setStatistics(stats);
     } catch (err) {
       console.error('❌ [useClassInventory] Error fetching class inventory statistics:', err);
@@ -80,6 +100,7 @@ export const useClassInventory = (options: UseClassInventoryOptions = {}): UseCl
 
   // Search inventory
   const searchInventory = useCallback((query: string) => {
+    console.log('🔵 [useClassInventory] searchInventory called with query:', query);
     setSearchQuery(query);
     setPagination(prev => ({ ...prev, page: 1 }));
     fetchInventory(1, query);
@@ -87,6 +108,7 @@ export const useClassInventory = (options: UseClassInventoryOptions = {}): UseCl
 
   // Clear search
   const clearSearch = useCallback(() => {
+    console.log('🔵 [useClassInventory] clearSearch called');
     setSearchQuery('');
     setPagination(prev => ({ ...prev, page: 1 }));
     fetchInventory(1);

@@ -103,8 +103,7 @@ export const createBaseProduct = async (baseProductData: Omit<BaseProduct, 'id' 
     .select(`
       *,
       category:categories(id, name),
-      fabric:fabrics(id, name, fabric_type),
-      size_group:size_groups(id, name)
+      fabric:fabrics(id, name, fabric_type)
     `)
     .single();
 
@@ -121,9 +120,9 @@ export const createBaseProduct = async (baseProductData: Omit<BaseProduct, 'id' 
     base_sn: data.base_sn ? Number(data.base_sn) : undefined,
     parts: Array.isArray(data.parts) ? data.parts : [],
     branding_sides: Array.isArray(data.branding_sides) ? data.branding_sides : [],
+    size_group_ids: Array.isArray(data.size_group_ids) ? data.size_group_ids : [],
     category: data.category && typeof data.category === 'object' && 'id' in data.category ? data.category : undefined,
     fabric: data.fabric && typeof data.fabric === 'object' && 'id' in data.fabric ? data.fabric : undefined,
-    size_group: data.size_group && typeof data.size_group === 'object' && data.size_group !== null && 'id' in data.size_group ? data.size_group : undefined,
   };
   
   return processedData as BaseProduct;
@@ -160,8 +159,7 @@ export const updateBaseProduct = async (id: string, updates: Partial<BaseProduct
     .select(`
       *,
       category:categories(id, name),
-      fabric:fabrics(id, name, fabric_type),
-      size_group:size_groups(id, name)
+      fabric:fabrics(id, name, fabric_type)
     `)
     .single();
 
@@ -178,9 +176,9 @@ export const updateBaseProduct = async (id: string, updates: Partial<BaseProduct
     base_sn: data.base_sn ? Number(data.base_sn) : undefined,
     parts: Array.isArray(data.parts) ? data.parts : [],
     branding_sides: Array.isArray(data.branding_sides) ? data.branding_sides : [],
+    size_group_ids: Array.isArray(data.size_group_ids) ? data.size_group_ids : [],
     category: data.category && typeof data.category === 'object' && 'id' in data.category ? data.category : undefined,
     fabric: data.fabric && typeof data.fabric === 'object' && 'id' in data.fabric ? data.fabric : undefined,
-    size_group: data.size_group && typeof data.size_group === 'object' && data.size_group !== null && 'id' in data.size_group ? data.size_group : undefined,
   };
   
   return processedData as BaseProduct;

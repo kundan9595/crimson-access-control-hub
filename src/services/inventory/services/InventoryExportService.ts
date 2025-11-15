@@ -45,7 +45,7 @@ export class InventoryExportService {
           lane:warehouse_lanes(*),
           rack:warehouse_racks(*)
         `)
-        .in('inventory_id', inventoryIds);
+        .in('warehouse_inventory_id', inventoryIds);
 
       if (locationError) {
         console.error('Error fetching location data:', locationError);
@@ -84,10 +84,10 @@ export class InventoryExportService {
 
       const locationMap = new Map();
       locationData?.forEach(location => {
-        if (!locationMap.has(location.inventory_id)) {
-          locationMap.set(location.inventory_id, []);
+        if (!locationMap.has(location.warehouse_inventory_id)) {
+          locationMap.set(location.warehouse_inventory_id, []);
         }
-        locationMap.get(location.inventory_id).push(location);
+        locationMap.get(location.warehouse_inventory_id).push(location);
       });
 
       // Prepare export data

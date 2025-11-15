@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Search, Download, AlertTriangle, MapPin } from 'lucide-react';
+import { Search, Download, AlertTriangle, MapPin, Plus, Trash2, ArrowRight } from 'lucide-react';
 import { exportToCSV } from '@/utils/exportUtils';
 import { toast } from 'sonner';
 import StatisticsCards from './StatisticsCards';
@@ -28,6 +28,9 @@ interface ConsolidatedSkuInventoryTableProps {
   onLoadMore: () => void;
   onExport: () => void;
   onViewLocations?: (skuId: string) => void;
+  onAddInventory?: (skuId: string, skuCode: string) => void;
+  onRemoveInventory?: (skuId: string, skuCode: string) => void;
+  onMoveInventory?: (skuId: string, skuCode: string) => void;
   
   // Configuration
   title?: string;
@@ -45,6 +48,9 @@ const ConsolidatedSkuInventoryTable: React.FC<ConsolidatedSkuInventoryTableProps
   onLoadMore,
   onExport,
   onViewLocations,
+  onAddInventory,
+  onRemoveInventory,
+  onMoveInventory,
   title = "Consolidated SKU Inventory",
   showExport = true
 }) => {
@@ -150,6 +156,7 @@ const ConsolidatedSkuInventoryTable: React.FC<ConsolidatedSkuInventoryTableProps
                   <TableHead className="text-center">Warehouses</TableHead>
                   <TableHead className="text-center">Locations</TableHead>
                   <TableHead className="text-center">Status</TableHead>
+                  <TableHead className="text-center">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -168,11 +175,12 @@ const ConsolidatedSkuInventoryTable: React.FC<ConsolidatedSkuInventoryTableProps
                       <TableCell><Skeleton className="h-4 w-12" /></TableCell>
                       <TableCell><Skeleton className="h-4 w-12" /></TableCell>
                       <TableCell><Skeleton className="h-4 w-16" /></TableCell>
+                      <TableCell><Skeleton className="h-4 w-24" /></TableCell>
                     </TableRow>
                   ))
                 ) : inventory.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={12} className="text-center py-8 text-gray-500">
+                    <TableCell colSpan={13} className="text-center py-8 text-gray-500">
                       No SKU inventory found
                     </TableCell>
                   </TableRow>
@@ -204,6 +212,39 @@ const ConsolidatedSkuInventoryTable: React.FC<ConsolidatedSkuInventoryTableProps
                         <Badge variant={getStockStatusColor(item.available_quantity, item.total_quantity)}>
                           {getStockStatusText(item.available_quantity, item.total_quantity)}
                         </Badge>
+                      </TableCell>
+                      <TableCell className="text-center">
+                        <div className="flex items-center justify-center gap-1">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => onAddInventory?.(item.sku_id, item.sku_code)}
+                            title="Add Inventory"
+                            className="h-8 w-8 p-0"
+                          >
+                            <Plus className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => onRemoveInventory?.(item.sku_id, item.sku_code)}
+                            title="Remove Inventory"
+                            className="h-8 w-8 p-0"
+                            disabled={item.total_quantity === 0}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => onMoveInventory?.(item.sku_id, item.sku_code)}
+                            title="Move Inventory"
+                            className="h-8 w-8 p-0"
+                            disabled={item.total_quantity === 0}
+                          >
+                            <ArrowRight className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))

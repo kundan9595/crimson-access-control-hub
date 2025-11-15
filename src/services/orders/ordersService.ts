@@ -45,6 +45,7 @@ class OrdersService {
                 name,
                 description,
                 primary_image_url,
+                gst_rate,
                 style:styles(
                   id,
                   name,
@@ -111,6 +112,7 @@ class OrdersService {
                 name,
                 description,
                 primary_image_url,
+                gst_rate,
                 style:styles(
                   id,
                   name,
@@ -147,12 +149,18 @@ class OrdersService {
     try {
       const { data: { user } } = await supabase.auth.getUser();
 
-      // Calculate totals
+      // Calculate totals including GST
       const subtotal = orderData.items.reduce((sum, item) => {
         const itemSubtotal = item.quantity * item.unit_price;
         const discountAmount = item.discount_percentage ? (itemSubtotal * item.discount_percentage / 100) : 0;
         return sum + (itemSubtotal - discountAmount);
       }, 0);
+
+      const totalGST = orderData.items.reduce((sum, item) => {
+        return sum + (item.gst_amount || 0);
+      }, 0);
+
+      const totalAmount = subtotal + totalGST;
 
       // Generate order number
       const { data: orderNumberData, error: orderNumberError } = await supabase
@@ -177,7 +185,12 @@ class OrdersService {
           ship_to_address: orderData.ship_to_address,
           bill_to_address: orderData.bill_to_address,
           subtotal: subtotal,
-          total_amount: subtotal, // For now, same as subtotal
+          discount_amount: orderData.items.reduce((sum, item) => {
+            const itemSubtotal = item.quantity * item.unit_price;
+            const discountAmount = item.discount_percentage ? (itemSubtotal * item.discount_percentage / 100) : 0;
+            return sum + discountAmount;
+          }, 0),
+          total_amount: totalAmount,
           status: 'draft',
           created_by: user?.id
         }])
@@ -206,7 +219,9 @@ class OrdersService {
             unit_price: item.unit_price,
             discount_percentage: item.discount_percentage || 0,
             discount_amount: discountAmount,
-            subtotal: itemSubtotal - discountAmount
+            subtotal: itemSubtotal - discountAmount,
+            gst_rate: item.gst_rate || 0,
+            gst_amount: item.gst_amount || 0
           };
         });
 
@@ -236,12 +251,18 @@ class OrdersService {
 
       // Calculate totals if items are provided
       let subtotal = 0;
+      let totalGST = 0;
+      let totalAmount = 0;
       if (orderData.items) {
         subtotal = orderData.items.reduce((sum, item) => {
           const itemSubtotal = item.quantity * item.unit_price;
           const discountAmount = item.discount_percentage ? (itemSubtotal * item.discount_percentage / 100) : 0;
           return sum + (itemSubtotal - discountAmount);
         }, 0);
+        totalGST = orderData.items.reduce((sum, item) => {
+          return sum + (item.gst_amount || 0);
+        }, 0);
+        totalAmount = subtotal + totalGST;
       }
 
       // Update the order
@@ -259,7 +280,12 @@ class OrdersService {
       
       if (orderData.items) {
         updateData.subtotal = subtotal;
-        updateData.total_amount = subtotal;
+        updateData.discount_amount = orderData.items.reduce((sum, item) => {
+          const itemSubtotal = item.quantity * item.unit_price;
+          const discountAmount = item.discount_percentage ? (itemSubtotal * item.discount_percentage / 100) : 0;
+          return sum + discountAmount;
+        }, 0);
+        updateData.total_amount = totalAmount;
       }
 
       const { error: orderError } = await supabase
@@ -302,7 +328,9 @@ class OrdersService {
               unit_price: item.unit_price,
               discount_percentage: item.discount_percentage || 0,
               discount_amount: discountAmount,
-              subtotal: itemSubtotal - discountAmount
+              subtotal: itemSubtotal - discountAmount,
+              gst_rate: item.gst_rate || 0,
+              gst_amount: item.gst_amount || 0
             };
           });
 

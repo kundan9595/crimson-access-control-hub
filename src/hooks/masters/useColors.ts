@@ -66,7 +66,13 @@ export const useDeleteColor = () => {
         .delete()
         .eq('id', id);
       
-      if (error) throw error;
+      if (error) {
+        // Check if it's a foreign key constraint violation
+        if (error.code === '23503' || error.message?.includes('foreign key') || error.message?.includes('violates foreign key constraint')) {
+          throw new Error('Cannot delete color: It is being used by one or more classes. Please remove the color from all classes first.');
+        }
+        throw error;
+      }
     },
   });
 };

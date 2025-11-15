@@ -4,11 +4,13 @@ import { useUserProfileForm } from '@/hooks/useUserProfileForm';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import type { Tables } from '@/integrations/supabase/types';
 import { departmentOptions } from '@/lib/userConstants';
+import { useRoles } from '@/hooks/useRoles';
 
 type Profile = Tables<'profiles'>;
 type DepartmentType = 'operations' | 'logistics' | 'warehouse' | 'customer_service' | 'administration' | 'finance' | 'it' | 'human_resources';
@@ -21,6 +23,7 @@ interface UserProfileEditorProps {
 const UserProfileEditor: React.FC<UserProfileEditorProps> = ({ user, onSuccess }) => {
   const { formData, setFormData, updateUser, isLoading } = useUserProfileForm(user, onSuccess);
   const { toast } = useToast();
+  const { data: roles = [], isLoading: rolesLoading } = useRoles();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -96,6 +99,48 @@ const UserProfileEditor: React.FC<UserProfileEditorProps> = ({ user, onSuccess }
             value={formData.designation}
             onChange={(e) => setFormData(prev => ({ ...prev, designation: e.target.value }))}
           />
+        </div>
+      </div>
+
+      <div className="space-y-3">
+        <Label>Roles</Label>
+        <div className="space-y-2 border rounded-md p-4 max-h-48 overflow-y-auto">
+          {rolesLoading ? (
+            <p className="text-sm text-muted-foreground">Loading roles...</p>
+          ) : roles.length === 0 ? (
+            <p className="text-sm text-muted-foreground">No roles available</p>
+          ) : (
+            roles.map((role) => (
+              <div key={role.id} className="flex items-center space-x-2">
+                <Checkbox
+                  id={`role-${role.id}`}
+                  checked={formData.selectedRoles.includes(role.id)}
+                  onCheckedChange={(checked) => {
+                    if (checked) {
+                      setFormData(prev => ({
+                        ...prev,
+                        selectedRoles: [...prev.selectedRoles, role.id]
+                      }));
+                    } else {
+                      setFormData(prev => ({
+                        ...prev,
+                        selectedRoles: prev.selectedRoles.filter(id => id !== role.id)
+                      }));
+                    }
+                  }}
+                />
+                <Label
+                  htmlFor={`role-${role.id}`}
+                  className="text-sm font-normal cursor-pointer flex-1"
+                >
+                  {role.name}
+                  {role.description && (
+                    <span className="text-muted-foreground ml-2">- {role.description}</span>
+                  )}
+                </Label>
+              </div>
+            ))
+          )}
         </div>
       </div>
 

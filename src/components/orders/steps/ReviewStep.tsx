@@ -29,7 +29,11 @@ export const ReviewStep: React.FC<ReviewStepProps> = ({
 }) => {
   const { data: priceTypes = [] } = usePriceTypes();
   const getTotalAmount = () => {
-    return formData.items.reduce((total, item) => total + item.subtotal, 0);
+    return formData.items.reduce((total, item) => total + item.subtotal + (item.gst_amount || 0), 0);
+  };
+
+  const getTotalGST = () => {
+    return formData.items.reduce((total, item) => total + (item.gst_amount || 0), 0);
   };
 
   const getTotalQuantity = () => {
@@ -46,6 +50,10 @@ export const ReviewStep: React.FC<ReviewStepProps> = ({
 
   const getSubtotalBeforeDiscount = () => {
     return formData.items.reduce((total, item) => total + (item.quantity * item.unit_price), 0);
+  };
+
+  const getSubtotalAfterDiscount = () => {
+    return formData.items.reduce((total, item) => total + item.subtotal, 0);
   };
 
   return (
@@ -193,6 +201,8 @@ export const ReviewStep: React.FC<ReviewStepProps> = ({
               <TableHead className="w-32">Unit Price</TableHead>
               <TableHead className="w-24">Discount</TableHead>
               <TableHead className="w-32 text-right">Subtotal</TableHead>
+              <TableHead className="w-24 text-right">GST Rate</TableHead>
+              <TableHead className="w-32 text-right">GST Amount</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -226,6 +236,22 @@ export const ReviewStep: React.FC<ReviewStepProps> = ({
                 <TableCell className="text-right font-medium">
                   ₹{item.subtotal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                 </TableCell>
+                <TableCell className="text-right">
+                  {item.item_type === 'sku' ? (
+                    <span className="text-sm">
+                      {item.gst_rate ? `${item.gst_rate}%` : '0%'}
+                    </span>
+                  ) : (
+                    <span className="text-muted-foreground">-</span>
+                  )}
+                </TableCell>
+                <TableCell className="text-right font-medium">
+                  {item.item_type === 'sku' ? (
+                    <span>₹{(item.gst_amount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                  ) : (
+                    <span className="text-muted-foreground">-</span>
+                  )}
+                </TableCell>
               </TableRow>
             ))}
           </TableBody>
@@ -240,17 +266,40 @@ export const ReviewStep: React.FC<ReviewStepProps> = ({
         </div>
         <Table>
           <TableBody>
-            <TableRow>
-              <TableCell className="font-medium">Subtotal (before discount)</TableCell>
-              <TableCell className="text-right">
-                ₹{getSubtotalBeforeDiscount().toLocaleString('en-IN', { minimumFractionDigits: 2 })}
-              </TableCell>
-            </TableRow>
-            {getTotalDiscount() > 0 && (
+            {getTotalDiscount() > 0 ? (
+              <>
+                <TableRow>
+                  <TableCell className="font-medium">Subtotal (before discount)</TableCell>
+                  <TableCell className="text-right">
+                    ₹{getSubtotalBeforeDiscount().toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                  </TableCell>
+                </TableRow>
+                <TableRow>
+                  <TableCell className="font-medium text-green-600">Total Discount</TableCell>
+                  <TableCell className="text-right text-green-600">
+                    -₹{getTotalDiscount().toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                  </TableCell>
+                </TableRow>
+                <TableRow>
+                  <TableCell className="font-medium">Subtotal (after discount)</TableCell>
+                  <TableCell className="text-right">
+                    ₹{getSubtotalAfterDiscount().toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                  </TableCell>
+                </TableRow>
+              </>
+            ) : (
               <TableRow>
-                <TableCell className="font-medium text-green-600">Total Discount</TableCell>
-                <TableCell className="text-right text-green-600">
-                  -₹{getTotalDiscount().toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                <TableCell className="font-medium">Subtotal</TableCell>
+                <TableCell className="text-right">
+                  ₹{getSubtotalAfterDiscount().toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                </TableCell>
+              </TableRow>
+            )}
+            {getTotalGST() > 0 && (
+              <TableRow>
+                <TableCell className="font-medium">Total GST</TableCell>
+                <TableCell className="text-right">
+                  ₹{getTotalGST().toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                 </TableCell>
               </TableRow>
             )}

@@ -1,5 +1,5 @@
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -95,6 +95,26 @@ export const PartDialog: React.FC<PartDialogProps> = ({
     }
   };
 
+  const handleSelectAllColors = (checked: boolean) => {
+    if (checked) {
+      const allColorIds = colors.map(color => color.id);
+      form.setValue('selected_colors', allColorIds);
+    } else {
+      form.setValue('selected_colors', []);
+    }
+  };
+
+  const selectedColors = form.watch('selected_colors');
+  const allColorsSelected = colors.length > 0 && selectedColors.length === colors.length;
+  const someColorsSelected = selectedColors.length > 0 && selectedColors.length < colors.length;
+  const selectAllRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    if (selectAllRef.current) {
+      (selectAllRef.current as any).indeterminate = someColorsSelected;
+    }
+  }, [someColorsSelected]);
+
   return (
     <BaseFormDialog
       open={open}
@@ -158,11 +178,26 @@ export const PartDialog: React.FC<PartDialogProps> = ({
               <FormLabel>Colors</FormLabel>
               <ScrollArea className="h-32 border rounded-md p-2">
                 <div className="space-y-2">
+                  {/* Select All Option */}
+                  <div className="flex items-center space-x-2 pb-2 border-b">
+                    <Checkbox
+                      id="select-all-colors"
+                      checked={allColorsSelected}
+                      ref={selectAllRef as any}
+                      onCheckedChange={handleSelectAllColors}
+                    />
+                    <label
+                      htmlFor="select-all-colors"
+                      className="text-sm font-semibold leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                    >
+                      Select All
+                    </label>
+                  </div>
                   {colors.map((color) => (
                     <div key={color.id} className="flex items-center space-x-2">
                       <Checkbox
                         id={`color-${color.id}`}
-                        checked={form.watch('selected_colors').includes(color.id)}
+                        checked={selectedColors.includes(color.id)}
                         onCheckedChange={(checked) => handleColorChange(color.id, checked as boolean)}
                       />
                       <div className="flex items-center space-x-2">

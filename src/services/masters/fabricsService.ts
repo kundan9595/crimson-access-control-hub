@@ -10,41 +10,80 @@ export const fetchFabrics = async (): Promise<Fabric[]> => {
 
   if (error) throw error;
   
-  // Based on DB schema, fabrics table has color_ids as jsonb array  
-  return (data || []).map(fabric => ({
-    ...fabric,
-    colors: [] // Colors would need to be fetched separately if needed
-  })) as Fabric[];
+  // Fetch colors for fabrics that have color_ids
+  const fabricsWithColors = await Promise.all((data || []).map(async (fabric) => {
+    if (fabric.color_ids && Array.isArray(fabric.color_ids) && fabric.color_ids.length > 0) {
+      const { data: colorsData, error: colorsError } = await supabase
+        .from('colors')
+        .select('id, name, hex_code')
+        .in('id', fabric.color_ids);
+      
+      if (!colorsError && colorsData) {
+        return {
+          ...fabric,
+          colors: colorsData
+        };
+      }
+    }
+    return {
+      ...fabric,
+      colors: []
+    };
+  }));
+  
+  return fabricsWithColors as Fabric[];
 };
 
-export const createFabric = async (fabricData: Omit<Fabric, 'id' | 'created_at' | 'updated_at' | 'created_by' | 'updated_by'>): Promise<Fabric> => {
+export const createFabric = async (fabricData: Omit<Fabric, 'id' | 'created_at' | 'updated_at' | 'created_by' | 'updated_by' | 'colors'>): Promise<Fabric> => {
+  const { color_ids, ...fabricDataWithoutColors } = fabricData;
   const { data, error } = await supabase
     .from('fabrics')
-    .insert([fabricData])
+    .insert([{ ...fabricDataWithoutColors, color_ids }])
     .select('*')
     .single();
 
   if (error) throw error;
   
+  // Fetch colors if color_ids exist
+  let colors = [];
+  if (data.color_ids && Array.isArray(data.color_ids) && data.color_ids.length > 0) {
+    const { data: colorsData } = await supabase
+      .from('colors')
+      .select('id, name, hex_code')
+      .in('id', data.color_ids);
+    colors = colorsData || [];
+  }
+  
   return {
     ...data,
-    colors: [] // Colors would need to be fetched separately if needed
+    colors
   } as Fabric;
 };
 
 export const updateFabric = async (id: string, updates: Partial<Fabric>): Promise<Fabric> => {
+  const { colors, ...updatesWithoutColors } = updates;
   const { data, error } = await supabase
     .from('fabrics')
-    .update(updates)
+    .update(updatesWithoutColors)
     .eq('id', id)
     .select('*')
     .single();
 
   if (error) throw error;
   
+  // Fetch colors if color_ids exist
+  let fabricColors = [];
+  if (data.color_ids && Array.isArray(data.color_ids) && data.color_ids.length > 0) {
+    const { data: colorsData } = await supabase
+      .from('colors')
+      .select('id, name, hex_code')
+      .in('id', data.color_ids);
+    fabricColors = colorsData || [];
+  }
+  
   return {
     ...data,
-    colors: [] // Colors would need to be fetched separately if needed
+    colors: fabricColors
   } as Fabric;
 };
 

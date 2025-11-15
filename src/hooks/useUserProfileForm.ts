@@ -1,9 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import type { Tables } from '@/integrations/supabase/types';
-import { updateUserProfile } from '@/services/usersService';
+import { updateUserProfile, fetchUserRoles, updateUserRoles } from '@/services/usersService';
 
 type Profile = Tables<'profiles'>;
 
@@ -14,6 +14,7 @@ type FormData = {
   phone_number: string;
   department: string;
   designation: string;
+  selectedRoles: string[];
 };
 
 export function useUserProfileForm(user: Profile, onSuccess: () => void) {
@@ -24,19 +25,46 @@ export function useUserProfileForm(user: Profile, onSuccess: () => void) {
     phone_number: user.phone_number || '',
     department: user.department || '',
     designation: user.designation || '',
+    selectedRoles: [],
   });
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
+  // Fetch user's current roles when component mounts or user changes
+  useEffect(() => {
+    const loadUserRoles = async () => {
+      try {
+        const roleIds = await fetchUserRoles(user.id);
+        setFormData(prev => ({ ...prev, selectedRoles: roleIds }));
+      } catch (error) {
+        console.error('Error fetching user roles:', error);
+      }
+    };
+    loadUserRoles();
+  }, [user.id]);
+
   const updateUserMutation = useMutation({
     mutationFn: async (userData: FormData) => {
-      return updateUserProfile(user.id, userData as Partial<Profile>);
+      // Update profile first
+      await updateUserProfile(user.id, {
+        first_name: userData.first_name,
+        last_name: userData.last_name,
+        email: userData.email,
+        phone_number: userData.phone_number,
+        department: userData.department,
+        designation: userData.designation,
+      } as Partial<Profile>);
+      
+      // Update user roles
+      await updateUserRoles(user.id, userData.selectedRoles);
+      
+      return { success: true };
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['users'] });
       toast({
         title: 'Success',
-        description: 'User profile updated successfully',
+        description: 'User profile and roles updated successfully',
       });
       onSuccess();
     },

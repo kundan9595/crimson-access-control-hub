@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { ChevronLeft, ChevronRight, Check } from 'lucide-react';
@@ -82,6 +82,8 @@ export const CreateOrderModal: React.FC<CreateOrderModalProps> = ({
           unit_price: item.unit_price,
           discount_percentage: item.discount_percentage,
           subtotal: item.subtotal,
+          gst_rate: item.gst_rate,
+          gst_amount: item.gst_amount,
           sku: item.sku,
           size: item.size,
           price_type: item.price_type
@@ -182,7 +184,9 @@ export const CreateOrderModal: React.FC<CreateOrderModalProps> = ({
           quantity: item.quantity,
           price_type_id: item.price_type_id,
           unit_price: item.unit_price,
-          discount_percentage: item.discount_percentage
+          discount_percentage: item.discount_percentage,
+          gst_rate: item.gst_rate,
+          gst_amount: item.gst_amount
         }))
       };
 
@@ -238,11 +242,14 @@ export const CreateOrderModal: React.FC<CreateOrderModalProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
             {order ? 'Edit Order' : 'Create New Order'}
           </DialogTitle>
+          <DialogDescription className="sr-only">
+            {order ? 'Edit existing order details' : 'Create a new customer order with items and delivery information'}
+          </DialogDescription>
         </DialogHeader>
 
         {/* Progress Bar */}

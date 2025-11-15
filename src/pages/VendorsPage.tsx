@@ -5,12 +5,13 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Edit, Trash2, Users } from 'lucide-react';
+import { Edit, Trash2, Users, Eye } from 'lucide-react';
 import { useVendors, useDeleteVendor, useStyles, useStates, useCities } from '@/hooks/useMasters';
 import { Vendor } from '@/services/mastersService';
 import { useSearchParams } from 'react-router-dom';
 import VendorDialog from '@/components/masters/VendorDialog';
 import BulkImportDialog from '@/components/masters/BulkImportDialog';
+import VendorPOsModal from '@/components/masters/VendorPOsModal';
 import { MasterPageHeader } from '@/components/masters/shared/MasterPageHeader';
 import { SearchFilter } from '@/components/masters/shared/SearchFilter';
 
@@ -20,6 +21,7 @@ const VendorsPage = () => {
   const [editingVendor, setEditingVendor] = useState<Vendor | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isBulkImportOpen, setIsBulkImportOpen] = useState(false);
+  const [viewingVendorPOs, setViewingVendorPOs] = useState<Vendor | null>(null);
   
   const { data: vendors, isLoading } = useVendors();
   const { data: styles = [] } = useStyles();
@@ -61,6 +63,14 @@ const VendorsPage = () => {
     if (window.confirm('Are you sure you want to delete this vendor?')) {
       deleteVendor.mutate(id);
     }
+  };
+
+  const handleViewPOs = (vendor: Vendor) => {
+    setViewingVendorPOs(vendor);
+  };
+
+  const handlePOsModalClose = () => {
+    setViewingVendorPOs(null);
   };
 
   const handleCloseDialog = () => {
@@ -196,6 +206,14 @@ const VendorsPage = () => {
                           <Button
                             variant="outline"
                             size="sm"
+                            onClick={() => handleViewPOs(vendor)}
+                            title="View Purchase Orders"
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
                             onClick={() => handleEdit(vendor)}
                           >
                             <Edit className="h-4 w-4" />
@@ -236,6 +254,16 @@ const VendorsPage = () => {
         type="vendors"
         templateHeaders={templateHeaders}
         sampleData={sampleData}
+      />
+
+      <VendorPOsModal
+        open={!!viewingVendorPOs}
+        onOpenChange={(open) => {
+          if (!open) {
+            handlePOsModalClose();
+          }
+        }}
+        vendor={viewingVendorPOs}
       />
     </div>
   );

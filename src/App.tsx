@@ -43,6 +43,7 @@ const Inventory = lazy(() => import("./pages/Inventory"));
 const Inbound = lazy(() => import("./pages/Inbound"));
 const Customers = lazy(() => import("./pages/Customers"));
 const Orders = lazy(() => import("./pages/Orders"));
+const Settings = lazy(() => import("./pages/Settings"));
 const Auth = lazy(() => import("./pages/Auth"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
@@ -136,6 +137,7 @@ const App = () => {
                     <Route path="inbound" element={<Inbound />} />
                     <Route path="customers" element={<Customers />} />
                     <Route path="orders" element={<Orders />} />
+                    <Route path="settings" element={<Settings />} />
                   </Route>
                   <Route path="*" element={<NotFound />} />
                 </Routes>

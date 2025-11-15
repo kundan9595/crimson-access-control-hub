@@ -122,9 +122,13 @@ export const useDeleteMutation = ({
     },
     onError: (error: any) => {
       console.error('Delete mutation error:', error);
+      // Use the error message if it's a custom message, otherwise use the default errorMessage
+      const displayMessage = error?.message && error.message !== errorMessage 
+        ? error.message 
+        : errorMessage;
       toast({
         title: "Error",
-        description: errorMessage,
+        description: displayMessage,
         variant: "destructive",
       });
     },

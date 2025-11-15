@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -46,6 +46,18 @@ const ClassInventoryTable: React.FC<ClassInventoryTableProps> = ({
   onViewLocations
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
+
+  // Log props when they change
+  useEffect(() => {
+    console.log('🔷 [ClassInventoryTable] Props updated:', {
+      inventoryCount: inventory?.length || 0,
+      statistics,
+      loading,
+      error,
+      pagination,
+      firstItem: inventory?.[0] || null
+    });
+  }, [inventory, statistics, loading, error, pagination]);
 
   // Handle search
   const handleSearch = (e: React.FormEvent) => {

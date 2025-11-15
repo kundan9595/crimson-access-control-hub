@@ -34,6 +34,12 @@ export function validateRowEnhanced(row: string[], index: number, type: BulkImpo
         const names = value.split(',').map(n => n.trim()).filter(n => n);
         data[header.replace(/\s+/g, '_').toLowerCase().replace(/\(comma-separated\)/g, '').trim()] = names;
       }
+    } else if (header.toLowerCase().includes('colors') && header.toLowerCase().includes('comma-separated')) {
+      // Colors field (comma-separated) - store names temporarily, will be resolved to IDs during import
+      if (value) {
+        const colorNames = value.split(',').map(n => n.trim()).filter(n => n);
+        data.color_names = colorNames; // Store temporarily for resolution
+      }
     } else if (header.toLowerCase().includes('description')) {
       // Description field (optional)
       if (value) {
@@ -218,10 +224,13 @@ export function validateRowEnhanced(row: string[], index: number, type: BulkImpo
         if (isNaN(sortNum) || sortNum < 0) {
           errors.push(`${header} must be a valid non-negative number`);
         } else {
-          data.sort_position = sortNum;
+          // Use sort_order for categories, brands, styles, etc., and sort_position for others
+          const fieldName = type === 'categories' || type === 'brands' || type === 'styles' ? 'sort_order' : 'sort_position';
+          data[fieldName] = sortNum;
         }
       } else {
-        data.sort_position = 0;
+        const fieldName = type === 'categories' || type === 'brands' || type === 'styles' ? 'sort_order' : 'sort_position';
+        data[fieldName] = 0;
       }
     } else if (header.toLowerCase().includes('gst rate') || header.toLowerCase().includes('tax percentage')) {
       // GST/Tax rate field
@@ -337,6 +346,18 @@ export function validateRowEnhanced(row: string[], index: number, type: BulkImpo
         errors.push(`${header} is required`);
       } else {
         data.sku_code = value;
+      }
+    } else if (header.toLowerCase().includes('image url') || header.toLowerCase().includes('logo url')) {
+      // Image/Logo URL field (optional)
+      if (value) {
+        // Basic URL validation
+        try {
+          new URL(value);
+          const fieldName = header.toLowerCase().includes('logo') ? 'logo_url' : 'image_url';
+          data[fieldName] = value;
+        } catch {
+          errors.push(`${header} must be a valid URL`);
+        }
       }
     }
   });

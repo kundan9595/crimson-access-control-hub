@@ -43,6 +43,7 @@ class InventoryService {
   getGlobalStyleInventory = globalInventoryService.getGlobalStyleInventory.bind(globalInventoryService);
   getConsolidatedSkuInventory = globalInventoryService.getConsolidatedSkuInventory.bind(globalInventoryService);
   getSkuLocationsByWarehouse = globalInventoryService.getSkuLocationsByWarehouse.bind(globalInventoryService);
+  getSkuInventoryLocations = globalInventoryService.getSkuInventoryLocations.bind(globalInventoryService);
   searchSkus = globalInventoryService.searchSkus.bind(globalInventoryService);
   getWarehouses = globalInventoryService.getWarehouses.bind(globalInventoryService);
 

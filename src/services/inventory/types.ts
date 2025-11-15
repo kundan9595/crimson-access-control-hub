@@ -183,4 +183,36 @@ export interface InventoryStatistics {
   available_quantity: number;
   low_stock_items: number;
   out_of_stock_items: number;
+}
+
+export interface SkuInventoryLocation {
+  location_id: string;
+  warehouse_id: string;
+  warehouse_name: string;
+  warehouse_inventory_id: string;
+  floor_id: string;
+  floor_name: string;
+  floor_number: number;
+  lane_id: string;
+  lane_name: string;
+  lane_number: number;
+  rack_id: string;
+  rack_name: string;
+  rack_number: number;
+  rack_side: 'left' | 'right';
+  quantity: number;
+  available_quantity: number;
+}
+
+export interface MoveInventoryRequest {
+  sku_id: string;
+  source_warehouse_id: string;
+  source_floor_id: string;
+  source_lane_id: string;
+  source_rack_id: string;
+  destination_warehouse_id: string;
+  destination_floor_id: string;
+  destination_lane_id: string;
+  destination_rack_id: string;
+  quantity: number;
 } 

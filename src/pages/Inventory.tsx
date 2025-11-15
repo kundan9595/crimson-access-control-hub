@@ -14,6 +14,9 @@ import { exportToCSV } from '@/utils/exportUtils';
 import { toast } from 'sonner';
 import EnhancedInventoryLocationsModal from '@/components/inventory/EnhancedInventoryLocationsModal';
 import BulkImportDialog from '@/components/masters/BulkImportDialog';
+import GlobalAddInventoryDialog from '@/components/inventory/GlobalAddInventoryDialog';
+import RemoveInventoryDialog from '@/components/inventory/RemoveInventoryDialog';
+import MoveInventoryDialog from '@/components/inventory/MoveInventoryDialog';
 import { Button } from '@/components/ui/button';
 import { Upload } from 'lucide-react';
 
@@ -39,6 +42,12 @@ const Inventory: React.FC = () => {
     itemCode: ''
   });
 
+  // Action dialogs state
+  const [addDialogOpen, setAddDialogOpen] = useState(false);
+  const [removeDialogOpen, setRemoveDialogOpen] = useState(false);
+  const [moveDialogOpen, setMoveDialogOpen] = useState(false);
+  const [selectedSku, setSelectedSku] = useState<{ skuId: string; skuCode: string } | null>(null);
+
   // SKU View Hook
   const skuInventory = useConsolidatedSkuInventory({
     autoFetch: false // We'll manually control fetching
@@ -56,16 +65,20 @@ const Inventory: React.FC = () => {
 
   // Fetch data when view changes
   useEffect(() => {
+    console.log('📊 [Inventory] View changed to:', currentView);
     switch (currentView) {
       case 'sku':
+        console.log('📊 [Inventory] Fetching SKU inventory');
         skuInventory.searchInventory('');
         skuInventory.fetchStatistics();
         break;
       case 'class':
+        console.log('📊 [Inventory] Fetching Class inventory');
         classInventory.searchInventory('');
         classInventory.fetchStatistics();
         break;
       case 'style':
+        console.log('📊 [Inventory] Fetching Style inventory');
         styleInventory.searchInventory('');
         styleInventory.fetchStatistics();
         break;
@@ -400,6 +413,30 @@ const Inventory: React.FC = () => {
     setLocationsModal(prev => ({ ...prev, isOpen: false }));
   };
 
+  // Handle action dialog callbacks
+  const handleAddInventory = (skuId: string, skuCode: string) => {
+    setSelectedSku({ skuId, skuCode });
+    setAddDialogOpen(true);
+  };
+
+  const handleRemoveInventory = (skuId: string, skuCode: string) => {
+    setSelectedSku({ skuId, skuCode });
+    setRemoveDialogOpen(true);
+  };
+
+  const handleMoveInventory = (skuId: string, skuCode: string) => {
+    setSelectedSku({ skuId, skuCode });
+    setMoveDialogOpen(true);
+  };
+
+  // Handle action success - refresh inventory
+  const handleActionSuccess = () => {
+    if (currentView === 'sku') {
+      skuInventory.searchInventory('');
+      skuInventory.fetchStatistics();
+    }
+  };
+
   try {
     return (
       <div className="space-y-4">
@@ -446,41 +483,64 @@ const Inventory: React.FC = () => {
           onLoadMore={currentData.loadMore}
           onExport={handleExport}
           onViewLocations={handleViewLocations}
+          onAddInventory={handleAddInventory}
+          onRemoveInventory={handleRemoveInventory}
+          onMoveInventory={handleMoveInventory}
           title="Consolidated SKU Inventory"
           showExport={true}
         />
       )}
 
       {currentView === 'class' && (
-        <ClassInventoryTable
-          inventory={currentData.inventory as any}
-          statistics={currentData.statistics}
-          loading={currentData.loading}
-          error={currentData.error}
-          pagination={currentData.pagination}
-          onSearch={currentData.searchInventory}
-          onClearSearch={currentData.clearSearch}
-          onLoadMore={currentData.loadMore}
-          onExport={handleExport}
-          onViewDetails={handleViewDetails}
-          onViewLocations={handleViewLocations}
-        />
+        <>
+          {console.log('📊 [Inventory] Rendering ClassInventoryTable with:', {
+            inventoryCount: currentData.inventory?.length || 0,
+            statistics: currentData.statistics,
+            loading: currentData.loading,
+            error: currentData.error,
+            pagination: currentData.pagination,
+            firstItem: currentData.inventory?.[0] || null
+          })}
+          <ClassInventoryTable
+            inventory={currentData.inventory as any}
+            statistics={currentData.statistics}
+            loading={currentData.loading}
+            error={currentData.error}
+            pagination={currentData.pagination}
+            onSearch={currentData.searchInventory}
+            onClearSearch={currentData.clearSearch}
+            onLoadMore={currentData.loadMore}
+            onExport={handleExport}
+            onViewDetails={handleViewDetails}
+            onViewLocations={handleViewLocations}
+          />
+        </>
       )}
 
       {currentView === 'style' && (
-        <StyleInventoryTable
-          inventory={currentData.inventory as any}
-          statistics={currentData.statistics}
-          loading={currentData.loading}
-          error={currentData.error}
-          pagination={currentData.pagination}
-          onSearch={currentData.searchInventory}
-          onClearSearch={currentData.clearSearch}
-          onLoadMore={currentData.loadMore}
-          onExport={handleExport}
-          onViewDetails={handleViewDetails}
-          onViewLocations={handleViewLocations}
-        />
+        <>
+          {console.log('📊 [Inventory] Rendering StyleInventoryTable with:', {
+            inventoryCount: currentData.inventory?.length || 0,
+            statistics: currentData.statistics,
+            loading: currentData.loading,
+            error: currentData.error,
+            pagination: currentData.pagination,
+            firstItem: currentData.inventory?.[0] || null
+          })}
+          <StyleInventoryTable
+            inventory={currentData.inventory as any}
+            statistics={currentData.statistics}
+            loading={currentData.loading}
+            error={currentData.error}
+            pagination={currentData.pagination}
+            onSearch={currentData.searchInventory}
+            onClearSearch={currentData.clearSearch}
+            onLoadMore={currentData.loadMore}
+            onExport={handleExport}
+            onViewDetails={handleViewDetails}
+            onViewLocations={handleViewLocations}
+          />
+        </>
       )}
 
       {/* Drill-down Modal */}
@@ -509,6 +569,33 @@ const Inventory: React.FC = () => {
         onOpenChange={setIsBulkImportOpen}
         type="inventory"
       />
+
+      {/* Action Dialogs */}
+      {selectedSku && (
+        <>
+          <GlobalAddInventoryDialog
+            open={addDialogOpen}
+            onOpenChange={setAddDialogOpen}
+            skuId={selectedSku.skuId}
+            skuCode={selectedSku.skuCode}
+            onSuccess={handleActionSuccess}
+          />
+          <RemoveInventoryDialog
+            open={removeDialogOpen}
+            onOpenChange={setRemoveDialogOpen}
+            skuId={selectedSku.skuId}
+            skuCode={selectedSku.skuCode}
+            onSuccess={handleActionSuccess}
+          />
+          <MoveInventoryDialog
+            open={moveDialogOpen}
+            onOpenChange={setMoveDialogOpen}
+            skuId={selectedSku.skuId}
+            skuCode={selectedSku.skuCode}
+            onSuccess={handleActionSuccess}
+          />
+        </>
+      )}
     </div>
   );
   } catch (error) {

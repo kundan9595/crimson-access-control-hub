@@ -15,8 +15,8 @@ const profitMarginSchema = z.object({
   min_range: z.number().min(0, 'Min range must be >= 0'),
   max_range: z.number().min(0, 'Max range must be >= 0'),
   margin_percentage: z.number().min(0, 'Margin percentage must be >= 0').max(100, 'Margin percentage must be <= 100'),
-  branding_print: z.number().min(0, 'Branding print must be >= 0').max(100, 'Branding print must be <= 100'),
-  branding_embroidery: z.number().min(0, 'Branding embroidery must be >= 0').max(100, 'Branding embroidery must be <= 100'),
+  branding_print: z.number().min(0, 'Branding print must be >= 0'),
+  branding_embroidery: z.number().min(0, 'Branding embroidery must be >= 0'),
   status: z.string().default('active'),
 }).refine((data) => data.max_range >= data.min_range, {
   message: 'Max range must be greater than or equal to min range',
@@ -202,7 +202,7 @@ export const ProfitMarginDialog: React.FC<ProfitMarginDialogProps> = ({
           name="branding_print"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Branding Print (%)</FormLabel>
+              <FormLabel>Branding Print</FormLabel>
               <FormControl>
                 <Input 
                   type="number" 
@@ -222,7 +222,7 @@ export const ProfitMarginDialog: React.FC<ProfitMarginDialogProps> = ({
           name="branding_embroidery"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Branding Embroidery (%)</FormLabel>
+              <FormLabel>Branding Embroidery</FormLabel>
               <FormControl>
                 <Input 
                   type="number" 

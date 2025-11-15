@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -18,7 +18,7 @@ import { useSizeGroups } from '@/hooks/masters/useSizes';
 import { useCreateBaseProduct, useUpdateBaseProduct } from '@/hooks/masters/useBaseProducts';
 import { BaseProduct } from '@/services/masters/baseProductsService';
 import { Badge } from '@/components/ui/badge';
-import { X, Search, Package, DollarSign, Settings, Image, Tag } from 'lucide-react';
+import { X, Search, Package, DollarSign, Settings, Image, Tag, Plus, Pencil, Trash2, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 const BRANDING_SIDE_OPTIONS = [
@@ -69,6 +69,10 @@ export const BaseProductDialog: React.FC<BaseProductDialogProps> = ({
   const { data: sizeGroups = [] } = useSizeGroups();
   const createMutation = useCreateBaseProduct();
   const updateMutation = useUpdateBaseProduct();
+  
+  const [newCustomSide, setNewCustomSide] = useState('');
+  const [editingSide, setEditingSide] = useState<string | null>(null);
+  const [editingValue, setEditingValue] = useState('');
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -723,47 +727,185 @@ export const BaseProductDialog: React.FC<BaseProductDialogProps> = ({
               <FormField
                 control={form.control}
                 name="branding_sides"
-                render={() => (
-                  <FormItem>
-                    <FormLabel>Branding Sides</FormLabel>
-                    <div className="grid grid-cols-2 gap-3">
-                      {BRANDING_SIDE_OPTIONS.map((option) => (
-                        <FormField
-                          key={option}
-                          control={form.control}
-                          name="branding_sides"
-                          render={({ field }) => {
-                            return (
-                              <FormItem
-                                key={option}
-                                className="flex flex-row items-start space-x-3 space-y-0"
-                              >
-                                <FormControl>
-                                  <Checkbox
-                                    checked={field.value?.includes(option)}
-                                    onCheckedChange={(checked) => {
-                                      return checked
-                                        ? field.onChange([...field.value, option])
-                                        : field.onChange(
-                                            field.value?.filter(
-                                              (value) => value !== option
+                render={() => {
+                  const brandingSides = form.watch('branding_sides') || [];
+                  const standardSides = brandingSides.filter(side => 
+                    BRANDING_SIDE_OPTIONS.includes(side as any)
+                  );
+                  const customSides = brandingSides.filter(side => 
+                    !BRANDING_SIDE_OPTIONS.includes(side as any)
+                  );
+
+                  const handleAddCustomSide = () => {
+                    if (newCustomSide.trim() && !brandingSides.includes(newCustomSide.trim())) {
+                      form.setValue('branding_sides', [...brandingSides, newCustomSide.trim()]);
+                      setNewCustomSide('');
+                    }
+                  };
+
+                  const handleEditCustomSide = (oldSide: string) => {
+                    if (editingValue.trim() && editingValue.trim() !== oldSide) {
+                      const updatedSides = brandingSides.map(side => 
+                        side === oldSide ? editingValue.trim() : side
+                      );
+                      form.setValue('branding_sides', updatedSides);
+                    }
+                    setEditingSide(null);
+                    setEditingValue('');
+                  };
+
+                  const handleRemoveCustomSide = (sideToRemove: string) => {
+                    form.setValue('branding_sides', brandingSides.filter(side => side !== sideToRemove));
+                  };
+
+                  const startEditing = (side: string) => {
+                    setEditingSide(side);
+                    setEditingValue(side);
+                  };
+
+                  return (
+                    <FormItem>
+                      <FormLabel>Branding Sides</FormLabel>
+                      <div className="grid grid-cols-2 gap-3">
+                        {BRANDING_SIDE_OPTIONS.map((option) => (
+                          <FormField
+                            key={option}
+                            control={form.control}
+                            name="branding_sides"
+                            render={({ field }) => {
+                              return (
+                                <FormItem
+                                  key={option}
+                                  className="flex flex-row items-start space-x-3 space-y-0"
+                                >
+                                  <FormControl>
+                                    <Checkbox
+                                      checked={field.value?.includes(option)}
+                                      onCheckedChange={(checked) => {
+                                        return checked
+                                          ? field.onChange([...field.value, option])
+                                          : field.onChange(
+                                              field.value?.filter(
+                                                (value) => value !== option
+                                              )
                                             )
-                                          )
-                                    }}
-                                  />
-                                </FormControl>
-                                <FormLabel className="text-sm font-normal">
-                                  {option}
-                                </FormLabel>
-                              </FormItem>
-                            )
-                          }}
-                        />
-                      ))}
-                    </div>
-                    <FormMessage />
-                  </FormItem>
-                )}
+                                      }}
+                                    />
+                                  </FormControl>
+                                  <FormLabel className="text-sm font-normal">
+                                    {option}
+                                  </FormLabel>
+                                </FormItem>
+                              )
+                            }}
+                          />
+                        ))}
+                      </div>
+
+                      {/* Custom Branding Sides Section */}
+                      <div className="mt-4 space-y-3 pt-4 border-t">
+                        <FormLabel className="text-sm font-medium">Custom Branding Sides</FormLabel>
+                        
+                        {/* Display Custom Sides */}
+                        {customSides.length > 0 && (
+                          <div className="flex flex-wrap gap-2">
+                            {customSides.map((side) => (
+                              <div key={side} className="flex items-center gap-1">
+                                {editingSide === side ? (
+                                  <div className="flex items-center gap-1">
+                                    <Input
+                                      value={editingValue}
+                                      onChange={(e) => setEditingValue(e.target.value)}
+                                      onKeyDown={(e) => {
+                                        if (e.key === 'Enter') {
+                                          handleEditCustomSide(side);
+                                        } else if (e.key === 'Escape') {
+                                          setEditingSide(null);
+                                          setEditingValue('');
+                                        }
+                                      }}
+                                      className="h-8 w-32"
+                                      autoFocus
+                                    />
+                                    <Button
+                                      type="button"
+                                      size="sm"
+                                      variant="ghost"
+                                      onClick={() => handleEditCustomSide(side)}
+                                      className="h-8 w-8 p-0"
+                                    >
+                                      <Check className="h-4 w-4" />
+                                    </Button>
+                                    <Button
+                                      type="button"
+                                      size="sm"
+                                      variant="ghost"
+                                      onClick={() => {
+                                        setEditingSide(null);
+                                        setEditingValue('');
+                                      }}
+                                      className="h-8 w-8 p-0"
+                                    >
+                                      <X className="h-4 w-4" />
+                                    </Button>
+                                  </div>
+                                ) : (
+                                  <Badge variant="secondary" className="flex items-center gap-1 px-2 py-1">
+                                    <span>{side}</span>
+                                    <Button
+                                      type="button"
+                                      size="sm"
+                                      variant="ghost"
+                                      onClick={() => startEditing(side)}
+                                      className="h-4 w-4 p-0 hover:bg-transparent"
+                                    >
+                                      <Pencil className="h-3 w-3" />
+                                    </Button>
+                                    <Button
+                                      type="button"
+                                      size="sm"
+                                      variant="ghost"
+                                      onClick={() => handleRemoveCustomSide(side)}
+                                      className="h-4 w-4 p-0 hover:bg-transparent"
+                                    >
+                                      <Trash2 className="h-3 w-3 text-destructive" />
+                                    </Button>
+                                  </Badge>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        )}
+
+                        {/* Add New Custom Side */}
+                        <div className="flex items-center gap-2">
+                          <Input
+                            placeholder="Enter custom branding side"
+                            value={newCustomSide}
+                            onChange={(e) => setNewCustomSide(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') {
+                                handleAddCustomSide();
+                              }
+                            }}
+                            className="flex-1"
+                          />
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            onClick={handleAddCustomSide}
+                            disabled={!newCustomSide.trim() || brandingSides.includes(newCustomSide.trim())}
+                          >
+                            <Plus className="h-4 w-4 mr-1" />
+                            Add
+                          </Button>
+                        </div>
+                      </div>
+                      <FormMessage />
+                    </FormItem>
+                  );
+                }}
               />
             </CardContent>
           </Card>
