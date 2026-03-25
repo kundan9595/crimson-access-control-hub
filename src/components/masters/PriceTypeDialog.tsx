@@ -15,7 +15,6 @@ import { PriceType } from '@/services/masters/types';
 const priceTypeSchema = z.object({
   name: z.string().min(1, 'Name is required'),
   description: z.string().optional(),
-  category: z.enum(['zone', 'customer'] as const),
   status: z.string(),
 });
 
@@ -23,11 +22,12 @@ type PriceTypeFormData = z.infer<typeof priceTypeSchema>;
 
 interface PriceTypeDialogProps {
   priceType?: PriceType | null;
+  distributorId?: string; // Required for creating new price types
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
 
-const PriceTypeDialog = ({ priceType, open, onOpenChange }: PriceTypeDialogProps) => {
+const PriceTypeDialog = ({ priceType, distributorId, open, onOpenChange }: PriceTypeDialogProps) => {
   const createPriceType = useCreatePriceType();
   const updatePriceType = useUpdatePriceType();
 
@@ -36,7 +36,6 @@ const PriceTypeDialog = ({ priceType, open, onOpenChange }: PriceTypeDialogProps
     defaultValues: {
       name: priceType?.name || '',
       description: priceType?.description || '',
-      category: (priceType?.category === 'zone' || priceType?.category === 'customer') ? priceType.category : 'zone',
       status: priceType?.status || 'active',
     },
   });
@@ -46,14 +45,12 @@ const PriceTypeDialog = ({ priceType, open, onOpenChange }: PriceTypeDialogProps
       form.reset({
         name: priceType.name,
         description: priceType.description || '',
-        category: (priceType.category === 'zone' || priceType.category === 'customer') ? priceType.category : 'zone',
         status: priceType.status,
       });
     } else {
       form.reset({
         name: '',
         description: '',
-        category: 'zone',
         status: 'active',
       });
     }
@@ -64,8 +61,8 @@ const PriceTypeDialog = ({ priceType, open, onOpenChange }: PriceTypeDialogProps
       const priceTypeData = {
         name: data.name,
         description: data.description || null,
-        category: data.category,
         status: data.status,
+        ...(priceType ? {} : { distributor_id: distributorId! }), // distributor_id required for new price types
       };
 
       if (priceType) {
@@ -74,7 +71,10 @@ const PriceTypeDialog = ({ priceType, open, onOpenChange }: PriceTypeDialogProps
           updates: priceTypeData,
         });
       } else {
-        await createPriceType.mutateAsync(priceTypeData);
+        if (!distributorId) {
+          throw new Error('Distributor ID is required to create a price type');
+        }
+        await createPriceType.mutateAsync(priceTypeData as any);
       }
       onOpenChange(false);
       form.reset();
@@ -117,28 +117,6 @@ const PriceTypeDialog = ({ priceType, open, onOpenChange }: PriceTypeDialogProps
                   <FormControl>
                     <Textarea {...field} placeholder="Enter description (optional)" />
                   </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="category"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Category</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select category" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="zone">Zone</SelectItem>
-                      <SelectItem value="customer">Customer</SelectItem>
-                    </SelectContent>
-                  </Select>
                   <FormMessage />
                 </FormItem>
               )}

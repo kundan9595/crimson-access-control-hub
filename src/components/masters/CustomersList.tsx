@@ -4,7 +4,8 @@ import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Edit, Trash2, Filter, X } from 'lucide-react';
+import { Edit, Trash2, Filter, X, Crown, IndianRupee } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { useCustomers, useDeleteCustomer } from '@/hooks/masters/useCustomers';
 import { useStates } from '@/hooks/masters/useStates';
 import { usePriceTypes } from '@/hooks/masters/usePriceTypes';
@@ -16,9 +17,11 @@ import type { Customer } from '@/services/masters/types';
 
 interface CustomersListProps {
   onEdit?: (customer: Customer) => void;
+  customerType?: 'customer' | 'distributor';
 }
 
-const CustomersList: React.FC<CustomersListProps> = ({ onEdit }) => {
+const CustomersList: React.FC<CustomersListProps> = ({ onEdit, customerType }) => {
+  const navigate = useNavigate();
   const { data: customers, isLoading } = useCustomers();
   const { data: states = [] } = useStates();
   const { data: priceTypes = [] } = usePriceTypes();
@@ -61,34 +64,44 @@ const CustomersList: React.FC<CustomersListProps> = ({ onEdit }) => {
 
   const filteredCustomers = customers?.filter(customer => {
     // Search filter
-    const matchesSearch = searchTerm === '' || 
+    const matchesSearch = searchTerm === '' ||
       customer.customer_code.toLowerCase().includes(searchTerm.toLowerCase()) ||
       customer.company_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       customer.contact_person.toLowerCase().includes(searchTerm.toLowerCase()) ||
       customer.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      customer.addresses?.some(addr => 
+      customer.addresses?.some(addr =>
         addr.city?.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         addr.state?.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         addr.address.toLowerCase().includes(searchTerm.toLowerCase())
       );
 
     // Price type filter
-    const matchesPriceType = filters.priceType === 'all' || 
+    const matchesPriceType = filters.priceType === 'all' ||
       customer.price_type_id === filters.priceType;
 
     // Status filter
-    const matchesStatus = filters.status === 'all' || 
+    const matchesStatus = filters.status === 'all' ||
       customer.status === filters.status;
 
     // State filter
-    const matchesState = filters.state === 'all' || 
+    const matchesState = filters.state === 'all' ||
       customer.addresses?.some(addr => addr.state?.id === filters.state);
 
     return matchesSearch && matchesPriceType && matchesStatus && matchesState;
+  }).filter(customer => {
+    // Filter by customer type if specified
+    if (!customerType) return true;
+    const type = customer.customer_type || 'retail';
+    // 'customer' mode shows retail
+    if (customerType === 'customer') {
+      return type === 'retail';
+    }
+    // 'distributor' mode shows only distributor
+    return type === 'distributor';
   }) || [];
 
   // Sort customers by created_at
-  const sortedCustomers = [...filteredCustomers].sort((a, b) => 
+  const sortedCustomers = [...filteredCustomers].sort((a, b) =>
     new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
   );
 
@@ -103,53 +116,86 @@ const CustomersList: React.FC<CustomersListProps> = ({ onEdit }) => {
   };
 
   // Render customer row for virtual list
-  const renderCustomerRow = (customer: Customer) => (
-    <TableRow key={customer.id} className="hover:bg-muted/50">
-      <TableCell>
-        <EntityImage
-          imageUrl={customer.avatar_url}
-          name={customer.company_name}
-          size="sm"
-        />
-      </TableCell>
-      <TableCell className="font-medium">{customer.company_name}</TableCell>
-      <TableCell>{customer.contact_person}</TableCell>
-      <TableCell>{customer.email}</TableCell>
-      <TableCell>{customer.phone}</TableCell>
-      <TableCell className="text-center">
-        <Badge variant="outline" className="font-mono">
-          {customer.orders_count || 0}
-        </Badge>
-      </TableCell>
-      <TableCell className="text-right font-medium">
-        {formatCurrency(customer.lifetime_value)}
-      </TableCell>
-      <TableCell>
-        <Badge variant={customer.status === 'active' ? 'default' : 'secondary'}>
-          {customer.status}
-        </Badge>
-      </TableCell>
-      <TableCell className="text-right">
-        <div className="flex items-center justify-end gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => handleEdit(customer)}
-          >
-            <Edit className="h-4 w-4" />
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => handleDelete(customer.id)}
-            disabled={deleteCustomerMutation.isPending}
-          >
-            <Trash2 className="h-4 w-4" />
-          </Button>
-        </div>
-      </TableCell>
-    </TableRow>
-  );
+  const renderCustomerRow = (customer: Customer) => {
+    const isOwnerDistributor = customer.customer_type === 'distributor' && customer.is_owner_distributor;
+    
+    return (
+      <TableRow 
+        key={customer.id} 
+        className={`hover:bg-muted/50 ${isOwnerDistributor ? 'bg-yellow-50 dark:bg-yellow-950/20 border-l-4 border-l-yellow-500' : ''}`}
+      >
+        <TableCell>
+          <div className="flex items-center gap-2">
+            <EntityImage
+              imageUrl={customer.avatar_url}
+              name={customer.company_name}
+              size="sm"
+            />
+            {isOwnerDistributor && (
+              <Crown className="h-4 w-4 text-yellow-600 dark:text-yellow-400" />
+            )}
+          </div>
+        </TableCell>
+        <TableCell className="font-medium">
+          <div className="flex items-center gap-2">
+            {customer.company_name}
+            {isOwnerDistributor && (
+              <Badge variant="default" className="bg-yellow-500 hover:bg-yellow-600 text-white">
+                Owner Distributor
+              </Badge>
+            )}
+          </div>
+        </TableCell>
+        <TableCell>{customer.contact_person}</TableCell>
+        <TableCell>{customer.email}</TableCell>
+        <TableCell>{customer.phone}</TableCell>
+        <TableCell className="text-center">
+          <Badge variant="outline" className="font-mono">
+            {customer.orders_count || 0}
+          </Badge>
+        </TableCell>
+        <TableCell className="text-right font-medium">
+          {formatCurrency(customer.lifetime_value)}
+        </TableCell>
+        <TableCell>
+          <Badge variant={customer.status === 'active' ? 'default' : 'secondary'}>
+            {customer.status}
+          </Badge>
+        </TableCell>
+        <TableCell className="text-right">
+          <div className="flex items-center justify-end gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handleEdit(customer)}
+            >
+              <Edit className="h-4 w-4" />
+            </Button>
+            {customer.customer_type === 'distributor' && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => navigate(`/distributors/${customer.id}/price-types`)}
+                title="Set Price Types"
+              >
+                <IndianRupee className="h-4 w-4" />
+              </Button>
+            )}
+            {!isOwnerDistributor && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handleDelete(customer.id)}
+                disabled={deleteCustomerMutation.isPending}
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            )}
+          </div>
+        </TableCell>
+      </TableRow>
+    );
+  };
 
   if (isLoading) {
     return (
@@ -327,7 +373,7 @@ const CustomersList: React.FC<CustomersListProps> = ({ onEdit }) => {
             </div>
           )}
         </div>
-        
+
         <div className="mt-6">
           {sortedCustomers.length > 0 ? (
             <Table>

@@ -14,7 +14,7 @@ import { validateRowEnhanced } from './bulk-import/enhancedValidation';
 import { useImportMutations } from './bulk-import/useImportMutations';
 import { createDependencyResolutionService, DuplicateHandlingStrategy } from '@/services/masters/dependencyResolutionService';
 import { getMasterConfig, getMasterDependencies, generateCompleteTemplateHeaders } from '@/constants/masterDependencies';
-import { supabase } from '@/integrations/supabase/client';
+import { fetchColors } from '@/services/masters/colorsService';
 import FileUploadStep from './bulk-import/FileUploadStep';
 import ReviewStep from './bulk-import/ReviewStep';
 import CompleteStep from './bulk-import/CompleteStep';
@@ -114,18 +114,18 @@ const BulkImportDialog: React.FC<BulkImportDialogProps> = ({
   const resolveColorNamesToIds = async (colorNames: string[]): Promise<string[]> => {
     if (!colorNames || colorNames.length === 0) return [];
     
-    const { data: colors, error } = await supabase
-      .from('colors')
-      .select('id, name')
-      .in('name', colorNames);
-    
-    if (error) {
-      console.error('Error fetching colors:', error);
+    let colors: { id: string; name: string }[];
+    try {
+      const all = await fetchColors();
+      colors = all
+        .filter((c) => colorNames.some((n) => n.toLowerCase() === c.name.toLowerCase()))
+        .map((c) => ({ id: c.id, name: c.name }));
+    } catch (e) {
+      console.error('Error fetching colors:', e);
       return [];
     }
-    
-    // Create a map of name to id
-    const nameToIdMap = new Map(colors?.map(c => [c.name.toLowerCase(), c.id]) || []);
+
+    const nameToIdMap = new Map(colors.map((c) => [c.name.toLowerCase(), c.id]));
     
     // Return IDs for the provided names (in order)
     const resolvedIds: string[] = [];

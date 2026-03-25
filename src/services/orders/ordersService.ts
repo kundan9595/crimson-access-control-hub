@@ -20,16 +20,7 @@ class OrdersService {
             phone,
             customer_type,
             gst,
-            price_type:price_types(
-              id,
-              name,
-              category
-            )
-          ),
-          price_type:price_types(
-            id,
-            name,
-            category
+            price_type_id
           ),
           order_items(
             *,
@@ -56,8 +47,7 @@ class OrdersService {
               ),
               size:sizes(id, name, code)
             ),
-            size:sizes(id, name, code),
-            price_type:price_types(id, name, category)
+            size:sizes(id, name, code)
           )
         `)
         .order('created_at', { ascending: false });
@@ -67,7 +57,20 @@ class OrdersService {
         throw error;
       }
 
-      return data || [];
+      // Since all price_type_id values are NULL after migration, we don't need to fetch price types
+      // Price type fields will be undefined/null, which the UI should handle gracefully
+      return (data || []).map((order: any) => ({
+        ...order,
+        price_type: undefined, // Explicitly set to undefined since all price_type_id are NULL
+        customer: order.customer ? {
+          ...order.customer,
+          price_type: undefined
+        } : undefined,
+        order_items: order.order_items?.map((item: any) => ({
+          ...item,
+          price_type: undefined
+        })) || []
+      }));
     } catch (error) {
       console.error('Error in getOrders:', error);
       throw error;
@@ -92,11 +95,7 @@ class OrdersService {
             phone,
             customer_type,
             gst,
-            price_type:price_types(
-              id,
-              name,
-              category
-            )
+            price_type_id
           ),
           order_items(
             *,
@@ -123,8 +122,7 @@ class OrdersService {
               ),
               size:sizes(id, name, code)
             ),
-            size:sizes(id, name, code),
-            price_type:price_types(id, name, category)
+            size:sizes(id, name, code)
           )
         `)
         .eq('id', id)
@@ -135,7 +133,21 @@ class OrdersService {
         throw error;
       }
 
-      return data;
+      if (!data) return null;
+
+      // Since all price_type_id values are NULL after migration, set price_type to undefined
+      return {
+        ...data,
+        price_type: undefined,
+        customer: data.customer ? {
+          ...data.customer,
+          price_type: undefined
+        } : undefined,
+        order_items: data.order_items?.map((item: any) => ({
+          ...item,
+          price_type: undefined
+        })) || []
+      };
     } catch (error) {
       console.error('Error in getOrderById:', error);
       throw error;

@@ -69,3 +69,6 @@ export * from './useProfitMargins';
 
 // Export base products hooks
 export * from './useBaseProducts';
+
+export * from './useSizeTypes';
+export * from './useBaseProductTypes';

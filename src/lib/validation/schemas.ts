@@ -8,7 +8,7 @@ export const createBaseEntitySchema = (entityName: string) => z.object({
 });
 
 // Master entity schema with common fields
-export const createMasterEntitySchema = (entityName: string) => 
+export const createMasterEntitySchema = (entityName: string) =>
   createBaseEntitySchema(entityName).extend({
     description: z.string().optional(),
     image_url: z.string().url().optional().or(z.literal('')),
@@ -100,7 +100,10 @@ export const customerSchema = z.object({
   contact_person: z.string().min(1, 'Contact person is required').max(255, 'Contact person name is too long'),
   email: z.string().email('Invalid email format'),
   phone: z.string().regex(/^[\+]?[0-9\s\-\(\)]{10,15}$/, 'Invalid phone number format'),
-  price_type_id: z.string().optional(),
+  customer_type: z.enum(['retail', 'distributor']).default('retail'),
+  zone_id: z.string().optional(),
+  brand_ids: z.array(z.string()).default([]),
+  distributor_ids: z.array(z.string()).default([]), // For retail customers to connect to distributors
   status: z.enum(['active', 'inactive']).default('active'),
   credit_limit: z.number().min(0, 'Credit limit must be non-negative').default(0),
   payment_terms: z.string().max(255, 'Payment terms is too long').optional(),
@@ -113,7 +116,6 @@ export const customerSchema = z.object({
 export const priceTypeSchema = z.object({
   name: commonFields.name,
   description: commonFields.description,
-  category: z.enum(['zone', 'customer']),
   status: commonFields.status,
 });
 
@@ -232,12 +234,12 @@ export const appAssetSchema = z.object({
 
 export const promotionalBannerSchema = z.object({
   title: commonFields.name,
+  link: z.string().optional(),
+  category_label: z.string().optional(),
+  upload_date: z.string().optional(),
   banner_image: z.string().optional(),
   status: commonFields.status,
   position: z.number().min(0),
-  category_id: z.string().optional(),
-  brand_id: z.string().min(1, 'Brand is required'),
-  class_id: z.string().optional(),
 });
 
 export const promotionalAssetSchema = z.object({

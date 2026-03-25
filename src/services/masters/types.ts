@@ -184,7 +184,11 @@ export interface Customer {
   contact_person: string;
   email: string;
   phone: string;
-  price_type_id?: string;
+  customer_type: 'retail' | 'distributor';
+  is_owner_distributor?: boolean;
+  zone_id?: string;
+  price_type_id?: string; // Deprecated - only for backward compatibility
+  distributor_ids?: string[]; // Array of distributor IDs (for retail customers)
   status: 'active' | 'inactive';
   credit_limit?: number;
   payment_terms?: string;
@@ -201,18 +205,21 @@ export interface Customer {
     id: string;
     name: string;
   };
+  zone?: {
+    id: string;
+    name: string;
+  };
+  brand_ids?: string[];
   // Computed fields
   orders_count?: number;
   lifetime_value?: number;
 }
 
-export type PriceTypeCategory = 'zone' | 'customer';
-
 export interface PriceType {
   id: string;
   name: string;
   description?: string;
-  category: PriceTypeCategory;
+  distributor_id: string;
   status: string;
   created_at: string;
   updated_at: string;
@@ -317,9 +324,15 @@ export interface AppAsset {
   updated_by?: string;
 }
 
+/** Scott dashboard catalogue promotions (via Edge Function); legacy Supabase FK fields optional */
 export interface PromotionalBanner {
   id: string;
   title: string;
+  link?: string;
+  /** Catalogue category label from API */
+  category_label?: string;
+  upload_date?: string;
+  file_size?: string;
   banner_image?: string;
   status: string;
   position: number;
@@ -328,7 +341,7 @@ export interface PromotionalBanner {
     id: string;
     name: string;
   };
-  brand_id: string;
+  brand_id?: string;
   brand?: {
     id: string;
     name: string;

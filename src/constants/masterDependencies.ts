@@ -241,19 +241,14 @@ export const MASTER_DEPENDENCIES: Record<string, MasterConfig> = {
     ] as const,
   },
   promotionalBanners: {
-    dependencies: [
-      { table: 'categories', lookupField: 'category_id', nameField: 'name', required: false },
-      { table: 'brands', lookupField: 'brand_id', nameField: 'name', required: true },
-      { table: 'classes', lookupField: 'class_id', nameField: 'name', required: false }
-    ],
-    independent: false,
-    level: 1,
-    templateHeaders: ['Title', 'Category Name', 'Brand Name', 'Class Name', 'Style Name', 'Color Name', 'Size Group Name', 'Position', 'Status'],
+    dependencies: [],
+    independent: true,
+    level: 0,
+    templateHeaders: ['Title', 'Link', 'Category', 'Upload date', 'Position', 'Status'],
     sampleData: [
-      ['Summer Sale', 'Clothing', 'Apple', 'Summer T-Shirt Red', 'Summer Collection', 'Red', 'Small', '1', 'active'],
-      ['Winter Collection', 'Electronics', 'Samsung', 'Winter Jacket Blue', 'Winter Collection', 'Blue', 'Medium', '2', 'active']
+      ['Summer catalogue', 'https://example.com/summer', 'Catalogues', '', '1', 'active'],
     ],
-    exportFields: ['title', 'position', 'status', 'created_at'] as const,
+    exportFields: ['title', 'link', 'category_label', 'upload_date', 'position', 'status', 'created_at'] as const,
   },
 
   // Add-ons (independent but referenced by appAssets)

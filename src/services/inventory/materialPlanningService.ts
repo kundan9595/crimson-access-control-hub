@@ -10,6 +10,7 @@ import {
   ReorderRequest
 } from './materialPlanningTypes';
 import { materialPlanningPOService } from './materialPlanningPOService';
+import { fetchBrands } from '@/services/masters/brandsService';
 
 export class MaterialPlanningService {
   /**
@@ -382,18 +383,23 @@ export class MaterialPlanningService {
     vendors: Array<{ id: string; name: string; code: string }>;
   }> {
     try {
-      const [classesResult, brandsResult, categoriesResult, vendorsResult] = await Promise.all([
+      const [classesResult, brandsList, categoriesResult, vendorsResult] = await Promise.all([
         supabase.from('classes').select('id, name').eq('status', 'active').order('name'),
-        supabase.from('brands').select('id, name').eq('status', 'active').order('name'),
+        fetchBrands().then((rows) =>
+          rows
+            .filter((b) => b.status === 'active')
+            .map((b) => ({ id: b.id, name: b.name }))
+            .sort((a, b) => a.name.localeCompare(b.name)),
+        ),
         supabase.from('categories').select('id, name').eq('status', 'active').order('name'),
-        supabase.from('vendors').select('id, name, code').eq('status', 'active').order('name')
+        supabase.from('vendors').select('id, name, code').eq('status', 'active').order('name'),
       ]);
 
       return {
         classes: classesResult.data || [],
-        brands: brandsResult.data || [],
+        brands: brandsList,
         categories: categoriesResult.data || [],
-        vendors: vendorsResult.data || []
+        vendors: vendorsResult.data || [],
       };
     } catch (error) {
       console.error('Error fetching filter options:', error);

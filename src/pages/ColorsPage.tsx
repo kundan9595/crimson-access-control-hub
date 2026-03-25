@@ -88,6 +88,7 @@ const ColorsPage = () => {
         onExport={handleExport}
         onImport={() => setBulkImportOpen(true)}
         canExport={!!colors?.length}
+        isScottApi={true}
       />
 
       <Card>

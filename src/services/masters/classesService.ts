@@ -69,12 +69,7 @@ export const deleteClass = async (id: string): Promise<void> => {
 
   if (skuError) throw skuError;
 
-  const { error: bannerError } = await supabase
-    .from('promotional_banners')
-    .delete()
-    .eq('class_id', id);
-
-  if (bannerError) throw bannerError;
+  // Promotional banners are managed via Scott API; legacy table unused
 
   // Then delete the class
   const { error } = await supabase

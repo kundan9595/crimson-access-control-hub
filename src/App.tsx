@@ -23,7 +23,6 @@ const CategoriesPage = lazy(() => import("./pages/CategoriesPage"));
 const ColorsPage = lazy(() => import("./pages/ColorsPage"));
 const SizeGroupsPage = lazy(() => import("./pages/SizeGroupsPage"));
 const ZonesPage = lazy(() => import("./pages/ZonesPage"));
-const PriceTypesPage = lazy(() => import("./pages/PriceTypesPage"));
 const VendorsPage = lazy(() => import("./pages/VendorsPage"));
 const StylesPage = lazy(() => import("./pages/StylesPage"));
 const ClassesPage = lazy(() => import("./pages/ClassesPage"));
@@ -33,6 +32,8 @@ const FabricPage = lazy(() => import("./pages/FabricPage"));
 const PartsPage = lazy(() => import("./pages/PartsPage"));
 const AddOnsPage = lazy(() => import("./pages/AddOnsPage"));
 const BaseProductPage = lazy(() => import("./pages/BaseProductPage"));
+const SizeTypesPage = lazy(() => import("./pages/SizeTypesPage"));
+const BaseProductTypesPage = lazy(() => import("./pages/BaseProductTypesPage"));
 const ProfitMarginPage = lazy(() => import("./pages/ProfitMarginPage"));
 const AppAssetsPage = lazy(() => import("./pages/AppAssetsPage"));
 const PromotionalBannersPage = lazy(() => import("./pages/PromotionalBannersPage"));
@@ -42,6 +43,7 @@ const WarehouseDetails = lazy(() => import("./pages/WarehouseDetails"));
 const Inventory = lazy(() => import("./pages/Inventory"));
 const Inbound = lazy(() => import("./pages/Inbound"));
 const Customers = lazy(() => import("./pages/Customers"));
+const DistributorPriceTypesPage = lazy(() => import("./pages/DistributorPriceTypesPage"));
 const Orders = lazy(() => import("./pages/Orders"));
 const Settings = lazy(() => import("./pages/Settings"));
 const Auth = lazy(() => import("./pages/Auth"));
@@ -117,7 +119,6 @@ const App = () => {
                     <Route path="masters/colors" element={<ColorsPage />} />
                     <Route path="masters/size-groups" element={<SizeGroupsPage />} />
                     <Route path="masters/zones" element={<ZonesPage />} />
-                    <Route path="masters/price-types" element={<PriceTypesPage />} />
                     <Route path="masters/vendors" element={<VendorsPage />} />
                     <Route path="masters/styles" element={<StylesPage />} />
                     <Route path="masters/classes" element={<ClassesPage />} />
@@ -127,6 +128,8 @@ const App = () => {
                     <Route path="masters/parts" element={<PartsPage />} />
                     <Route path="masters/add-ons" element={<AddOnsPage />} />
                     <Route path="masters/base-product" element={<BaseProductPage />} />
+                    <Route path="masters/size-types" element={<SizeTypesPage />} />
+                    <Route path="masters/base-product-types" element={<BaseProductTypesPage />} />
                     <Route path="masters/profit-margin" element={<ProfitMarginPage />} />
                     <Route path="masters/app-assets" element={<AppAssetsPage />} />
                     <Route path="masters/promotional-banners" element={<PromotionalBannersPage />} />
@@ -136,6 +139,7 @@ const App = () => {
                     <Route path="inventory" element={<Inventory />} />
                     <Route path="inbound" element={<Inbound />} />
                     <Route path="customers" element={<Customers />} />
+                    <Route path="distributors/:id/price-types" element={<DistributorPriceTypesPage />} />
                     <Route path="orders" element={<Orders />} />
                     <Route path="settings" element={<Settings />} />
                   </Route>

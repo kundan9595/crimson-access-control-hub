@@ -2,6 +2,7 @@
 import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { 
   Package, 
@@ -37,6 +38,7 @@ const Masters = () => {
       icon: Package,
       path: '/masters/brands',
       color: 'text-blue-600',
+      isScottApi: true,
     },
     {
       title: 'Categories',
@@ -44,6 +46,7 @@ const Masters = () => {
       icon: Tags,
       path: '/masters/categories',
       color: 'text-green-600',
+      isScottApi: false,
     },
     {
       title: 'Colors',
@@ -51,6 +54,7 @@ const Masters = () => {
       icon: Palette,
       path: '/masters/colors',
       color: 'text-purple-600',
+      isScottApi: true,
     },
     {
       title: 'Size Groups',
@@ -58,6 +62,15 @@ const Masters = () => {
       icon: Ruler,
       path: '/masters/size-groups',
       color: 'text-orange-600',
+      isScottApi: false,
+    },
+    {
+      title: 'Size types',
+      description: 'Scott dashboard size types (API)',
+      icon: Ruler,
+      path: '/masters/size-types',
+      color: 'text-orange-500',
+      isScottApi: true,
     },
     {
       title: 'Zones',
@@ -65,13 +78,7 @@ const Masters = () => {
       icon: MapPin,
       path: '/masters/zones',
       color: 'text-red-600',
-    },
-    {
-      title: 'Price Types',
-      description: 'Set up different pricing structures',
-      icon: DollarSign,
-      path: '/masters/price-types',
-      color: 'text-yellow-600',
+      isScottApi: false,
     },
     {
       title: 'Vendors',
@@ -79,6 +86,7 @@ const Masters = () => {
       icon: Users,
       path: '/masters/vendors',
       color: 'text-indigo-600',
+      isScottApi: false,
     },
     {
       title: 'Styles',
@@ -86,6 +94,7 @@ const Masters = () => {
       icon: Shirt,
       path: '/masters/styles',
       color: 'text-pink-600',
+      isScottApi: false,
     },
     {
       title: 'Classes',
@@ -93,6 +102,7 @@ const Masters = () => {
       icon: Shirt,
       path: '/masters/classes',
       color: 'text-cyan-600',
+      isScottApi: false,
     },
     {
       title: 'SKUs',
@@ -100,6 +110,7 @@ const Masters = () => {
       icon: Package2,
       path: '/masters/skus',
       color: 'text-emerald-600',
+      isScottApi: false,
     },
     {
       title: 'Media',
@@ -107,6 +118,7 @@ const Masters = () => {
       icon: FolderOpen,
       path: '/masters/media',
       color: 'text-violet-600',
+      isScottApi: false,
     },
     {
       title: 'Fabric',
@@ -114,6 +126,7 @@ const Masters = () => {
       icon: Scissors,
       path: '/masters/fabric',
       color: 'text-amber-600',
+      isScottApi: false,
     },
     {
       title: 'Parts',
@@ -121,6 +134,7 @@ const Masters = () => {
       icon: Wrench,
       path: '/masters/parts',
       color: 'text-slate-600',
+      isScottApi: false,
     },
     {
       title: 'Add Ons',
@@ -128,6 +142,7 @@ const Masters = () => {
       icon: Plus,
       path: '/masters/add-ons',
       color: 'text-lime-600',
+      isScottApi: false,
     },
     {
       title: 'Base Product',
@@ -135,6 +150,15 @@ const Masters = () => {
       icon: Box,
       path: '/masters/base-product',
       color: 'text-rose-600',
+      isScottApi: false,
+    },
+    {
+      title: 'Base product types',
+      description: 'Scott dashboard base product types (taxonomy)',
+      icon: Box,
+      path: '/masters/base-product-types',
+      color: 'text-rose-500',
+      isScottApi: true,
     },
     {
       title: 'Profit Margin',
@@ -142,6 +166,7 @@ const Masters = () => {
       icon: TrendingUp,
       path: '/masters/profit-margin',
       color: 'text-teal-600',
+      isScottApi: true,
     },
     {
       title: 'App Assets',
@@ -149,13 +174,15 @@ const Masters = () => {
       icon: Smartphone,
       path: '/masters/app-assets',
       color: 'text-sky-600',
+      isScottApi: true,
     },
     {
-      title: 'Promotional Banners',
-      description: 'Manage promotional banners with category, brand, and class associations',
+      title: 'Catalogue promotions',
+      description: 'Scott dashboard catalogue promotions (name, link, category, thumbnail)',
       icon: ImageIcon,
       path: '/masters/promotional-banners',
       color: 'text-purple-600',
+      isScottApi: true,
     },
     {
       title: 'Promotional Assets',
@@ -163,6 +190,7 @@ const Masters = () => {
       icon: ImageIcon,
       path: '/masters/promotional-assets',
       color: 'text-blue-600',
+      isScottApi: false,
     },
   ];
 
@@ -215,6 +243,11 @@ const Masters = () => {
                   <div className="flex items-center space-x-2">
                     <Icon className={`h-6 w-6 ${category.color}`} />
                     <CardTitle className="text-xl">{category.title}</CardTitle>
+                    {category.isScottApi && (
+                      <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 text-xs">
+                        Scott API
+                      </Badge>
+                    )}
                   </div>
                   <CardDescription>{category.description}</CardDescription>
                 </CardHeader>

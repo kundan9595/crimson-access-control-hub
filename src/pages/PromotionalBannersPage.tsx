@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
@@ -9,11 +9,8 @@ import { MasterPageHeader } from '@/components/masters/shared/MasterPageHeader';
 import PromotionalBannerDialog from '@/components/masters/PromotionalBannerDialog';
 import BulkImportDialog from '@/components/masters/BulkImportDialog';
 import { usePromotionalBanners, useDeletePromotionalBanner } from '@/hooks/masters/usePromotionalBanners';
-import { useCategories } from '@/hooks/masters/useCategories';
-import { useBrands } from '@/hooks/masters/useBrands';
-import { useClasses } from '@/hooks/masters/useClasses';
 import { exportToCSV, generateExportFilename } from '@/utils/exportUtils';
-import { Edit, Trash2, Plus, Image as ImageIcon } from 'lucide-react';
+import { Edit, Trash2, Image as ImageIcon } from 'lucide-react';
 import type { PromotionalBanner } from '@/services/masters/types';
 
 const PromotionalBannersPage = () => {
@@ -24,33 +21,12 @@ const PromotionalBannersPage = () => {
 
   const { data: promotionalBanners = [], isLoading } = usePromotionalBanners();
   const deletePromotionalBannerMutation = useDeletePromotionalBanner();
-  const { data: categories = [] } = useCategories();
-  const { data: brands = [] } = useBrands();
-  const { data: classes = [] } = useClasses();
 
-  // Helper functions to get related entity names
-  const getCategoryName = (categoryId?: string) => {
-    if (!categoryId) return '-';
-    const category = categories.find(c => c.id === categoryId);
-    return category?.name || '-';
-  };
-
-  const getBrandName = (brandId: string) => {
-    const brand = brands.find(b => b.id === brandId);
-    return brand?.name || '-';
-  };
-
-  const getClassName = (classId?: string) => {
-    if (!classId) return '-';
-    const cls = classes.find(c => c.id === classId);
-    return cls?.name || '-';
-  };
-
-  const filteredBanners = promotionalBanners.filter(banner =>
-    banner.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    getCategoryName(banner.category_id).toLowerCase().includes(searchTerm.toLowerCase()) ||
-    getBrandName(banner.brand_id).toLowerCase().includes(searchTerm.toLowerCase()) ||
-    getClassName(banner.class_id).toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredBanners = promotionalBanners.filter(
+    (banner) =>
+      banner.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (banner.category_label || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (banner.link || '').toLowerCase().includes(searchTerm.toLowerCase()),
   );
 
   const handleAdd = () => {
@@ -73,18 +49,18 @@ const PromotionalBannersPage = () => {
     if (!promotionalBanners || promotionalBanners.length === 0) return;
 
     exportToCSV({
-      filename: generateExportFilename('promotional-banners'),
-      headers: ['Title', 'Category', 'Brand', 'Class', 'Position', 'Status', 'Created At'],
+      filename: generateExportFilename('catalogue-promotions'),
+      headers: ['Name', 'Link', 'Category', 'Upload date', 'Status', 'Created At'],
       data: promotionalBanners,
       fieldMap: {
-        'Title': 'title',
-        'Category': (item: PromotionalBanner) => getCategoryName(item.category_id),
-        'Brand': (item: PromotionalBanner) => getBrandName(item.brand_id),
-        'Class': (item: PromotionalBanner) => getClassName(item.class_id),
-        'Position': 'position',
-        'Status': 'status',
-        'Created At': (item: PromotionalBanner) => new Date(item.created_at).toLocaleDateString()
-      }
+        Name: 'title',
+        Link: 'link',
+        Category: 'category_label',
+        'Upload date': 'upload_date',
+        Status: 'status',
+        'Created At': (item: PromotionalBanner) =>
+          new Date(item.created_at).toLocaleDateString(),
+      },
     });
   };
 
@@ -92,17 +68,16 @@ const PromotionalBannersPage = () => {
     setImportDialogOpen(true);
   };
 
-  const templateHeaders = ['Title', 'Category', 'Brand', 'Class', 'Position', 'Status'];
+  const templateHeaders = ['Title', 'Link', 'Category', 'Upload date', 'Status'];
   const sampleData = [
-    ['Summer Sale Banner', 'Clothing', 'Nike', 'Sports T-Shirt', '1', 'active'],
-    ['Winter Collection', 'Footwear', 'Adidas', '', '2', 'active']
+    ['Summer catalogue', 'https://example.com/cat', 'Catalogues', '', 'active'],
   ];
 
   if (isLoading) {
     return (
       <div className="space-y-6">
         <div className="text-center py-8">
-          <p>Loading promotional banners...</p>
+          <p>Loading catalogue promotions...</p>
         </div>
       </div>
     );
@@ -111,41 +86,40 @@ const PromotionalBannersPage = () => {
   return (
     <div className="space-y-6">
       <MasterPageHeader
-        title="Promotional Banners"
-        description="Manage promotional banners with category, brand, and class associations"
+        title="Catalogue promotions"
+        description="Manage Scott dashboard catalogue promotions (name, link, category, thumbnail)"
         icon={<ImageIcon className="h-6 w-6 text-purple-600" />}
         onAdd={handleAdd}
         onExport={handleExport}
         onImport={handleImport}
         canExport={filteredBanners.length > 0}
+        isScottApi={true}
       />
 
       <Card>
         <CardContent className="p-6">
           <SearchFilter
-            placeholder="Search promotional banners..."
+            placeholder="Search promotions..."
             value={searchTerm}
             onChange={setSearchTerm}
             resultCount={filteredBanners.length}
             totalCount={promotionalBanners.length}
           />
-          
+
           <div className="mt-6">
             {filteredBanners.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
-                <p>No promotional banners found</p>
-                <p className="text-sm">Click "Add Promotional Banner" to create your first banner</p>
+                <p>No promotions found</p>
+                <p className="text-sm">Click Add to create a catalogue promotion</p>
               </div>
             ) : (
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Banner</TableHead>
-                    <TableHead>Title</TableHead>
+                    <TableHead>Thumbnail</TableHead>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Link</TableHead>
                     <TableHead>Category</TableHead>
-                    <TableHead>Brand</TableHead>
-                    <TableHead>Class</TableHead>
-                    <TableHead>Position</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
@@ -155,8 +129,8 @@ const PromotionalBannersPage = () => {
                     <TableRow key={banner.id}>
                       <TableCell>
                         {banner.banner_image ? (
-                          <img 
-                            src={banner.banner_image} 
+                          <img
+                            src={banner.banner_image}
                             alt={banner.title}
                             className="w-16 h-12 object-cover rounded"
                           />
@@ -167,26 +141,29 @@ const PromotionalBannersPage = () => {
                         )}
                       </TableCell>
                       <TableCell className="font-medium">{banner.title}</TableCell>
-                      <TableCell>{getCategoryName(banner.category_id)}</TableCell>
-                      <TableCell>{getBrandName(banner.brand_id)}</TableCell>
-                      <TableCell>{getClassName(banner.class_id)}</TableCell>
-                      <TableCell>{banner.position}</TableCell>
+                      <TableCell className="max-w-[200px] truncate">
+                        {banner.link ? (
+                          <a
+                            href={banner.link}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-blue-600 hover:underline"
+                          >
+                            {banner.link}
+                          </a>
+                        ) : (
+                          '—'
+                        )}
+                      </TableCell>
+                      <TableCell>{banner.category_label || '—'}</TableCell>
                       <TableCell>
-                        <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                          banner.status === 'active' 
-                            ? 'bg-green-100 text-green-800' 
-                            : 'bg-red-100 text-red-800'
-                        }`}>
+                        <Badge variant={banner.status === 'active' ? 'default' : 'secondary'}>
                           {banner.status}
-                        </span>
+                        </Badge>
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end space-x-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleEdit(banner)}
-                          >
+                          <Button variant="outline" size="sm" onClick={() => handleEdit(banner)}>
                             <Edit className="h-4 w-4" />
                           </Button>
                           <Button
@@ -225,4 +202,4 @@ const PromotionalBannersPage = () => {
   );
 };
 
-export default PromotionalBannersPage; 
+export default PromotionalBannersPage;

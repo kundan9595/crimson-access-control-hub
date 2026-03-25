@@ -173,6 +173,7 @@ const BrandsPage = () => {
         onExport={handleExport}
         onImport={() => setBulkImportOpen(true)}
         canExport={!!brands?.length}
+        isScottApi={true}
       />
 
       <Card>

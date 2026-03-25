@@ -1,4 +1,4 @@
-// Service Worker for Crimson Access Control Hub
+// Service Worker for ScottOne
 const CACHE_NAME = 'crimson-ach-v1';
 const urlsToCache = [
   '/',
@@ -26,7 +26,7 @@ self.addEventListener('fetch', (event) => {
         // Return cached version or fetch from network
         return response || fetch(event.request);
       }
-    )
+      )
   );
 });
 

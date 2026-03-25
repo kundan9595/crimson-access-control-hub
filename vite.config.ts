@@ -6,7 +6,7 @@ import { VitePWA } from 'vite-plugin-pwa'
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {
   const isAnalyze = mode === 'analyze';
-  
+
   return {
     plugins: [
       react(),
@@ -14,7 +14,7 @@ export default defineConfig(({ mode }) => {
         registerType: 'autoUpdate',
         includeAssets: ['favicon.ico', 'placeholder.svg', 'robots.txt', 'icon.svg', 'polyfills.js'],
         manifest: {
-          name: 'Crimson Access Control Hub',
+          name: 'ScottOne',
           short_name: 'Crimson ACH',
           description: 'A comprehensive access control and inventory management system',
           theme_color: '#dc2626',
@@ -67,7 +67,7 @@ export default defineConfig(({ mode }) => {
         },
       },
     ].filter(Boolean),
-    
+
     resolve: {
       alias: {
         '@': path.resolve(__dirname, './src'),
@@ -77,17 +77,17 @@ export default defineConfig(({ mode }) => {
         'react-redux/react-is': path.resolve(__dirname, 'node_modules/react-is'),
       },
     },
-    
+
     build: {
       // Optimize chunk size
       chunkSizeWarningLimit: 1000,
-      
+
       // Enable source maps in development
       sourcemap: mode === 'development',
-      
+
       // Optimize CSS
       cssCodeSplit: true,
-      
+
       // Minify options
       minify: mode === 'production' ? 'terser' : false,
       terserOptions: mode === 'production' ? {
@@ -101,10 +101,10 @@ export default defineConfig(({ mode }) => {
           toplevel: true,
         },
       } : undefined,
-      
+
       // Target modern browsers for smaller bundles
       target: 'es2015',
-      
+
       // Optimize bundle splitting and tree shaking
       rollupOptions: {
         output: {
@@ -150,7 +150,7 @@ export default defineConfig(({ mode }) => {
         },
       },
     },
-    
+
     // Development server optimization
     server: {
       port: 3000,
@@ -160,13 +160,13 @@ export default defineConfig(({ mode }) => {
         overlay: false,
       },
     },
-    
+
     // Preview server
     preview: {
       port: 4173,
       host: true,
     },
-    
+
     // Optimize dependencies
     optimizeDeps: {
       include: [
@@ -197,7 +197,7 @@ export default defineConfig(({ mode }) => {
         },
       },
     },
-    
+
     // Define environment variables
     define: {
       __DEV__: mode === 'development',

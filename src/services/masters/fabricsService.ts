@@ -1,6 +1,6 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { Fabric } from './types';
+import { fetchColors } from '@/services/masters/colorsService';
 
 export const fetchFabrics = async (): Promise<Fabric[]> => {
   const { data, error } = await supabase
@@ -11,25 +11,23 @@ export const fetchFabrics = async (): Promise<Fabric[]> => {
   if (error) throw error;
   
   // Fetch colors for fabrics that have color_ids
-  const fabricsWithColors = await Promise.all((data || []).map(async (fabric) => {
+  const allColors = await fetchColors();
+  const colorMap = new Map(allColors.map((c) => [c.id, c]));
+
+  const fabricsWithColors = (data || []).map((fabric) => {
     if (fabric.color_ids && Array.isArray(fabric.color_ids) && fabric.color_ids.length > 0) {
-      const { data: colorsData, error: colorsError } = await supabase
-        .from('colors')
-        .select('id, name, hex_code')
-        .in('id', fabric.color_ids);
-      
-      if (!colorsError && colorsData) {
-        return {
-          ...fabric,
-          colors: colorsData
-        };
-      }
+      const colorsData = fabric.color_ids
+        .map((cid: string) => colorMap.get(cid))
+        .filter(Boolean)
+        .map((c) => ({
+          id: c!.id,
+          name: c!.name,
+          hex_code: c!.hex_code,
+        }));
+      return { ...fabric, colors: colorsData };
     }
-    return {
-      ...fabric,
-      colors: []
-    };
-  }));
+    return { ...fabric, colors: [] };
+  });
   
   return fabricsWithColors as Fabric[];
 };
@@ -45,13 +43,13 @@ export const createFabric = async (fabricData: Omit<Fabric, 'id' | 'created_at' 
   if (error) throw error;
   
   // Fetch colors if color_ids exist
-  let colors = [];
+  let colors: { id: string; name: string; hex_code: string }[] = [];
   if (data.color_ids && Array.isArray(data.color_ids) && data.color_ids.length > 0) {
-    const { data: colorsData } = await supabase
-      .from('colors')
-      .select('id, name, hex_code')
-      .in('id', data.color_ids);
-    colors = colorsData || [];
+    const allColors = await fetchColors();
+    const set = new Set(data.color_ids as string[]);
+    colors = allColors
+      .filter((c) => set.has(c.id))
+      .map((c) => ({ id: c.id, name: c.name, hex_code: c.hex_code }));
   }
   
   return {
@@ -72,13 +70,13 @@ export const updateFabric = async (id: string, updates: Partial<Fabric>): Promis
   if (error) throw error;
   
   // Fetch colors if color_ids exist
-  let fabricColors = [];
+  let fabricColors: { id: string; name: string; hex_code: string }[] = [];
   if (data.color_ids && Array.isArray(data.color_ids) && data.color_ids.length > 0) {
-    const { data: colorsData } = await supabase
-      .from('colors')
-      .select('id, name, hex_code')
-      .in('id', data.color_ids);
-    fabricColors = colorsData || [];
+    const allColors = await fetchColors();
+    const set = new Set(data.color_ids as string[]);
+    fabricColors = allColors
+      .filter((c) => set.has(c.id))
+      .map((c) => ({ id: c.id, name: c.name, hex_code: c.hex_code }));
   }
   
   return {

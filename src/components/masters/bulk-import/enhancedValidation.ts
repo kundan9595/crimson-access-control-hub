@@ -385,7 +385,7 @@ function isRequiredField(header: string, type: BulkImportType): boolean {
     'skus': ['SKU Code'],
     'add-ons': ['Name', 'Select Type'],
     'appAssets': ['Name'],
-    'promotionalBanners': ['Title', 'Brand Name'],
+    'promotionalBanners': ['Title'],
     'promotionalAssets': ['Name'],
     'parts': ['Name'],
     'fabrics': ['Name', 'Fabric Type', 'GSM', 'UOM', 'Price'],

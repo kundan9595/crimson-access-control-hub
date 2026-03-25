@@ -5,9 +5,11 @@ import { CustomerDialog } from '@/components/masters/CustomerDialogNew';
 import BulkImportDialog from '@/components/masters/BulkImportDialog';
 import { useCustomers } from '@/hooks/masters/useCustomers';
 import { MasterPageHeader } from '@/components/masters/shared/MasterPageHeader';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import type { Customer } from '@/services/masters/types';
 
 const Customers: React.FC = () => {
+  const [activeTab, setActiveTab] = useState<'customer' | 'distributor'>('customer');
   const [showCustomerDialog, setShowCustomerDialog] = useState(false);
   const [showImportDialog, setShowImportDialog] = useState(false);
   const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
@@ -23,8 +25,21 @@ const Customers: React.FC = () => {
     setEditingCustomer(null);
   };
 
+  // Filter customers by type
+  const filteredCustomers = customers.filter(
+    (c) => {
+      const type = c.customer_type || 'retail';
+      // Show retail in the customer tab, distributor in distributor tab
+      if (activeTab === 'customer') {
+        return type === 'retail';
+      } else {
+        return type === 'distributor';
+      }
+    }
+  );
+
   const handleExport = () => {
-    if (customers.length === 0) {
+    if (filteredCustomers.length === 0) {
       return;
     }
 
@@ -45,7 +60,7 @@ const Customers: React.FC = () => {
 
     const csvContent = [
       headers.join(','),
-      ...customers.map(customer => [
+      ...filteredCustomers.map(customer => [
         `"${customer.customer_code}"`,
         `"${customer.company_name || ''}"`,
         `"${customer.contact_person || ''}"`,
@@ -75,22 +90,36 @@ const Customers: React.FC = () => {
   return (
     <div className="space-y-6">
       <MasterPageHeader
-        title="Customers"
-        description="Manage customer information and relationships"
+        title={activeTab === 'customer' ? 'Customers' : 'Distributors'}
+        description={activeTab === 'customer' ? 'Manage customer information and relationships' : 'Manage distributor information and brand assignments'}
         icon={<Users className="h-6 w-6 text-blue-600" />}
         onAdd={() => setShowCustomerDialog(true)}
         onExport={handleExport}
         onImport={() => setShowImportDialog(true)}
-        canExport={!!customers?.length}
+        canExport={!!filteredCustomers?.length}
         showBackButton={false}
       />
 
-      <CustomersList onEdit={handleEdit} />
+      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'customer' | 'distributor')}>
+        <TabsList>
+          <TabsTrigger value="customer">Customers</TabsTrigger>
+          <TabsTrigger value="distributor">Distributors</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="customer" className="mt-6">
+          <CustomersList onEdit={handleEdit} customerType="customer" />
+        </TabsContent>
+
+        <TabsContent value="distributor" className="mt-6">
+          <CustomersList onEdit={handleEdit} customerType="distributor" />
+        </TabsContent>
+      </Tabs>
 
       <CustomerDialog
         open={showCustomerDialog}
         onOpenChange={handleDialogClose}
         customer={editingCustomer}
+        mode={activeTab}
       />
 
       <BulkImportDialog

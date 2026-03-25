@@ -28,7 +28,7 @@ const PWAInstallPrompt: React.FC = () => {
     // Check if app is already installed
     const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
     const isInWebAppiOS = (window.navigator as any).standalone === true;
-    
+
     if (isStandalone || isInWebAppiOS) {
       setIsInstalled(true);
       return;
@@ -69,16 +69,16 @@ const PWAInstallPrompt: React.FC = () => {
     try {
       // Show the install prompt
       await deferredPrompt.prompt();
-      
+
       // Wait for the user to respond to the prompt
       const { outcome } = await deferredPrompt.userChoice;
-      
+
       if (outcome === 'accepted') {
         toast.success('Installing app...');
       } else {
         toast.info('Installation cancelled');
       }
-      
+
       // Clear the deferredPrompt
       setDeferredPrompt(null);
       setShowInstallPrompt(false);
@@ -124,7 +124,7 @@ const PWAInstallPrompt: React.FC = () => {
             </Button>
           </div>
           <CardDescription>
-            Install Crimson Access Control Hub for a better experience with offline access and faster loading.
+            Install ScottOne for a better experience with offline access and faster loading.
           </CardDescription>
         </CardHeader>
         <CardContent className="pt-0">

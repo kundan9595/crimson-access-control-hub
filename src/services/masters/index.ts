@@ -40,6 +40,9 @@ export * from './profitMarginsService';
 // Export base products services
 export * from './baseProductsService';
 
+export * from './sizeTypesService';
+export * from './baseProductTypesService';
+
 // Re-export types for convenience
 export type {
   Brand,

@@ -1,6 +1,7 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { ArrowLeft, Download, Upload, Plus } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
@@ -13,6 +14,7 @@ interface MasterPageHeaderProps {
   onImport?: () => void;
   canExport?: boolean;
   showBackButton?: boolean;
+  isScottApi?: boolean;
 }
 
 export const MasterPageHeader: React.FC<MasterPageHeaderProps> = ({
@@ -24,6 +26,7 @@ export const MasterPageHeader: React.FC<MasterPageHeaderProps> = ({
   onImport,
   canExport = true,
   showBackButton = true,
+  isScottApi = false,
 }) => {
   const navigate = useNavigate();
 
@@ -53,7 +56,14 @@ export const MasterPageHeader: React.FC<MasterPageHeaderProps> = ({
         <div className="flex items-center gap-3">
           {icon}
           <div>
-            <h1 className="text-2xl font-bold text-left">{title}</h1>
+            <div className="flex items-center gap-2">
+              <h1 className="text-2xl font-bold text-left">{title}</h1>
+              {isScottApi && (
+                <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+                  Scott API
+                </Badge>
+              )}
+            </div>
             <p className="text-muted-foreground text-left">{description}</p>
           </div>
         </div>

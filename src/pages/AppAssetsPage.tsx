@@ -92,6 +92,7 @@ const AppAssetsPage = () => {
         onExport={handleExport}
         onImport={handleImport}
         canExport={filteredAssets.length > 0}
+        isScottApi={true}
       />
 
       <Card>

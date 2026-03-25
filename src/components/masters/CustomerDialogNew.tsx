@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
@@ -8,10 +8,11 @@ import { Button } from '@/components/ui/button';
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useCreateCustomer, useUpdateCustomer } from '@/hooks/masters/useCustomers';
+import { useCreateCustomer, useUpdateCustomer, useCustomers } from '@/hooks/masters/useCustomers';
 import { useStates } from '@/hooks/masters/useStates';
 import { useCities } from '@/hooks/masters/useCities';
-import { usePriceTypes } from '@/hooks/masters/usePriceTypes';
+import { useZones } from '@/hooks/masters/useZones';
+import { useBrands } from '@/hooks/masters/useBrands';
 import { BaseFormDialog } from './shared/BaseFormDialog';
 import ImageUpload from '@/components/ui/ImageUpload';
 import type { Customer, CustomerAddress } from '@/services/masters/types';
@@ -22,13 +23,16 @@ type CustomerDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   customer?: Customer | null;
+  mode?: 'customer' | 'distributor';
 };
 
-const CustomerDialog: React.FC<CustomerDialogProps> = ({ open, onOpenChange, customer }) => {
+const CustomerDialog: React.FC<CustomerDialogProps> = ({ open, onOpenChange, customer, mode = 'customer' }) => {
   const createCustomerMutation = useCreateCustomer();
   const updateCustomerMutation = useUpdateCustomer();
   const { data: states = [] } = useStates();
-  const { data: priceTypes = [] } = usePriceTypes();
+  const { data: zones = [] } = useZones();
+  const { data: brands = [] } = useBrands();
+  const { data: allCustomers = [] } = useCustomers();
   const isEditing = !!customer;
 
   const form = useForm<CustomerFormData>({
@@ -39,7 +43,10 @@ const CustomerDialog: React.FC<CustomerDialogProps> = ({ open, onOpenChange, cus
       contact_person: '',
       email: '',
       phone: '',
-      price_type_id: 'none',
+      customer_type: mode === 'distributor' ? 'distributor' : 'retail',
+      zone_id: '',
+      brand_ids: [],
+      distributor_ids: [],
       status: 'active',
       credit_limit: 0,
       payment_terms: '',
@@ -66,19 +73,47 @@ const CustomerDialog: React.FC<CustomerDialogProps> = ({ open, onOpenChange, cus
   });
 
   const [selectedStates, setSelectedStates] = useState<Record<number, string>>({});
+  const previousZoneIdRef = useRef<string | undefined>(undefined);
 
   // Watch for state changes to fetch cities
   const watchedAddresses = form.watch('addresses');
+  
+  // Watch for zone_id changes to reset brands when zone changes
+  const watchedZoneId = form.watch('zone_id');
+  
+  useEffect(() => {
+    // Reset brands when zone changes (only for distributors)
+    // Only reset if zone actually changed (not on initial load)
+    if (mode === 'distributor' && watchedZoneId && previousZoneIdRef.current !== undefined && previousZoneIdRef.current !== watchedZoneId) {
+      const currentBrandIds = form.getValues('brand_ids');
+      if (currentBrandIds && currentBrandIds.length > 0) {
+        form.setValue('brand_ids', []);
+        // Clear any brand-related errors
+        form.clearErrors('brand_ids');
+      }
+    }
+    // Update the ref to track the current zone
+    previousZoneIdRef.current = watchedZoneId;
+  }, [watchedZoneId, mode, form]);
 
   useEffect(() => {
+    // Reset the zone ref when dialog opens/closes
+    if (!open) {
+      previousZoneIdRef.current = undefined;
+    }
+    
     if (customer && open) {
+      previousZoneIdRef.current = customer.zone_id;
       form.reset({
         customer_code: customer.customer_code,
         company_name: customer.company_name,
         contact_person: customer.contact_person,
         email: customer.email,
         phone: customer.phone,
-        price_type_id: customer.price_type_id || 'none',
+        customer_type: customer.customer_type || (mode === 'distributor' ? 'distributor' : 'retail'),
+        zone_id: customer.zone_id || '',
+        brand_ids: customer.brand_ids || [],
+        distributor_ids: customer.distributor_ids || [],
         status: customer.status,
         credit_limit: customer.credit_limit ?? 0,
         payment_terms: customer.payment_terms || '',
@@ -113,7 +148,10 @@ const CustomerDialog: React.FC<CustomerDialogProps> = ({ open, onOpenChange, cus
         contact_person: '',
         email: '',
         phone: '',
-        price_type_id: 'none',
+        customer_type: mode === 'distributor' ? 'distributor' : 'retail',
+        zone_id: '',
+        brand_ids: [],
+        distributor_ids: [],
         status: 'active',
         credit_limit: 0,
         payment_terms: '',
@@ -136,13 +174,57 @@ const CustomerDialog: React.FC<CustomerDialogProps> = ({ open, onOpenChange, cus
   }, [customer, open, form]);
 
   const onSubmit = (data: CustomerFormData) => {
-    const customerData = {
+    // Validate brand uniqueness for distributors in the same zone
+    if (data.customer_type === 'distributor' && data.zone_id && data.brand_ids && data.brand_ids.length > 0) {
+      // Find other distributors in the same zone
+      const otherDistributorsInZone = allCustomers.filter(
+        (c) =>
+          c.customer_type === 'distributor' &&
+          c.zone_id === data.zone_id &&
+          (!isEditing || c.id !== customer?.id) &&
+          c.brand_ids &&
+          c.brand_ids.length > 0
+      );
+
+      // Check for brand conflicts
+      const conflictingBrands: Array<{ brandId: string; distributorName: string; brandName: string }> = [];
+      
+      for (const brandId of data.brand_ids) {
+        for (const distributor of otherDistributorsInZone) {
+          if (distributor.brand_ids?.includes(brandId)) {
+            const brandName = brands.find((b) => b.id === brandId)?.name || brandId;
+            conflictingBrands.push({
+              brandId,
+              distributorName: distributor.company_name,
+              brandName,
+            });
+            break; // Only report first conflict per brand
+          }
+        }
+      }
+
+      if (conflictingBrands.length > 0) {
+        const conflictMessages = conflictingBrands.map(
+          (conflict) => `Brand "${conflict.brandName}" is already assigned to distributor "${conflict.distributorName}"`
+        );
+        form.setError('brand_ids', {
+          type: 'manual',
+          message: `Brand conflict: ${conflictMessages.join('; ')}. Distributors in the same zone cannot share brands.`,
+        });
+        return;
+      }
+    }
+
+    const customerData: any = {
       customer_code: data.customer_code,
       company_name: data.company_name,
       contact_person: data.contact_person,
       email: data.email,
       phone: data.phone,
-      price_type_id: data.price_type_id === 'none' ? null : data.price_type_id || null,
+      customer_type: data.customer_type,
+      zone_id: data.zone_id || null,
+      brand_ids: data.brand_ids || [],
+      distributor_ids: data.distributor_ids || [],
       status: data.status,
       credit_limit: data.credit_limit ?? 0,
       payment_terms: data.payment_terms || null,
@@ -212,7 +294,7 @@ const CustomerDialog: React.FC<CustomerDialogProps> = ({ open, onOpenChange, cus
     <BaseFormDialog
       open={open}
       onOpenChange={onOpenChange}
-      title={isEditing ? 'Edit Customer' : 'Create Customer'}
+      title={isEditing ? `Edit ${mode === 'distributor' ? 'Distributor' : 'Customer'}` : `Create ${mode === 'distributor' ? 'Distributor' : 'Customer'}`}
       form={form}
       onSubmit={onSubmit}
       isSubmitting={createCustomerMutation.isPending || updateCustomerMutation.isPending}
@@ -314,31 +396,97 @@ const CustomerDialog: React.FC<CustomerDialogProps> = ({ open, onOpenChange, cus
             )}
           />
 
-          <FormField
-            control={form.control}
-            name="price_type_id"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Price Type</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select price type" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    <SelectItem value="none">No Price Type</SelectItem>
-                    {priceTypes.map((priceType) => (
-                      <SelectItem key={priceType.id} value={priceType.id}>
-                        {priceType.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+
+          {mode === 'customer' && (
+            <FormField
+              control={form.control}
+              name="distributor_ids"
+              render={({ field }) => {
+                // Get all distributors for selection
+                const distributors = allCustomers.filter(
+                  (c) => c.customer_type === 'distributor'
+                );
+
+                // Helper function to get brand names for a distributor
+                const getBrandNames = (distributor: Customer) => {
+                  if (!distributor.brand_ids || distributor.brand_ids.length === 0) {
+                    return [];
+                  }
+                  return distributor.brand_ids
+                    .map((brandId) => brands.find((b) => b.id === brandId)?.name)
+                    .filter((name): name is string => !!name);
+                };
+
+                return (
+                  <FormItem className="md:col-span-2">
+                    <FormLabel>Distributors</FormLabel>
+                    <div className="space-y-3 border rounded-md p-4">
+                      {distributors.length === 0 ? (
+                        <p className="text-sm text-muted-foreground">
+                          No distributors available
+                        </p>
+                      ) : (
+                        distributors.map((distributor) => {
+                          const brandNames = getBrandNames(distributor);
+                          const isSelected = field.value?.includes(distributor.id);
+
+                          return (
+                            <div
+                              key={distributor.id}
+                              className={`flex items-start space-x-3 p-3 rounded-md border ${
+                                isSelected
+                                  ? 'border-primary bg-primary/5'
+                                  : 'border-gray-200 hover:border-gray-300'
+                              }`}
+                            >
+                              <input
+                                type="checkbox"
+                                checked={isSelected}
+                                onChange={(e) => {
+                                  const newValue = e.target.checked
+                                    ? [...(field.value || []), distributor.id]
+                                    : (field.value || []).filter(
+                                        (id) => id !== distributor.id
+                                      );
+                                  field.onChange(newValue);
+                                }}
+                                className="mt-1 rounded border-gray-300 cursor-pointer"
+                              />
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2">
+                                  <span className="text-sm font-medium">
+                                    {distributor.company_name}
+                                  </span>
+                                </div>
+                                {brandNames.length > 0 ? (
+                                  <div className="mt-1.5">
+                                    <span className="text-xs text-muted-foreground">
+                                      Brands:{' '}
+                                    </span>
+                                    <span className="text-xs font-medium">
+                                      {brandNames.join(', ')}
+                                    </span>
+                                  </div>
+                                ) : (
+                                  <div className="mt-1.5">
+                                    <span className="text-xs text-muted-foreground italic">
+                                      No brands assigned
+                                    </span>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })
+                      )}
+                    </div>
+                  <FormMessage />
+                </FormItem>
+                );
+              }}
+            />
+          )}
+
 
 
           <FormField
@@ -388,6 +536,115 @@ const CustomerDialog: React.FC<CustomerDialogProps> = ({ open, onOpenChange, cus
               </FormItem>
             )}
           />
+          {mode === 'distributor' && (
+            <>
+              <FormField
+                control={form.control}
+                name="zone_id"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Zone *</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select zone" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {zones.map((zone) => (
+                          <SelectItem key={zone.id} value={zone.id}>
+                            {zone.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="brand_ids"
+                render={({ field }) => {
+                  const zoneId = form.watch('zone_id');
+                  const currentBrandIds = field.value || [];
+                  
+                  // Get other distributors in the same zone
+                  const otherDistributorsInZone = allCustomers.filter(
+                    (c) =>
+                      c.customer_type === 'distributor' &&
+                      c.zone_id === zoneId &&
+                      (!isEditing || c.id !== customer?.id) &&
+                      c.brand_ids &&
+                      c.brand_ids.length > 0
+                  );
+
+                  // Get brands already assigned to other distributors in this zone
+                  const unavailableBrandIds = new Set<string>();
+                  otherDistributorsInZone.forEach((distributor) => {
+                    distributor.brand_ids?.forEach((brandId) => {
+                      unavailableBrandIds.add(brandId);
+                    });
+                  });
+
+                  return (
+                  <FormItem className="md:col-span-2">
+                    <FormLabel>Brands *</FormLabel>
+                    <div className="flex flex-wrap gap-2 border rounded-md p-3">
+                        {brands.map((brand) => {
+                          const isUnavailable = unavailableBrandIds.has(brand.id);
+                          const isSelected = currentBrandIds.includes(brand.id);
+                          const isDisabled = isUnavailable && !isSelected;
+                          
+                          return (
+                        <label
+                          key={brand.id}
+                              className={`flex items-center space-x-2 ${
+                                isDisabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'
+                              }`}
+                              title={
+                                isDisabled
+                                  ? `This brand is already assigned to another distributor in this zone`
+                                  : undefined
+                              }
+                        >
+                          <input
+                            type="checkbox"
+                                checked={isSelected}
+                                disabled={isDisabled}
+                            onChange={(e) => {
+                                  if (isDisabled) return;
+                              const newValue = e.target.checked
+                                    ? [...currentBrandIds, brand.id]
+                                    : currentBrandIds.filter((id) => id !== brand.id);
+                              field.onChange(newValue);
+                                  // Clear any previous errors when user changes selection
+                                  if (form.formState.errors.brand_ids) {
+                                    form.clearErrors('brand_ids');
+                                  }
+                            }}
+                            className="rounded border-gray-300"
+                          />
+                              <span className="text-sm">
+                                {brand.name}
+                                {isDisabled && (
+                                  <span className="ml-1 text-xs text-muted-foreground">
+                                    (unavailable)
+                                  </span>
+                                )}
+                              </span>
+                        </label>
+                          );
+                        })}
+                    </div>
+                    <FormMessage />
+                  </FormItem>
+                  );
+                }}
+              />
+            </>
+          )}
         </div>
 
         {/* Addresses Section */}
@@ -463,13 +720,13 @@ const CustomerDialog: React.FC<CustomerDialogProps> = ({ open, onOpenChange, cus
 };
 
 // Address Form Component
-const AddressForm = ({ 
-  index, 
-  form, 
-  states, 
-  onRemove, 
-  onSetPrimary, 
-  canRemove 
+const AddressForm = ({
+  index,
+  form,
+  states,
+  onRemove,
+  onSetPrimary,
+  canRemove
 }: {
   index: number;
   form: any;

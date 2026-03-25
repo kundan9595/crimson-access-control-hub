@@ -235,7 +235,7 @@ const CustomerDialog: React.FC<CustomerDialogProps> = ({ open, onOpenChange, cus
           render={({ field }) => (
             <FormItem>
               <FormLabel>Customer Type</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
+              <Select onValueChange={field.onChange} value={field.value || 'retail'}>
                 <FormControl>
                   <SelectTrigger>
                     <SelectValue placeholder="Select customer type" />
@@ -243,7 +243,6 @@ const CustomerDialog: React.FC<CustomerDialogProps> = ({ open, onOpenChange, cus
                 </FormControl>
                 <SelectContent>
                   <SelectItem value="retail">Retail</SelectItem>
-                  <SelectItem value="wholesale">Wholesale</SelectItem>
                   <SelectItem value="distributor">Distributor</SelectItem>
                 </SelectContent>
               </Select>

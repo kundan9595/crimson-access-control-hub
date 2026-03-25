@@ -499,7 +499,7 @@ function validatePartRow(row: string[], errors: string[], data: any): Validation
 }
 
 function validatePromotionalBannerRow(row: string[], errors: string[], data: any): ValidationResult {
-  const [title, categoryName, brandName, className, position, status] = row;
+  const [title, link, categoryLabel, uploadDate, position, status] = row;
 
   if (!title?.trim()) {
     errors.push('Title is required');
@@ -507,30 +507,20 @@ function validatePromotionalBannerRow(row: string[], errors: string[], data: any
     data.title = title.trim();
   }
 
-  // Handle category (optional field)
-  if (categoryName?.trim()) {
-    data.category_name = categoryName.trim();
-  } else {
-    data.category_name = null;
+  if (link?.trim()) {
+    data.link = link.trim();
   }
 
-  // Handle brand (required field)
-  if (!brandName?.trim()) {
-    errors.push('Brand is required');
-  } else {
-    data.brand_name = brandName.trim();
+  if (categoryLabel?.trim()) {
+    data.category_label = categoryLabel.trim();
   }
 
-  // Handle class (optional field)
-  if (className?.trim()) {
-    data.class_name = className.trim();
-  } else {
-    data.class_name = null;
+  if (uploadDate?.trim()) {
+    data.upload_date = uploadDate.trim();
   }
 
-  // Handle position
   if (position?.trim()) {
-    const positionNum = parseInt(position.trim());
+    const positionNum = parseInt(position.trim(), 10);
     if (isNaN(positionNum) || positionNum < 0) {
       errors.push('Position must be a non-negative number');
     } else {

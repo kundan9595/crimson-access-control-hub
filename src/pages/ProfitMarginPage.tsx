@@ -130,6 +130,7 @@ const ProfitMarginPage = () => {
         onExport={handleExport}
         onImport={handleImport}
         canExport={profitMargins.length > 0}
+        isScottApi={true}
       />
 
       <Card>
