@@ -13,6 +13,7 @@ import { PromotionalAsset } from '@/services/masters/types';
 import { Edit, Trash2, ExternalLink, ImageIcon } from 'lucide-react';
 import { exportToCSV, generateExportFilename } from '@/utils/exportUtils';
 import { toast } from 'sonner';
+import { MasterListPageSkeleton } from '@/components/masters/shared/MasterListPageSkeleton';
 
 const PromotionalAssetsPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -88,11 +89,20 @@ const PromotionalAssetsPage = () => {
 
   if (isLoading) {
     return (
-      <div className="space-y-6">
-        <div className="text-center py-8">
-          <p>Loading promotional assets...</p>
-        </div>
-      </div>
+      <MasterListPageSkeleton
+        columnCount={6}
+        header={
+          <MasterPageHeader
+            title="Promotional Assets"
+            description="Manage promotional assets including videos, catalogues, and images"
+            icon={<ImageIcon className="h-6 w-6 text-blue-600" />}
+            onAdd={handleAdd}
+            onExport={handleExport}
+            onImport={handleImport}
+            canExport={false}
+          />
+        }
+      />
     );
   }
 

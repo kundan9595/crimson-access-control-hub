@@ -145,6 +145,15 @@ export function validateRowEnhanced(row: string[], index: number, type: BulkImpo
       } else {
         errors.push(`${header} is required`);
       }
+    } else if (header.toLowerCase().includes('size type id')) {
+      if (!value) {
+        if (isRequiredField(header, type)) {
+          errors.push(`${header} is required`);
+        }
+      } else {
+        data.size_group_id = value;
+        data.size_type_id = value;
+      }
     } else if (header.toLowerCase().includes('type')) {
       // Type field
       if (value) {
@@ -224,12 +233,23 @@ export function validateRowEnhanced(row: string[], index: number, type: BulkImpo
         if (isNaN(sortNum) || sortNum < 0) {
           errors.push(`${header} must be a valid non-negative number`);
         } else {
-          // Use sort_order for categories, brands, styles, etc., and sort_position for others
-          const fieldName = type === 'categories' || type === 'brands' || type === 'styles' ? 'sort_order' : 'sort_position';
+          const useSortOrder =
+            type === 'categories' ||
+            type === 'brands' ||
+            type === 'styles' ||
+            type === 'sizeGroups' ||
+            type === 'sizes';
+          const fieldName = useSortOrder ? 'sort_order' : 'sort_position';
           data[fieldName] = sortNum;
         }
       } else {
-        const fieldName = type === 'categories' || type === 'brands' || type === 'styles' ? 'sort_order' : 'sort_position';
+        const useSortOrder =
+          type === 'categories' ||
+          type === 'brands' ||
+          type === 'styles' ||
+          type === 'sizeGroups' ||
+          type === 'sizes';
+        const fieldName = useSortOrder ? 'sort_order' : 'sort_position';
         data[fieldName] = 0;
       }
     } else if (header.toLowerCase().includes('gst rate') || header.toLowerCase().includes('tax percentage')) {
@@ -376,7 +396,7 @@ function isRequiredField(header: string, type: BulkImportType): boolean {
     'brands': ['Name'],
     'categories': ['Name'],
     'colors': ['Name', 'Hex Code'],
-    'sizeGroups': ['Name'],
+    'sizeGroups': ['Name', 'Size Type ID'],
     'zones': ['Name'],
     'priceTypes': ['Name'],
     'vendors': ['Name', 'Code'],
@@ -389,7 +409,7 @@ function isRequiredField(header: string, type: BulkImportType): boolean {
     'promotionalAssets': ['Name'],
     'parts': ['Name'],
     'fabrics': ['Name', 'Fabric Type', 'GSM', 'UOM', 'Price'],
-    'sizes': ['Name', 'Code', 'Size Group Name'],
+    'sizes': ['Name', 'Code', 'Size Type ID'],
     'baseProducts': ['Name', 'Sort Order', 'Base Price'],
   };
 

@@ -3,41 +3,52 @@ import React, { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { 
-  DropdownMenu, 
-  DropdownMenuContent, 
-  DropdownMenuItem, 
-  DropdownMenuTrigger 
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { MoreHorizontal, Edit, Trash2 } from 'lucide-react';
 import { useBaseProducts, useDeleteBaseProduct } from '@/hooks/masters/useBaseProducts';
 import { BaseProduct } from '@/services/masters/baseProductsService';
+import {
+  getBaseProductUnitPriceForDisplay,
+  type ScottBaseProduct,
+} from '@/services/masters/baseProductsServiceScott';
 import { BaseProductDialog } from './BaseProductDialog';
-import { 
-  AlertDialog, 
-  AlertDialogAction, 
-  AlertDialogCancel, 
-  AlertDialogContent, 
-  AlertDialogDescription, 
-  AlertDialogFooter, 
-  AlertDialogHeader, 
-  AlertDialogTitle 
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { MasterTableSkeleton } from '@/components/masters/shared/MasterListPageSkeleton';
+import { MasterServerPagination } from '@/components/masters/shared/MasterServerPagination';
+import { hasNextScottPage } from '@/services/scott/scottPagination';
+import { config } from '@/config/environment';
 
 export const BaseProductsList: React.FC = () => {
-  const { data: baseProducts = [], isLoading } = useBaseProducts();
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(config.pagination.defaultPageSize);
+  const { data: pageResult, isLoading, isFetching } = useBaseProducts(page, pageSize);
+  const rows = pageResult?.data ?? [];
   const deleteMutation = useDeleteBaseProduct();
   const [editingBaseProduct, setEditingBaseProduct] = useState<BaseProduct | null>(null);
   const [deletingBaseProduct, setDeletingBaseProduct] = useState<BaseProduct | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
-  const handleEdit = (baseProduct: BaseProduct) => {
-    setEditingBaseProduct(baseProduct);
+  const handleEdit = (baseProduct: ScottBaseProduct) => {
+    setEditingBaseProduct(baseProduct as unknown as BaseProduct);
     setIsDialogOpen(true);
   };
 
-  const handleDelete = (baseProduct: BaseProduct) => {
-    setDeletingBaseProduct(baseProduct);
+  const handleDelete = (baseProduct: ScottBaseProduct) => {
+    setDeletingBaseProduct(baseProduct as unknown as BaseProduct);
   };
 
   const confirmDelete = async () => {
@@ -56,29 +67,39 @@ export const BaseProductsList: React.FC = () => {
     return (
       <Card>
         <CardContent className="p-6">
-          <div className="text-center">Loading base products...</div>
+          <MasterTableSkeleton showToolbar={false} columnCount={7} className="space-y-0" />
         </CardContent>
       </Card>
     );
   }
 
-  if (baseProducts.length === 0) {
-    return (
-      <Card>
-        <CardContent className="p-6">
-          <div className="text-center py-8 text-muted-foreground">
-            <p>No base products found</p>
-            <p className="text-sm">Click "Add Base Product" to create your first base product template</p>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
+  const emptyCatalog =
+    rows.length === 0 &&
+    page === 1 &&
+    pageResult &&
+    (pageResult.totalCountIsExact
+      ? pageResult.totalCount === 0
+      : !hasNextScottPage(pageResult));
 
   return (
     <>
+      {rows.length === 0 ? (
+        <div className="text-center py-8 text-muted-foreground rounded-md border">
+          {emptyCatalog ? (
+            <>
+              <p>No base products found</p>
+              <p className="text-sm">Create a base product to see it listed here</p>
+            </>
+          ) : (
+            <>
+              <p>No base products on this page</p>
+              <p className="text-sm text-muted-foreground/90">Try another page or row size</p>
+            </>
+          )}
+        </div>
+      ) : (
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {baseProducts.map((baseProduct) => (
+        {rows.map((baseProduct) => (
           <Card key={baseProduct.id} className="relative">
             <CardContent className="p-4">
               <div className="flex items-start justify-between">
@@ -101,34 +122,43 @@ export const BaseProductsList: React.FC = () => {
                   )}
 
                   <div className="space-y-2 text-sm text-muted-foreground">
-                    {baseProduct.category && (
+                    {(baseProduct as BaseProduct).category && (
                       <div>
-                        <span className="font-medium">Category:</span> {baseProduct.category.name}
+                        <span className="font-medium">Category:</span>{' '}
+                        {(baseProduct as BaseProduct).category!.name}
                       </div>
                     )}
-                    {baseProduct.fabric && (
+                    {(baseProduct as BaseProduct).fabric && (
                       <div>
-                        <span className="font-medium">Fabric:</span> {baseProduct.fabric.name} ({baseProduct.fabric.fabric_type})
+                        <span className="font-medium">Fabric:</span>{' '}
+                        {(baseProduct as BaseProduct).fabric!.name} (
+                        {(baseProduct as BaseProduct).fabric!.fabric_type})
                       </div>
                     )}
-                    {baseProduct.size_groups && baseProduct.size_groups.length > 0 && (
+                    {(baseProduct as BaseProduct).size_groups &&
+                      (baseProduct as BaseProduct).size_groups!.length > 0 && (
+                        <div>
+                          <span className="font-medium">Size Groups:</span>{' '}
+                          {(baseProduct as BaseProduct).size_groups!.map((sg: { name: string }) => sg.name).join(', ')}
+                        </div>
+                      )}
+                    {baseProduct.calculator ? (
                       <div>
-                        <span className="font-medium">Size Groups:</span> {baseProduct.size_groups.map((sg: any) => sg.name).join(', ')}
+                        <span className="font-medium">Calculator:</span>{' '}
+                        {baseProduct.calculator.toFixed(2)}
                       </div>
-                    )}
-                    {baseProduct.calculator && (
-                      <div>
-                        <span className="font-medium">Calculator:</span> {baseProduct.calculator.toFixed(2)}
-                      </div>
-                    )}
+                    ) : null}
                     <div>
-                      <span className="font-medium">Base OF:</span> ₹{baseProduct.base_price.toFixed(2)}
+                      <span className="font-medium">Base OF:</span>{' '}
+                      ₹{getBaseProductUnitPriceForDisplay(baseProduct).toFixed(2)}
                     </div>
-                    {baseProduct.parts && baseProduct.parts.length > 0 && (
-                      <div>
-                        <span className="font-medium">Parts:</span> {baseProduct.parts.length} selected
-                      </div>
-                    )}
+                    {(baseProduct as BaseProduct).parts &&
+                      (baseProduct as BaseProduct).parts!.length > 0 && (
+                        <div>
+                          <span className="font-medium">Parts:</span>{' '}
+                          {(baseProduct as BaseProduct).parts!.length} selected
+                        </div>
+                      )}
                   </div>
                 </div>
 
@@ -143,7 +173,7 @@ export const BaseProductsList: React.FC = () => {
                       <Edit className="mr-2 h-4 w-4" />
                       Edit
                     </DropdownMenuItem>
-                    <DropdownMenuItem 
+                    <DropdownMenuItem
                       onClick={() => handleDelete(baseProduct)}
                       className="text-destructive"
                     >
@@ -157,6 +187,19 @@ export const BaseProductsList: React.FC = () => {
           </Card>
         ))}
       </div>
+      )}
+
+      <div className="mt-4">
+        <MasterServerPagination
+          result={pageResult ?? null}
+          onPageChange={setPage}
+          onPageSizeChange={(size) => {
+            setPageSize(size);
+            setPage(1);
+          }}
+          disabled={isFetching}
+        />
+      </div>
 
       <BaseProductDialog
         open={isDialogOpen}
@@ -169,12 +212,13 @@ export const BaseProductsList: React.FC = () => {
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Base Product</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete "{deletingBaseProduct?.name}"? This action cannot be undone.
+              Are you sure you want to delete "{deletingBaseProduct?.name}"? This action cannot be
+              undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction 
+            <AlertDialogAction
               onClick={confirmDelete}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >

@@ -19,6 +19,8 @@ import {
 import { Search } from 'lucide-react';
 import { useStylesByCategory } from '@/hooks/masters/useStyles';
 import type { Category, Style } from '@/services/mastersService';
+import { Skeleton } from '@/components/ui/skeleton';
+import { MasterTableSkeleton } from '@/components/masters/shared/MasterListPageSkeleton';
 
 interface CategoryStylesModalProps {
   open: boolean;
@@ -88,7 +90,7 @@ export const CategoryStylesModal: React.FC<CategoryStylesModalProps> = ({
           {/* Results Count */}
           <div className="text-sm text-muted-foreground">
             {isLoading ? (
-              'Loading styles...'
+              <Skeleton className="h-4 w-52" />
             ) : (
               <>
                 Showing {filteredStyles.length} of {styles.length} style{styles.length !== 1 ? 's' : ''}
@@ -98,11 +100,15 @@ export const CategoryStylesModal: React.FC<CategoryStylesModalProps> = ({
           </div>
 
           {/* Styles Table */}
-          <div className="flex-1 overflow-auto border rounded-md">
+          <div
+            className={
+              isLoading
+                ? 'flex-1 overflow-auto p-2'
+                : 'flex-1 overflow-auto border rounded-md'
+            }
+          >
             {isLoading ? (
-              <div className="text-center py-8 text-muted-foreground">
-                Loading styles...
-              </div>
+              <MasterTableSkeleton showToolbar={false} columnCount={5} />
             ) : sortedStyles.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
                 <p>No styles found</p>

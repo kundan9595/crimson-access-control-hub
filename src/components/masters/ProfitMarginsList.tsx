@@ -8,6 +8,7 @@ import { Pencil, Trash2 } from 'lucide-react';
 import { useProfitMargins, useDeleteProfitMargin } from '@/hooks/masters/useProfitMargins';
 import { ProfitMarginDialog } from './ProfitMarginDialog';
 import type { ProfitMargin } from '@/services/masters/profitMarginsService';
+import { MasterTableSkeleton } from '@/components/masters/shared/MasterListPageSkeleton';
 
 interface ProfitMarginsListProps {
   searchTerm: string;
@@ -52,7 +53,7 @@ export const ProfitMarginsList: React.FC<ProfitMarginsListProps> = ({ searchTerm
     return (
       <Card>
         <CardContent className="p-6">
-          <div className="text-center">Loading profit margins...</div>
+          <MasterTableSkeleton showToolbar={false} columnCount={5} />
         </CardContent>
       </Card>
     );

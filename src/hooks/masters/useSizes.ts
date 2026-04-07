@@ -1,48 +1,32 @@
 
 import { useQuery } from '@tanstack/react-query';
-import { fetchSizeGroups, createSizeGroup, updateSizeGroup, deleteSizeGroup, fetchSizes, createSize, updateSize, deleteSize, SizeGroup, Size } from '@/services/mastersService';
+import {
+  fetchSizes,
+  fetchSizesPaginated,
+  createSize,
+  updateSize,
+  deleteSize,
+} from '@/services/masters/sizesServiceScott';
+import { Size } from '@/services/masters/types';
 import { useCreateMutation, useUpdateMutation, useDeleteMutation } from './shared/utils';
+import { config } from '@/config/environment';
 
-// Size Group hooks
-export const useSizeGroups = () => {
+export const useSizes = (
+  page: number = 1,
+  pageSize: number = config.pagination.defaultPageSize,
+) => {
   return useQuery({
-    queryKey: ['sizeGroups'],
-    queryFn: fetchSizeGroups,
+    queryKey: ['sizes', 'list', page, pageSize],
+    queryFn: () => fetchSizesPaginated({ page, items: pageSize }),
+    placeholderData: (prev) => prev,
   });
 };
 
-export const useCreateSizeGroup = () => {
-  return useCreateMutation({
-    queryKey: ['sizeGroups'],
-    successMessage: "Size group created successfully",
-    errorMessage: "Failed to create size group",
-    mutationFn: createSizeGroup,
-  });
-};
-
-export const useUpdateSizeGroup = () => {
-  return useUpdateMutation<SizeGroup>({
-    queryKey: ['sizeGroups'],
-    successMessage: "Size group updated successfully",
-    errorMessage: "Failed to update size group",
-    mutationFn: ({ id, updates }) => updateSizeGroup(id, updates),
-  });
-};
-
-export const useDeleteSizeGroup = () => {
-  return useDeleteMutation({
-    queryKey: ['sizeGroups'],
-    successMessage: "Size group deleted successfully",
-    errorMessage: "Failed to delete size group",
-    mutationFn: deleteSizeGroup,
-  });
-};
-
-// Size hooks
-export const useSizes = () => {
+export const useAllSizes = () => {
   return useQuery({
-    queryKey: ['sizes'],
+    queryKey: ['sizes', 'all'],
     queryFn: fetchSizes,
+    staleTime: config.cache.staleTime,
   });
 };
 

@@ -2,9 +2,17 @@ import type { PromotionalBanner } from './types';
 import {
   callScottDashboard,
   extractRecords,
+  extractScottEntity,
   normalizeId,
   urlToScottFile,
 } from '@/services/scott/callScottDashboard';
+import {
+  buildScottPaginatedMeta,
+  fetchAllScottPages,
+  normalizeScottPageParams,
+  type ScottPageParams,
+  type ScottPaginatedResult,
+} from '@/services/scott/scottPagination';
 
 export type { PromotionalBanner };
 
@@ -65,14 +73,27 @@ async function toPromotionForm(data: {
   return body;
 }
 
+async function fetchPromotionsPaginated(
+  params?: Partial<ScottPageParams>,
+): Promise<ScottPaginatedResult<PromotionalBanner>> {
+  const p = normalizeScottPageParams(params);
+  const { body } = await callScottDashboard<Record<string, unknown>>({
+    resource: 'promotions',
+    method: 'GET',
+    query: { items: p.items, page: p.page, is_deleted: false },
+  });
+  const data = extractRecords(body).map((r) => normalizePromotion(r));
+  return {
+    data,
+    ...buildScottPaginatedMeta(body, p, data.length),
+  };
+}
+
 export const promotionalBannersService = {
+  getPage: fetchPromotionsPaginated,
+
   async getAll(): Promise<PromotionalBanner[]> {
-    const { body } = await callScottDashboard<Record<string, unknown>>({
-      resource: 'promotions',
-      method: 'GET',
-      query: { items: 500, page: 1, is_deleted: false },
-    });
-    return extractRecords(body).map((r) => normalizePromotion(r));
+    return fetchAllScottPages((pp) => fetchPromotionsPaginated(pp));
   },
 
   async getById(id: string): Promise<PromotionalBanner | null> {
@@ -107,10 +128,9 @@ export const promotionalBannersService = {
       method: 'POST',
       body: form,
     });
-    const list = extractRecords(body);
-    const row = list[0] ?? ((body as { data?: Record<string, unknown> }).data as Record<string, unknown>);
-    if (row && typeof row === 'object' && 'id' in row) {
-      return normalizePromotion(row as Record<string, unknown>);
+    const row = extractScottEntity(body);
+    if (row) {
+      return normalizePromotion(row);
     }
     throw new Error('Unexpected create promotion response');
   },
@@ -135,10 +155,9 @@ export const promotionalBannersService = {
       pathSuffix: id,
       body: form,
     });
-    const list = extractRecords(body);
-    const row = list[0] ?? ((body as { data?: Record<string, unknown> }).data as Record<string, unknown>);
-    if (row && typeof row === 'object' && 'id' in row) {
-      return normalizePromotion(row as Record<string, unknown>);
+    const row = extractScottEntity(body);
+    if (row) {
+      return normalizePromotion(row);
     }
     const again = await this.getById(id);
     if (again) return again;

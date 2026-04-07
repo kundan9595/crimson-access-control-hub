@@ -9,7 +9,14 @@ export type ScottResource =
   | 'size_types'
   | 'base_product_types'
   | 'promotions'
-  | 'settings';
+  | 'settings'
+  | 'sc_sizes'
+  | 'parts'
+  | 'add_ons'
+  | 'fabrics'
+  | 'base_products'
+  | 'promotional_banners'
+  | 'base_product_asset_infos';
 
 export interface ScottFilePayload {
   __base64File: true;
@@ -87,10 +94,50 @@ export async function callScottDashboard<T = unknown>(
     throw new Error(msg);
   }
 
+  // Upstream may return HTTP 2xx with { success: false, message, ... } (validation errors).
+  throwIfScottApplicationErrorBody(data.body);
+
   return {
     upstreamStatus: data.upstreamStatus ?? 200,
     body: data.body as T,
   };
+}
+
+function applicationFailureFromBody(o: Record<string, unknown>): string | null {
+  const success = o.success;
+  if (success !== false && success !== 'false') {
+    return null;
+  }
+  if (typeof o.message === 'string' && o.message.trim() !== '') {
+    return o.message;
+  }
+  if (typeof o.error === 'string' && o.error.trim() !== '') {
+    return o.error;
+  }
+  const status = o.status_code;
+  return typeof status === 'number' ? `Scott API error (${status})` : 'Request failed';
+}
+
+/**
+ * Scott sometimes returns HTTP 200 with JSON where `success` is false (validation / business rules).
+ * The edge proxy sets `ok: true` when the upstream status is 2xx, so we must inspect the body.
+ */
+function throwIfScottApplicationErrorBody(body: unknown): void {
+  if (body === null || typeof body !== 'object' || Array.isArray(body)) {
+    return;
+  }
+  const o = body as Record<string, unknown>;
+  const nested = o.data;
+  const msgTop = applicationFailureFromBody(o);
+  if (msgTop) {
+    throw new Error(msgTop);
+  }
+  if (nested && typeof nested === 'object' && !Array.isArray(nested)) {
+    const msgNested = applicationFailureFromBody(nested as Record<string, unknown>);
+    if (msgNested) {
+      throw new Error(msgNested);
+    }
+  }
 }
 
 /** Extract list records from common Scott / Rails response shapes */
@@ -142,6 +189,148 @@ export function extractRecords(raw: unknown): Record<string, unknown>[] {
   }
 
   return [];
+}
+
+/**
+ * Alternate primary-key field names returned by some Scott dashboard endpoints
+ * (e.g. authorized_brand_id instead of id on create).
+ */
+const SCOTT_ALT_ID_KEYS = [
+  'authorized_brand_id',
+  'profit_margin_id',
+  'color_id',
+  'fabric_id',
+  'part_id',
+  'add_on_id',
+  'base_product_id',
+  'asset_info_id',
+  'promotion_id',
+  'size_type_id',
+  'sc_size_id',
+  'base_product_type_id',
+  'base_product_asset_info_id',
+  'promotional_banner_id',
+] as const;
+
+function firstAltId(r: Record<string, unknown>): unknown {
+  for (const k of SCOTT_ALT_ID_KEYS) {
+    const v = r[k as string];
+    if (v !== undefined && v !== null && String(v).trim() !== '') {
+      return v;
+    }
+  }
+  return undefined;
+}
+
+function hasUsableIdValue(v: unknown): boolean {
+  return v !== undefined && v !== null && String(v).trim() !== '';
+}
+
+/** True if JSON looks like a Scott record (id or resource-specific *_id). */
+function isScottRecordShape(v: unknown): v is Record<string, unknown> {
+  if (v === null || typeof v !== 'object' || Array.isArray(v)) return false;
+  const r = v as Record<string, unknown>;
+  if (hasUsableIdValue(r.id)) return true;
+  return firstAltId(r) !== undefined;
+}
+
+/** Normalize entity payloads so normalizers can keep using `id`. */
+function withCanonicalPrimaryKey(row: Record<string, unknown>): Record<string, unknown> {
+  if (hasUsableIdValue(row.id)) {
+    return row;
+  }
+  const alt = firstAltId(row);
+  if (alt !== undefined) {
+    return { ...row, id: alt };
+  }
+  return row;
+}
+
+function deepExtractScottEntity(body: unknown, depth = 0): Record<string, unknown> | null {
+  if (depth > 14 || body === null || typeof body !== 'object') {
+    return null;
+  }
+  if (Array.isArray(body)) {
+    for (const item of body) {
+      const found = deepExtractScottEntity(item, depth + 1);
+      if (found) {
+        return found;
+      }
+    }
+    return null;
+  }
+  const o = body as Record<string, unknown>;
+  if (isScottRecordShape(o)) {
+    return withCanonicalPrimaryKey(o);
+  }
+  for (const v of Object.values(o)) {
+    if (v === null || typeof v !== 'object') {
+      continue;
+    }
+    const found = deepExtractScottEntity(v, depth + 1);
+    if (found) {
+      return found;
+    }
+  }
+  return null;
+}
+
+/**
+ * Extract one entity from Scott dashboard / v1 create, update, or show responses.
+ * Handles list wrappers ({ data: { brands: { data: [...] } } }), flat { data: { id } },
+ * nested resource keys ({ data: { authorized_brand: { … } } }), alternate PK fields,
+ * and deeply nested success payloads.
+ */
+export function extractScottEntity(body: unknown): Record<string, unknown> | null {
+  if (body === null || body === undefined) {
+    return null;
+  }
+
+  const fromList = extractRecords(body);
+  if (fromList.length > 0 && isScottRecordShape(fromList[0])) {
+    return withCanonicalPrimaryKey(fromList[0]!);
+  }
+
+  if (typeof body !== 'object' || Array.isArray(body)) {
+    return isScottRecordShape(body)
+      ? withCanonicalPrimaryKey(body as Record<string, unknown>)
+      : null;
+  }
+
+  const o = body as Record<string, unknown>;
+
+  if (isScottRecordShape(o)) {
+    return withCanonicalPrimaryKey(o);
+  }
+
+  const data = o.data;
+  if (data && typeof data === 'object' && !Array.isArray(data)) {
+    const d = data as Record<string, unknown>;
+    if (isScottRecordShape(d)) {
+      return withCanonicalPrimaryKey(d);
+    }
+    for (const v of Object.values(d)) {
+      if (isScottRecordShape(v)) {
+        return withCanonicalPrimaryKey(v as Record<string, unknown>);
+      }
+      if (v && typeof v === 'object' && !Array.isArray(v)) {
+        const nested = v as Record<string, unknown>;
+        if (
+          Array.isArray(nested.data) &&
+          nested.data[0] &&
+          isScottRecordShape(nested.data[0])
+        ) {
+          return withCanonicalPrimaryKey(nested.data[0] as Record<string, unknown>);
+        }
+        const fromNested = deepExtractScottEntity(v, 0);
+        if (fromNested) {
+          return fromNested;
+        }
+      }
+    }
+  }
+
+  return deepExtractScottEntity(body, 0);
 }
 
 export function normalizeId(id: unknown): string {

@@ -1,13 +1,34 @@
 
 import { useQuery } from '@tanstack/react-query';
-import { fetchParts, createPart, updatePart, deletePart } from '@/services/masters/partsService';
+import {
+  fetchParts,
+  fetchPartsPaginated,
+  createPart,
+  updatePart,
+  deletePart,
+} from '@/services/masters/partsServiceScott';
+import type { Part } from '@/services/masters/partsServiceScott';
 import { useCreateMutation, useUpdateMutation, useDeleteMutation } from './shared/utils';
-import { Part } from '@/services/masters/partsService';
+import { config } from '@/config/environment';
 
-export const useParts = () => {
+export type { Part };
+
+export const useParts = (
+  page: number = 1,
+  pageSize: number = config.pagination.defaultPageSize,
+) => {
   return useQuery({
-    queryKey: ['parts'],
+    queryKey: ['parts', 'list', page, pageSize],
+    queryFn: () => fetchPartsPaginated({ page, items: pageSize }),
+    placeholderData: (prev) => prev,
+  });
+};
+
+export const useAllParts = () => {
+  return useQuery({
+    queryKey: ['parts', 'all'],
     queryFn: fetchParts,
+    staleTime: config.cache.staleTime,
   });
 };
 

@@ -428,3 +428,8 @@ export type {
   AddOn,
   AddOnOption,
 } from './addOnsService';
+
+// Re-export Scott API specific interfaces for central access
+export type { ScottBaseProduct } from './baseProductsServiceScott';
+export type { ScottPromotionalBanner } from './scottPromotionalBannersService';
+export type { BaseProductAssetInfo } from './baseProductAssetInfosService';

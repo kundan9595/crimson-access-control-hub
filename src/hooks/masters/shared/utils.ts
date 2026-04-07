@@ -2,6 +2,29 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
 
+/** One-line dev log so expected API validation does not spam console.error + stack traces. */
+function logMutationFailure(context: string, error: unknown, fallback: string): void {
+  if (!import.meta.env.DEV) return;
+  const msg = errorDescription(error, fallback);
+  console.info(`[masters mutation] ${context}:`, msg);
+}
+
+function errorDescription(error: unknown, fallback: string): string {
+  if (error instanceof Error && error.message.trim() !== '') {
+    return error.message;
+  }
+  if (
+    error &&
+    typeof error === 'object' &&
+    'message' in error &&
+    typeof (error as { message: unknown }).message === 'string' &&
+    String((error as { message: string }).message).trim() !== ''
+  ) {
+    return String((error as { message: string }).message);
+  }
+  return fallback;
+}
+
 export interface CreateMutationConfig<T = any> {
   queryKey: string[];
   successMessage: string;
@@ -48,12 +71,12 @@ export const useCreateMutation = <T = any>({
         description: successMessage,
       });
     },
-    onError: (error: any) => {
-      console.error('Create mutation error:', error);
+    onError: (error: unknown) => {
+      logMutationFailure('create failed', error, errorMessage);
       toast({
-        title: "Error",
-        description: errorMessage,
-        variant: "destructive",
+        title: 'Error',
+        description: errorDescription(error, errorMessage),
+        variant: 'destructive',
       });
     },
   });
@@ -84,12 +107,12 @@ export const useUpdateMutation = <T = any>({
         description: successMessage,
       });
     },
-    onError: (error: any) => {
-      console.error('Update mutation error:', error);
+    onError: (error: unknown) => {
+      logMutationFailure('update failed', error, errorMessage);
       toast({
-        title: "Error",
-        description: errorMessage,
-        variant: "destructive",
+        title: 'Error',
+        description: errorDescription(error, errorMessage),
+        variant: 'destructive',
       });
     },
   });
@@ -120,16 +143,12 @@ export const useDeleteMutation = ({
         description: successMessage,
       });
     },
-    onError: (error: any) => {
-      console.error('Delete mutation error:', error);
-      // Use the error message if it's a custom message, otherwise use the default errorMessage
-      const displayMessage = error?.message && error.message !== errorMessage 
-        ? error.message 
-        : errorMessage;
+    onError: (error: unknown) => {
+      logMutationFailure('delete failed', error, errorMessage);
       toast({
-        title: "Error",
-        description: displayMessage,
-        variant: "destructive",
+        title: 'Error',
+        description: errorDescription(error, errorMessage),
+        variant: 'destructive',
       });
     },
   });

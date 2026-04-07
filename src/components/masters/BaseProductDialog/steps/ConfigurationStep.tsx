@@ -6,11 +6,12 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { X, Settings, Tag } from 'lucide-react';
 import { BaseProductFormData } from '@/lib/validation/schemas';
-import { SizeGroup, Part } from '@/services/masters/types';
+import type { SizeType } from '@/services/masters/sizeTypesService';
+import type { Part } from '@/hooks/masters/useParts';
 
 interface ConfigurationStepProps {
   form: UseFormReturn<BaseProductFormData>;
-  sizeGroups: SizeGroup[];
+  sizeTypes: SizeType[];
   parts: Part[];
 }
 
@@ -24,7 +25,7 @@ const BRANDING_SIDE_OPTIONS = [
 
 export const ConfigurationStep: React.FC<ConfigurationStepProps> = ({
   form,
-  sizeGroups,
+  sizeTypes,
   parts,
 }) => {
   const selectedSizeGroups = form.watch('size_group_ids') || [];
@@ -69,30 +70,30 @@ export const ConfigurationStep: React.FC<ConfigurationStepProps> = ({
 
   return (
     <div className="space-y-6">
-      {/* Size Groups Configuration */}
+      {/* Size types (Scott API); values stored in size_group_ids */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Settings className="h-5 w-5" />
-            Size Groups
+            Size types
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {sizeGroups.map((sizeGroup) => (
-              <div key={sizeGroup.id} className="flex items-center space-x-2">
+            {sizeTypes.map((sizeType) => (
+              <div key={sizeType.id} className="flex items-center space-x-2">
                 <Checkbox
-                  id={`size-group-${sizeGroup.id}`}
-                  checked={selectedSizeGroups.includes(sizeGroup.id)}
-                  onCheckedChange={(checked) => 
-                    handleSizeGroupToggle(sizeGroup.id, checked as boolean)
+                  id={`size-type-${sizeType.id}`}
+                  checked={selectedSizeGroups.includes(sizeType.id)}
+                  onCheckedChange={(checked) =>
+                    handleSizeGroupToggle(sizeType.id, checked as boolean)
                   }
                 />
                 <label
-                  htmlFor={`size-group-${sizeGroup.id}`}
+                  htmlFor={`size-type-${sizeType.id}`}
                   className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
                 >
-                  {sizeGroup.name}
+                  {sizeType.name}
                 </label>
               </div>
             ))}
@@ -100,10 +101,10 @@ export const ConfigurationStep: React.FC<ConfigurationStepProps> = ({
 
           {selectedSizeGroups.length > 0 && (
             <div className="space-y-2">
-              <label className="text-sm font-medium">Selected Size Groups:</label>
+              <label className="text-sm font-medium">Selected size types:</label>
               <div className="flex flex-wrap gap-2">
                 {selectedSizeGroups.map((groupId) => {
-                  const sizeGroup = sizeGroups.find(sg => sg.id === groupId);
+                  const sizeType = sizeTypes.find((st) => st.id === groupId);
                   return (
                     <Badge
                       key={groupId}
@@ -111,7 +112,7 @@ export const ConfigurationStep: React.FC<ConfigurationStepProps> = ({
                       className="cursor-pointer"
                       onClick={() => removeSizeGroup(groupId)}
                     >
-                      {sizeGroup?.name || groupId}
+                      {sizeType?.name || groupId}
                       <X className="ml-1 h-3 w-3" />
                     </Badge>
                   );

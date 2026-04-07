@@ -32,7 +32,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Separator } from '@/components/ui/separator';
 import { useCreateSku, useUpdateSku } from '@/hooks/masters/useSkus';
 import { useClasses } from '@/hooks/masters/useClasses';
-import { useSizes } from '@/hooks/masters/useSizes';
+import { useAllSizes } from '@/hooks/masters/useSizes';
 import { usePriceTypes } from '@/hooks/masters/usePriceTypes';
 import { Sku } from '@/services/masters/types';
 
@@ -66,7 +66,7 @@ export const SkuDialog = ({ open, onOpenChange, sku }: SkuDialogProps) => {
   const createMutation = useCreateSku();
   const updateMutation = useUpdateSku();
   const { data: classes = [] } = useClasses();
-  const { data: allSizes = [] } = useSizes();
+  const { data: allSizes = [] } = useAllSizes();
   const { data: priceTypes = [] } = usePriceTypes();
 
   const [selectedPriceTypes, setSelectedPriceTypes] = useState<string[]>([]);

@@ -12,7 +12,7 @@ import { useCreateCustomer, useUpdateCustomer, useCustomers } from '@/hooks/mast
 import { useStates } from '@/hooks/masters/useStates';
 import { useCities } from '@/hooks/masters/useCities';
 import { useZones } from '@/hooks/masters/useZones';
-import { useBrands } from '@/hooks/masters/useBrands';
+import { useAllBrands } from '@/hooks/masters/useBrands';
 import { BaseFormDialog } from './shared/BaseFormDialog';
 import ImageUpload from '@/components/ui/ImageUpload';
 import type { Customer, CustomerAddress } from '@/services/masters/types';
@@ -31,7 +31,7 @@ const CustomerDialog: React.FC<CustomerDialogProps> = ({ open, onOpenChange, cus
   const updateCustomerMutation = useUpdateCustomer();
   const { data: states = [] } = useStates();
   const { data: zones = [] } = useZones();
-  const { data: brands = [] } = useBrands();
+  const { data: brands = [] } = useAllBrands();
   const { data: allCustomers = [] } = useCustomers();
   const isEditing = !!customer;
 

@@ -13,6 +13,7 @@ import PriceTypeDialog from '@/components/masters/PriceTypeDialog';
 import BulkImportDialog from '@/components/masters/BulkImportDialog';
 import { MasterPageHeader } from '@/components/masters/shared/MasterPageHeader';
 import { SearchFilter } from '@/components/masters/shared/SearchFilter';
+import { MasterListPageSkeleton } from '@/components/masters/shared/MasterListPageSkeleton';
 
 const PriceTypesPage = () => {
   const { data: priceTypes, isLoading } = usePriceTypes();
@@ -76,7 +77,22 @@ const PriceTypesPage = () => {
   ) || [];
 
   if (isLoading) {
-    return <div className="text-center">Loading price types...</div>;
+    return (
+      <MasterListPageSkeleton
+        columnCount={5}
+        header={
+          <MasterPageHeader
+            title="Price Types"
+            description="Configure pricing structures"
+            icon={<DollarSign className="h-6 w-6 text-blue-600" />}
+            onAdd={() => setIsDialogOpen(true)}
+            onExport={handleExport}
+            onImport={() => setIsBulkImportOpen(true)}
+            canExport={false}
+          />
+        }
+      />
+    );
   }
 
   return (

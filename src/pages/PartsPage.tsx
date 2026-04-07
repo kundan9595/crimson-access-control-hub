@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -11,28 +10,34 @@ import { SearchFilter } from '@/components/masters/shared/SearchFilter';
 import { PartDialog } from '@/components/masters/PartDialog';
 import BulkImportDialog from '@/components/masters/BulkImportDialog';
 import { useParts, useCreatePart, useUpdatePart, useDeletePart } from '@/hooks/masters/useParts';
-import { useAddOns, useColors } from '@/hooks/masters';
+import type { Part } from '@/hooks/masters/useParts';
 import { exportToCSV, generateExportFilename } from '@/utils/exportUtils';
-import { Part } from '@/services/masters/partsService';
+import { MasterListPageSkeleton } from '@/components/masters/shared/MasterListPageSkeleton';
+import { MasterServerPagination } from '@/components/masters/shared/MasterServerPagination';
+import { fetchParts } from '@/services/masters/partsServiceScott';
+import { config } from '@/config/environment';
 
 const PartsPage = () => {
-  // Component rendering
-  
   const [searchTerm, setSearchTerm] = useState('');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingPart, setEditingPart] = useState<Part | undefined>();
   const [importDialogOpen, setImportDialogOpen] = useState(false);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(config.pagination.defaultPageSize);
 
-  const { data: parts = [], isLoading } = useParts();
-  const { data: addOns = [] } = useAddOns();
-  const { data: colors = [] } = useColors();
+  const { data: partsPage, isLoading } = useParts(page, pageSize);
+  const parts = partsPage?.data ?? [];
   const createPartMutation = useCreatePart();
   const updatePartMutation = useUpdatePart();
   const deletePartMutation = useDeletePart();
 
-  const filteredParts = parts.filter(part =>
-    part.name.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredParts = parts.filter((part) =>
+    part.name.toLowerCase().includes(searchTerm.toLowerCase()),
   );
+
+  useEffect(() => {
+    setPage(1);
+  }, [searchTerm]);
 
   // Sort parts by sort_position, then by name
   const sortedParts = [...filteredParts].sort((a, b) => {
@@ -42,45 +47,27 @@ const PartsPage = () => {
     return a.name.localeCompare(b.name);
   });
 
-  const getAddOnNames = (addOnIds: string[]) => {
-    return addOnIds
-      .map(id => addOns.find(addOn => addOn.id === id)?.name)
-      .filter(Boolean)
-      .join(', ');
-  };
-
-  const getColorNames = (colorIds: string[]) => {
-    return colorIds
-      .map(id => colors.find(color => color.id === id)?.name)
-      .filter(Boolean)
-      .join(', ');
-  };
-
   const handleAdd = () => {
-    // Adding new part
     setEditingPart(undefined);
     setDialogOpen(true);
   };
 
   const handleEdit = (part: Part) => {
-    // Editing part
     setEditingPart(part);
     setDialogOpen(true);
   };
 
   const handleDelete = async (part: Part) => {
-    // Deleting part
     if (window.confirm(`Are you sure you want to delete "${part.name}"?`)) {
       try {
         await deletePartMutation.mutateAsync(part.id);
       } catch (error) {
-        console.error('❌ Error deleting part:', error);
+        console.error('Error deleting part:', error);
       }
     }
   };
 
   const handleSubmit = async (data: any) => {
-    // Submitting part data
     try {
       if (editingPart) {
         await updatePartMutation.mutateAsync({
@@ -93,7 +80,7 @@ const PartsPage = () => {
       setDialogOpen(false);
       setEditingPart(undefined);
     } catch (error) {
-      console.error('❌ Error submitting part:', error);
+      console.error('Error submitting part:', error);
     }
   };
 
@@ -102,18 +89,16 @@ const PartsPage = () => {
     setEditingPart(undefined);
   };
 
-  const handleExport = () => {
-    // Export parts clicked
-    if (!parts || parts.length === 0) return;
+  const handleExport = async () => {
+    const all = await fetchParts();
+    if (!all.length) return;
 
     exportToCSV({
       filename: generateExportFilename('parts'),
-      headers: ['Name', 'Add-ons', 'Colors', 'Order Criteria', 'Sort Position', 'Status', 'Created At'],
-      data: parts,
+      headers: ['Name', 'Order Criteria', 'Sort Position', 'Status', 'Created At'],
+      data: all,
       fieldMap: {
         'Name': 'name',
-        'Add-ons': (item: Part) => getAddOnNames(item.selected_add_ons || []),
-        'Colors': (item: Part) => getColorNames(item.selected_colors || []),
         'Order Criteria': (item: Part) => item.order_criteria ? 'Yes' : 'No',
         'Sort Position': (item: Part) => (item.sort_position || 0).toString(),
         'Status': 'status',
@@ -123,7 +108,6 @@ const PartsPage = () => {
   };
 
   const handleImport = () => {
-    // Import parts clicked
     setImportDialogOpen(true);
   };
 
@@ -135,24 +119,21 @@ const PartsPage = () => {
 
   if (isLoading) {
     return (
-      <div className="space-y-6">
-        <MasterPageHeader
-          title="Parts"
-          description="Define and manage product parts and components"
-          icon={<Wrench className="h-6 w-6 text-slate-600" />}
-          onAdd={handleAdd}
-          onExport={handleExport}
-          onImport={handleImport}
-          canExport={false}
-        />
-        <Card>
-          <CardContent className="p-6">
-            <div className="text-center py-8 text-muted-foreground">
-              Loading parts...
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+      <MasterListPageSkeleton
+        columnCount={5}
+        header={
+          <MasterPageHeader
+            title="Parts"
+            description="Define and manage product parts and components"
+            icon={<Wrench className="h-6 w-6 text-slate-600" />}
+            onAdd={handleAdd}
+            onExport={handleExport}
+            onImport={handleImport}
+            canExport={!!partsPage?.data.length}
+            isScottApi={true}
+          />
+        }
+      />
     );
   }
 
@@ -166,16 +147,19 @@ const PartsPage = () => {
         onExport={handleExport}
         onImport={handleImport}
         canExport={parts.length > 0}
+        isScottApi={true}
       />
 
       <Card>
         <CardContent className="p-6">
           <SearchFilter
-            placeholder="Search parts..."
+            placeholder="Search parts (current page)..."
             value={searchTerm}
             onChange={setSearchTerm}
             resultCount={sortedParts.length}
-            totalCount={parts.length}
+            totalCount={
+              partsPage?.totalCountIsExact ? partsPage.totalCount : parts.length
+            }
           />
           
           <div className="mt-6">
@@ -184,8 +168,6 @@ const PartsPage = () => {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Name</TableHead>
-                    <TableHead>Add-ons</TableHead>
-                    <TableHead>Colors</TableHead>
                     <TableHead className="w-24">Order Criteria</TableHead>
                     <TableHead className="w-20">Sort Position</TableHead>
                     <TableHead className="w-24">Status</TableHead>
@@ -197,12 +179,6 @@ const PartsPage = () => {
                   {sortedParts.map((part) => (
                     <TableRow key={part.id}>
                       <TableCell className="font-medium">{part.name}</TableCell>
-                      <TableCell className="max-w-xs truncate">
-                        {part.selected_add_ons?.length > 0 ? getAddOnNames(part.selected_add_ons) : '-'}
-                      </TableCell>
-                      <TableCell className="max-w-xs truncate">
-                        {part.selected_colors?.length > 0 ? getColorNames(part.selected_colors) : '-'}
-                      </TableCell>
                       <TableCell className="text-center">
                         {part.order_criteria ? (
                           <Badge variant="default" className="text-xs">Yes</Badge>
@@ -256,6 +232,19 @@ const PartsPage = () => {
               </div>
             )}
           </div>
+
+          {partsPage && partsPage.data.length > 0 && (
+            <MasterServerPagination
+              className="mt-6"
+              result={partsPage}
+              disabled={isLoading}
+              onPageChange={setPage}
+              onPageSizeChange={(size) => {
+                setPageSize(size);
+                setPage(1);
+              }}
+            />
+          )}
         </CardContent>
       </Card>
 

@@ -1,29 +1,65 @@
 
 import { useQuery } from '@tanstack/react-query';
-import { fetchBaseProducts, createBaseProduct, updateBaseProduct, deleteBaseProduct } from '@/services/masters/baseProductsService';
+import {
+  fetchBaseProducts,
+  fetchBaseProductsPaginated,
+  createBaseProduct,
+  updateBaseProduct,
+  deleteBaseProduct,
+  type ScottBaseProduct,
+} from '@/services/masters/baseProductsServiceScott';
 import { useCreateMutation, useUpdateMutation, useDeleteMutation } from './shared/utils';
-import { BaseProduct } from '@/services/masters/baseProductsService';
+import { config } from '@/config/environment';
 
-export const useBaseProducts = () => {
+export { type ScottBaseProduct } from '@/services/masters/baseProductsServiceScott';
+
+export const useBaseProducts = (
+  page: number = 1,
+  pageSize: number = config.pagination.defaultPageSize,
+) => {
   return useQuery({
-    queryKey: ['baseProducts'],
+    queryKey: ['baseProducts', 'list', page, pageSize],
+    queryFn: () => fetchBaseProductsPaginated({ page, items: pageSize }),
+    placeholderData: (prev) => prev,
+  });
+};
+
+export const useAllBaseProducts = () => {
+  return useQuery({
+    queryKey: ['baseProducts', 'all'],
     queryFn: fetchBaseProducts,
+    staleTime: config.cache.staleTime,
   });
 };
 
 export const useCreateBaseProduct = () => {
-  return useCreateMutation<Omit<BaseProduct, 'id' | 'created_at' | 'updated_at' | 'created_by' | 'updated_by' | 'category' | 'fabric' | 'size_group'>>({
+  return useCreateMutation<{
+    data: Omit<
+      ScottBaseProduct,
+      'id' | 'created_at' | 'updated_at' | 'created_by' | 'updated_by' | 'base_product_type' | 'asset_info'
+    >;
+    imageFile?: File;
+  }>({
     queryKey: ['baseProducts'],
-    mutationFn: createBaseProduct,
+    mutationFn: ({ data, imageFile }) => createBaseProduct(data, imageFile),
     successMessage: 'Base product created successfully',
     errorMessage: 'Failed to create base product',
   });
 };
 
 export const useUpdateBaseProduct = () => {
-  return useUpdateMutation<BaseProduct>({
+  return useUpdateMutation<{
+    id: string;
+    data: Partial<
+      Omit<
+        ScottBaseProduct,
+        'id' | 'created_at' | 'updated_at' | 'created_by' | 'updated_by' | 'base_product_type' | 'asset_info'
+      >
+    >;
+    imageFile?: File;
+  }>({
     queryKey: ['baseProducts'],
-    mutationFn: ({ id, updates }) => updateBaseProduct(id, updates),
+    mutationFn: ({ id, data, imageFile }) => updateBaseProduct(id, data, imageFile),
     successMessage: 'Base product updated successfully',
     errorMessage: 'Failed to update base product',
   });

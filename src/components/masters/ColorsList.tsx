@@ -8,6 +8,7 @@ import { Edit, Trash2, Search } from 'lucide-react';
 import { useColors, useDeleteColor } from '@/hooks/useMasters';
 import ColorDialog from './ColorDialog';
 import type { Color } from '@/services/mastersService';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const ColorsList = () => {
   const { data: colors, isLoading } = useColors();
@@ -38,7 +39,13 @@ const ColorsList = () => {
   ) || [];
 
   if (isLoading) {
-    return <div className="text-center">Loading colors...</div>;
+    return (
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        {Array.from({ length: 6 }).map((_, i) => (
+          <Skeleton key={i} className="h-32 rounded-lg" />
+        ))}
+      </div>
+    );
   }
 
   return (

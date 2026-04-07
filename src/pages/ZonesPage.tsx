@@ -13,6 +13,7 @@ import ZoneDialog from '@/components/masters/ZoneDialog';
 import BulkImportDialog from '@/components/masters/BulkImportDialog';
 import { MasterPageHeader } from '@/components/masters/shared/MasterPageHeader';
 import { SearchFilter } from '@/components/masters/shared/SearchFilter';
+import { MasterListPageSkeleton } from '@/components/masters/shared/MasterListPageSkeleton';
 
 const ZonesPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -90,7 +91,22 @@ const ZonesPage = () => {
   ];
 
   if (isLoading) {
-    return <div className="text-center">Loading zones...</div>;
+    return (
+      <MasterListPageSkeleton
+        columnCount={4}
+        header={
+          <MasterPageHeader
+            title="Zones"
+            description="Manage geographical zones and their locations"
+            icon={<MapPin className="h-6 w-6 text-red-600" />}
+            onAdd={() => setIsDialogOpen(true)}
+            onExport={handleExport}
+            onImport={() => setIsBulkImportOpen(true)}
+            canExport={false}
+          />
+        }
+      />
+    );
   }
 
   return (

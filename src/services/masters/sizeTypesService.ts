@@ -1,8 +1,16 @@
 import {
   callScottDashboard,
   extractRecords,
+  extractScottEntity,
   normalizeId,
 } from '@/services/scott/callScottDashboard';
+import {
+  buildScottPaginatedMeta,
+  fetchAllScottPages,
+  normalizeScottPageParams,
+  type ScottPageParams,
+  type ScottPaginatedResult,
+} from '@/services/scott/scottPagination';
 
 export interface SizeType {
   id: string;
@@ -28,13 +36,24 @@ function normalize(r: Record<string, unknown>): SizeType {
   };
 }
 
-export async function fetchSizeTypes(): Promise<SizeType[]> {
+export async function fetchSizeTypesPaginated(
+  params?: Partial<ScottPageParams>,
+): Promise<ScottPaginatedResult<SizeType>> {
+  const p = normalizeScottPageParams(params);
   const { body } = await callScottDashboard<Record<string, unknown>>({
     resource: 'size_types',
     method: 'GET',
-    query: { items: 500, page: 1, is_deleted: false },
+    query: { items: p.items, page: p.page, is_deleted: false },
   });
-  return extractRecords(body).map((r) => normalize(r));
+  const data = extractRecords(body).map((r) => normalize(r));
+  return {
+    data,
+    ...buildScottPaginatedMeta(body, p, data.length),
+  };
+}
+
+export async function fetchSizeTypes(): Promise<SizeType[]> {
+  return fetchAllScottPages((pp) => fetchSizeTypesPaginated(pp));
 }
 
 export async function createSizeType(data: {
@@ -51,10 +70,9 @@ export async function createSizeType(data: {
       is_deleted: isActive ? 'false' : 'true',
     },
   });
-  const list = extractRecords(body);
-  const row = list[0] ?? ((body as { data?: Record<string, unknown> }).data as Record<string, unknown>);
-  if (row && typeof row === 'object' && 'id' in row) {
-    return normalize(row as Record<string, unknown>);
+  const row = extractScottEntity(body);
+  if (row) {
+    return normalize(row);
   }
   throw new Error('Unexpected create size type response');
 }
@@ -78,10 +96,9 @@ export async function updateSizeType(
       is_deleted: isActive ? 'false' : 'true',
     },
   });
-  const list = extractRecords(body);
-  const row = list[0] ?? ((body as { data?: Record<string, unknown> }).data as Record<string, unknown>);
-  if (row && typeof row === 'object' && 'id' in row) {
-    return normalize(row as Record<string, unknown>);
+  const row = extractScottEntity(body);
+  if (row) {
+    return normalize(row);
   }
   const again = await fetchSizeTypes().then((rows) => rows.find((s) => s.id === id));
   if (again) return again;

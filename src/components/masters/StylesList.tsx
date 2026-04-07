@@ -33,6 +33,7 @@ import { useStyles, useDeleteStyle, useUpdateStyle } from '@/hooks/useMasters';
 import { Style } from '@/services/mastersService';
 import { StyleDialog } from './StyleDialog';
 import DraggableList from './shared/DraggableList';
+import { MasterTableSkeleton } from '@/components/masters/shared/MasterListPageSkeleton';
 
 interface StylesListProps {
   searchTerm?: string;
@@ -160,7 +161,7 @@ export const StylesList: React.FC<StylesListProps> = ({ searchTerm = '' }) => {
     </TableRow>
   );
 
-  if (isLoading) return <div>Loading styles...</div>;
+  if (isLoading) return <MasterTableSkeleton showToolbar={false} columnCount={6} />;
   if (error) return <div>Error loading styles: {error.message}</div>;
 
   const totalCount = styles?.length || 0;

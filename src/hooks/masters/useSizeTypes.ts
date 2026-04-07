@@ -1,17 +1,31 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   fetchSizeTypes,
+  fetchSizeTypesPaginated,
   createSizeType,
   updateSizeType,
   deleteSizeType,
   type SizeType,
 } from '@/services/masters/sizeTypesService';
 import { toast } from 'sonner';
+import { config } from '@/config/environment';
 
-export const useSizeTypes = () => {
+export const useSizeTypes = (
+  page: number = 1,
+  pageSize: number = config.pagination.defaultPageSize,
+) => {
   return useQuery({
-    queryKey: ['sizeTypes'],
+    queryKey: ['sizeTypes', 'list', page, pageSize],
+    queryFn: () => fetchSizeTypesPaginated({ page, items: pageSize }),
+    placeholderData: (prev) => prev,
+  });
+};
+
+export const useAllSizeTypes = () => {
+  return useQuery({
+    queryKey: ['sizeTypes', 'all'],
     queryFn: fetchSizeTypes,
+    staleTime: config.cache.staleTime,
   });
 };
 

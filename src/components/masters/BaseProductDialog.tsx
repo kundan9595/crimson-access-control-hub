@@ -14,7 +14,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useCategories } from '@/hooks/masters/useCategories';
 import { useFabrics } from '@/hooks/masters/useFabrics';
 import { useParts } from '@/hooks/masters/useParts';
-import { useSizeGroups } from '@/hooks/masters/useSizes';
+import { useAllSizeTypes } from '@/hooks/masters/useSizeTypes';
 import { useCreateBaseProduct, useUpdateBaseProduct } from '@/hooks/masters/useBaseProducts';
 import { BaseProduct } from '@/services/masters/baseProductsService';
 import { Badge } from '@/components/ui/badge';
@@ -66,7 +66,7 @@ export const BaseProductDialog: React.FC<BaseProductDialogProps> = ({
   const { data: categories = [] } = useCategories();
   const { data: fabrics = [] } = useFabrics();
   const { data: parts = [] } = useParts();
-  const { data: sizeGroups = [] } = useSizeGroups();
+  const { data: sizeTypes = [] } = useAllSizeTypes();
   const createMutation = useCreateBaseProduct();
   const updateMutation = useUpdateBaseProduct();
   
@@ -199,9 +199,8 @@ export const BaseProductDialog: React.FC<BaseProductDialogProps> = ({
   const [sizeGroupSearchTerm, setSizeGroupSearchTerm] = React.useState('');
   
   // Filter size groups based on search term
-  const filteredSizeGroups = sizeGroups.filter(sizeGroup =>
-    sizeGroup.name.toLowerCase().includes(sizeGroupSearchTerm.toLowerCase()) ||
-    (sizeGroup.description && sizeGroup.description.toLowerCase().includes(sizeGroupSearchTerm.toLowerCase()))
+  const filteredSizeTypes = sizeTypes.filter((sizeType) =>
+    sizeType.name.toLowerCase().includes(sizeGroupSearchTerm.toLowerCase()),
   );
 
   const handleSizeGroupToggle = (sizeGroupId: string, checked: boolean) => {
@@ -397,18 +396,18 @@ export const BaseProductDialog: React.FC<BaseProductDialogProps> = ({
               </div>
 
               <FormItem>
-                <FormLabel>Size Groups</FormLabel>
+                <FormLabel>Size types</FormLabel>
                 <div className="space-y-4">
-                  {/* Selected Size Groups */}
+                  {/* Selected size types (stored in size_group_ids for API compatibility) */}
                   {selectedSizeGroups.length > 0 && (
                     <div className="space-y-2">
-                      <FormLabel className="text-sm">Selected Size Groups</FormLabel>
+                      <FormLabel className="text-sm">Selected size types</FormLabel>
                       <div className="flex flex-wrap gap-2">
                         {selectedSizeGroups.map((sizeGroupId) => {
-                          const sizeGroup = sizeGroups.find(sg => sg.id === sizeGroupId);
-                          return sizeGroup ? (
+                          const sizeType = sizeTypes.find((st) => st.id === sizeGroupId);
+                          return sizeType ? (
                             <Badge key={sizeGroupId} variant="secondary" className="flex items-center gap-1">
-                              {sizeGroup.name}
+                              {sizeType.name}
                               <Button
                                 type="button"
                                 variant="ghost"
@@ -425,45 +424,45 @@ export const BaseProductDialog: React.FC<BaseProductDialogProps> = ({
                     </div>
                   )}
 
-                  {/* Available Size Groups */}
+                  {/* Available size types */}
                   <div className="space-y-2">
-                    <FormLabel className="text-sm">Available Size Groups</FormLabel>
+                    <FormLabel className="text-sm">Available size types</FormLabel>
                     <div className="relative">
                       <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                       <Input
-                        placeholder="Search size groups..."
+                        placeholder="Search size types..."
                         value={sizeGroupSearchTerm}
                         onChange={(e) => setSizeGroupSearchTerm(e.target.value)}
                         className="pl-8"
                       />
                     </div>
                     <div className="grid grid-cols-2 gap-2 max-h-40 overflow-y-auto border rounded-md p-4">
-                      {filteredSizeGroups.map((sizeGroup) => (
-                        <div key={sizeGroup.id} className="flex items-center space-x-2">
+                      {filteredSizeTypes.map((sizeType) => (
+                        <div key={sizeType.id} className="flex items-center space-x-2">
                           <Checkbox
-                            id={sizeGroup.id}
-                            checked={selectedSizeGroups.includes(sizeGroup.id)}
-                            onCheckedChange={(checked) => 
-                              handleSizeGroupToggle(sizeGroup.id, checked as boolean)
+                            id={sizeType.id}
+                            checked={selectedSizeGroups.includes(sizeType.id)}
+                            onCheckedChange={(checked) =>
+                              handleSizeGroupToggle(sizeType.id, checked as boolean)
                             }
                           />
                           <label
-                            htmlFor={sizeGroup.id}
+                            htmlFor={sizeType.id}
                             className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
                           >
-                            {sizeGroup.name}
+                            {sizeType.name}
                           </label>
                         </div>
                       ))}
-                      {filteredSizeGroups.length === 0 && (
+                      {filteredSizeTypes.length === 0 && (
                         <div className="col-span-2 text-center text-sm text-muted-foreground py-4">
-                          No size groups found
+                          No size types found
                         </div>
                       )}
                     </div>
-                    {filteredSizeGroups.length > 0 && (
+                    {filteredSizeTypes.length > 0 && (
                       <p className="text-xs text-muted-foreground">
-                        Showing {filteredSizeGroups.length} of {sizeGroups.length} size groups
+                        Showing {filteredSizeTypes.length} of {sizeTypes.length} size types
                       </p>
                     )}
                   </div>

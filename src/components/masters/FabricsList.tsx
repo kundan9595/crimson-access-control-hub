@@ -4,16 +4,18 @@ import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Edit, Trash2, Eye } from 'lucide-react';
-import { useFabrics, useDeleteFabric } from '@/hooks/masters/useFabrics';
+import { useDeleteFabric } from '@/hooks/masters/useFabrics';
 import { FabricDialog } from './FabricDialog';
 import { Fabric } from '@/services/masters/types';
+import { MasterTableSkeleton } from '@/components/masters/shared/MasterListPageSkeleton';
 
 interface FabricsListProps {
   searchTerm: string;
+  fabrics: Fabric[];
+  isLoading: boolean;
 }
 
-export const FabricsList: React.FC<FabricsListProps> = ({ searchTerm }) => {
-  const { data: fabrics = [], isLoading } = useFabrics();
+export const FabricsList: React.FC<FabricsListProps> = ({ searchTerm, fabrics, isLoading }) => {
   const deleteFabric = useDeleteFabric();
   const [editingFabric, setEditingFabric] = useState<Fabric | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -40,7 +42,7 @@ export const FabricsList: React.FC<FabricsListProps> = ({ searchTerm }) => {
   };
 
   if (isLoading) {
-    return <div className="text-center py-4">Loading fabrics...</div>;
+    return <MasterTableSkeleton showToolbar={false} columnCount={7} />;
   }
 
   if (filteredFabrics.length === 0) {

@@ -9,27 +9,27 @@ import { Button } from '@/components/ui/button';
 import { X, Search } from 'lucide-react';
 import { BaseProductStepProps } from '../types';
 
-export const CategoriesStep: React.FC<BaseProductStepProps> = ({ 
-  form, 
-  categories, 
-  fabrics, 
-  parts, 
-  sizeGroups 
+export const CategoriesStep: React.FC<BaseProductStepProps> = ({
+  form,
+  categories,
+  fabrics,
+  parts,
+  sizeTypes,
 }) => {
-  const [sizeGroupSearchTerm, setSizeGroupSearchTerm] = useState('');
+  const [sizeTypeSearchTerm, setSizeTypeSearchTerm] = useState('');
   const [partSearchTerm, setPartSearchTerm] = useState('');
 
-  const selectedSizeGroups = sizeGroups.filter(sizeGroup =>
-    form.getValues('size_group_ids')?.includes(sizeGroup.id)
+  const selectedSizeTypes = sizeTypes.filter((sizeType) =>
+    form.getValues('size_group_ids')?.includes(sizeType.id),
   );
 
   const selectedParts = parts.filter(part =>
     form.getValues('parts')?.includes(part.id)
   );
 
-  const filteredSizeGroups = sizeGroups.filter(sizeGroup =>
-    sizeGroup.name.toLowerCase().includes(sizeGroupSearchTerm.toLowerCase()) ||
-    (sizeGroup.description && sizeGroup.description.toLowerCase().includes(sizeGroupSearchTerm.toLowerCase()))
+  const filteredSizeTypes = sizeTypes.filter(
+    (sizeType) =>
+      sizeType.name.toLowerCase().includes(sizeTypeSearchTerm.toLowerCase()),
   );
 
   const filteredParts = parts.filter(part =>
@@ -120,22 +120,21 @@ export const CategoriesStep: React.FC<BaseProductStepProps> = ({
         </div>
 
         <FormItem>
-          <FormLabel>Size Groups</FormLabel>
+          <FormLabel>Size types</FormLabel>
           <div className="space-y-4">
-            {/* Selected Size Groups */}
-            {selectedSizeGroups.length > 0 && (
+            {selectedSizeTypes.length > 0 && (
               <div className="space-y-2">
-                <label className="text-sm font-medium">Selected Size Groups</label>
+                <label className="text-sm font-medium">Selected size types</label>
                 <div className="flex flex-wrap gap-2">
-                  {selectedSizeGroups.map((sizeGroup) => (
-                    <Badge key={sizeGroup.id} variant="secondary" className="gap-1">
-                      {sizeGroup.name}
+                  {selectedSizeTypes.map((sizeType) => (
+                    <Badge key={sizeType.id} variant="secondary" className="gap-1">
+                      {sizeType.name}
                       <Button
                         type="button"
                         variant="ghost"
                         size="sm"
                         className="h-auto p-0 ml-1"
-                        onClick={() => removeSizeGroup(sizeGroup.id)}
+                        onClick={() => removeSizeGroup(sizeType.id)}
                       >
                         <X className="h-3 w-3" />
                       </Button>
@@ -145,30 +144,29 @@ export const CategoriesStep: React.FC<BaseProductStepProps> = ({
               </div>
             )}
 
-            {/* Size Group Selection */}
             <div className="space-y-2">
               <div className="relative">
                 <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input
-                  placeholder="Search size groups..."
-                  value={sizeGroupSearchTerm}
-                  onChange={(e) => setSizeGroupSearchTerm(e.target.value)}
+                  placeholder="Search size types..."
+                  value={sizeTypeSearchTerm}
+                  onChange={(e) => setSizeTypeSearchTerm(e.target.value)}
                   className="pl-8"
                 />
               </div>
               <div className="max-h-40 overflow-y-auto space-y-2">
-                {filteredSizeGroups.map((sizeGroup) => (
-                  <div key={sizeGroup.id} className="flex items-center space-x-2">
+                {filteredSizeTypes.map((sizeType) => (
+                  <div key={sizeType.id} className="flex items-center space-x-2">
                     <Checkbox
-                      id={`size-group-${sizeGroup.id}`}
-                      checked={form.getValues('size_group_ids')?.includes(sizeGroup.id)}
-                      onCheckedChange={(checked) => handleSizeGroupToggle(sizeGroup.id, checked as boolean)}
+                      id={`size-type-${sizeType.id}`}
+                      checked={form.getValues('size_group_ids')?.includes(sizeType.id)}
+                      onCheckedChange={(checked) => handleSizeGroupToggle(sizeType.id, checked as boolean)}
                     />
                     <label
-                      htmlFor={`size-group-${sizeGroup.id}`}
+                      htmlFor={`size-type-${sizeType.id}`}
                       className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
                     >
-                      {sizeGroup.name}
+                      {sizeType.name}
                     </label>
                   </div>
                 ))}

@@ -1,12 +1,32 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getAppAssets, createAppAsset, updateAppAsset, deleteAppAsset, type AppAsset } from '@/services/masters/appAssetsService';
+import {
+  getAppAssets,
+  getAppAssetsPaginated,
+  createAppAsset,
+  updateAppAsset,
+  deleteAppAsset,
+  type AppAsset,
+} from '@/services/masters/appAssetsService';
 import { toast } from 'sonner';
+import { config } from '@/config/environment';
 
-export const useGetAppAssets = () => {
+export const useGetAppAssets = (
+  page: number = 1,
+  pageSize: number = config.pagination.defaultPageSize,
+) => {
   return useQuery({
-    queryKey: ['appAssets'],
+    queryKey: ['appAssets', 'list', page, pageSize],
+    queryFn: () => getAppAssetsPaginated({ page, items: pageSize }),
+    placeholderData: (prev) => prev,
+  });
+};
+
+export const useAllAppAssets = () => {
+  return useQuery({
+    queryKey: ['appAssets', 'all'],
     queryFn: getAppAssets,
+    staleTime: config.cache.staleTime,
   });
 };
 

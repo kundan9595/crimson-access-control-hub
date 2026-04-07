@@ -12,7 +12,7 @@ import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import ImageUpload from '@/components/ui/ImageUpload';
 import { useCreateFabric, useUpdateFabric } from '@/hooks/masters/useFabrics';
-import { useColors } from '@/hooks/masters/useColors';
+import { useAllColors } from '@/hooks/masters/useColors';
 import { Fabric } from '@/services/masters/types';
 
 const fabricSchema = z.object({
@@ -57,7 +57,7 @@ export const FabricDialog: React.FC<FabricDialogProps> = ({
 }) => {
   const createFabric = useCreateFabric();
   const updateFabric = useUpdateFabric();
-  const { data: colors = [] } = useColors();
+  const { data: colors = [] } = useAllColors();
 
   const form = useForm<FabricFormData>({
     resolver: zodResolver(fabricSchema),

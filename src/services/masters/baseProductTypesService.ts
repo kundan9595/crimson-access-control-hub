@@ -1,10 +1,18 @@
 import {
   callScottDashboard,
   extractRecords,
+  extractScottEntity,
   normalizeId,
   urlToScottFile,
   type ScottFilePayload,
 } from '@/services/scott/callScottDashboard';
+import {
+  buildScottPaginatedMeta,
+  fetchAllScottPages,
+  normalizeScottPageParams,
+  type ScottPageParams,
+  type ScottPaginatedResult,
+} from '@/services/scott/scottPagination';
 
 export interface BaseProductType {
   id: string;
@@ -73,13 +81,24 @@ async function toForm(data: {
   return body;
 }
 
-export async function fetchBaseProductTypes(): Promise<BaseProductType[]> {
+export async function fetchBaseProductTypesPaginated(
+  params?: Partial<ScottPageParams>,
+): Promise<ScottPaginatedResult<BaseProductType>> {
+  const p = normalizeScottPageParams(params);
   const { body } = await callScottDashboard<Record<string, unknown>>({
     resource: 'base_product_types',
     method: 'GET',
-    query: { items: 500, page: 1 },
+    query: { items: p.items, page: p.page },
   });
-  return extractRecords(body).map((r) => normalize(r));
+  const data = extractRecords(body).map((r) => normalize(r));
+  return {
+    data,
+    ...buildScottPaginatedMeta(body, p, data.length),
+  };
+}
+
+export async function fetchBaseProductTypes(): Promise<BaseProductType[]> {
+  return fetchAllScottPages((pp) => fetchBaseProductTypesPaginated(pp));
 }
 
 export async function createBaseProductType(data: {
@@ -94,10 +113,9 @@ export async function createBaseProductType(data: {
     method: 'POST',
     body: form,
   });
-  const list = extractRecords(body);
-  const row = list[0] ?? ((body as { data?: Record<string, unknown> }).data as Record<string, unknown>);
-  if (row && typeof row === 'object' && 'id' in row) {
-    return normalize(row as Record<string, unknown>);
+  const row = extractScottEntity(body);
+  if (row) {
+    return normalize(row);
   }
   throw new Error('Unexpected create base product type response');
 }
@@ -128,10 +146,9 @@ export async function updateBaseProductType(
     pathSuffix: id,
     body: form,
   });
-  const list = extractRecords(body);
-  const row = list[0] ?? ((body as { data?: Record<string, unknown> }).data as Record<string, unknown>);
-  if (row && typeof row === 'object' && 'id' in row) {
-    return normalize(row as Record<string, unknown>);
+  const row = extractScottEntity(body);
+  if (row) {
+    return normalize(row);
   }
   const again = await fetchBaseProductTypes().then((rows) => rows.find((b) => b.id === id));
   if (again) return again;

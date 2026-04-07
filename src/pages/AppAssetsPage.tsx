@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -12,15 +12,26 @@ import AppAssetDialog from '@/components/masters/AppAssetDialog';
 import BulkImportDialog from '@/components/masters/BulkImportDialog';
 import { exportToCSV, generateExportFilename } from '@/utils/exportUtils';
 import type { AppAsset } from '@/services/masters/appAssetsService';
+import { getAppAssets } from '@/services/masters/appAssetsService';
+import { MasterListPageSkeleton } from '@/components/masters/shared/MasterListPageSkeleton';
+import { MasterServerPagination } from '@/components/masters/shared/MasterServerPagination';
+import { config } from '@/config/environment';
 
 const AppAssetsPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(config.pagination.defaultPageSize);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedAsset, setSelectedAsset] = useState<AppAsset | null>(null);
   const [importDialogOpen, setImportDialogOpen] = useState(false);
 
-  const { data: appAssets = [], isLoading } = useGetAppAssets();
+  const { data: appAssetsPage, isLoading, isFetching } = useGetAppAssets(page, pageSize);
+  const appAssets = appAssetsPage?.data ?? [];
   const deleteAppAssetMutation = useDeleteAppAsset();
+
+  useEffect(() => {
+    setPage(1);
+  }, [searchTerm]);
 
   const filteredAssets = appAssets.filter(asset =>
     asset.name.toLowerCase().includes(searchTerm.toLowerCase())
@@ -42,13 +53,14 @@ const AppAssetsPage = () => {
     }
   };
 
-  const handleExport = () => {
-    if (!appAssets || appAssets.length === 0) return;
+  const handleExport = async () => {
+    const all = await getAppAssets();
+    if (!all.length) return;
 
     exportToCSV({
       filename: generateExportFilename('app-assets'),
       headers: ['Name', 'dX', 'dY', 'Mirror dX', 'Height Resp', 'Connected Add-On', 'Status', 'Created At'],
-      data: appAssets,
+      data: all,
       fieldMap: {
         'Name': 'name',
         'dX': 'dx',
@@ -74,11 +86,21 @@ const AppAssetsPage = () => {
 
   if (isLoading) {
     return (
-      <div className="space-y-6">
-        <div className="text-center py-8">
-          <p>Loading app assets...</p>
-        </div>
-      </div>
+      <MasterListPageSkeleton
+        columnCount={7}
+        header={
+          <MasterPageHeader
+            title="App Assets"
+            description="Manage application assets, icons, and media resources"
+            icon={<Smartphone className="h-6 w-6 text-sky-600" />}
+            onAdd={handleAdd}
+            onExport={handleExport}
+            onImport={handleImport}
+            canExport={!!appAssetsPage?.data.length}
+            isScottApi={true}
+          />
+        }
+      />
     );
   }
 
@@ -98,18 +120,20 @@ const AppAssetsPage = () => {
       <Card>
         <CardContent className="p-6">
           <SearchFilter
-            placeholder="Search app assets..."
+            placeholder="Search app assets (current page)..."
             value={searchTerm}
             onChange={setSearchTerm}
             resultCount={filteredAssets.length}
-            totalCount={appAssets.length}
+            totalCount={
+              appAssetsPage?.totalCountIsExact ? appAssetsPage.totalCount : appAssets.length
+            }
           />
           
           <div className="mt-6">
             {filteredAssets.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
-                <p>No app assets found</p>
-                <p className="text-sm">Click "Add App Asset" to create your first asset</p>
+                <p>No app assets on this page</p>
+                <p className="text-sm">Try another page or add an app asset</p>
               </div>
             ) : (
               <Table>
@@ -194,6 +218,16 @@ const AppAssetsPage = () => {
               </Table>
             )}
           </div>
+          <MasterServerPagination
+            result={appAssetsPage ?? null}
+            onPageChange={setPage}
+            onPageSizeChange={(size) => {
+              setPageSize(size);
+              setPage(1);
+            }}
+            disabled={isFetching}
+            className="mt-4"
+          />
         </CardContent>
       </Card>
 

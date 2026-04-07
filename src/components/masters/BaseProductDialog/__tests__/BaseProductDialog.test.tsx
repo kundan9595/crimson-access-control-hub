@@ -34,8 +34,8 @@ vi.mock('@/hooks/masters/useParts', () => ({
   }),
 }));
 
-vi.mock('@/hooks/masters/useSizes', () => ({
-  useSizeGroups: () => ({
+vi.mock('@/hooks/masters/useSizeTypes', () => ({
+  useSizeTypes: () => ({
     data: [
       createMockSizeGroup({ name: 'Small' }),
       createMockSizeGroup({ name: 'Medium' }),

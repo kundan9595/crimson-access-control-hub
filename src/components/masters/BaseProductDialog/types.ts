@@ -41,7 +41,7 @@ export interface BaseProductStepProps {
   categories: any[];
   fabrics: any[];
   parts: any[];
-  sizeGroups: any[];
+  sizeTypes: any[];
 }
 
 // Branding side options

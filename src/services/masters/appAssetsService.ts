@@ -1,10 +1,18 @@
 import {
   callScottDashboard,
   extractRecords,
+  extractScottEntity,
   normalizeId,
   urlToScottFile,
   type ScottFilePayload,
 } from '@/services/scott/callScottDashboard';
+import {
+  buildScottPaginatedMeta,
+  fetchAllScottPages,
+  normalizeScottPageParams,
+  type ScottPageParams,
+  type ScottPaginatedResult,
+} from '@/services/scott/scottPagination';
 
 export interface AppAsset {
   id: string;
@@ -104,18 +112,28 @@ async function toForm(
   return body;
 }
 
-export const getAppAssets = async (): Promise<AppAsset[]> => {
+export async function getAppAssetsPaginated(
+  params?: Partial<ScottPageParams>,
+): Promise<ScottPaginatedResult<AppAsset>> {
+  const p = normalizeScottPageParams(params);
   const { body } = await callScottDashboard<Record<string, unknown>>({
     resource: 'asset_infos',
     method: 'GET',
     query: {
-      items: 500,
-      page: 1,
+      items: p.items,
+      page: p.page,
       is_deleted: false,
     },
   });
-  return extractRecords(body).map((r) => normalizeAsset(r));
-};
+  const data = extractRecords(body).map((r) => normalizeAsset(r));
+  return {
+    data,
+    ...buildScottPaginatedMeta(body, p, data.length),
+  };
+}
+
+export const getAppAssets = async (): Promise<AppAsset[]> =>
+  fetchAllScottPages((pp) => getAppAssetsPaginated(pp));
 
 export const createAppAsset = async (
   asset: Omit<
@@ -129,10 +147,9 @@ export const createAppAsset = async (
     method: 'POST',
     body: form,
   });
-  const list = extractRecords(body);
-  const row = list[0] ?? ((body as { data?: Record<string, unknown> }).data as Record<string, unknown>);
-  if (row && typeof row === 'object' && 'id' in row) {
-    return normalizeAsset(row as Record<string, unknown>);
+  const row = extractScottEntity(body);
+  if (row) {
+    return normalizeAsset(row);
   }
   throw new Error('Unexpected create app asset response');
 };
@@ -152,10 +169,9 @@ export const updateAppAsset = async (
     pathSuffix: id,
     body: form,
   });
-  const list = extractRecords(body);
-  const row = list[0] ?? ((body as { data?: Record<string, unknown> }).data as Record<string, unknown>);
-  if (row && typeof row === 'object' && 'id' in row) {
-    return normalizeAsset(row as Record<string, unknown>);
+  const row = extractScottEntity(body);
+  if (row) {
+    return normalizeAsset(row);
   }
   const again = await getAppAssets().then((rows) => rows.find((a) => a.id === id));
   if (again) return again;

@@ -2,8 +2,16 @@ import { Color } from './types';
 import {
   callScottDashboard,
   extractRecords,
+  extractScottEntity,
   normalizeId,
 } from '@/services/scott/callScottDashboard';
+import {
+  buildScottPaginatedMeta,
+  fetchAllScottPages,
+  normalizeScottPageParams,
+  type ScottPageParams,
+  type ScottPaginatedResult,
+} from '@/services/scott/scottPagination';
 
 function normalizeColor(r: Record<string, unknown>): Color {
   const status =
@@ -38,18 +46,29 @@ function colorFormToBody(
   };
 }
 
-export const fetchColors = async (): Promise<Color[]> => {
+export async function fetchColorsPaginated(
+  params?: Partial<ScottPageParams>,
+): Promise<ScottPaginatedResult<Color>> {
+  const p = normalizeScottPageParams(params);
   const { body } = await callScottDashboard<Record<string, unknown>>({
     resource: 'colors',
     method: 'GET',
     query: {
-      items: 500,
-      page: 1,
+      items: p.items,
+      page: p.page,
       is_deleted: false,
     },
   });
-  return extractRecords(body).map((r) => normalizeColor(r));
-};
+  const data = extractRecords(body).map((r) => normalizeColor(r));
+  return {
+    data,
+    ...buildScottPaginatedMeta(body, p, data.length),
+  };
+}
+
+/** All pages — for dropdowns, imports, merge helpers. */
+export const fetchColors = async (): Promise<Color[]> =>
+  fetchAllScottPages((pp) => fetchColorsPaginated(pp));
 
 export const createColor = async (
   colorData: Omit<Color, 'id' | 'created_at' | 'updated_at' | 'created_by' | 'updated_by'>,
@@ -59,14 +78,9 @@ export const createColor = async (
     method: 'POST',
     body: colorFormToBody(colorData),
   });
-  const list = extractRecords(body);
-  const row = list[0] ?? (body as Record<string, unknown>);
-  if (row && typeof row === 'object' && 'id' in row) {
-    return normalizeColor(row as Record<string, unknown>);
-  }
-  const data = (body as { data?: Record<string, unknown> }).data;
-  if (data && typeof data === 'object' && 'id' in data) {
-    return normalizeColor(data as Record<string, unknown>);
+  const row = extractScottEntity(body);
+  if (row) {
+    return normalizeColor(row);
   }
   throw new Error('Unexpected create color response');
 };
@@ -89,14 +103,9 @@ export const updateColor = async (
       status: merged.status,
     }),
   });
-  const list = extractRecords(body);
-  const row = list[0] ?? (body as Record<string, unknown>);
-  if (row && typeof row === 'object' && 'id' in row) {
-    return normalizeColor(row as Record<string, unknown>);
-  }
-  const data = (body as { data?: Record<string, unknown> }).data;
-  if (data && typeof data === 'object') {
-    return normalizeColor(data as Record<string, unknown>);
+  const row = extractScottEntity(body);
+  if (row) {
+    return normalizeColor(row);
   }
   return fetchColors().then((rows) => {
     const found = rows.find((c) => c.id === id);

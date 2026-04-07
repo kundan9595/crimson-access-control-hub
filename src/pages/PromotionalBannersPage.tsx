@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -12,15 +12,26 @@ import { usePromotionalBanners, useDeletePromotionalBanner } from '@/hooks/maste
 import { exportToCSV, generateExportFilename } from '@/utils/exportUtils';
 import { Edit, Trash2, Image as ImageIcon } from 'lucide-react';
 import type { PromotionalBanner } from '@/services/masters/types';
+import { promotionalBannersService } from '@/services/masters/promotionalBannersService';
+import { MasterListPageSkeleton } from '@/components/masters/shared/MasterListPageSkeleton';
+import { MasterServerPagination } from '@/components/masters/shared/MasterServerPagination';
+import { config } from '@/config/environment';
 
 const PromotionalBannersPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(config.pagination.defaultPageSize);
   const [selectedBanner, setSelectedBanner] = useState<PromotionalBanner | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [importDialogOpen, setImportDialogOpen] = useState(false);
 
-  const { data: promotionalBanners = [], isLoading } = usePromotionalBanners();
+  const { data: bannersPage, isLoading, isFetching } = usePromotionalBanners(page, pageSize);
+  const promotionalBanners = bannersPage?.data ?? [];
   const deletePromotionalBannerMutation = useDeletePromotionalBanner();
+
+  useEffect(() => {
+    setPage(1);
+  }, [searchTerm]);
 
   const filteredBanners = promotionalBanners.filter(
     (banner) =>
@@ -45,13 +56,14 @@ const PromotionalBannersPage = () => {
     }
   };
 
-  const handleExport = () => {
-    if (!promotionalBanners || promotionalBanners.length === 0) return;
+  const handleExport = async () => {
+    const all = await promotionalBannersService.getAll();
+    if (!all.length) return;
 
     exportToCSV({
       filename: generateExportFilename('catalogue-promotions'),
       headers: ['Name', 'Link', 'Category', 'Upload date', 'Status', 'Created At'],
-      data: promotionalBanners,
+      data: all,
       fieldMap: {
         Name: 'title',
         Link: 'link',
@@ -75,11 +87,21 @@ const PromotionalBannersPage = () => {
 
   if (isLoading) {
     return (
-      <div className="space-y-6">
-        <div className="text-center py-8">
-          <p>Loading catalogue promotions...</p>
-        </div>
-      </div>
+      <MasterListPageSkeleton
+        columnCount={6}
+        header={
+          <MasterPageHeader
+            title="Catalogue promotions"
+            description="Manage Scott dashboard catalogue promotions (name, link, category, thumbnail)"
+            icon={<ImageIcon className="h-6 w-6 text-purple-600" />}
+            onAdd={handleAdd}
+            onExport={handleExport}
+            onImport={handleImport}
+            canExport={!!bannersPage?.data.length}
+            isScottApi={true}
+          />
+        }
+      />
     );
   }
 
@@ -99,18 +121,20 @@ const PromotionalBannersPage = () => {
       <Card>
         <CardContent className="p-6">
           <SearchFilter
-            placeholder="Search promotions..."
+            placeholder="Search promotions (current page)..."
             value={searchTerm}
             onChange={setSearchTerm}
             resultCount={filteredBanners.length}
-            totalCount={promotionalBanners.length}
+            totalCount={
+              bannersPage?.totalCountIsExact ? bannersPage.totalCount : promotionalBanners.length
+            }
           />
 
           <div className="mt-6">
             {filteredBanners.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
-                <p>No promotions found</p>
-                <p className="text-sm">Click Add to create a catalogue promotion</p>
+                <p>No promotions on this page</p>
+                <p className="text-sm">Try another page or add a catalogue promotion</p>
               </div>
             ) : (
               <Table>
@@ -182,6 +206,16 @@ const PromotionalBannersPage = () => {
               </Table>
             )}
           </div>
+          <MasterServerPagination
+            result={bannersPage ?? null}
+            onPageChange={setPage}
+            onPageSizeChange={(size) => {
+              setPageSize(size);
+              setPage(1);
+            }}
+            disabled={isFetching}
+            className="mt-4"
+          />
         </CardContent>
       </Card>
 

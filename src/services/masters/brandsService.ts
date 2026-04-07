@@ -2,10 +2,18 @@ import { Brand } from './types';
 import {
   callScottDashboard,
   extractRecords,
+  extractScottEntity,
   normalizeId,
   urlToScottFile,
   type ScottFilePayload,
 } from '@/services/scott/callScottDashboard';
+import {
+  buildScottPaginatedMeta,
+  fetchAllScottPages,
+  normalizeScottPageParams,
+  type ScottPageParams,
+  type ScottPaginatedResult,
+} from '@/services/scott/scottPagination';
 
 function normalizeBrand(r: Record<string, unknown>): Brand {
   const status =
@@ -21,7 +29,7 @@ function normalizeBrand(r: Record<string, unknown>): Brand {
         ? String((r.logo as { url?: string }).url)
         : undefined;
   return {
-    id: normalizeId(r.id),
+    id: normalizeId(r.id ?? r.authorized_brand_id),
     name: String(r.name ?? ''),
     description: r.description != null ? String(r.description) : undefined,
     logo_url: logoUrl,
@@ -71,18 +79,29 @@ async function brandPayloadToForm(
   return body;
 }
 
-export const fetchBrands = async (): Promise<Brand[]> => {
+export async function fetchBrandsPaginated(
+  params?: Partial<ScottPageParams>,
+): Promise<ScottPaginatedResult<Brand>> {
+  const p = normalizeScottPageParams(params);
   const { body } = await callScottDashboard<Record<string, unknown>>({
     resource: 'authorized_brands',
     method: 'GET',
     query: {
-      items: 500,
-      page: 1,
+      items: p.items,
+      page: p.page,
       is_deleted: false,
     },
   });
-  return extractRecords(body).map((r) => normalizeBrand(r));
-};
+  const data = extractRecords(body).map((r) => normalizeBrand(r));
+  return {
+    data,
+    ...buildScottPaginatedMeta(body, p, data.length),
+  };
+}
+
+/** All pages — for dropdowns, create recovery, update merge. */
+export const fetchBrands = async (): Promise<Brand[]> =>
+  fetchAllScottPages((pp) => fetchBrandsPaginated(pp));
 
 export const createBrand = async (
   brandData: Omit<Brand, 'id' | 'created_at' | 'updated_at' | 'created_by' | 'updated_by'>,
@@ -95,12 +114,28 @@ export const createBrand = async (
     method: 'POST',
     body: form,
   });
-  const list = extractRecords(body);
-  const row = list[0] ?? ((body as { data?: Record<string, unknown> }).data as Record<string, unknown>);
-  if (row && typeof row === 'object' && 'id' in row) {
-    return normalizeBrand(row as Record<string, unknown>);
+  const row = extractScottEntity(body);
+  if (row) {
+    return normalizeBrand(row);
   }
-  throw new Error('Unexpected create brand response');
+  // Some environments return a minimal body on successful POST; recover from list.
+  const refreshed = await fetchBrands();
+  const wantName = brandData.name.trim();
+  const matches = refreshed.filter((b) => b.name.trim() === wantName);
+  if (matches.length === 1) {
+    return matches[0];
+  }
+  if (matches.length > 1) {
+    return [...matches].sort(
+      (a, b) =>
+        new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime(),
+    )[0];
+  }
+  const snippet =
+    body !== null && typeof body === 'object'
+      ? JSON.stringify(body).slice(0, 400)
+      : String(body);
+  throw new Error(`Unexpected create brand response: ${snippet}`);
 };
 
 export const updateBrand = async (id: string, updates: Partial<Brand>): Promise<Brand> => {
@@ -121,10 +156,9 @@ export const updateBrand = async (id: string, updates: Partial<Brand>): Promise<
     pathSuffix: id,
     body: form,
   });
-  const list = extractRecords(body);
-  const row = list[0] ?? ((body as { data?: Record<string, unknown> }).data as Record<string, unknown>);
-  if (row && typeof row === 'object' && 'id' in row) {
-    return normalizeBrand(row as Record<string, unknown>);
+  const row = extractScottEntity(body);
+  if (row) {
+    return normalizeBrand(row);
   }
   const again = await fetchBrands().then((rows) => rows.find((b) => b.id === id));
   if (again) return again;

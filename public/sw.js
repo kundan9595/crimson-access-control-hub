@@ -1,5 +1,5 @@
 // Service Worker for ScottOne
-const CACHE_NAME = 'crimson-ach-v1';
+const CACHE_NAME = 'scottone-v1';
 const urlsToCache = [
   '/',
   '/static/js/bundle.js',

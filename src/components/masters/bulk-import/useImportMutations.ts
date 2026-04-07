@@ -2,7 +2,7 @@
 import { useCreateBrand } from '@/hooks/masters/useBrands';
 import { useCreateCategory } from '@/hooks/masters/useCategories';
 import { useCreateColor } from '@/hooks/masters/useColors';
-import { useCreateSizeGroup } from '@/hooks/masters/useSizes';
+import { useCreateSize } from '@/hooks/masters/useSizes';
 import { useCreateZone } from '@/hooks/masters/useZones';
 import { useCreatePriceType } from '@/hooks/masters/usePriceTypes';
 import { useCreateVendor } from '@/hooks/masters/useVendors';
@@ -17,12 +17,51 @@ import { useCreatePromotionalBanner } from '@/hooks/masters/usePromotionalBanner
 import { useCreatePromotionalAsset } from '@/hooks/masters/usePromotionalAssets';
 import { inventoryService } from '@/services/inventory/inventoryService';
 import { BulkImportType } from './types';
+import type { Size } from '@/services/masters/types';
+
+/** Map bulk-import row data to Scott `sc_sizes` create payload (size_group_id = size_type_id). */
+function toCreateSizePayload(data: Record<string, unknown>): Omit<
+  Size,
+  'id' | 'created_at' | 'updated_at' | 'created_by' | 'updated_by'
+> {
+  const name = String(data.name ?? '').trim();
+  if (!name) {
+    throw new Error('Name is required');
+  }
+  const code = String(data.code ?? data.name ?? '').trim();
+  const sizeTypeId = String(
+    data.size_type_id ?? data.size_group_id ?? data.size_type ?? '',
+  ).trim();
+  if (!sizeTypeId) {
+    throw new Error(
+      'Size Type ID is required. Add a "Size Type ID" column with the Scott size type id for each row.',
+    );
+  }
+  const sortRaw = data.sort_order ?? data.sort_position;
+  let sort_order: number | undefined;
+  if (sortRaw !== undefined && sortRaw !== null && String(sortRaw).trim() !== '') {
+    const n = Number(sortRaw);
+    if (!Number.isFinite(n) || n < 0) {
+      throw new Error('Sort Order must be a non-negative number');
+    }
+    sort_order = n;
+  }
+  const statusRaw = String(data.status ?? 'active').toLowerCase();
+  const status = statusRaw === 'inactive' ? 'inactive' : 'active';
+  return {
+    name,
+    code: code || name,
+    size_group_id: sizeTypeId,
+    status,
+    ...(sort_order !== undefined ? { sort_order } : {}),
+  };
+}
 
 export const useImportMutations = () => {
   const createBrandMutation = useCreateBrand();
   const createCategoryMutation = useCreateCategory();
   const createColorMutation = useCreateColor();
-  const createSizeGroupMutation = useCreateSizeGroup();
+  const createSizeMutation = useCreateSize();
   const createZoneMutation = useCreateZone();
   const createPriceTypeMutation = useCreatePriceType();
   const createVendorMutation = useCreateVendor();
@@ -45,7 +84,12 @@ export const useImportMutations = () => {
       case 'colors':
         return createColorMutation;
       case 'sizeGroups':
-        return createSizeGroupMutation;
+      case 'sizes':
+        return {
+          mutateAsync: async (record: Record<string, unknown>) => {
+            return createSizeMutation.mutateAsync(toCreateSizePayload(record));
+          },
+        };
       case 'zones':
         return createZoneMutation;
       case 'priceTypes':

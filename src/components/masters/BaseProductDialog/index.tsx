@@ -11,7 +11,7 @@ import { ConfigurationStep } from './steps/ConfigurationStep';
 import { MediaStep } from './steps/MediaStep';
 import { useCategories } from '@/hooks/masters/useCategories';
 import { useFabrics } from '@/hooks/masters/useFabrics';
-import { useSizeGroups } from '@/hooks/masters/useSizes';
+import { useAllSizeTypes } from '@/hooks/masters/useSizeTypes';
 import { useParts } from '@/hooks/masters/useParts';
 import { useCreateBaseProduct, useUpdateBaseProduct } from '@/hooks/masters/useBaseProducts';
 import { BaseProduct } from '@/services/masters/baseProductsService';
@@ -28,7 +28,7 @@ type DialogStep = 'basic' | 'pricing' | 'configuration' | 'media';
 const STEPS: { key: DialogStep; label: string; description: string }[] = [
   { key: 'basic', label: 'Basic Info', description: 'Product details' },
   { key: 'pricing', label: 'Pricing', description: 'Costs and pricing' },
-  { key: 'configuration', label: 'Configuration', description: 'Size groups, parts, and branding' },
+  { key: 'configuration', label: 'Configuration', description: 'Size types, parts, and branding' },
   { key: 'media', label: 'Media', description: 'Images and status' },
 ];
 
@@ -43,7 +43,7 @@ export const BaseProductDialog: React.FC<BaseProductDialogProps> = ({
   // Data hooks
   const { data: categories = [] } = useCategories();
   const { data: fabrics = [] } = useFabrics();
-  const { data: sizeGroups = [] } = useSizeGroups();
+  const { data: sizeTypes = [] } = useAllSizeTypes();
   const { data: parts = [] } = useParts();
 
   // Mutation hooks
@@ -141,7 +141,7 @@ export const BaseProductDialog: React.FC<BaseProductDialogProps> = ({
             {currentStep === 'configuration' && (
               <ConfigurationStep
                 form={form}
-                sizeGroups={sizeGroups}
+                sizeTypes={sizeTypes}
                 parts={parts}
               />
             )}

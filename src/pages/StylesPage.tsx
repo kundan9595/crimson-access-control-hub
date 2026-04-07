@@ -11,12 +11,14 @@ import { ErrorBoundary } from '@/components/ErrorBoundary';
 import BulkImportDialog from '@/components/masters/BulkImportDialog';
 import { useStyles } from '@/hooks/useMasters';
 import { MasterPageHeader } from '@/components/masters/shared/MasterPageHeader';
+import { MasterTableSkeleton } from '@/components/masters/shared/MasterListPageSkeleton';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const StylesPage = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const { data: styles } = useStyles();
+  const { data: styles, isLoading: stylesLoading } = useStyles();
 
   const handleExport = () => {
     if (!styles || styles.length === 0) return;
@@ -64,19 +66,31 @@ const StylesPage = () => {
 
       <Card>
         <CardContent className="p-6">
-          <div className="flex items-center justify-between mb-6">
-            <h3 className="text-lg font-semibold">All Styles</h3>
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-              <Input
-                placeholder="Search styles..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-9 w-64"
-              />
-            </div>
-          </div>
-          <StylesList searchTerm={searchTerm} />
+          {stylesLoading ? (
+            <>
+              <div className="flex items-center justify-between mb-6">
+                <Skeleton className="h-7 w-36" />
+                <Skeleton className="h-10 w-64 rounded-md" />
+              </div>
+              <MasterTableSkeleton showToolbar={false} columnCount={6} />
+            </>
+          ) : (
+            <>
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-lg font-semibold">All Styles</h3>
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                  <Input
+                    placeholder="Search styles..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-9 w-64"
+                  />
+                </div>
+              </div>
+              <StylesList searchTerm={searchTerm} />
+            </>
+          )}
         </CardContent>
       </Card>
 

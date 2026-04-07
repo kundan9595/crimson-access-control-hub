@@ -20,6 +20,8 @@ import { Search } from 'lucide-react';
 import { usePurchaseOrdersByVendor } from '@/hooks/usePurchaseOrdersByVendor';
 import type { Vendor } from '@/services/mastersService';
 import type { PurchaseOrder } from '@/services/purchaseOrderService';
+import { Skeleton } from '@/components/ui/skeleton';
+import { MasterTableSkeleton } from '@/components/masters/shared/MasterListPageSkeleton';
 import { 
   PURCHASE_ORDER_STATUS_LABELS, 
   PURCHASE_ORDER_STATUS_VARIANTS 
@@ -101,7 +103,7 @@ export const VendorPOsModal: React.FC<VendorPOsModalProps> = ({
           {/* Results Count */}
           <div className="text-sm text-muted-foreground">
             {isLoading ? (
-              'Loading purchase orders...'
+              <Skeleton className="h-4 w-56" />
             ) : (
               <>
                 Showing {filteredPOs.length} of {purchaseOrders.length} purchase order{purchaseOrders.length !== 1 ? 's' : ''}
@@ -111,11 +113,15 @@ export const VendorPOsModal: React.FC<VendorPOsModalProps> = ({
           </div>
 
           {/* Purchase Orders Table */}
-          <div className="flex-1 overflow-auto border rounded-md">
+          <div
+            className={
+              isLoading
+                ? 'flex-1 overflow-auto p-2'
+                : 'flex-1 overflow-auto border rounded-md'
+            }
+          >
             {isLoading ? (
-              <div className="text-center py-8 text-muted-foreground">
-                Loading purchase orders...
-              </div>
+              <MasterTableSkeleton showToolbar={false} columnCount={7} />
             ) : sortedPOs.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
                 <p>No purchase orders found</p>

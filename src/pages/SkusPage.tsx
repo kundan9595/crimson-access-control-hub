@@ -7,11 +7,12 @@ import { SkuDialog } from '@/components/masters/SkuDialog';
 import BulkImportDialog from '@/components/masters/BulkImportDialog';
 import { useSkus } from '@/hooks/masters/useSkus';
 import { MasterPageHeader } from '@/components/masters/shared/MasterPageHeader';
+import { MasterListPageSkeleton } from '@/components/masters/shared/MasterListPageSkeleton';
 
 const SkusPage = () => {
   const [showSkuDialog, setShowSkuDialog] = useState(false);
   const [showImportDialog, setShowImportDialog] = useState(false);
-  const { data: skus = [] } = useSkus();
+  const { data: skus = [], isLoading } = useSkus();
 
   const handleExport = () => {
     if (skus.length === 0) {
@@ -63,6 +64,27 @@ const SkusPage = () => {
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
   };
+
+  if (isLoading) {
+    return (
+      <MasterListPageSkeleton
+        withCard={false}
+        showToolbar={false}
+        columnCount={8}
+        header={
+          <MasterPageHeader
+            title="SKUs"
+            description="Manage your product SKUs with pricing, dimensions, and specifications"
+            icon={<Package className="h-8 w-8" />}
+            onAdd={() => setShowSkuDialog(true)}
+            onExport={handleExport}
+            onImport={() => setShowImportDialog(true)}
+            canExport={false}
+          />
+        }
+      />
+    );
+  }
 
   return (
     <div className="space-y-6">

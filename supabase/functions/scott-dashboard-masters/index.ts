@@ -15,8 +15,16 @@ type ScottResource =
   | "size_types"
   | "base_product_types"
   | "promotions"
-  | "settings";
+  | "settings"
+  | "sc_sizes"
+  | "parts"
+  | "add_ons"
+  | "fabrics"
+  | "base_products"
+  | "promotional_banners"
+  | "base_product_asset_infos";
 
+/** Keep in sync with `ScottResource` in src/services/scott/callScottDashboard.ts */
 const ALLOWED: Set<ScottResource> = new Set([
   "colors",
   "profit_margins",
@@ -26,6 +34,13 @@ const ALLOWED: Set<ScottResource> = new Set([
   "base_product_types",
   "promotions",
   "settings",
+  "sc_sizes",
+  "parts",
+  "add_ons",
+  "fabrics",
+  "base_products",
+  "promotional_banners",
+  "base_product_asset_infos",
 ]);
 
 interface ScottProxyPayload {

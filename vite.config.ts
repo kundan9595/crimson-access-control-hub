@@ -15,7 +15,7 @@ export default defineConfig(({ mode }) => {
         includeAssets: ['favicon.ico', 'placeholder.svg', 'robots.txt', 'icon.svg', 'polyfills.js'],
         manifest: {
           name: 'ScottOne',
-          short_name: 'Crimson ACH',
+          short_name: 'ScottOne',
           description: 'A comprehensive access control and inventory management system',
           theme_color: '#dc2626',
           background_color: '#ffffff',

@@ -1,12 +1,34 @@
 
 import { useQuery } from '@tanstack/react-query';
-import { fetchBrands, createBrand, updateBrand, deleteBrand, Brand } from '@/services/mastersService';
+import {
+  fetchBrands,
+  fetchBrandsPaginated,
+  createBrand,
+  updateBrand,
+  deleteBrand,
+  Brand,
+} from '@/services/mastersService';
 import { useCreateMutation, useUpdateMutation, useDeleteMutation } from './shared/utils';
+import { config } from '@/config/environment';
 
-export const useBrands = () => {
+/** Server-paginated list for table views. */
+export const useBrands = (
+  page: number = 1,
+  pageSize: number = config.pagination.defaultPageSize,
+) => {
   return useQuery({
-    queryKey: ['brands'],
+    queryKey: ['brands', 'list', page, pageSize],
+    queryFn: () => fetchBrandsPaginated({ page, items: pageSize }),
+    placeholderData: (prev) => prev,
+  });
+};
+
+/** Full list (all pages) for dropdowns. */
+export const useAllBrands = () => {
+  return useQuery({
+    queryKey: ['brands', 'all'],
     queryFn: fetchBrands,
+    staleTime: config.cache.staleTime,
   });
 };
 

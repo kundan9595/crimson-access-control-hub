@@ -11,6 +11,7 @@ import ClassDialog from '@/components/masters/ClassDialog';
 import BulkImportDialog from '@/components/masters/BulkImportDialog';
 import { MasterPageHeader } from '@/components/masters/shared/MasterPageHeader';
 import { SearchFilter } from '@/components/masters/shared/SearchFilter';
+import { MasterListPageSkeleton } from '@/components/masters/shared/MasterListPageSkeleton';
 import { getSizeRatioDisplay } from '@/utils/stockUtils';
 import type { Class } from '@/services/mastersService';
 
@@ -97,7 +98,22 @@ const ClassesPage = () => {
   });
 
   if (isLoading) {
-    return <div className="text-center">Loading classes...</div>;
+    return (
+      <MasterListPageSkeleton
+        columnCount={8}
+        header={
+          <MasterPageHeader
+            title="Classes"
+            description="Manage product classes with styles, colors, and images"
+            icon={<Shirt className="h-6 w-6 text-pink-600" />}
+            onAdd={handleAdd}
+            onExport={handleExport}
+            onImport={() => setBulkImportOpen(true)}
+            canExport={false}
+          />
+        }
+      />
+    );
   }
 
   return (

@@ -12,10 +12,17 @@ import ColorDialog from '@/components/masters/ColorDialog';
 import BulkImportDialog from '@/components/masters/BulkImportDialog';
 import { MasterPageHeader } from '@/components/masters/shared/MasterPageHeader';
 import { SearchFilter } from '@/components/masters/shared/SearchFilter';
+import { MasterListPageSkeleton } from '@/components/masters/shared/MasterListPageSkeleton';
+import { MasterServerPagination } from '@/components/masters/shared/MasterServerPagination';
+import { fetchColors } from '@/services/masters/colorsService';
+import { config } from '@/config/environment';
 import type { Color } from '@/services/mastersService';
 
 const ColorsPage = () => {
-  const { data: colors, isLoading } = useColors();
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(config.pagination.defaultPageSize);
+  const { data: colorsPage, isLoading } = useColors(page, pageSize);
+  const colors = colorsPage?.data;
   const deleteColorMutation = useDeleteColor();
   const [searchTerm, setSearchTerm] = useState('');
   const [editingColor, setEditingColor] = useState<Color | null>(null);
@@ -46,12 +53,13 @@ const ColorsPage = () => {
     setEditingColor(null);
   };
 
-  const handleExport = () => {
-    if (!colors || colors.length === 0) return;
+  const handleExport = async () => {
+    const allColors = await fetchColors();
+    if (!allColors.length) return;
 
     const csvContent = [
       ['Name', 'Hex Code', 'Status', 'Created At'].join(','),
-      ...colors.map(color => [
+      ...allColors.map((color) => [
         `"${color.name}"`,
         color.hex_code,
         color.status,
@@ -70,13 +78,34 @@ const ColorsPage = () => {
     URL.revokeObjectURL(url);
   };
 
-  const filteredColors = colors?.filter(color =>
-    color.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    color.hex_code.toLowerCase().includes(searchTerm.toLowerCase())
-  ) || [];
+  const filteredColors =
+    colors?.filter(
+      (color) =>
+        color.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        color.hex_code.toLowerCase().includes(searchTerm.toLowerCase()),
+    ) || [];
+
+  useEffect(() => {
+    setPage(1);
+  }, [searchTerm]);
 
   if (isLoading) {
-    return <div className="text-center">Loading colors...</div>;
+    return (
+      <MasterListPageSkeleton
+        columnCount={6}
+        header={
+          <MasterPageHeader
+            title="Colors"
+            description="Manage your color palette"
+            onAdd={() => setDialogOpen(true)}
+            onExport={handleExport}
+            onImport={() => setBulkImportOpen(true)}
+            canExport={false}
+            isScottApi={true}
+          />
+        }
+      />
+    );
   }
 
   return (
@@ -87,20 +116,22 @@ const ColorsPage = () => {
         onAdd={() => setDialogOpen(true)}
         onExport={handleExport}
         onImport={() => setBulkImportOpen(true)}
-        canExport={!!colors?.length}
+        canExport={!!colorsPage?.data.length}
         isScottApi={true}
       />
 
       <Card>
         <CardContent className="p-6">
           <SearchFilter
-            placeholder="Search colors..."
+            placeholder="Search colors (current page)..."
             value={searchTerm}
             onChange={setSearchTerm}
             resultCount={filteredColors.length}
-            totalCount={colors?.length || 0}
+            totalCount={
+              colorsPage?.totalCountIsExact ? colorsPage.totalCount : colors?.length
+            }
           />
-          
+
           <div className="mt-6">
             {filteredColors.length > 0 ? (
               <Table>
@@ -161,6 +192,19 @@ const ColorsPage = () => {
               </div>
             )}
           </div>
+
+          {colorsPage && colorsPage.data.length > 0 && (
+            <MasterServerPagination
+              className="mt-6"
+              result={colorsPage}
+              disabled={isLoading}
+              onPageChange={setPage}
+              onPageSizeChange={(size) => {
+                setPageSize(size);
+                setPage(1);
+              }}
+            />
+          )}
         </CardContent>
       </Card>
 

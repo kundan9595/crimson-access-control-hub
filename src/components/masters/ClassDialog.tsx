@@ -10,7 +10,15 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Plus, Edit2, X, AlertTriangle, CheckCircle, Package, TrendingUp, Calendar, BarChart3 } from 'lucide-react';
-import { useCreateClass, useUpdateClass, useStyles, useColors, useSizeGroups, useSizes, Class } from '@/hooks/masters';
+import {
+  useCreateClass,
+  useUpdateClass,
+  useStyles,
+  useAllColors,
+  useAllSizeTypes,
+  useAllSizes,
+  Class,
+} from '@/hooks/masters';
 import ImageUpload from '@/components/ui/ImageUpload';
 import MultipleImageUpload from '@/components/ui/MultipleImageUpload';
 import { validateSizeRatios, getSizeRatioDisplay, getDefaultMonthlyStockLevels, validateMonthlyStockLevels, StockLevelsByMonth } from '@/utils/stockUtils';
@@ -44,9 +52,9 @@ const ClassDialog: React.FC<ClassDialogProps> = ({ classItem, trigger, open, onO
   });
 
   const { data: styles = [] } = useStyles();
-  const { data: colors = [] } = useColors();
-  const { data: sizeGroups = [] } = useSizeGroups();
-  const { data: allSizes = [] } = useSizes();
+  const { data: colors = [] } = useAllColors();
+  const { data: sizeTypes = [] } = useAllSizeTypes();
+  const { data: allSizes = [] } = useAllSizes();
   const createMutation = useCreateClass();
   const updateMutation = useUpdateClass();
 
@@ -406,16 +414,16 @@ const ClassDialog: React.FC<ClassDialogProps> = ({ classItem, trigger, open, onO
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div>
-                    <Label htmlFor="sizeGroup">Size Group</Label>
+                    <Label htmlFor="sizeGroup">Size type</Label>
                     <Select value={formData.size_group_id || 'none'} onValueChange={handleSizeGroupChange}>
                       <SelectTrigger>
-                        <SelectValue placeholder="Select size group" />
+                        <SelectValue placeholder="Select size type" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="none">No Size Group</SelectItem>
-                        {sizeGroups.filter(group => group.status === 'active').map((group) => (
-                          <SelectItem key={group.id} value={group.id}>
-                            {group.name}
+                        <SelectItem value="none">No size type</SelectItem>
+                        {sizeTypes.filter((st) => st.status === 'active').map((st) => (
+                          <SelectItem key={st.id} value={st.id}>
+                            {st.name}
                           </SelectItem>
                         ))}
                       </SelectContent>

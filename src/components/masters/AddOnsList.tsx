@@ -1,5 +1,5 @@
 
-import React, { useState, forwardRef, useImperativeHandle } from 'react';
+import React, { useState, forwardRef, useImperativeHandle, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -10,6 +10,9 @@ import { AddOn } from '@/services/masters/addOnsService';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { ErrorBoundary } from '@/components/ui/error-boundary';
+import { Skeleton } from '@/components/ui/skeleton';
+import { MasterServerPagination } from '@/components/masters/shared/MasterServerPagination';
+import { config } from '@/config/environment';
 
 interface AddOnsListProps {
   searchTerm: string;
@@ -22,15 +25,12 @@ interface AddOnsListRef {
 export const AddOnsList = forwardRef<AddOnsListRef, AddOnsListProps>(({ searchTerm }, ref) => {
   const [selectedAddOn, setSelectedAddOn] = useState<AddOn | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
-
-  // AddOnsList - Render state
-    searchTerm,
-    selectedAddOn: selectedAddOn?.id || null,
-    dialogOpen
-  });
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(config.pagination.defaultPageSize);
 
   const { user, loading: authLoading } = useAuth();
-  const { data: addOns = [], isLoading, error } = useAddOns();
+  const { data: addOnsPage, isLoading, isFetching, error } = useAddOns(page, pageSize);
+  const addOns = addOnsPage?.data ?? [];
   const deleteAddOnMutation = useDeleteAddOn();
   const createAddOnMutation = useCreateAddOn();
   const updateAddOnMutation = useUpdateAddOn();
@@ -41,6 +41,10 @@ export const AddOnsList = forwardRef<AddOnsListRef, AddOnsListProps>(({ searchTe
     (addOn.add_on_of && addOn.add_on_of.toString().includes(searchTerm)) ||
     (addOn.add_on_sn && addOn.add_on_sn.toString().includes(searchTerm))
   );
+
+  useEffect(() => {
+    setPage(1);
+  }, [searchTerm]);
 
   const handleCreate = () => {
     // AddOnsList - handleCreate called
@@ -109,9 +113,20 @@ export const AddOnsList = forwardRef<AddOnsListRef, AddOnsListProps>(({ searchTe
     }
   };
 
-  // Show loading state
   if (authLoading || isLoading) {
-    return <div className="text-center py-8">Loading add-ons...</div>;
+    return (
+      <div className="grid gap-4">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <Card key={i}>
+            <CardContent className="p-6 space-y-3">
+              <Skeleton className="h-5 w-48 max-w-full" />
+              <Skeleton className="h-4 w-full max-w-xl" />
+              <Skeleton className="h-4 w-full max-w-lg" />
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    );
   }
 
   // Show authentication required message
@@ -140,8 +155,8 @@ export const AddOnsList = forwardRef<AddOnsListRef, AddOnsListProps>(({ searchTe
     <>
       {filteredAddOns.length === 0 ? (
         <div className="text-center py-8 text-muted-foreground">
-          <p>No add-ons found</p>
-          <p className="text-sm">Click "Add Add On" to create your first add-on entry</p>
+          <p>No add-ons on this page</p>
+          <p className="text-sm">Try another page or create an add-on</p>
         </div>
       ) : (
         <div className="grid gap-4">
@@ -204,6 +219,17 @@ export const AddOnsList = forwardRef<AddOnsListRef, AddOnsListProps>(({ searchTe
           ))}
         </div>
       )}
+
+      <MasterServerPagination
+        result={addOnsPage ?? null}
+        onPageChange={setPage}
+        onPageSizeChange={(size) => {
+          setPageSize(size);
+          setPage(1);
+        }}
+        disabled={isFetching}
+        className="mt-4"
+      />
 
       <ErrorBoundary fallback={<div className="text-red-500">Dialog Error: Check console</div>}>
         <AddOnDialog

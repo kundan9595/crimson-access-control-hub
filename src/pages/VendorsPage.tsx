@@ -14,6 +14,7 @@ import BulkImportDialog from '@/components/masters/BulkImportDialog';
 import VendorPOsModal from '@/components/masters/VendorPOsModal';
 import { MasterPageHeader } from '@/components/masters/shared/MasterPageHeader';
 import { SearchFilter } from '@/components/masters/shared/SearchFilter';
+import { MasterListPageSkeleton } from '@/components/masters/shared/MasterListPageSkeleton';
 
 const VendorsPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -117,7 +118,22 @@ const VendorsPage = () => {
   ];
 
   if (isLoading) {
-    return <div className="text-center">Loading vendors...</div>;
+    return (
+      <MasterListPageSkeleton
+        columnCount={6}
+        header={
+          <MasterPageHeader
+            title="Vendors"
+            description="Manage supplier and vendor information"
+            icon={<Users className="h-6 w-6 text-blue-600" />}
+            onAdd={() => setIsDialogOpen(true)}
+            onExport={handleExport}
+            onImport={() => setIsBulkImportOpen(true)}
+            canExport={false}
+          />
+        }
+      />
+    );
   }
 
   return (

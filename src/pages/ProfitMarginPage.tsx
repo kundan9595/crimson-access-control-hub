@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 import { Card, CardContent } from '@/components/ui/card';
 import { TrendingUp } from 'lucide-react';
@@ -15,16 +15,27 @@ import { useProfitMargins, useDeleteProfitMargin } from '@/hooks/masters/useProf
 import { exportToCSV, generateExportFilename } from '@/utils/exportUtils';
 import { useToast } from '@/hooks/use-toast';
 import type { ProfitMargin } from '@/services/masters/profitMarginsService';
+import { profitMarginsService } from '@/services/masters/profitMarginsService';
+import { MasterListPageSkeleton } from '@/components/masters/shared/MasterListPageSkeleton';
+import { MasterServerPagination } from '@/components/masters/shared/MasterServerPagination';
+import { config } from '@/config/environment';
 
 const ProfitMarginPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(config.pagination.defaultPageSize);
   const [showImportDialog, setShowImportDialog] = useState(false);
   const [selectedProfitMargin, setSelectedProfitMargin] = useState<ProfitMargin | undefined>();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   
-  const { data: profitMargins = [], isLoading } = useProfitMargins();
+  const { data: marginsPage, isLoading, isFetching } = useProfitMargins(page, pageSize);
+  const profitMargins = marginsPage?.data ?? [];
   const deleteProfitMarginMutation = useDeleteProfitMargin();
   const { toast } = useToast();
+
+  useEffect(() => {
+    setPage(1);
+  }, [searchTerm]);
 
   const filteredProfitMargins = profitMargins.filter((profitMargin) =>
     profitMargin.name.toLowerCase().includes(searchTerm.toLowerCase())
@@ -50,8 +61,9 @@ const ProfitMarginPage = () => {
     }
   };
 
-  const handleExport = () => {
-    if (profitMargins.length === 0) {
+  const handleExport = async () => {
+    const allMargins = await profitMarginsService.getAll();
+    if (allMargins.length === 0) {
       toast({
         title: "No data to export",
         description: "There are no profit margins to export.",
@@ -72,7 +84,7 @@ const ProfitMarginPage = () => {
         'Status',
         'Created At'
       ],
-      data: profitMargins,
+      data: allMargins,
       fieldMap: {
         'Name': 'name',
         'Min Range': 'min_range',
@@ -88,7 +100,7 @@ const ProfitMarginPage = () => {
     exportToCSV(exportConfig);
     toast({
       title: "Export successful",
-      description: `${profitMargins.length} profit margins exported successfully.`,
+      description: `${allMargins.length} profit margins exported successfully.`,
     });
   };
 
@@ -117,7 +129,23 @@ const ProfitMarginPage = () => {
   ];
 
   if (isLoading) {
-    return <div className="text-center">Loading profit margins...</div>;
+    return (
+      <MasterListPageSkeleton
+        columnCount={7}
+        header={
+          <MasterPageHeader
+            title="Profit Margins"
+            description="Configure profit margins and pricing strategies"
+            icon={<TrendingUp className="h-6 w-6 text-teal-600" />}
+            onAdd={handleAdd}
+            onExport={handleExport}
+            onImport={handleImport}
+            canExport={!!marginsPage?.data.length}
+            isScottApi={true}
+          />
+        }
+      />
+    );
   }
 
   return (
@@ -136,11 +164,13 @@ const ProfitMarginPage = () => {
       <Card>
         <CardContent className="p-6">
           <SearchFilter
-            placeholder="Search profit margins..."
+            placeholder="Search profit margins (current page)..."
             value={searchTerm}
             onChange={setSearchTerm}
             resultCount={filteredProfitMargins.length}
-            totalCount={profitMargins.length}
+            totalCount={
+              marginsPage?.totalCountIsExact ? marginsPage.totalCount : profitMargins.length
+            }
           />
           
           <div className="mt-6">
@@ -204,6 +234,16 @@ const ProfitMarginPage = () => {
               </div>
             )}
           </div>
+          <MasterServerPagination
+            result={marginsPage ?? null}
+            onPageChange={setPage}
+            onPageSizeChange={(size) => {
+              setPageSize(size);
+              setPage(1);
+            }}
+            disabled={isFetching}
+            className="mt-4"
+          />
         </CardContent>
       </Card>
 

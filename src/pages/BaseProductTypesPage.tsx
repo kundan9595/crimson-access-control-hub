@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -23,13 +23,19 @@ import {
   useDeleteBaseProductType,
 } from '@/hooks/masters/useBaseProductTypes';
 import type { BaseProductType } from '@/services/masters/baseProductTypesService';
+import { fetchBaseProductTypes } from '@/services/masters/baseProductTypesService';
 import { Package2, Edit, Trash2 } from 'lucide-react';
-import { Skeleton } from '@/components/ui/skeleton';
+import { MasterTableSkeleton } from '@/components/masters/shared/MasterListPageSkeleton';
+import { MasterServerPagination } from '@/components/masters/shared/MasterServerPagination';
 import { exportToCSV, generateExportFilename } from '@/utils/exportUtils';
 import BulkImportDialog from '@/components/masters/BulkImportDialog';
+import { config } from '@/config/environment';
 
 const BaseProductTypesPage = () => {
-  const { data: rows = [], isLoading } = useBaseProductTypes();
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(config.pagination.defaultPageSize);
+  const { data: bptPage, isLoading, isFetching } = useBaseProductTypes(page, pageSize);
+  const rows = bptPage?.data ?? [];
   const createMut = useCreateBaseProductType();
   const updateMut = useUpdateBaseProductType();
   const deleteMut = useDeleteBaseProductType();
@@ -45,13 +51,18 @@ const BaseProductTypesPage = () => {
 
   const filtered = rows.filter((r) => r.name.toLowerCase().includes(search.toLowerCase()));
 
-  const handleExport = () => {
-    if (!rows || rows.length === 0) return;
+  useEffect(() => {
+    setPage(1);
+  }, [search]);
+
+  const handleExport = async () => {
+    const all = await fetchBaseProductTypes();
+    if (!all.length) return;
 
     exportToCSV({
       filename: generateExportFilename('base-product-types'),
       headers: ['Name', 'Position', 'Image URL', 'Status', 'Created At'],
-      data: rows,
+      data: all,
       fieldMap: {
         'Name': 'name',
         'Position': (item: BaseProductType) => item.position?.toString() || '',
@@ -128,19 +139,18 @@ const BaseProductTypesPage = () => {
       <Card>
         <CardContent className="p-6">
           <SearchFilter
-            placeholder="Search..."
+            placeholder="Search (current page)..."
             value={search}
             onChange={setSearch}
             resultCount={filtered.length}
-            totalCount={rows.length}
+            totalCount={
+              bptPage?.totalCountIsExact ? bptPage.totalCount : rows.length
+            }
           />
           {isLoading ? (
-            <div className="space-y-2 mt-6">
-              <Skeleton className="h-10 w-full" />
-              <Skeleton className="h-10 w-full" />
-            </div>
+            <MasterTableSkeleton showToolbar={false} columnCount={4} className="mt-6" />
           ) : filtered.length === 0 ? (
-            <p className="text-center text-muted-foreground py-8">No base product types</p>
+            <p className="text-center text-muted-foreground py-8">No base product types on this page</p>
           ) : (
             <Table className="mt-6">
               <TableHeader>
@@ -187,6 +197,16 @@ const BaseProductTypesPage = () => {
               </TableBody>
             </Table>
           )}
+          <MasterServerPagination
+            result={bptPage ?? null}
+            onPageChange={setPage}
+            onPageSizeChange={(size) => {
+              setPageSize(size);
+              setPage(1);
+            }}
+            disabled={isFetching}
+            className="mt-4"
+          />
         </CardContent>
       </Card>
 

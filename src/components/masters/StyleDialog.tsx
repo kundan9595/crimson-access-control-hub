@@ -28,7 +28,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
-import { useCreateStyle, useUpdateStyle, useBrands, useCategories } from '@/hooks/useMasters';
+import { useCreateStyle, useUpdateStyle, useAllBrands, useCategories } from '@/hooks/useMasters';
 import { Style } from '@/services/mastersService';
 
 const formSchema = z.object({
@@ -54,7 +54,7 @@ export const StyleDialog: React.FC<StyleDialogProps> = ({
 }) => {
   const createMutation = useCreateStyle();
   const updateMutation = useUpdateStyle();
-  const { data: brands } = useBrands();
+  const { data: brands } = useAllBrands();
   const { data: categories } = useCategories();
 
   const form = useForm<FormData>({

@@ -17,8 +17,14 @@ import {
   DropdownMenuTrigger 
 } from '@/components/ui/dropdown-menu';
 import { MoreHorizontal, Edit, Trash2 } from 'lucide-react';
-import { useBaseProducts, useDeleteBaseProduct } from '@/hooks/masters/useBaseProducts';
+import { useDeleteBaseProduct } from '@/hooks/masters/useBaseProducts';
 import { BaseProduct } from '@/services/masters/baseProductsService';
+import {
+  getBaseProductUnitPriceForDisplay,
+  type ScottBaseProduct,
+} from '@/services/masters/baseProductsServiceScott';
+import type { ScottPaginatedResult } from '@/services/scott/scottPagination';
+import { MasterServerPagination } from '@/components/masters/shared/MasterServerPagination';
 import { BaseProductDialog } from './BaseProductDialog';
 import { 
   AlertDialog, 
@@ -30,21 +36,37 @@ import {
   AlertDialogHeader, 
   AlertDialogTitle 
 } from '@/components/ui/alert-dialog';
+import { MasterTableSkeleton } from '@/components/masters/shared/MasterListPageSkeleton';
 
-export const BaseProductsTable: React.FC = () => {
-  const { data: baseProducts = [], isLoading } = useBaseProducts();
+type BaseProductsTableProps = {
+  rows: ScottBaseProduct[];
+  isLoading: boolean;
+  paginationDisabled?: boolean;
+  paginated?: ScottPaginatedResult<ScottBaseProduct> | null;
+  onPageChange?: (page: number) => void;
+  onPageSizeChange?: (pageSize: number) => void;
+};
+
+export const BaseProductsTable: React.FC<BaseProductsTableProps> = ({
+  rows: baseProducts,
+  isLoading,
+  paginationDisabled,
+  paginated,
+  onPageChange,
+  onPageSizeChange,
+}) => {
   const deleteMutation = useDeleteBaseProduct();
   const [editingBaseProduct, setEditingBaseProduct] = useState<BaseProduct | null>(null);
   const [deletingBaseProduct, setDeletingBaseProduct] = useState<BaseProduct | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
-  const handleEdit = (baseProduct: BaseProduct) => {
-    setEditingBaseProduct(baseProduct);
+  const handleEdit = (baseProduct: ScottBaseProduct) => {
+    setEditingBaseProduct(baseProduct as unknown as BaseProduct);
     setIsDialogOpen(true);
   };
 
-  const handleDelete = (baseProduct: BaseProduct) => {
-    setDeletingBaseProduct(baseProduct);
+  const handleDelete = (baseProduct: ScottBaseProduct) => {
+    setDeletingBaseProduct(baseProduct as unknown as BaseProduct);
   };
 
   const confirmDelete = async () => {
@@ -60,10 +82,13 @@ export const BaseProductsTable: React.FC = () => {
   };
 
   if (isLoading) {
-    return <div className="text-center py-8">Loading base products...</div>;
+    return <MasterTableSkeleton showToolbar={false} columnCount={7} className="mt-0" />;
   }
 
-  if (baseProducts.length === 0) {
+  const showPagination =
+    Boolean(paginated && onPageChange && onPageSizeChange);
+
+  if (baseProducts.length === 0 && !showPagination) {
     return (
       <div className="text-center py-8 text-muted-foreground">
         <p>No base products found</p>
@@ -74,6 +99,12 @@ export const BaseProductsTable: React.FC = () => {
 
   return (
     <>
+      {baseProducts.length === 0 ? (
+        <div className="text-center py-8 text-muted-foreground rounded-md border">
+          <p>No base products on this page</p>
+          <p className="text-sm text-muted-foreground/90">Try another page or row size</p>
+        </div>
+      ) : (
       <div className="rounded-md border">
         <Table>
           <TableHeader>
@@ -89,13 +120,17 @@ export const BaseProductsTable: React.FC = () => {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {baseProducts.map((baseProduct) => (
+            {baseProducts.map((baseProduct: ScottBaseProduct) => (
               <TableRow key={baseProduct.id}>
                 <TableCell>
                   <div className="flex items-center gap-3">
-                    {(baseProduct.image_url || baseProduct.base_icon_url) && (
+                    {(baseProduct.image_url ||
+                      (baseProduct as BaseProduct).base_icon_url) && (
                       <img
-                        src={baseProduct.base_icon_url || baseProduct.image_url}
+                        src={
+                          (baseProduct as BaseProduct).base_icon_url ||
+                          baseProduct.image_url
+                        }
                         alt={baseProduct.name}
                         className="w-10 h-10 object-cover rounded-md"
                       />
@@ -140,7 +175,7 @@ export const BaseProductsTable: React.FC = () => {
                   )}
                 </TableCell>
                 <TableCell>
-                  ₹{baseProduct.base_price.toFixed(2)}
+                  ₹{getBaseProductUnitPriceForDisplay(baseProduct).toFixed(2)}
                 </TableCell>
                 <TableCell>
                   {baseProduct.calculator?.toFixed(2) || '-'}
@@ -177,6 +212,18 @@ export const BaseProductsTable: React.FC = () => {
           </TableBody>
         </Table>
       </div>
+      )}
+
+      {showPagination && (
+        <div className="mt-4">
+          <MasterServerPagination
+            result={paginated}
+            onPageChange={onPageChange!}
+            onPageSizeChange={onPageSizeChange!}
+            disabled={isLoading || paginationDisabled}
+          />
+        </div>
+      )}
 
       <BaseProductDialog
         open={isDialogOpen}

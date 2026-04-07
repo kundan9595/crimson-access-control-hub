@@ -1,8 +1,16 @@
 import {
   callScottDashboard,
   extractRecords,
+  extractScottEntity,
   normalizeId,
 } from '@/services/scott/callScottDashboard';
+import {
+  buildScottPaginatedMeta,
+  fetchAllScottPages,
+  normalizeScottPageParams,
+  type ScottPageParams,
+  type ScottPaginatedResult,
+} from '@/services/scott/scottPagination';
 
 export interface ProfitMargin {
   id: string;
@@ -53,7 +61,7 @@ function normalizePm(r: Record<string, unknown>): ProfitMargin {
         ? 'deleted'
         : 'active';
   return {
-    id: normalizeId(r.id),
+    id: normalizeId(r.id ?? r.profit_margin_id),
     name: String(r.name ?? ''),
     min_range: num(r.min_range),
     max_range: num(r.max_range),
@@ -84,29 +92,32 @@ function toFormBody(
   };
 }
 
-function firstRecord(body: Record<string, unknown>): Record<string, unknown> | null {
-  const list = extractRecords(body);
-  if (list.length) return list[0]!;
-  const data = body.data;
-  if (data && typeof data === 'object' && !Array.isArray(data) && 'id' in (data as object)) {
-    return data as Record<string, unknown>;
-  }
-  return null;
+async function fetchProfitMarginsPaginated(
+  params?: Partial<ScottPageParams>,
+): Promise<ScottPaginatedResult<ProfitMargin>> {
+  const p = normalizeScottPageParams(params);
+  const { body } = await callScottDashboard<Record<string, unknown>>({
+    resource: 'profit_margins',
+    method: 'GET',
+    query: {
+      items: p.items,
+      page: p.page,
+      is_deleted: false,
+      status: 'active',
+    },
+  });
+  const data = extractRecords(body).map((r) => normalizePm(r));
+  return {
+    data,
+    ...buildScottPaginatedMeta(body, p, data.length),
+  };
 }
 
 export const profitMarginsService = {
+  getPage: fetchProfitMarginsPaginated,
+
   async getAll(): Promise<ProfitMargin[]> {
-    const { body } = await callScottDashboard<Record<string, unknown>>({
-      resource: 'profit_margins',
-      method: 'GET',
-      query: {
-        items: 500,
-        page: 1,
-        is_deleted: false,
-        status: 'active',
-      },
-    });
-    return extractRecords(body).map((r) => normalizePm(r));
+    return fetchAllScottPages((pp) => fetchProfitMarginsPaginated(pp));
   },
 
   async getById(id: string): Promise<ProfitMargin | null> {
@@ -120,7 +131,7 @@ export const profitMarginsService = {
       method: 'POST',
       body: toFormBody(profitMarginData),
     });
-    const row = firstRecord(body);
+    const row = extractScottEntity(body);
     if (row) return normalizePm(row);
     throw new Error('Unexpected create profit margin response');
   },
@@ -144,7 +155,7 @@ export const profitMarginsService = {
       pathSuffix: id,
       body: toFormBody(merged),
     });
-    const row = firstRecord(body);
+    const row = extractScottEntity(body);
     if (row) return normalizePm(row);
     const again = await this.getById(id);
     if (again) return again;

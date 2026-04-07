@@ -4,9 +4,10 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Plus, Edit, Trash2, GripVertical } from 'lucide-react';
 import { DragDropContext, Droppable, Draggable, DropResult } from 'react-beautiful-dnd';
-import { useSizes, useDeleteSize, useUpdateSize } from '@/hooks/useMasters';
+import { useAllSizes, useDeleteSize, useUpdateSize } from '@/hooks/useMasters';
 import { Size } from '@/services/mastersService';
 import SizeDialog from './SizeDialog';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface SizeGroupSizesProps {
   sizeGroupId: string;
@@ -18,7 +19,7 @@ const SizeGroupSizes = ({ sizeGroupId, sizeGroupName }: SizeGroupSizesProps) => 
   const [editingSize, setEditingSize] = useState<Size | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   
-  const { data: allSizes, isLoading } = useSizes();
+  const { data: allSizes, isLoading } = useAllSizes();
   const deleteSize = useDeleteSize();
   const updateSize = useUpdateSize();
 
@@ -67,7 +68,13 @@ const SizeGroupSizes = ({ sizeGroupId, sizeGroupName }: SizeGroupSizesProps) => 
   };
 
   if (isLoading) {
-    return <div>Loading sizes...</div>;
+    return (
+      <div className="space-y-2 py-1">
+        {Array.from({ length: 5 }).map((_, i) => (
+          <Skeleton key={i} className="h-12 w-full rounded-md" />
+        ))}
+      </div>
+    );
   }
 
   return (

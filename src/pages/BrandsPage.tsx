@@ -14,13 +14,20 @@ import BrandStylesModal from '@/components/masters/BrandStylesModal';
 import { MasterPageHeader } from '@/components/masters/shared/MasterPageHeader';
 import { SearchFilter } from '@/components/masters/shared/SearchFilter';
 import { VirtualList } from '@/components/common';
+import { MasterListPageSkeleton } from '@/components/masters/shared/MasterListPageSkeleton';
+import { MasterServerPagination } from '@/components/masters/shared/MasterServerPagination';
+import { fetchBrands } from '@/services/masters/brandsService';
+import { config } from '@/config/environment';
 
 import type { Brand } from '@/services/mastersService';
 
 type ViewType = 'table' | 'card';
 
 const BrandsPage = () => {
-  const { data: brands, isLoading } = useBrands();
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(config.pagination.defaultPageSize);
+  const { data: brandsPage, isLoading } = useBrands(page, pageSize);
+  const brands = brandsPage?.data;
   const deleteBrandMutation = useDeleteBrand();
   const [searchTerm, setSearchTerm] = useState('');
   const [editingBrand, setEditingBrand] = useState<Brand | null>(null);
@@ -62,11 +69,12 @@ const BrandsPage = () => {
   };
 
   const handleExport = async () => {
-    if (!brands || brands.length === 0) return;
+    const allBrands = await fetchBrands();
+    if (!allBrands.length) return;
 
     const csvContent = [
       ['Name', 'Description', 'Logo URL', 'Sort Order', 'Status', 'Created At'].join(','),
-      ...brands.map(brand => [
+      ...allBrands.map((brand) => [
         `"${brand.name}"`,
         `"${brand.description || ''}"`,
         `"${brand.logo_url || ''}"`,
@@ -87,10 +95,16 @@ const BrandsPage = () => {
     URL.revokeObjectURL(url);
   };
 
-  const filteredBrands = brands?.filter(brand =>
-    brand.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    brand.description?.toLowerCase().includes(searchTerm.toLowerCase())
-  ) || [];
+  const filteredBrands =
+    brands?.filter(
+      (brand) =>
+        brand.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        brand.description?.toLowerCase().includes(searchTerm.toLowerCase()),
+    ) || [];
+
+  useEffect(() => {
+    setPage(1);
+  }, [searchTerm]);
 
   // Sort brands by sort_order, then by name
   const sortedBrands = [...filteredBrands].sort((a, b) => {
@@ -160,7 +174,24 @@ const BrandsPage = () => {
   );
 
   if (isLoading) {
-    return <div className="text-center">Loading brands...</div>;
+    return (
+      <MasterListPageSkeleton
+        showViewToggle
+        columnCount={6}
+        header={
+          <MasterPageHeader
+            title="Brands"
+            description="Manage your product brands"
+            icon={<Package className="h-6 w-6 text-blue-600" />}
+            onAdd={() => setDialogOpen(true)}
+            onExport={handleExport}
+            onImport={() => setBulkImportOpen(true)}
+            canExport={!!brandsPage?.data.length}
+            isScottApi={true}
+          />
+        }
+      />
+    );
   }
 
   return (
@@ -172,7 +203,7 @@ const BrandsPage = () => {
         onAdd={() => setDialogOpen(true)}
         onExport={handleExport}
         onImport={() => setBulkImportOpen(true)}
-        canExport={!!brands?.length}
+        canExport={!!brandsPage?.data.length}
         isScottApi={true}
       />
 
@@ -180,11 +211,13 @@ const BrandsPage = () => {
         <CardContent className="p-6">
           <div className="flex items-center justify-between mb-4">
             <SearchFilter
-              placeholder="Search brands..."
+              placeholder="Search brands (current page)..."
               value={searchTerm}
               onChange={setSearchTerm}
               resultCount={sortedBrands.length}
-              totalCount={brands?.length || 0}
+              totalCount={
+                brandsPage?.totalCountIsExact ? brandsPage.totalCount : brands?.length
+              }
             />
             <Tabs value={viewType} onValueChange={(value) => setViewType(value as ViewType)}>
               <TabsList className="inline-flex h-10 items-center justify-center rounded-md bg-muted p-1 text-muted-foreground">
@@ -311,6 +344,19 @@ const BrandsPage = () => {
               </div>
             )}
           </div>
+
+          {brandsPage && brandsPage.data.length > 0 && (
+            <MasterServerPagination
+              className="mt-6"
+              result={brandsPage}
+              disabled={isLoading}
+              onPageChange={setPage}
+              onPageSizeChange={(size) => {
+                setPageSize(size);
+                setPage(1);
+              }}
+            />
+          )}
         </CardContent>
       </Card>
 

@@ -1,29 +1,57 @@
 
 import { useQuery } from '@tanstack/react-query';
-import { fetchFabrics, createFabric, updateFabric, deleteFabric } from '@/services/masters/fabricsService';
+import {
+  fetchFabrics,
+  fetchFabricsPaginated,
+  createFabric,
+  updateFabric,
+  deleteFabric,
+  type Fabric,
+} from '@/services/masters/fabricsServiceScott';
 import { useCreateMutation, useUpdateMutation, useDeleteMutation } from './shared/utils';
-import { Fabric } from '@/services/masters/types';
+import { config } from '@/config/environment';
 
-export const useFabrics = () => {
+export { type Fabric } from '@/services/masters/fabricsServiceScott';
+
+export const useFabrics = (
+  page: number = 1,
+  pageSize: number = config.pagination.defaultPageSize,
+) => {
   return useQuery({
-    queryKey: ['fabrics'],
+    queryKey: ['fabrics', 'list', page, pageSize],
+    queryFn: () => fetchFabricsPaginated({ page, items: pageSize }),
+    placeholderData: (prev) => prev,
+  });
+};
+
+export const useAllFabrics = () => {
+  return useQuery({
+    queryKey: ['fabrics', 'all'],
     queryFn: fetchFabrics,
+    staleTime: config.cache.staleTime,
   });
 };
 
 export const useCreateFabric = () => {
-  return useCreateMutation<Omit<Fabric, 'id' | 'created_at' | 'updated_at' | 'created_by' | 'updated_by'>>({
+  return useCreateMutation<{
+    data: Omit<Fabric, 'id' | 'created_at' | 'updated_at' | 'created_by' | 'updated_by' | 'colors'>;
+    imageFile?: File;
+  }>({
     queryKey: ['fabrics'],
-    mutationFn: createFabric,
+    mutationFn: ({ data, imageFile }) => createFabric(data, imageFile),
     successMessage: 'Fabric created successfully',
     errorMessage: 'Failed to create fabric',
   });
 };
 
 export const useUpdateFabric = () => {
-  return useUpdateMutation<Fabric>({
+  return useUpdateMutation<{
+    id: string;
+    data: Partial<Omit<Fabric, 'id' | 'created_at' | 'updated_at' | 'created_by' | 'updated_by' | 'colors'>>;
+    imageFile?: File;
+  }>({
     queryKey: ['fabrics'],
-    mutationFn: ({ id, updates }) => updateFabric(id, updates),
+    mutationFn: ({ id, data, imageFile }) => updateFabric(id, data, imageFile),
     successMessage: 'Fabric updated successfully',
     errorMessage: 'Failed to update fabric',
   });

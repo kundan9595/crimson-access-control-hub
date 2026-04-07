@@ -13,6 +13,7 @@ import BulkImportDialog from '@/components/masters/BulkImportDialog';
 import CategoryStylesModal from '@/components/masters/CategoryStylesModal';
 import { MasterPageHeader } from '@/components/masters/shared/MasterPageHeader';
 import { SearchFilter } from '@/components/masters/shared/SearchFilter';
+import { MasterListPageSkeleton } from '@/components/masters/shared/MasterListPageSkeleton';
 import type { Category } from '@/services/mastersService';
 
 const CategoriesPage = () => {
@@ -95,7 +96,22 @@ const CategoriesPage = () => {
   });
 
   if (isLoading) {
-    return <div className="text-center">Loading categories...</div>;
+    return (
+      <MasterListPageSkeleton
+        columnCount={6}
+        header={
+          <MasterPageHeader
+            title="Categories"
+            description="Organize your products into categories"
+            icon={<Tags className="h-6 w-6 text-green-600" />}
+            onAdd={() => setDialogOpen(true)}
+            onExport={handleExport}
+            onImport={() => setBulkImportOpen(true)}
+            canExport={false}
+          />
+        }
+      />
+    );
   }
 
   return (

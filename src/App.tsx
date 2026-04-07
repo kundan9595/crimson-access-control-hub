@@ -37,7 +37,9 @@ const BaseProductTypesPage = lazy(() => import("./pages/BaseProductTypesPage"));
 const ProfitMarginPage = lazy(() => import("./pages/ProfitMarginPage"));
 const AppAssetsPage = lazy(() => import("./pages/AppAssetsPage"));
 const PromotionalBannersPage = lazy(() => import("./pages/PromotionalBannersPage"));
+const ScottPromotionalBannersPage = lazy(() => import("./pages/ScottPromotionalBannersPage"));
 const PromotionalAssetsPage = lazy(() => import("./pages/PromotionalAssetsPage"));
+const BaseProductAssetInfosPage = lazy(() => import("./pages/BaseProductAssetInfosPage"));
 const Warehouse = lazy(() => import("./pages/WarehouseOptimized"));
 const WarehouseDetails = lazy(() => import("./pages/WarehouseDetails"));
 const Inventory = lazy(() => import("./pages/Inventory"));
@@ -90,7 +92,7 @@ const App = () => {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <ThemeProvider defaultTheme="system" storageKey="crimson-theme">
+      <ThemeProvider defaultTheme="system" storageKey="scottone-theme">
         <TooltipProvider>
           <AuthProvider>
             <Toaster />
@@ -133,7 +135,9 @@ const App = () => {
                     <Route path="masters/profit-margin" element={<ProfitMarginPage />} />
                     <Route path="masters/app-assets" element={<AppAssetsPage />} />
                     <Route path="masters/promotional-banners" element={<PromotionalBannersPage />} />
+                    <Route path="masters/promotional-banners-rmp" element={<ScottPromotionalBannersPage />} />
                     <Route path="masters/promotional-assets" element={<PromotionalAssetsPage />} />
+                    <Route path="masters/base-product-asset-links" element={<BaseProductAssetInfosPage />} />
                     <Route path="warehouse" element={<Warehouse />} />
                     <Route path="warehouse/:id" element={<WarehouseDetails />} />
                     <Route path="inventory" element={<Inventory />} />

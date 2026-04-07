@@ -78,12 +78,12 @@ export const MASTER_DEPENDENCIES: Record<string, MasterConfig> = {
     dependencies: [],
     independent: true,
     level: 0,
-    templateHeaders: ['Name', 'Description', 'Status'],
+    templateHeaders: ['Name', 'Code', 'Size Type ID', 'Status', 'Sort Order'],
     sampleData: [
-      ['Small', 'Small size group', 'active'],
-      ['Medium', 'Medium size group', 'active']
+      ['Small', 'S', '1', 'active', '1'],
+      ['Medium', 'M', '1', 'active', '2'],
     ],
-    exportFields: ['name', 'description', 'status', 'created_at'] as const,
+    exportFields: ['name', 'code', 'size_group_id', 'status', 'sort_order', 'created_at'] as const,
   },
   zones: {
     dependencies: [],
@@ -266,17 +266,15 @@ export const MASTER_DEPENDENCIES: Record<string, MasterConfig> = {
 
   // Sizes (independent but referenced by skus)
   sizes: {
-    dependencies: [
-      { table: 'sizeGroups', lookupField: 'size_group_id', nameField: 'name', required: true }
-    ],
-    independent: false,
-    level: 1,
-    templateHeaders: ['Name', 'Code', 'Size Group Name', 'Status'],
+    dependencies: [],
+    independent: true,
+    level: 0,
+    templateHeaders: ['Name', 'Code', 'Size Type ID', 'Status', 'Sort Order'],
     sampleData: [
-      ['Small', 'S', 'Small', 'active'],
-      ['Medium', 'M', 'Medium', 'active']
+      ['Small', 'S', '1', 'active', '1'],
+      ['Medium', 'M', '1', 'active', '2'],
     ],
-    exportFields: ['name', 'code', 'status', 'created_at'] as const,
+    exportFields: ['name', 'code', 'size_group_id', 'status', 'sort_order', 'created_at'] as const,
   },
 
   // Promotional Assets (independent)

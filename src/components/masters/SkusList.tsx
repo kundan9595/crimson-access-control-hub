@@ -30,6 +30,7 @@ import { MoreHorizontal, Edit, Trash2 } from 'lucide-react';
 import { useSkus, useDeleteSku } from '@/hooks/masters/useSkus';
 import { SkuDialog } from './SkuDialog';
 import { Sku } from '@/services/masters/types';
+import { MasterTableSkeleton } from '@/components/masters/shared/MasterListPageSkeleton';
 
 export const SkusList = () => {
   const { data: skus = [], isLoading } = useSkus();
@@ -61,7 +62,7 @@ export const SkusList = () => {
   };
 
   if (isLoading) {
-    return <div>Loading SKUs...</div>;
+    return <MasterTableSkeleton showToolbar={false} columnCount={8} />;
   }
 
   return (

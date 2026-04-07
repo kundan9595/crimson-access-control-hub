@@ -4,14 +4,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { 
-  Package, 
-  Tags, 
-  Palette, 
-  Ruler, 
-  MapPin, 
-  DollarSign, 
-  Users, 
+import {
+  Package,
+  Tags,
+  Palette,
+  Ruler,
+  MapPin,
+  DollarSign,
+  Users,
   Shirt,
   ArrowRight,
   Package2,
@@ -23,7 +23,9 @@ import {
   TrendingUp,
   Smartphone,
   Search,
-  Image as ImageIcon
+  Image as ImageIcon,
+  Megaphone,
+  Link2,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
@@ -58,14 +60,14 @@ const Masters = () => {
     },
     {
       title: 'Size Groups',
-      description: 'Create and manage size groups and individual sizes',
+      description: 'Create and manage sizes linked to size types',
       icon: Ruler,
       path: '/masters/size-groups',
       color: 'text-orange-600',
-      isScottApi: false,
+      isScottApi: true,
     },
     {
-      title: 'Size types',
+      title: 'Size Types',
       description: 'Scott dashboard size types (API)',
       icon: Ruler,
       path: '/masters/size-types',
@@ -126,7 +128,7 @@ const Masters = () => {
       icon: Scissors,
       path: '/masters/fabric',
       color: 'text-amber-600',
-      isScottApi: false,
+      isScottApi: true,
     },
     {
       title: 'Parts',
@@ -134,7 +136,7 @@ const Masters = () => {
       icon: Wrench,
       path: '/masters/parts',
       color: 'text-slate-600',
-      isScottApi: false,
+      isScottApi: true,
     },
     {
       title: 'Add Ons',
@@ -142,7 +144,7 @@ const Masters = () => {
       icon: Plus,
       path: '/masters/add-ons',
       color: 'text-lime-600',
-      isScottApi: false,
+      isScottApi: true,
     },
     {
       title: 'Base Product',
@@ -150,7 +152,7 @@ const Masters = () => {
       icon: Box,
       path: '/masters/base-product',
       color: 'text-rose-600',
-      isScottApi: false,
+      isScottApi: true,
     },
     {
       title: 'Base product types',
@@ -185,12 +187,28 @@ const Masters = () => {
       isScottApi: true,
     },
     {
+      title: 'Promotional Banners (RMP)',
+      description: 'Manage RMP promotional banners with category, class and brand targeting',
+      icon: Megaphone,
+      path: '/masters/promotional-banners-rmp',
+      color: 'text-purple-600',
+      isScottApi: true,
+    },
+    {
       title: 'Promotional Assets',
       description: 'Manage promotional assets including videos, catalogues, and images',
       icon: ImageIcon,
       path: '/masters/promotional-assets',
       color: 'text-blue-600',
       isScottApi: false,
+    },
+    {
+      title: 'Base Product Asset Links',
+      description: 'Manage links between base products, add-ons, parts, and asset infos',
+      icon: Link2,
+      path: '/masters/base-product-asset-links',
+      color: 'text-amber-600',
+      isScottApi: true,
     },
   ];
 
