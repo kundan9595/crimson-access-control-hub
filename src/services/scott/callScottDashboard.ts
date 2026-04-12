@@ -16,7 +16,15 @@ export type ScottResource =
   | 'fabrics'
   | 'base_products'
   | 'promotional_banners'
-  | 'base_product_asset_infos';
+  | 'base_product_asset_infos'
+  | 'rmp_colors'
+  | 'rmp_sizes'
+  | 'rmp_brands'
+  | 'rmp_classes'
+  | 'rmp_skus'
+  | 'rmp_categories'
+  | 'rmp_prices'
+  | 'rmp_price_types';
 
 export interface ScottFilePayload {
   __base64File: true;
@@ -210,6 +218,14 @@ const SCOTT_ALT_ID_KEYS = [
   'base_product_type_id',
   'base_product_asset_info_id',
   'promotional_banner_id',
+  'rmp_color_id',
+  'rmp_size_id',
+  'rmp_brand_id',
+  'rmp_class_id',
+  'rmp_sku_id',
+  'rmp_category_id',
+  'rmp_price_id',
+  'rmp_price_type_id',
 ] as const;
 
 function firstAltId(r: Record<string, unknown>): unknown {

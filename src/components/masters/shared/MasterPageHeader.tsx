@@ -8,6 +8,8 @@ import { useNavigate } from 'react-router-dom';
 interface MasterPageHeaderProps {
   title: string;
   description: string;
+  /** Label after "Add " on the primary button. Defaults to title with its last character removed (legacy plural→singular heuristic). */
+  addButtonLabel?: string;
   icon?: React.ReactNode;
   onAdd: () => void;
   onExport?: () => void;
@@ -20,6 +22,7 @@ interface MasterPageHeaderProps {
 export const MasterPageHeader: React.FC<MasterPageHeaderProps> = ({
   title,
   description,
+  addButtonLabel,
   icon,
   onAdd,
   onExport,
@@ -88,7 +91,7 @@ export const MasterPageHeader: React.FC<MasterPageHeaderProps> = ({
           )}
           <Button onClick={handleAddClick}>
             <Plus className="h-4 w-4 mr-2" />
-            Add {title.slice(0, -1)}
+            Add {addButtonLabel ?? title.slice(0, -1)}
           </Button>
         </div>
       </div>

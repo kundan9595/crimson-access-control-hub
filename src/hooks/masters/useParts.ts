@@ -1,15 +1,18 @@
 
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   fetchParts,
   fetchPartsPaginated,
   createPart,
   updatePart,
   deletePart,
+  updatePartColors,
+  updatePartAddOns,
 } from '@/services/masters/partsServiceScott';
 import type { Part } from '@/services/masters/partsServiceScott';
 import { useCreateMutation, useUpdateMutation, useDeleteMutation } from './shared/utils';
 import { config } from '@/config/environment';
+import { toast } from 'sonner';
 
 export type { Part };
 
@@ -56,5 +59,39 @@ export const useDeletePart = () => {
     mutationFn: deletePart,
     successMessage: 'Part deleted successfully',
     errorMessage: 'Failed to delete part',
+  });
+};
+
+// Update Part Colors relationship
+export const useUpdatePartColors = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, colorIds }: { id: string; colorIds: string[] }) =>
+      updatePartColors(id, colorIds),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['parts'] });
+      toast.success('Part colors updated successfully');
+    },
+    onError: () => {
+      toast.error('Failed to update part colors');
+    },
+  });
+};
+
+// Update Part AddOns relationship
+export const useUpdatePartAddOns = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, addOnIds }: { id: string; addOnIds: string[] }) =>
+      updatePartAddOns(id, addOnIds),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['parts'] });
+      toast.success('Part add-ons updated successfully');
+    },
+    onError: () => {
+      toast.error('Failed to update part add-ons');
+    },
   });
 };

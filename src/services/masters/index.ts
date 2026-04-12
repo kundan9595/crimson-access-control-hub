@@ -87,9 +87,43 @@ export * from './citiesService';
 export * from './promotionalBannersService';
 export * from './promotionalAssetsService';
 
+// Export all RMP (Ready Made Product) services
+export * from './rmpSkusService';
+export * from './rmpBrandsService';
+export * from './rmpSizesService';
+export * from './rmpColorsService';
+export * from './rmpClassesService';
+export * from './rmpCategoriesService';
+export * from './rmpPricesService';
+export * from './rmpPriceTypesService';
+
 // Re-export profit margin types
 export type {
   ProfitMargin,
   CreateProfitMarginData,
   UpdateProfitMarginData,
 } from './profitMarginsService';
+
+// Re-export RMP types from individual services
+export type {
+  RmpSku,
+} from './rmpSkusService';
+
+export type {
+  RmpBrand,
+} from './rmpBrandsService';
+
+export type {
+  RmpSize,
+  RmpSizeType,
+} from './rmpSizesService';
+
+export type {
+  RmpColor,
+} from './rmpColorsService';
+
+export type {
+  RmpClass,
+  RmpClassImageFiles,
+} from './rmpClassesService';
+

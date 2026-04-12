@@ -60,7 +60,7 @@ const BaseProductTypesPage = () => {
     if (!all.length) return;
 
     exportToCSV({
-      filename: generateExportFilename('base-product-types'),
+      filename: generateExportFilename('parent-categories'),
       headers: ['Name', 'Position', 'Image URL', 'Status', 'Created At'],
       data: all,
       fieldMap: {
@@ -126,8 +126,9 @@ const BaseProductTypesPage = () => {
   return (
     <div className="space-y-6">
       <MasterPageHeader
-        title="Base product types"
-        description="Scott dashboard base product types (taxonomy)"
+        title="Parent categories"
+        description="Manage parent product categories (taxonomy)"
+        addButtonLabel="Parent category"
         icon={<Package2 className="h-6 w-6 text-teal-600" />}
         onAdd={openCreate}
         onExport={handleExport}
@@ -150,7 +151,7 @@ const BaseProductTypesPage = () => {
           {isLoading ? (
             <MasterTableSkeleton showToolbar={false} columnCount={4} className="mt-6" />
           ) : filtered.length === 0 ? (
-            <p className="text-center text-muted-foreground py-8">No base product types on this page</p>
+            <p className="text-center text-muted-foreground py-8">No parent categories on this page</p>
           ) : (
             <Table className="mt-6">
               <TableHeader>
@@ -186,7 +187,7 @@ const BaseProductTypesPage = () => {
                         size="sm"
                         className="text-red-600"
                         onClick={() => {
-                          if (confirm('Delete this item?')) deleteMut.mutate(r.id);
+                          if (confirm('Delete this parent category?')) deleteMut.mutate(r.id);
                         }}
                       >
                         <Trash2 className="h-4 w-4" />
@@ -213,7 +214,7 @@ const BaseProductTypesPage = () => {
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>{editing ? 'Edit base product type' : 'Create base product type'}</DialogTitle>
+            <DialogTitle>{editing ? 'Edit parent category' : 'Create parent category'}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-2">
             <div>

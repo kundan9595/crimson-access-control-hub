@@ -1,11 +1,11 @@
 {
 	"info": {
-		"_postman_id": "2edd9ca7-9b44-4e56-9dc7-0000c27ac292",
+		"_postman_id": "d6aa7a7f-a32f-4663-afc0-41535eced5f5",
 		"name": "scott-international-dashboard",
 		"description": "UPDATED COLLECTION — Changelog vs original scott-international collection:\n\n• Promotions index: URL now has items=10&page=1 (original had empty ?).  \n• Profit Margin index: query uses 'items' (not 'item'), added status=active filter; create/update: added status field.  \n• Colors create/update: added status (active|inactive); Delete: URL fixed to colors/:id (original wrongly used authorized_brands/2).  \n• Authorized Brands create/update: added description, logo_url, status, sort_order; Delete: URL fixed to authorized_brands/:id.  \n• Asset Infos create/update: added name, add_on_id, status; body keys use snake_case (dx, dy, mirror_dx, asset_height_resp_to_box).  \n• Customers index: query params now search, status, customer_type, zone_id, items, page (aligned with app).  \n• Customers: NEW endpoint 'get by customer_code' (GET .../by_code?customer_code=).  \n• Customers create: body aligned with app — customer_code, company_name, contact_person, customer_type, zone_id, status, credit_limit, payment_terms, gst, notes, distributor_ids, brand_ids, addresses with label, type, address, city_id, state_id, postal_code, is_primary.",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
 		"_exporter_id": "28600663",
-		"_collection_link": "https://techsaints.postman.co/workspace/Team-Workspace~bf1971e4-3f0e-438e-8aef-2a6c59f7deff/collection/28600663-2edd9ca7-9b44-4e56-9dc7-0000c27ac292?action=share&source=collection_link&creator=28600663"
+		"_collection_link": "https://techsaints.postman.co/workspace/Team-Workspace~bf1971e4-3f0e-438e-8aef-2a6c59f7deff/collection/8581452-d6aa7a7f-a32f-4663-afc0-41535eced5f5?action=share&source=collection_link&creator=28600663"
 	},
 	"item": [
 		{
@@ -1304,7 +1304,7 @@
 									}
 								],
 								"url": {
-									"raw": "{{base_url}}/api/dashboard/v1/rmp_categories?items=10&page=1&is_deleted=true",
+									"raw": "{{base_url}}/api/dashboard/v1/rmp_categories?items=10&page=1",
 									"host": [
 										"{{base_url}}"
 									],
@@ -1327,7 +1327,8 @@
 										{
 											"key": "is_deleted",
 											"value": "true",
-											"description": "true | false"
+											"description": "true | false",
+											"disabled": true
 										}
 									]
 								}
@@ -2771,6 +2772,234 @@
 										"v1",
 										"rmp_classes",
 										"3302"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Rmp Prices",
+					"item": [
+						{
+							"name": "Index",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "{{auth_token}}",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/api/dashboard/v1/rmp_prices?items=10&page=1&is_deleted=false",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"dashboard",
+										"v1",
+										"rmp_prices"
+									],
+									"query": [
+										{
+											"key": "items",
+											"value": "10",
+											"description": "Airtable Name Prices (Scott Ready Stock)"
+										},
+										{
+											"key": "page",
+											"value": "1"
+										},
+										{
+											"key": "is_deleted",
+											"value": "false",
+											"description": "true | false"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Create",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "{{auth_token}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "formdata",
+									"formdata": [
+										{
+											"key": "name",
+											"value": "testing-21-1",
+											"description": "Price Prefix (Required)",
+											"type": "text"
+										},
+										{
+											"key": "price",
+											"value": "29",
+											"description": "Price",
+											"type": "text"
+										},
+										{
+											"key": "is_deleted",
+											"value": "false",
+											"description": "True | False",
+											"type": "text"
+										},
+										{
+											"key": "mrp",
+											"value": "5",
+											"description": "MRP",
+											"type": "text"
+										},
+										{
+											"key": "rmp_sku_id",
+											"value": "21587",
+											"type": "text"
+										},
+										{
+											"key": "rmp_price_type_id",
+											"value": "264",
+											"type": "text"
+										}
+									]
+								},
+								"url": {
+									"raw": "{{base_url}}/api/dashboard/v1/rmp_prices",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"dashboard",
+										"v1",
+										"rmp_prices"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Update",
+							"request": {
+								"method": "PATCH",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "{{auth_token}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "formdata",
+									"formdata": [
+										{
+											"key": "name",
+											"value": "testing",
+											"type": "text"
+										},
+										{
+											"key": "price",
+											"value": "299",
+											"type": "text"
+										},
+										{
+											"key": "is_deleted",
+											"value": "false",
+											"type": "text"
+										},
+										{
+											"key": "mrp",
+											"value": "101",
+											"type": "text"
+										},
+										{
+											"key": "rmp_sku_id",
+											"value": "21587",
+											"type": "text"
+										},
+										{
+											"key": "rmp_price_type_id",
+											"value": "264",
+											"type": "text"
+										}
+									]
+								},
+								"url": {
+									"raw": "{{base_url}}/api/dashboard/v1/rmp_prices/32631",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"dashboard",
+										"v1",
+										"rmp_prices",
+										"32631"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Delete",
+							"request": {
+								"method": "DELETE",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "{{auth_token}}",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/api/dashboard/v1/rmp_prices/32631",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"dashboard",
+										"v1",
+										"rmp_prices",
+										"32631"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Show",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "{{auth_token}}",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/api/dashboard/v1/rmp_prices/32631",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"dashboard",
+										"v1",
+										"rmp_prices",
+										"32631"
 									]
 								}
 							},

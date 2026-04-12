@@ -117,7 +117,7 @@ export async function createBaseProductType(data: {
   if (row) {
     return normalize(row);
   }
-  throw new Error('Unexpected create base product type response');
+  throw new Error('Unexpected create parent category response');
 }
 
 export async function updateBaseProductType(
@@ -132,7 +132,7 @@ export async function updateBaseProductType(
 ): Promise<BaseProductType> {
   const all = await fetchBaseProductTypes();
   const cur = all.find((b) => b.id === id);
-  if (!cur) throw new Error('Base product type not found');
+  if (!cur) throw new Error('Parent category not found');
   const merged = {
     name: updates.name ?? cur.name,
     status: updates.status ?? cur.status,
@@ -152,7 +152,7 @@ export async function updateBaseProductType(
   }
   const again = await fetchBaseProductTypes().then((rows) => rows.find((b) => b.id === id));
   if (again) return again;
-  throw new Error('Unexpected update base product type response');
+  throw new Error('Unexpected update parent category response');
 }
 
 export async function deleteBaseProductType(id: string): Promise<void> {

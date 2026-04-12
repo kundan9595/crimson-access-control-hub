@@ -12,7 +12,7 @@ import { MediaStep } from './steps/MediaStep';
 import { useCategories } from '@/hooks/masters/useCategories';
 import { useFabrics } from '@/hooks/masters/useFabrics';
 import { useAllSizeTypes } from '@/hooks/masters/useSizeTypes';
-import { useParts } from '@/hooks/masters/useParts';
+import { useAllParts } from '@/hooks/masters/useParts';
 import { useCreateBaseProduct, useUpdateBaseProduct } from '@/hooks/masters/useBaseProducts';
 import { BaseProduct } from '@/services/masters/baseProductsService';
 import { BaseProductFormData } from '@/lib/validation/schemas';
@@ -44,7 +44,7 @@ export const BaseProductDialog: React.FC<BaseProductDialogProps> = ({
   const { data: categories = [] } = useCategories();
   const { data: fabrics = [] } = useFabrics();
   const { data: sizeTypes = [] } = useAllSizeTypes();
-  const { data: parts = [] } = useParts();
+  const { data: partsData = [] } = useAllParts();
 
   // Mutation hooks
   const createMutation = useCreateBaseProduct();
@@ -142,7 +142,7 @@ export const BaseProductDialog: React.FC<BaseProductDialogProps> = ({
               <ConfigurationStep
                 form={form}
                 sizeTypes={sizeTypes}
-                parts={parts}
+                parts={partsData}
               />
             )}
 

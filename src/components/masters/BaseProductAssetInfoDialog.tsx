@@ -13,7 +13,7 @@ import {
 } from '@/hooks/masters/useBaseProductAssetInfos';
 import { useBaseProducts } from '@/hooks/masters/useBaseProducts';
 import { useAddOns } from '@/hooks/masters/useAddOns';
-import { useParts } from '@/hooks/masters/useParts';
+import { useAllParts } from '@/hooks/masters/useParts';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useGetAppAssets } from '@/hooks/masters/useAppAssets';
 
@@ -42,7 +42,7 @@ const BaseProductAssetInfoDialog = ({
 
   const { data: baseProducts = [], isLoading: isBaseProductsLoading } = useBaseProducts();
   const { data: addOns = [], isLoading: isAddOnsLoading } = useAddOns();
-  const { data: parts = [], isLoading: isPartsLoading } = useParts();
+  const { data: parts = [], isLoading: isPartsLoading } = useAllParts();
   const { data: appAssets = [], isLoading: isAppAssetsLoading } = useGetAppAssets();
 
   const form = useForm<BaseProductAssetInfoFormData>({

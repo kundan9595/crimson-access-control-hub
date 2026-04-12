@@ -35,7 +35,7 @@ export const useCreateBaseProductType = () => {
     mutationFn: createBaseProductType,
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['baseProductTypes'] });
-      toast.success('Base product type created');
+      toast.success('Parent category created');
     },
     onError: (e: Error) => toast.error(e.message || 'Failed to create'),
   });
@@ -53,7 +53,7 @@ export const useUpdateBaseProductType = () => {
     }) => updateBaseProductType(id, updates),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['baseProductTypes'] });
-      toast.success('Base product type updated');
+      toast.success('Parent category updated');
     },
     onError: (e: Error) => toast.error(e.message || 'Failed to update'),
   });
@@ -65,7 +65,7 @@ export const useDeleteBaseProductType = () => {
     mutationFn: deleteBaseProductType,
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['baseProductTypes'] });
-      toast.success('Base product type deleted');
+      toast.success('Parent category deleted');
     },
     onError: (e: Error) => toast.error(e.message || 'Failed to delete'),
   });

@@ -3,7 +3,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { Suspense, lazy, useEffect } from "react";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
@@ -40,6 +40,14 @@ const PromotionalBannersPage = lazy(() => import("./pages/PromotionalBannersPage
 const ScottPromotionalBannersPage = lazy(() => import("./pages/ScottPromotionalBannersPage"));
 const PromotionalAssetsPage = lazy(() => import("./pages/PromotionalAssetsPage"));
 const BaseProductAssetInfosPage = lazy(() => import("./pages/BaseProductAssetInfosPage"));
+const RmpBrandsPage = lazy(() => import("./pages/RmpBrandsPage"));
+const RmpSizesPage = lazy(() => import("./pages/RmpSizesPage"));
+const RmpColorsPage = lazy(() => import("./pages/RmpColorsPage"));
+const RmpClassesPage = lazy(() => import("./pages/RmpClassesPage"));
+const RmpSkusPage = lazy(() => import("./pages/RmpSkusPage"));
+const RmpCategoriesPage = lazy(() => import("./pages/RmpCategoriesPage"));
+const RmpPricesPage = lazy(() => import("./pages/RmpPricesPage"));
+const RmpPriceTypesPage = lazy(() => import("./pages/RmpPriceTypesPage"));
 const Warehouse = lazy(() => import("./pages/WarehouseOptimized"));
 const WarehouseDetails = lazy(() => import("./pages/WarehouseDetails"));
 const Inventory = lazy(() => import("./pages/Inventory"));
@@ -131,13 +139,25 @@ const App = () => {
                     <Route path="masters/add-ons" element={<AddOnsPage />} />
                     <Route path="masters/base-product" element={<BaseProductPage />} />
                     <Route path="masters/size-types" element={<SizeTypesPage />} />
-                    <Route path="masters/base-product-types" element={<BaseProductTypesPage />} />
+                    <Route path="masters/parent-categories" element={<BaseProductTypesPage />} />
+                    <Route
+                      path="masters/base-product-types"
+                      element={<Navigate to="/masters/parent-categories" replace />}
+                    />
                     <Route path="masters/profit-margin" element={<ProfitMarginPage />} />
                     <Route path="masters/app-assets" element={<AppAssetsPage />} />
                     <Route path="masters/promotional-banners" element={<PromotionalBannersPage />} />
                     <Route path="masters/promotional-banners-rmp" element={<ScottPromotionalBannersPage />} />
                     <Route path="masters/promotional-assets" element={<PromotionalAssetsPage />} />
                     <Route path="masters/base-product-asset-links" element={<BaseProductAssetInfosPage />} />
+                    <Route path="masters/rmp-brands" element={<RmpBrandsPage />} />
+                    <Route path="masters/rmp-sizes" element={<RmpSizesPage />} />
+                    <Route path="masters/rmp-colors" element={<RmpColorsPage />} />
+                    <Route path="masters/rmp-classes" element={<RmpClassesPage />} />
+                    <Route path="masters/rmp-skus" element={<RmpSkusPage />} />
+                    <Route path="masters/rmp-categories" element={<RmpCategoriesPage />} />
+                    <Route path="masters/rmp-prices" element={<RmpPricesPage />} />
+                    <Route path="masters/rmp-price-types" element={<RmpPriceTypesPage />} />
                     <Route path="warehouse" element={<Warehouse />} />
                     <Route path="warehouse/:id" element={<WarehouseDetails />} />
                     <Route path="inventory" element={<Inventory />} />

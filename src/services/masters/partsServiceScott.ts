@@ -156,3 +156,39 @@ export const deletePart = async (id: string): Promise<void> => {
     pathSuffix: id,
   });
 };
+
+// Update Part Colors relationship
+export const updatePartColors = async (
+  id: string,
+  colorIds: string[],
+): Promise<void> => {
+  const formData: Record<string, unknown> = {};
+  colorIds.forEach((colorId, index) => {
+    formData[`color_ids[${index}]`] = colorId;
+  });
+
+  await callScottDashboard<Record<string, unknown>>({
+    resource: 'parts',
+    method: 'PATCH',
+    pathSuffix: `${id}/update_colors`,
+    body: formData,
+  });
+};
+
+// Update Part AddOns relationship
+export const updatePartAddOns = async (
+  id: string,
+  addOnIds: string[],
+): Promise<void> => {
+  const formData: Record<string, unknown> = {};
+  addOnIds.forEach((addOnId, index) => {
+    formData[`add_on_ids[${index}]`] = addOnId;
+  });
+
+  await callScottDashboard<Record<string, unknown>>({
+    resource: 'parts',
+    method: 'PATCH',
+    pathSuffix: `${id}/update_add_ons`,
+    body: formData,
+  });
+};

@@ -22,7 +22,15 @@ type ScottResource =
   | "fabrics"
   | "base_products"
   | "promotional_banners"
-  | "base_product_asset_infos";
+  | "base_product_asset_infos"
+  | "rmp_colors"
+  | "rmp_sizes"
+  | "rmp_brands"
+  | "rmp_classes"
+  | "rmp_skus"
+  | "rmp_categories"
+  | "rmp_prices"
+  | "rmp_price_types";
 
 /** Keep in sync with `ScottResource` in src/services/scott/callScottDashboard.ts */
 const ALLOWED: Set<ScottResource> = new Set([
@@ -41,6 +49,14 @@ const ALLOWED: Set<ScottResource> = new Set([
   "base_products",
   "promotional_banners",
   "base_product_asset_infos",
+  "rmp_colors",
+  "rmp_sizes",
+  "rmp_brands",
+  "rmp_classes",
+  "rmp_skus",
+  "rmp_categories",
+  "rmp_prices",
+  "rmp_price_types",
 ]);
 
 interface ScottProxyPayload {
@@ -183,7 +199,7 @@ function resolveScottUpstream(
     const b = body && typeof body === "object" ? body : {};
     return {
       url: `${baseUrl}/api/dashboard/v1/settings/airtable_sync${qs}`,
-      fetchMethod: "POST",
+      fetchMethod: "PATCH",
       fetchBody: bodyToFormData(b as Record<string, unknown>),
     };
   }

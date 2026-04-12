@@ -1,8 +1,27 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { useMutation } from '@tanstack/react-query';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Settings as SettingsIcon, Construction } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
+import { Settings as SettingsIcon, CloudUpload } from 'lucide-react';
+import { setScottAirtableSyncEnabled } from '@/services/scott/scottSettingsService';
+import { toast } from 'sonner';
 
 const Settings = () => {
+  const [airtableEnabled, setAirtableEnabled] = useState(true);
+
+  const syncMutation = useMutation({
+    mutationFn: () => setScottAirtableSyncEnabled(airtableEnabled),
+    onSuccess: () => {
+      toast.success('Scott Airtable sync setting updated');
+    },
+    onError: (e: unknown) => {
+      const msg = e instanceof Error ? e.message : 'Request failed';
+      toast.error(msg);
+    },
+  });
+
   return (
     <div className="space-y-6">
       <div>
@@ -11,31 +30,44 @@ const Settings = () => {
           Settings
         </h1>
         <p className="text-muted-foreground">
-          Manage your application settings and preferences
+          Application preferences and Scott dashboard integration
         </p>
       </div>
 
-      <div className="flex justify-center">
-        <Card className="max-w-2xl w-full">
+      <div className="max-w-2xl space-y-6">
+        <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Construction className="h-5 w-5" />
-              Coming Soon
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <CloudUpload className="h-5 w-5 text-blue-600" />
+              Scott — Airtable sync
             </CardTitle>
             <CardDescription>
-              Settings page is under development
+              Controls the Scott dashboard Airtable sync flag (same as Postman{' '}
+              <code className="text-xs">/api/dashboard/v1/settings/airtable_sync</code>).
             </CardDescription>
           </CardHeader>
-          <CardContent>
-            <div className="flex flex-col items-center justify-center py-12 text-center">
-              <div className="rounded-full bg-muted p-6 mb-4">
-                <Construction className="h-12 w-12 text-muted-foreground" />
+          <CardContent className="space-y-4">
+            <div className="flex items-center justify-between gap-4 rounded-lg border p-4">
+              <div className="space-y-0.5">
+                <Label htmlFor="airtable-sync">Enable Airtable sync</Label>
+                <p className="text-sm text-muted-foreground">
+                  When off, sync jobs on the Scott side should not run.
+                </p>
               </div>
-              <h3 className="text-xl font-semibold mb-2">Settings Coming Soon</h3>
-              <p className="text-muted-foreground max-w-md">
-                We're working on bringing you a comprehensive settings page where you'll be able to manage your account preferences, application settings, and more.
-              </p>
+              <Switch
+                id="airtable-sync"
+                checked={airtableEnabled}
+                onCheckedChange={setAirtableEnabled}
+                disabled={syncMutation.isPending}
+              />
             </div>
+            <Button
+              type="button"
+              onClick={() => syncMutation.mutate()}
+              disabled={syncMutation.isPending}
+            >
+              {syncMutation.isPending ? 'Saving…' : 'Save to Scott'}
+            </Button>
           </CardContent>
         </Card>
       </div>

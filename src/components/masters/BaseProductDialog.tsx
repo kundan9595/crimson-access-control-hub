@@ -13,7 +13,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useCategories } from '@/hooks/masters/useCategories';
 import { useFabrics } from '@/hooks/masters/useFabrics';
-import { useParts } from '@/hooks/masters/useParts';
+import { useAllParts } from '@/hooks/masters/useParts';
 import { useAllSizeTypes } from '@/hooks/masters/useSizeTypes';
 import { useCreateBaseProduct, useUpdateBaseProduct } from '@/hooks/masters/useBaseProducts';
 import { BaseProduct } from '@/services/masters/baseProductsService';
@@ -65,7 +65,7 @@ export const BaseProductDialog: React.FC<BaseProductDialogProps> = ({
 }) => {
   const { data: categories = [] } = useCategories();
   const { data: fabrics = [] } = useFabrics();
-  const { data: parts = [] } = useParts();
+  const { data: partsData = [] } = useAllParts();
   const { data: sizeTypes = [] } = useAllSizeTypes();
   const createMutation = useCreateBaseProduct();
   const updateMutation = useUpdateBaseProduct();
@@ -477,7 +477,7 @@ export const BaseProductDialog: React.FC<BaseProductDialogProps> = ({
                       <SelectValue placeholder="Select parts to add" />
                     </SelectTrigger>
                     <SelectContent>
-                      {parts
+                      {partsData
                         .filter(part => !selectedParts.includes(part.id))
                         .map((part) => (
                           <SelectItem key={part.id} value={part.id}>
@@ -489,7 +489,7 @@ export const BaseProductDialog: React.FC<BaseProductDialogProps> = ({
                   {selectedParts.length > 0 && (
                     <div className="flex flex-wrap gap-2">
                       {selectedParts.map((partId) => {
-                        const part = parts.find(p => p.id === partId);
+                        const part = partsData.find(p => p.id === partId);
                         return (
                           <Badge key={partId} variant="secondary" className="flex items-center gap-1">
                             {part?.name || partId}
