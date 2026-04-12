@@ -1,15 +1,16 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { promotionalBannersService, type PromotionalBanner } from '@/services/masters/promotionalBannersService';
+import { promotionalBannersService, type PromotionalBanner, type PromotionalBannerFilter } from '@/services/masters/promotionalBannersService';
 import { toast } from 'sonner';
 import { config } from '@/config/environment';
 
 export const usePromotionalBanners = (
   page: number = 1,
   pageSize: number = config.pagination.defaultPageSize,
+  filters?: PromotionalBannerFilter,
 ) => {
   return useQuery({
-    queryKey: ['promotional-banners', 'list', page, pageSize],
-    queryFn: () => promotionalBannersService.getPage({ page, items: pageSize }),
+    queryKey: ['promotional-banners', 'list', page, pageSize, filters?.search],
+    queryFn: () => promotionalBannersService.getPage({ page, items: pageSize }, filters),
     placeholderData: (prev) => prev,
   });
 };

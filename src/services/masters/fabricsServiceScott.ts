@@ -115,18 +115,27 @@ async function enrichFabricsWithColors(fabrics: Fabric[]): Promise<Fabric[]> {
   }
 }
 
+export interface FabricFilter {
+  search?: string;
+}
+
 export async function fetchFabricsPaginated(
   params?: Partial<ScottPageParams>,
+  filters?: FabricFilter,
 ): Promise<ScottPaginatedResult<Fabric>> {
   const p = normalizeScottPageParams(params);
+  const query: Record<string, string | number | boolean | undefined> = {
+    items: p.items,
+    page: p.page,
+    is_deleted: false,
+  };
+  if (filters?.search) {
+    query.search = filters.search;
+  }
   const { body } = await callScottDashboard<Record<string, unknown>>({
     resource: 'fabrics',
     method: 'GET',
-    query: {
-      items: p.items,
-      page: p.page,
-      is_deleted: false,
-    },
+    query,
   });
   const fabrics = extractRecords(body).map((r) => normalizeFabric(r));
   const data = await enrichFabricsWithColors(fabrics);

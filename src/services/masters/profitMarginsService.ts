@@ -92,19 +92,28 @@ function toFormBody(
   };
 }
 
+export interface ProfitMarginFilter {
+  search?: string;
+}
+
 async function fetchProfitMarginsPaginated(
   params?: Partial<ScottPageParams>,
+  filters?: ProfitMarginFilter,
 ): Promise<ScottPaginatedResult<ProfitMargin>> {
   const p = normalizeScottPageParams(params);
+  const query: Record<string, string | number | boolean | undefined> = {
+    items: p.items,
+    page: p.page,
+    is_deleted: false,
+    status: 'active',
+  };
+  if (filters?.search) {
+    query.search = filters.search;
+  }
   const { body } = await callScottDashboard<Record<string, unknown>>({
     resource: 'profit_margins',
     method: 'GET',
-    query: {
-      items: p.items,
-      page: p.page,
-      is_deleted: false,
-      status: 'active',
-    },
+    query,
   });
   const data = extractRecords(body).map((r) => normalizePm(r));
   return {

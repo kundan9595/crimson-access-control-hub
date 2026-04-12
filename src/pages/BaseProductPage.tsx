@@ -50,7 +50,7 @@ const BaseProductPage = () => {
   if (isLoading) {
     return (
       <MasterListPageSkeleton
-        columnCount={7}
+        columnCount={17}
         header={
           <MasterPageHeader
             title="Base Product"
@@ -83,7 +83,7 @@ const BaseProductPage = () => {
       <Card>
         <CardContent className="p-6">
           <SearchFilter
-            placeholder="Search base products (current page)..."
+            placeholder="Search base products..."
             value={searchTerm}
             onChange={setSearchTerm}
             resultCount={filteredBaseProducts.length}

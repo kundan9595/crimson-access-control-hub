@@ -1,16 +1,19 @@
 
 import { useQuery } from '@tanstack/react-query';
-import { profitMarginsService } from '@/services/masters/profitMarginsService';
+import { profitMarginsService, type ProfitMarginFilter } from '@/services/masters/profitMarginsService';
 import { useCreateMutation, useUpdateMutation, useDeleteMutation } from './shared/utils';
 import { config } from '@/config/environment';
+
+export { type ProfitMarginFilter } from '@/services/masters/profitMarginsService';
 
 export const useProfitMargins = (
   page: number = 1,
   pageSize: number = config.pagination.defaultPageSize,
+  filters?: ProfitMarginFilter,
 ) => {
   return useQuery({
-    queryKey: ['profitMargins', 'list', page, pageSize],
-    queryFn: () => profitMarginsService.getPage({ page, items: pageSize }),
+    queryKey: ['profitMargins', 'list', page, pageSize, filters?.search],
+    queryFn: () => profitMarginsService.getPage({ page, items: pageSize }, filters),
     placeholderData: (prev) => prev,
   });
 };

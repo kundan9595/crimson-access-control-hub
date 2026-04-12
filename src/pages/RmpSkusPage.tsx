@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -19,18 +19,31 @@ import { useRmpSkus, useCreateRmpSku, useUpdateRmpSku, useDeleteRmpSku } from '@
 import { useAllRmpSizes } from '@/hooks/masters/useRmpSizes';
 import { useAllRmpClasses } from '@/hooks/masters/useRmpClasses';
 import { useAllRmpBrands } from '@/hooks/masters/useRmpBrands';
+import { useAllRmpCategories } from '@/hooks/masters/useRmpCategories';
 import type { RmpSku } from '@/services/masters/rmpSkusService';
 import { Package2, Edit, Trash2 } from 'lucide-react';
 import { MasterTableSkeleton } from '@/components/masters/shared/MasterListPageSkeleton';
 import { MasterServerPagination } from '@/components/masters/shared/MasterServerPagination';
 import { exportToCSV, generateExportFilename } from '@/utils/exportUtils';
 import { fetchRmpSkus } from '@/services/masters/rmpSkusService';
+import { fetchRmpSizes } from '@/services/masters/rmpSizesService';
+import { fetchRmpClasses } from '@/services/masters/rmpClassesService';
+import { fetchRmpBrands } from '@/services/masters/rmpBrandsService';
 import { config } from '@/config/environment';
+
+/** Radix Select reserves empty string; use a sentinel for optional "None" rows. */
+const SELECT_NONE = '__none__';
 
 const RmpSkusPage = () => {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(config.pagination.defaultPageSize);
-  const { data: rmpSkusPage, isLoading, isFetching } = useRmpSkus(page, pageSize);
+  const [search, setSearch] = useState('');
+
+  const { data: rmpSkusPage, isLoading, isFetching } = useRmpSkus(
+    page,
+    pageSize,
+    search ? { search } : undefined
+  );
   const rows = rmpSkusPage?.data ?? [];
   const createMut = useCreateRmpSku();
   const updateMut = useUpdateRmpSku();
@@ -39,8 +52,48 @@ const RmpSkusPage = () => {
   const { data: rmpSizes = [] } = useAllRmpSizes();
   const { data: rmpClasses = [] } = useAllRmpClasses();
   const { data: rmpBrands = [] } = useAllRmpBrands();
+  const { data: rmpCategories = [] } = useAllRmpCategories();
 
-  const [search, setSearch] = useState('');
+  const sizeById = useMemo(
+    () => new Map(rmpSizes.map((s) => [s.id, s] as const)),
+    [rmpSizes],
+  );
+  const classById = useMemo(
+    () => new Map(rmpClasses.map((c) => [c.id, c] as const)),
+    [rmpClasses],
+  );
+  const brandById = useMemo(
+    () => new Map(rmpBrands.map((b) => [b.id, b] as const)),
+    [rmpBrands],
+  );
+  const categoryById = useMemo(
+    () => new Map(rmpCategories.map((c) => [c.id, c] as const)),
+    [rmpCategories],
+  );
+
+  const resolveSizeLabel = (row: RmpSku) => {
+    const full = row.rmp_size_id ? sizeById.get(row.rmp_size_id) : undefined;
+    const sz = full ?? row.rmp_size;
+    if (!sz) return row.rmp_size_id ?? '-';
+    if ('size_type' in sz && sz.size_type) return `${sz.name} (${sz.size_type})`;
+    return sz.name;
+  };
+  const resolveClassLabel = (row: RmpSku) => {
+    const full = row.rmp_class_id ? classById.get(row.rmp_class_id) : undefined;
+    const c = full ?? row.rmp_class;
+    return c?.name ?? row.rmp_class_id ?? '-';
+  };
+  const resolveBrandLabel = (row: RmpSku) => {
+    const full = row.rmp_brand_id ? brandById.get(row.rmp_brand_id) : undefined;
+    const b = full ?? row.rmp_brand;
+    return b?.name ?? row.rmp_brand_id ?? '-';
+  };
+  const resolveCategoryLabel = (row: RmpSku) => {
+    const full = row.rmp_category_id ? categoryById.get(row.rmp_category_id) : undefined;
+    const c = full ?? row.rmp_category;
+    return c?.name ?? row.rmp_category_id ?? '-';
+  };
+
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<RmpSku | null>(null);
   const [name, setName] = useState('');
@@ -52,15 +105,38 @@ const RmpSkusPage = () => {
   const [rmpBrandId, setRmpBrandId] = useState('');
   const [status, setStatus] = useState('active');
 
-  const filtered = rows.filter((r) => r.name.toLowerCase().includes(search.toLowerCase()));
-
   useEffect(() => {
     setPage(1);
   }, [search]);
 
   const handleExport = async () => {
-    const all = await fetchRmpSkus();
+    const [all, sizes, classes, brands] = await Promise.all([
+      fetchRmpSkus(),
+      fetchRmpSizes(),
+      fetchRmpClasses(),
+      fetchRmpBrands(),
+    ]);
     if (!all.length) return;
+
+    const sizeMap = new Map(sizes.map((s) => [s.id, s] as const));
+    const classMap = new Map(classes.map((c) => [c.id, c] as const));
+    const brandMap = new Map(brands.map((b) => [b.id, b] as const));
+
+    const sizeLabel = (item: RmpSku) => {
+      const full = item.rmp_size_id ? sizeMap.get(item.rmp_size_id) : undefined;
+      const sz = full ?? item.rmp_size;
+      if (!sz) return item.rmp_size_id ?? '-';
+      if ('size_type' in sz && sz.size_type) return `${sz.name} (${sz.size_type})`;
+      return sz.name;
+    };
+    const classLabel = (item: RmpSku) => {
+      const full = item.rmp_class_id ? classMap.get(item.rmp_class_id) : undefined;
+      return full?.name ?? item.rmp_class?.name ?? item.rmp_class_id ?? '-';
+    };
+    const brandLabel = (item: RmpSku) => {
+      const full = item.rmp_brand_id ? brandMap.get(item.rmp_brand_id) : undefined;
+      return full?.name ?? item.rmp_brand?.name ?? item.rmp_brand_id ?? '-';
+    };
 
     exportToCSV({
       filename: generateExportFilename('rmp-skus'),
@@ -71,9 +147,9 @@ const RmpSkusPage = () => {
         'CGST': 'cgst',
         'IGST': 'igst',
         'SGST': 'sgst',
-        'Size': (item: RmpSku) => item.rmp_size?.name || item.rmp_size_id || '-',
-        'Class': (item: RmpSku) => item.rmp_class?.name || item.rmp_class_id || '-',
-        'Brand': (item: RmpSku) => item.rmp_brand?.name || item.rmp_brand_id || '-',
+        'Size': sizeLabel,
+        'Class': classLabel,
+        'Brand': brandLabel,
         'Status': 'status',
         'Created At': (item: RmpSku) => new Date(item.created_at).toLocaleDateString(),
       },
@@ -144,41 +220,57 @@ const RmpSkusPage = () => {
       <Card>
         <CardContent className="p-6">
           <SearchFilter
-            placeholder="Search RMP SKUs (current page)..."
+            placeholder="Search RMP SKUs..."
             value={search}
             onChange={setSearch}
-            resultCount={filtered.length}
+            resultCount={rows.length}
             totalCount={rmpSkusPage?.totalCount ?? rows.length}
           />
           {isLoading ? (
-            <MasterTableSkeleton showToolbar={false} columnCount={7} className="mt-6" />
-          ) : filtered.length === 0 ? (
-            <p className="text-center text-muted-foreground py-8">No RMP SKUs on this page</p>
+            <MasterTableSkeleton showToolbar={false} columnCount={10} className="mt-6" />
+          ) : rows.length === 0 ? (
+            <p className="text-center text-muted-foreground py-8">
+              {search ? 'No RMP SKUs match your search' : 'No RMP SKUs found'}
+            </p>
           ) : (
             <Table className="mt-6">
               <TableHeader>
                 <TableRow>
                   <TableHead>Name</TableHead>
+                  <TableHead>Image</TableHead>
                   <TableHead>CGST</TableHead>
                   <TableHead>IGST</TableHead>
                   <TableHead>SGST</TableHead>
                   <TableHead>Size</TableHead>
                   <TableHead>Class</TableHead>
                   <TableHead>Brand</TableHead>
+                  <TableHead>Category</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filtered.map((r) => (
+                {rows.map((r) => (
                   <TableRow key={r.id}>
                     <TableCell className="font-medium">{r.name}</TableCell>
+                    <TableCell>
+                      {r.image ? (
+                        <img
+                          src={r.image}
+                          alt={r.name}
+                          className="w-10 h-10 object-cover rounded-md"
+                        />
+                      ) : (
+                        <span className="text-muted-foreground text-sm">-</span>
+                      )}
+                    </TableCell>
                     <TableCell>{r.cgst}%</TableCell>
                     <TableCell>{r.igst}%</TableCell>
                     <TableCell>{r.sgst}%</TableCell>
-                    <TableCell>{r.rmp_size?.name || r.rmp_size_id || '-'}</TableCell>
-                    <TableCell>{r.rmp_class?.name || r.rmp_class_id || '-'}</TableCell>
-                    <TableCell>{r.rmp_brand?.name || r.rmp_brand_id || '-'}</TableCell>
+                    <TableCell>{resolveSizeLabel(r)}</TableCell>
+                    <TableCell>{resolveClassLabel(r)}</TableCell>
+                    <TableCell>{resolveBrandLabel(r)}</TableCell>
+                    <TableCell>{resolveCategoryLabel(r)}</TableCell>
                     <TableCell>
                       <Badge variant={r.status === 'active' ? 'default' : 'secondary'}>{r.status}</Badge>
                     </TableCell>
@@ -216,7 +308,7 @@ const RmpSkusPage = () => {
       </Card>
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-w-lg" aria-describedby={undefined}>
           <DialogHeader>
             <DialogTitle>{editing ? 'Edit RMP SKU' : 'Add RMP SKU'}</DialogTitle>
           </DialogHeader>
@@ -259,12 +351,15 @@ const RmpSkusPage = () => {
             </div>
             <div className="space-y-2">
               <Label>Size</Label>
-              <Select value={rmpSizeId} onValueChange={setRmpSizeId}>
+              <Select
+                value={rmpSizeId || SELECT_NONE}
+                onValueChange={(v) => setRmpSizeId(v === SELECT_NONE ? '' : v)}
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="Select a size (optional)" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">None</SelectItem>
+                  <SelectItem value={SELECT_NONE}>None</SelectItem>
                   {rmpSizes.map((size) => (
                     <SelectItem key={size.id} value={size.id}>
                       {size.name} ({size.size_type})
@@ -275,12 +370,15 @@ const RmpSkusPage = () => {
             </div>
             <div className="space-y-2">
               <Label>Class</Label>
-              <Select value={rmpClassId} onValueChange={setRmpClassId}>
+              <Select
+                value={rmpClassId || SELECT_NONE}
+                onValueChange={(v) => setRmpClassId(v === SELECT_NONE ? '' : v)}
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="Select a class (optional)" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">None</SelectItem>
+                  <SelectItem value={SELECT_NONE}>None</SelectItem>
                   {rmpClasses.map((cls) => (
                     <SelectItem key={cls.id} value={cls.id}>
                       {cls.name}
@@ -291,12 +389,15 @@ const RmpSkusPage = () => {
             </div>
             <div className="space-y-2">
               <Label>Brand</Label>
-              <Select value={rmpBrandId} onValueChange={setRmpBrandId}>
+              <Select
+                value={rmpBrandId || SELECT_NONE}
+                onValueChange={(v) => setRmpBrandId(v === SELECT_NONE ? '' : v)}
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="Select a brand (optional)" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">None</SelectItem>
+                  <SelectItem value={SELECT_NONE}>None</SelectItem>
                   {rmpBrands.map((brand) => (
                     <SelectItem key={brand.id} value={brand.id}>
                       {brand.name}

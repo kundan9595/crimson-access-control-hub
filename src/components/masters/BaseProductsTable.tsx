@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { 
   Table, 
   TableBody, 
@@ -37,6 +37,7 @@ import {
   AlertDialogTitle 
 } from '@/components/ui/alert-dialog';
 import { MasterTableSkeleton } from '@/components/masters/shared/MasterListPageSkeleton';
+import { useAllSizeTypes } from '@/hooks/masters/useSizeTypes';
 
 type BaseProductsTableProps = {
   rows: ScottBaseProduct[];
@@ -60,6 +61,20 @@ export const BaseProductsTable: React.FC<BaseProductsTableProps> = ({
   const [deletingBaseProduct, setDeletingBaseProduct] = useState<BaseProduct | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
+  // Fetch size types for resolving size_group_ids
+  const { data: sizeTypes } = useAllSizeTypes();
+
+  // Create lookup map for size types
+  const sizeTypesMap = useMemo(() => {
+    return new Map(sizeTypes?.map(st => [st.id, st]) ?? []);
+  }, [sizeTypes]);
+
+  // Helper to resolve size group names
+  const resolveSizeGroupNames = (ids?: string[]): string[] => {
+    if (!ids?.length) return [];
+    return ids.map(id => sizeTypesMap.get(id)?.name).filter(Boolean) as string[];
+  };
+
   const handleEdit = (baseProduct: ScottBaseProduct) => {
     setEditingBaseProduct(baseProduct as unknown as BaseProduct);
     setIsDialogOpen(true);
@@ -82,7 +97,7 @@ export const BaseProductsTable: React.FC<BaseProductsTableProps> = ({
   };
 
   if (isLoading) {
-    return <MasterTableSkeleton showToolbar={false} columnCount={7} className="mt-0" />;
+    return <MasterTableSkeleton showToolbar={false} columnCount={17} className="mt-0" />;
   }
 
   const showPagination =
@@ -111,16 +126,27 @@ export const BaseProductsTable: React.FC<BaseProductsTableProps> = ({
             <TableRow>
               <TableHead>Name</TableHead>
               <TableHead>Category</TableHead>
+              <TableHead>Asset Info</TableHead>
               <TableHead>Fabric</TableHead>
               <TableHead>Size Group</TableHead>
               <TableHead>Base Price</TableHead>
+              <TableHead>Base Of</TableHead>
+              <TableHead>Base SN</TableHead>
+              <TableHead>Trims Cost</TableHead>
+              <TableHead>Adult Cons.</TableHead>
+              <TableHead>Kids Cons.</TableHead>
+              <TableHead>Overhead %</TableHead>
+              <TableHead>Brand Sides</TableHead>
+              <TableHead>Sample Rate</TableHead>
               <TableHead>Calculator</TableHead>
               <TableHead>Status</TableHead>
               <TableHead className="w-[50px]"></TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {baseProducts.map((baseProduct: ScottBaseProduct) => (
+            {baseProducts.map((baseProduct: ScottBaseProduct) => {
+              const sizeGroupNames = resolveSizeGroupNames(baseProduct.size_group_ids);
+              return (
               <TableRow key={baseProduct.id}>
                 <TableCell>
                   <div className="flex items-center gap-3">
@@ -147,6 +173,9 @@ export const BaseProductsTable: React.FC<BaseProductsTableProps> = ({
                   {baseProduct.category?.name || '-'}
                 </TableCell>
                 <TableCell>
+                  {baseProduct.asset_info?.name || '-'}
+                </TableCell>
+                <TableCell>
                   {baseProduct.fabric ? (
                     <div>
                       <div>{baseProduct.fabric.name}</div>
@@ -157,16 +186,16 @@ export const BaseProductsTable: React.FC<BaseProductsTableProps> = ({
                   ) : '-'}
                 </TableCell>
                 <TableCell>
-                  {baseProduct.size_group_ids && baseProduct.size_group_ids.length > 0 ? (
+                  {sizeGroupNames.length > 0 ? (
                     <div className="flex flex-wrap gap-1">
-                      {baseProduct.size_group_ids.slice(0, 2).map((sizeGroupId) => (
-                        <Badge key={sizeGroupId} variant="outline" className="text-xs">
-                          {sizeGroupId}
+                      {sizeGroupNames.slice(0, 2).map((name) => (
+                        <Badge key={name} variant="outline" className="text-xs">
+                          {name}
                         </Badge>
                       ))}
-                      {baseProduct.size_group_ids.length > 2 && (
+                      {sizeGroupNames.length > 2 && (
                         <Badge variant="outline" className="text-xs">
-                          +{baseProduct.size_group_ids.length - 2} more
+                          +{sizeGroupNames.length - 2} more
                         </Badge>
                       )}
                     </div>
@@ -177,6 +206,14 @@ export const BaseProductsTable: React.FC<BaseProductsTableProps> = ({
                 <TableCell>
                   ₹{getBaseProductUnitPriceForDisplay(baseProduct).toFixed(2)}
                 </TableCell>
+                <TableCell>{baseProduct.base_of ?? '-'}</TableCell>
+                <TableCell>{baseProduct.base_sn ?? '-'}</TableCell>
+                <TableCell>₹{baseProduct.tims_cost?.toFixed(2) || '-'}</TableCell>
+                <TableCell>{baseProduct.adult_consumption?.toFixed(2) || '-'}</TableCell>
+                <TableCell>{baseProduct.kids_consumption?.toFixed(2) || '-'}</TableCell>
+                <TableCell>{baseProduct.over_header_percentage?.toFixed(1) || '-'}%</TableCell>
+                <TableCell>{baseProduct.branding_sides ?? '-'}</TableCell>
+                <TableCell>₹{baseProduct.sample_rate?.toFixed(2) || '-'}</TableCell>
                 <TableCell>
                   {baseProduct.calculator?.toFixed(2) || '-'}
                 </TableCell>
@@ -208,7 +245,7 @@ export const BaseProductsTable: React.FC<BaseProductsTableProps> = ({
                   </DropdownMenu>
                 </TableCell>
               </TableRow>
-            ))}
+            )})}
           </TableBody>
         </Table>
       </div>

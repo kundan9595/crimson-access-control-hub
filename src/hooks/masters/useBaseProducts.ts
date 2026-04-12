@@ -7,19 +7,21 @@ import {
   updateBaseProduct,
   deleteBaseProduct,
   type ScottBaseProduct,
+  type BaseProductFilter,
 } from '@/services/masters/baseProductsServiceScott';
 import { useCreateMutation, useUpdateMutation, useDeleteMutation } from './shared/utils';
 import { config } from '@/config/environment';
 
-export { type ScottBaseProduct } from '@/services/masters/baseProductsServiceScott';
+export { type ScottBaseProduct, type BaseProductFilter } from '@/services/masters/baseProductsServiceScott';
 
 export const useBaseProducts = (
   page: number = 1,
   pageSize: number = config.pagination.defaultPageSize,
+  filters?: BaseProductFilter,
 ) => {
   return useQuery({
-    queryKey: ['baseProducts', 'list', page, pageSize],
-    queryFn: () => fetchBaseProductsPaginated({ page, items: pageSize }),
+    queryKey: ['baseProducts', 'list', page, pageSize, filters?.search],
+    queryFn: () => fetchBaseProductsPaginated({ page, items: pageSize }, filters),
     placeholderData: (prev) => prev,
   });
 };

@@ -6,19 +6,20 @@ import {
   updateRmpSku,
   deleteRmpSku,
 } from '@/services/masters/rmpSkusService';
-import type { RmpSku } from '@/services/masters/rmpSkusService';
+import type { RmpSku, RmpSkuFilter } from '@/services/masters/rmpSkusService';
 import { useCreateMutation, useUpdateMutation, useDeleteMutation } from './shared/utils';
 import { config } from '@/config/environment';
 
-export type { RmpSku };
+export type { RmpSku, RmpSkuFilter };
 
 export const useRmpSkus = (
   page: number = 1,
   pageSize: number = config.pagination.defaultPageSize,
+  filters?: RmpSkuFilter,
 ) => {
   return useQuery({
-    queryKey: ['rmp_skus', 'list', page, pageSize],
-    queryFn: () => fetchRmpSkusPaginated({ page, items: pageSize }),
+    queryKey: ['rmp_skus', 'list', page, pageSize, filters?.search],
+    queryFn: () => fetchRmpSkusPaginated({ page, items: pageSize }, filters),
     placeholderData: (prev) => prev,
   });
 };

@@ -9,7 +9,7 @@ import { AddOnDialog } from '@/components/masters/AddOnDialog';
 import BulkImportDialog from '@/components/masters/BulkImportDialog';
 import { MasterPageHeader } from '@/components/masters/shared/MasterPageHeader';
 import { SearchFilter } from '@/components/masters/shared/SearchFilter';
-import { useAddOns, useCreateAddOn, useUpdateAddOn, useDeleteAddOn } from '@/hooks/masters/useAddOns';
+import { useAddOns, useCreateAddOn, useUpdateAddOn, useDeleteAddOn, type AddOnFilter } from '@/hooks/masters/useAddOns';
 import { MasterListPageSkeleton } from '@/components/masters/shared/MasterListPageSkeleton';
 import { MasterServerPagination } from '@/components/masters/shared/MasterServerPagination';
 import { fetchAddOns } from '@/services/masters/addOnsServiceScott';
@@ -18,28 +18,26 @@ import { config } from '@/config/environment';
 const AddOnsPage = () => {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(config.pagination.defaultPageSize);
-  const { data: addOnsPage, isLoading } = useAddOns(page, pageSize);
+  const [searchTerm, setSearchTerm] = useState('');
+  const filters: AddOnFilter | undefined = searchTerm ? { search: searchTerm } : undefined;
+  const { data: addOnsPage, isLoading } = useAddOns(page, pageSize, filters);
   const addOns = addOnsPage?.data ?? [];
   const deleteAddOnMutation = useDeleteAddOn();
   const createAddOnMutation = useCreateAddOn();
   const updateAddOnMutation = useUpdateAddOn();
-  const [searchTerm, setSearchTerm] = useState('');
   const [editingAddOn, setEditingAddOn] = useState(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [bulkImportOpen, setBulkImportOpen] = useState(false);
 
-  const filteredAddOns = addOns.filter((addOn) =>
-    addOn.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    addOn.group_name?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
-  const sortedAddOns = [...filteredAddOns].sort((a, b) => {
+  // Sort addOns by sort_order, then by name (server-side search returns filtered results)
+  const sortedAddOns = [...addOns].sort((a, b) => {
     const orderA = a.sort_order || 0;
     const orderB = b.sort_order || 0;
     if (orderA !== orderB) return orderA - orderB;
     return a.name.localeCompare(b.name);
   });
 
+  // Reset to page 1 when search changes
   useEffect(() => {
     setPage(1);
   }, [searchTerm]);
@@ -105,7 +103,7 @@ const AddOnsPage = () => {
   if (isLoading) {
     return (
       <MasterListPageSkeleton
-        columnCount={6}
+        columnCount={14}
         header={
           <MasterPageHeader
             title="Add Ons"
@@ -137,7 +135,7 @@ const AddOnsPage = () => {
       <Card>
         <CardContent className="p-6">
           <SearchFilter
-            placeholder="Search add-ons (current page)..."
+            placeholder="Search add-ons..."
             value={searchTerm}
             onChange={setSearchTerm}
             resultCount={sortedAddOns.length}
@@ -161,6 +159,8 @@ const AddOnsPage = () => {
                     <TableHead className="w-20">Sort Order</TableHead>
                     <TableHead className="w-20">Layer</TableHead>
                     <TableHead className="w-24">Status</TableHead>
+                    <TableHead>Created</TableHead>
+                    <TableHead>Updated</TableHead>
                     <TableHead className="text-right w-32">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -209,6 +209,8 @@ const AddOnsPage = () => {
                           {addOn.status}
                         </Badge>
                       </TableCell>
+                      <TableCell>{new Date(addOn.created_at).toLocaleDateString()}</TableCell>
+                      <TableCell>{new Date(addOn.updated_at).toLocaleDateString()}</TableCell>
                       <TableCell className="text-right">
                         <div className="flex items-center justify-end gap-2">
                           <Button variant="outline" size="sm" onClick={() => handleEdit(addOn)}>

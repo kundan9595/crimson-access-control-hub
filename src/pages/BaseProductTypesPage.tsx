@@ -21,6 +21,7 @@ import {
   useCreateBaseProductType,
   useUpdateBaseProductType,
   useDeleteBaseProductType,
+  type BaseProductTypeFilter,
 } from '@/hooks/masters/useBaseProductTypes';
 import type { BaseProductType } from '@/services/masters/baseProductTypesService';
 import { fetchBaseProductTypes } from '@/services/masters/baseProductTypesService';
@@ -34,13 +35,14 @@ import { config } from '@/config/environment';
 const BaseProductTypesPage = () => {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(config.pagination.defaultPageSize);
-  const { data: bptPage, isLoading, isFetching } = useBaseProductTypes(page, pageSize);
+  const [search, setSearch] = useState('');
+  const filters: BaseProductTypeFilter | undefined = search ? { search } : undefined;
+  const { data: bptPage, isLoading, isFetching } = useBaseProductTypes(page, pageSize, filters);
   const rows = bptPage?.data ?? [];
   const createMut = useCreateBaseProductType();
   const updateMut = useUpdateBaseProductType();
   const deleteMut = useDeleteBaseProductType();
 
-  const [search, setSearch] = useState('');
   const [open, setOpen] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
   const [editing, setEditing] = useState<BaseProductType | null>(null);
@@ -49,8 +51,7 @@ const BaseProductTypesPage = () => {
   const [status, setStatus] = useState('active');
   const [imageUrl, setImageUrl] = useState('');
 
-  const filtered = rows.filter((r) => r.name.toLowerCase().includes(search.toLowerCase()));
-
+  // Reset to page 1 when search changes
   useEffect(() => {
     setPage(1);
   }, [search]);
@@ -140,18 +141,18 @@ const BaseProductTypesPage = () => {
       <Card>
         <CardContent className="p-6">
           <SearchFilter
-            placeholder="Search (current page)..."
+            placeholder="Search parent categories..."
             value={search}
             onChange={setSearch}
-            resultCount={filtered.length}
+            resultCount={rows.length}
             totalCount={
               bptPage?.totalCountIsExact ? bptPage.totalCount : rows.length
             }
           />
           {isLoading ? (
-            <MasterTableSkeleton showToolbar={false} columnCount={4} className="mt-6" />
-          ) : filtered.length === 0 ? (
-            <p className="text-center text-muted-foreground py-8">No parent categories on this page</p>
+            <MasterTableSkeleton showToolbar={false} columnCount={7} className="mt-6" />
+          ) : rows.length === 0 ? (
+            <p className="text-center text-muted-foreground py-8">{search ? 'No parent categories match your search' : 'No parent categories found'}</p>
           ) : (
             <Table className="mt-6">
               <TableHeader>
@@ -160,11 +161,13 @@ const BaseProductTypesPage = () => {
                   <TableHead>Name</TableHead>
                   <TableHead>Position</TableHead>
                   <TableHead>Status</TableHead>
+                  <TableHead>Created</TableHead>
+                  <TableHead>Updated</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filtered.map((r) => (
+                {rows.map((r) => (
                   <TableRow key={r.id}>
                     <TableCell>
                       {r.image_url ? (
@@ -178,6 +181,8 @@ const BaseProductTypesPage = () => {
                     <TableCell>
                       <Badge variant={r.status === 'active' ? 'default' : 'secondary'}>{r.status}</Badge>
                     </TableCell>
+                    <TableCell>{new Date(r.created_at).toLocaleDateString()}</TableCell>
+                    <TableCell>{new Date(r.updated_at).toLocaleDateString()}</TableCell>
                     <TableCell className="text-right space-x-2">
                       <Button variant="outline" size="sm" onClick={() => openEdit(r)}>
                         <Edit className="h-4 w-4" />

@@ -6,19 +6,20 @@ import {
   updateRmpSize,
   deleteRmpSize,
 } from '@/services/masters/rmpSizesService';
-import type { RmpSize, RmpSizeType } from '@/services/masters/rmpSizesService';
+import type { RmpSize, RmpSizeType, RmpSizeFilter } from '@/services/masters/rmpSizesService';
 import { useCreateMutation, useUpdateMutation, useDeleteMutation } from './shared/utils';
 import { config } from '@/config/environment';
 
-export type { RmpSize, RmpSizeType };
+export type { RmpSize, RmpSizeType, RmpSizeFilter };
 
 export const useRmpSizes = (
   page: number = 1,
   pageSize: number = config.pagination.defaultPageSize,
+  filters?: RmpSizeFilter,
 ) => {
   return useQuery({
-    queryKey: ['rmp_sizes', 'list', page, pageSize],
-    queryFn: () => fetchRmpSizesPaginated({ page, items: pageSize }),
+    queryKey: ['rmp_sizes', 'list', page, pageSize, filters?.search],
+    queryFn: () => fetchRmpSizesPaginated({ page, items: pageSize }, filters),
     placeholderData: (prev) => prev,
   });
 };

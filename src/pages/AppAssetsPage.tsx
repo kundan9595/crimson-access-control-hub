@@ -7,7 +7,7 @@ import { Smartphone, Edit, Trash2 } from 'lucide-react';
 import { MasterPageHeader } from '@/components/masters/shared/MasterPageHeader';
 import { SearchFilter } from '@/components/masters/shared/SearchFilter';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { useGetAppAssets, useDeleteAppAsset } from '@/hooks/masters/useAppAssets';
+import { useGetAppAssets, useDeleteAppAsset, type AppAssetFilter } from '@/hooks/masters/useAppAssets';
 import AppAssetDialog from '@/components/masters/AppAssetDialog';
 import BulkImportDialog from '@/components/masters/BulkImportDialog';
 import { exportToCSV, generateExportFilename } from '@/utils/exportUtils';
@@ -21,21 +21,15 @@ const AppAssetsPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(config.pagination.defaultPageSize);
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [selectedAsset, setSelectedAsset] = useState<AppAsset | null>(null);
-  const [importDialogOpen, setImportDialogOpen] = useState(false);
-
-  const { data: appAssetsPage, isLoading, isFetching } = useGetAppAssets(page, pageSize);
+  const filters: AppAssetFilter | undefined = searchTerm ? { search: searchTerm } : undefined;
+  const { data: appAssetsPage, isLoading, isFetching } = useGetAppAssets(page, pageSize, filters);
   const appAssets = appAssetsPage?.data ?? [];
   const deleteAppAssetMutation = useDeleteAppAsset();
 
+  // Reset to page 1 when search changes
   useEffect(() => {
     setPage(1);
   }, [searchTerm]);
-
-  const filteredAssets = appAssets.filter(asset =>
-    asset.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
 
   const handleAdd = () => {
     setSelectedAsset(null);
@@ -87,7 +81,7 @@ const AppAssetsPage = () => {
   if (isLoading) {
     return (
       <MasterListPageSkeleton
-        columnCount={7}
+        columnCount={11}
         header={
           <MasterPageHeader
             title="App Assets"
@@ -113,27 +107,27 @@ const AppAssetsPage = () => {
         onAdd={handleAdd}
         onExport={handleExport}
         onImport={handleImport}
-        canExport={filteredAssets.length > 0}
+        canExport={appAssets.length > 0}
         isScottApi={true}
       />
 
       <Card>
         <CardContent className="p-6">
           <SearchFilter
-            placeholder="Search app assets (current page)..."
+            placeholder="Search app assets..."
             value={searchTerm}
             onChange={setSearchTerm}
-            resultCount={filteredAssets.length}
+            resultCount={appAssets.length}
             totalCount={
               appAssetsPage?.totalCountIsExact ? appAssetsPage.totalCount : appAssets.length
             }
           />
           
           <div className="mt-6">
-            {filteredAssets.length === 0 ? (
+            {appAssets.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
-                <p>No app assets on this page</p>
-                <p className="text-sm">Try another page or add an app asset</p>
+                <p>{searchTerm ? 'No app assets match your search' : 'No app assets found'}</p>
+                <p className="text-sm">{searchTerm ? 'Try a different search term' : 'Add an app asset to get started'}</p>
               </div>
             ) : (
               <Table>
@@ -147,11 +141,13 @@ const AppAssetsPage = () => {
                     <TableHead>Height Resp</TableHead>
                     <TableHead>Connected Add-On</TableHead>
                     <TableHead>Status</TableHead>
+                    <TableHead>Created</TableHead>
+                    <TableHead>Updated</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredAssets.map((asset) => (
+                  {appAssets.map((asset) => (
                     <TableRow key={asset.id}>
                       <TableCell>
                         {asset.asset ? (
@@ -186,13 +182,15 @@ const AppAssetsPage = () => {
                       </TableCell>
                       <TableCell>
                         <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                          asset.status === 'active' 
-                            ? 'bg-green-100 text-green-800' 
+                          asset.status === 'active'
+                            ? 'bg-green-100 text-green-800'
                             : 'bg-red-100 text-red-800'
                         }`}>
                           {asset.status}
                         </span>
                       </TableCell>
+                      <TableCell>{new Date(asset.created_at).toLocaleDateString()}</TableCell>
+                      <TableCell>{new Date(asset.updated_at).toLocaleDateString()}</TableCell>
                       <TableCell className="text-right">
                         <div className="flex items-center justify-end gap-2">
                           <Button

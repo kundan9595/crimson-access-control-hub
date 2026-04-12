@@ -75,18 +75,27 @@ async function toFormDataAsync(
   return form;
 }
 
+export interface RmpCategoriesFilter {
+  search?: string;
+}
+
 export async function fetchRmpCategoriesPaginated(
   params?: Partial<ScottPageParams>,
+  filters?: RmpCategoriesFilter,
 ): Promise<ScottPaginatedResult<RmpCategory>> {
   const p = normalizeScottPageParams(params);
+  const query: Record<string, string | number | boolean | undefined> = {
+    items: p.items,
+    page: p.page,
+    is_deleted: false,
+  };
+  if (filters?.search) {
+    query.search = filters.search;
+  }
   const { body } = await callScottDashboard<Record<string, unknown>>({
     resource: 'rmp_categories',
     method: 'GET',
-    query: {
-      items: p.items,
-      page: p.page,
-      is_deleted: false,
-    },
+    query,
   });
   const data = extractRecords(body).map((r) => normalizeRmpCategory(r));
   return {

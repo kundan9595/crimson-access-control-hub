@@ -8,7 +8,7 @@ import { SearchFilter } from '@/components/masters/shared/SearchFilter';
 import { FabricDialog } from '@/components/masters/FabricDialog';
 import { FabricsList } from '@/components/masters/FabricsList';
 import BulkImportDialog from '@/components/masters/BulkImportDialog';
-import { useFabrics } from '@/hooks/masters/useFabrics';
+import { useFabrics, type FabricFilter } from '@/hooks/masters/useFabrics';
 import { MasterServerPagination } from '@/components/masters/shared/MasterServerPagination';
 import { fetchFabrics } from '@/services/masters/fabricsServiceScott';
 import { config } from '@/config/environment';
@@ -19,7 +19,8 @@ const FabricPage = () => {
   const [bulkImportOpen, setBulkImportOpen] = useState(false);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(config.pagination.defaultPageSize);
-  const { data: fabricsPage, isLoading } = useFabrics(page, pageSize);
+  const filters: FabricFilter | undefined = searchTerm ? { search: searchTerm } : undefined;
+  const { data: fabricsPage, isLoading } = useFabrics(page, pageSize, filters);
   const fabrics = fabricsPage?.data ?? [];
 
   const handleAdd = () => {
@@ -61,15 +62,10 @@ const FabricPage = () => {
     setBulkImportOpen(true);
   };
 
+  // Reset to page 1 when search changes
   useEffect(() => {
     setPage(1);
   }, [searchTerm]);
-
-  const filteredFabrics = fabrics.filter(
-    (fabric) =>
-      fabric.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      fabric.fabric_type.toLowerCase().includes(searchTerm.toLowerCase()),
-  );
 
   return (
     <div className="space-y-6">
@@ -87,17 +83,17 @@ const FabricPage = () => {
       <Card>
         <CardContent className="p-6">
           <SearchFilter
-            placeholder="Search fabric (current page)..."
+            placeholder="Search fabrics..."
             value={searchTerm}
             onChange={setSearchTerm}
-            resultCount={filteredFabrics.length}
+            resultCount={fabrics.length}
             totalCount={
               fabricsPage?.totalCountIsExact ? fabricsPage.totalCount : fabrics.length
             }
           />
 
           <div className="mt-6">
-            <FabricsList searchTerm={searchTerm} fabrics={fabrics} isLoading={isLoading} />
+            <FabricsList fabrics={fabrics} isLoading={isLoading} />
           </div>
 
           {fabricsPage && fabricsPage.data.length > 0 && (

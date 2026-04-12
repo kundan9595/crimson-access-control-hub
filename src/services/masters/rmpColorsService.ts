@@ -24,8 +24,12 @@ export interface RmpColor {
   updated_by?: string;
 }
 
-// Helper function to validate and normalize hex color code
-function normalizeHexCode(code: unknown): string {
+export interface RmpColorFilter {
+  search?: string;
+}
+
+/** Exported for mapping nested `rmp_color` on related entities (e.g. RMP classes). */
+export function normalizeHexCode(code: unknown): string {
   if (typeof code !== 'string') {
     return '#000000'; // default fallback
   }
@@ -92,16 +96,21 @@ function rmpColorToFormData(
 
 export async function fetchRmpColorsPaginated(
   params?: Partial<ScottPageParams>,
+  filters?: RmpColorFilter,
 ): Promise<ScottPaginatedResult<RmpColor>> {
   const p = normalizeScottPageParams(params);
+  const query: Record<string, string | number | boolean | undefined> = {
+    items: p.items,
+    page: p.page,
+    is_deleted: false,
+  };
+  if (filters?.search) {
+    query.search = filters.search;
+  }
   const { body } = await callScottDashboard<Record<string, unknown>>({
     resource: 'rmp_colors',
     method: 'GET',
-    query: {
-      items: p.items,
-      page: p.page,
-      is_deleted: false,
-    },
+    query,
   });
   const data = extractRecords(body).map((r) => normalizeRmpColor(r));
   return {

@@ -28,6 +28,10 @@ export interface RmpPrice {
   rmp_sku?: { id: string; name: string };
 }
 
+export interface RmpPriceFilter {
+  search?: string;
+}
+
 function normalizeRmpPrice(r: Record<string, unknown>): RmpPrice {
   const status =
     typeof r.status === 'string'
@@ -79,16 +83,21 @@ function toFormBody(
 
 export async function fetchRmpPricesPaginated(
   params?: Partial<ScottPageParams>,
+  filters?: RmpPriceFilter,
 ): Promise<ScottPaginatedResult<RmpPrice>> {
   const p = normalizeScottPageParams(params);
+  const query: Record<string, string | number | boolean | undefined> = {
+    items: p.items,
+    page: p.page,
+    is_deleted: false,
+  };
+  if (filters?.search) {
+    query.search = filters.search;
+  }
   const { body } = await callScottDashboard<Record<string, unknown>>({
     resource: 'rmp_prices',
     method: 'GET',
-    query: {
-      items: p.items,
-      page: p.page,
-      is_deleted: false,
-    },
+    query,
   });
   const data = extractRecords(body).map((r) => normalizeRmpPrice(r));
   return {

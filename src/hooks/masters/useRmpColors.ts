@@ -6,19 +6,20 @@ import {
   updateRmpColor,
   deleteRmpColor,
 } from '@/services/masters/rmpColorsService';
-import type { RmpColor } from '@/services/masters/rmpColorsService';
+import type { RmpColor, RmpColorFilter } from '@/services/masters/rmpColorsService';
 import { useCreateMutation, useUpdateMutation, useDeleteMutation } from './shared/utils';
 import { config } from '@/config/environment';
 
-export type { RmpColor };
+export type { RmpColor, RmpColorFilter };
 
 export const useRmpColors = (
   page: number = 1,
   pageSize: number = config.pagination.defaultPageSize,
+  filters?: RmpColorFilter,
 ) => {
   return useQuery({
-    queryKey: ['rmp_colors', 'list', page, pageSize],
-    queryFn: () => fetchRmpColorsPaginated({ page, items: pageSize }),
+    queryKey: ['rmp_colors', 'list', page, pageSize, filters?.search],
+    queryFn: () => fetchRmpColorsPaginated({ page, items: pageSize }, filters),
     placeholderData: (prev) => prev,
   });
 };

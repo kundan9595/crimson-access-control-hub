@@ -36,14 +36,27 @@ function normalize(r: Record<string, unknown>): SizeType {
   };
 }
 
+export interface SizeTypeFilter {
+  search?: string;
+}
+
 export async function fetchSizeTypesPaginated(
   params?: Partial<ScottPageParams>,
+  filters?: SizeTypeFilter,
 ): Promise<ScottPaginatedResult<SizeType>> {
   const p = normalizeScottPageParams(params);
+  const query: Record<string, string | number | boolean | undefined> = {
+    items: p.items,
+    page: p.page,
+    is_deleted: false,
+  };
+  if (filters?.search) {
+    query.search = filters.search;
+  }
   const { body } = await callScottDashboard<Record<string, unknown>>({
     resource: 'size_types',
     method: 'GET',
-    query: { items: p.items, page: p.page, is_deleted: false },
+    query,
   });
   const data = extractRecords(body).map((r) => normalize(r));
   return {

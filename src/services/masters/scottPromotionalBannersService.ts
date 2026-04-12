@@ -107,18 +107,27 @@ async function promotionalBannerToFormData(
   return form;
 }
 
+export interface PromotionalBannerFilter {
+  search?: string;
+}
+
 export async function fetchPromotionalBannersPaginated(
   params?: Partial<ScottPageParams>,
+  filters?: PromotionalBannerFilter,
 ): Promise<ScottPaginatedResult<ScottPromotionalBanner>> {
   const p = normalizeScottPageParams(params);
+  const query: Record<string, string | number | boolean | undefined> = {
+    items: p.items,
+    page: p.page,
+    is_deleted: false,
+  };
+  if (filters?.search) {
+    query.search = filters.search;
+  }
   const { body } = await callScottDashboard<Record<string, unknown>>({
     resource: 'promotional_banners',
     method: 'GET',
-    query: {
-      items: p.items,
-      page: p.page,
-      is_deleted: false,
-    },
+    query,
   });
   const data = extractRecords(body).map((r) => normalizePromotionalBanner(r));
   return {

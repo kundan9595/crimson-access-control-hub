@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { Link } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -18,25 +19,42 @@ import { SearchFilter } from '@/components/masters/shared/SearchFilter';
 import { useRmpBrands, useCreateRmpBrand, useUpdateRmpBrand, useDeleteRmpBrand, useUpdateRmpBrandCategories } from '@/hooks/masters/useRmpBrands';
 import { useAllBrands } from '@/hooks/masters/useBrands';
 import type { RmpBrand } from '@/services/masters/rmpBrandsService';
-import { Package, Edit, Trash2, Link2 } from 'lucide-react';
+import { Package, Edit, Trash2 } from 'lucide-react';
 import { MasterTableSkeleton } from '@/components/masters/shared/MasterListPageSkeleton';
 import { MasterServerPagination } from '@/components/masters/shared/MasterServerPagination';
 import { exportToCSV, generateExportFilename } from '@/utils/exportUtils';
 import { fetchRmpBrands } from '@/services/masters/rmpBrandsService';
+import { fetchBrands } from '@/services/masters/brandsService';
 import { config } from '@/config/environment';
+
+/** Radix Select reserves empty string; use a sentinel for optional "None" rows. */
+const SELECT_NONE = '__none__';
 
 const RmpBrandsPage = () => {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(config.pagination.defaultPageSize);
-  const { data: rmpBrandsPage, isLoading, isFetching } = useRmpBrands(page, pageSize);
+  const [search, setSearch] = useState('');
+
+  const { data: rmpBrandsPage, isLoading, isFetching } = useRmpBrands(
+    page,
+    pageSize,
+    search ? { search } : undefined
+  );
   const rows = rmpBrandsPage?.data ?? [];
   const createMut = useCreateRmpBrand();
   const updateMut = useUpdateRmpBrand();
   const deleteMut = useDeleteRmpBrand();
   const updateCategoriesMut = useUpdateRmpBrandCategories();
   const { data: authorizedBrands = [] } = useAllBrands();
+  const authorizedBrandById = useMemo(
+    () => new Map(authorizedBrands.map((b) => [b.id, b] as const)),
+    [authorizedBrands],
+  );
 
-  const [search, setSearch] = useState('');
+  const resolveAuthorizedBrand = (row: RmpBrand) =>
+    row.authorized_brand ??
+    (row.authorized_brand_id ? authorizedBrandById.get(row.authorized_brand_id) : undefined);
+
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<RmpBrand | null>(null);
   const [name, setName] = useState('');
@@ -45,15 +63,21 @@ const RmpBrandsPage = () => {
   const [authorizedBrandId, setAuthorizedBrandId] = useState('');
   const [status, setStatus] = useState('active');
 
-  const filtered = rows.filter((r) => r.name.toLowerCase().includes(search.toLowerCase()));
-
   useEffect(() => {
     setPage(1);
   }, [search]);
 
   const handleExport = async () => {
-    const all = await fetchRmpBrands();
+    const [all, authBrands] = await Promise.all([fetchRmpBrands(), fetchBrands()]);
     if (!all.length) return;
+
+    const exportById = new Map(authBrands.map((b) => [b.id, b] as const));
+    const authorizedLabel = (item: RmpBrand) => {
+      const ab =
+        item.authorized_brand ??
+        (item.authorized_brand_id ? exportById.get(item.authorized_brand_id) : undefined);
+      return ab?.name ?? item.authorized_brand_id ?? '-';
+    };
 
     exportToCSV({
       filename: generateExportFilename('rmp-brands'),
@@ -63,7 +87,7 @@ const RmpBrandsPage = () => {
         'Name': 'name',
         'Position': 'position',
         'Main Category': 'main_category',
-        'Authorized Brand': (item: RmpBrand) => item.authorized_brand?.name || item.authorized_brand_id || '-',
+        'Authorized Brand': authorizedLabel,
         'Status': 'status',
         'Created At': (item: RmpBrand) => new Date(item.created_at).toLocaleDateString(),
       },
@@ -114,7 +138,7 @@ const RmpBrandsPage = () => {
     <div className="space-y-6">
       <MasterPageHeader
         title="RMP Brands"
-        description="Manage Ready Made Product brands with category associations"
+        description="Ready Made Product brands. Link each to an authorized brand from the authorized brands master."
         icon={<Package className="h-6 w-6 text-blue-700" />}
         onAdd={openCreate}
         onExport={handleExport}
@@ -122,19 +146,29 @@ const RmpBrandsPage = () => {
         isScottApi={true}
       />
 
+      <p className="text-sm text-muted-foreground -mt-2">
+        Manage Scott authorized brands in{' '}
+        <Link to="/masters/authorized-brands" className="text-primary font-medium underline-offset-4 hover:underline">
+          Authorized Brands
+        </Link>
+        .
+      </p>
+
       <Card>
         <CardContent className="p-6">
           <SearchFilter
-            placeholder="Search RMP brands (current page)..."
+            placeholder="Search RMP brands..."
             value={search}
             onChange={setSearch}
-            resultCount={filtered.length}
+            resultCount={rows.length}
             totalCount={rmpBrandsPage?.totalCount ?? rows.length}
           />
           {isLoading ? (
             <MasterTableSkeleton showToolbar={false} columnCount={5} className="mt-6" />
-          ) : filtered.length === 0 ? (
-            <p className="text-center text-muted-foreground py-8">No RMP brands on this page</p>
+          ) : rows.length === 0 ? (
+            <p className="text-center text-muted-foreground py-8">
+              {search ? 'No RMP brands match your search' : 'No RMP brands found'}
+            </p>
           ) : (
             <Table className="mt-6">
               <TableHeader>
@@ -148,13 +182,27 @@ const RmpBrandsPage = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filtered.map((r) => (
+                {rows.map((r) => {
+                  const authBrand = resolveAuthorizedBrand(r);
+                  return (
                   <TableRow key={r.id}>
                     <TableCell className="font-medium">{r.name}</TableCell>
                     <TableCell>{r.position}</TableCell>
                     <TableCell>{r.main_category || '-'}</TableCell>
                     <TableCell>
-                      {r.authorized_brand?.name || r.authorized_brand_id || '-'}
+                      {authBrand ? (
+                        <Link
+                          to="/masters/authorized-brands"
+                          className="text-primary font-medium underline-offset-4 hover:underline"
+                          title="Open authorized brands master"
+                        >
+                          {authBrand.name}
+                        </Link>
+                      ) : r.authorized_brand_id ? (
+                        <span className="text-muted-foreground text-xs font-mono">{r.authorized_brand_id}</span>
+                      ) : (
+                        <span className="text-muted-foreground">-</span>
+                      )}
                     </TableCell>
                     <TableCell>
                       <Badge variant={r.status === 'active' ? 'default' : 'secondary'}>{r.status}</Badge>
@@ -175,7 +223,8 @@ const RmpBrandsPage = () => {
                       </Button>
                     </TableCell>
                   </TableRow>
-                ))}
+                  );
+                })}
               </TableBody>
             </Table>
           )}
@@ -193,7 +242,7 @@ const RmpBrandsPage = () => {
       </Card>
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-w-lg" aria-describedby={undefined}>
           <DialogHeader>
             <DialogTitle>{editing ? 'Edit RMP Brand' : 'Add RMP Brand'}</DialogTitle>
           </DialogHeader>
@@ -220,13 +269,24 @@ const RmpBrandsPage = () => {
               />
             </div>
             <div className="space-y-2">
-              <Label>Authorized Brand</Label>
-              <Select value={authorizedBrandId} onValueChange={setAuthorizedBrandId}>
+              <div className="flex items-center justify-between gap-2">
+                <Label>Authorized Brand</Label>
+                <Link
+                  to="/masters/authorized-brands"
+                  className="text-xs text-primary underline-offset-4 hover:underline"
+                >
+                  Manage list
+                </Link>
+              </div>
+              <Select
+                value={authorizedBrandId || SELECT_NONE}
+                onValueChange={(v) => setAuthorizedBrandId(v === SELECT_NONE ? '' : v)}
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="Select an authorized brand (optional)" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">None</SelectItem>
+                  <SelectItem value={SELECT_NONE}>None</SelectItem>
                   {authorizedBrands.map((brand) => (
                     <SelectItem key={brand.id} value={brand.id}>
                       {brand.name}

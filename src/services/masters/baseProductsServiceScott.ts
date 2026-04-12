@@ -133,18 +133,27 @@ async function baseProductToFormData(
   return form;
 }
 
+export interface BaseProductFilter {
+  search?: string;
+}
+
 export async function fetchBaseProductsPaginated(
   params?: Partial<ScottPageParams>,
+  filters?: BaseProductFilter,
 ): Promise<ScottPaginatedResult<ScottBaseProduct>> {
   const p = normalizeScottPageParams(params);
+  const query: Record<string, string | number | boolean | undefined> = {
+    items: p.items,
+    page: p.page,
+    is_deleted: false,
+  };
+  if (filters?.search) {
+    query.search = filters.search;
+  }
   const { body } = await callScottDashboard<Record<string, unknown>>({
     resource: 'base_products',
     method: 'GET',
-    query: {
-      items: p.items,
-      page: p.page,
-      is_deleted: false,
-    },
+    query,
   });
   const data = extractRecords(body).map((r) => normalizeBaseProduct(r));
   return {

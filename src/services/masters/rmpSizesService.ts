@@ -28,6 +28,10 @@ export interface RmpSize {
   updated_by?: string;
 }
 
+export interface RmpSizeFilter {
+  search?: string;
+}
+
 const VALID_SIZE_TYPES: RmpSizeType[] = ['alpha', 'numeric', 'free_size', 'kids', 'bags'];
 
 function normalizeRmpSize(r: Record<string, unknown>): RmpSize {
@@ -94,16 +98,21 @@ function rmpSizeToFormData(
 
 export async function fetchRmpSizesPaginated(
   params?: Partial<ScottPageParams>,
+  filters?: RmpSizeFilter,
 ): Promise<ScottPaginatedResult<RmpSize>> {
   const p = normalizeScottPageParams(params);
+  const query: Record<string, string | number | boolean | undefined> = {
+    items: p.items,
+    page: p.page,
+    is_deleted: false,
+  };
+  if (filters?.search) {
+    query.search = filters.search;
+  }
   const { body } = await callScottDashboard<Record<string, unknown>>({
     resource: 'rmp_sizes',
     method: 'GET',
-    query: {
-      items: p.items,
-      page: p.page,
-      is_deleted: false,
-    },
+    query,
   });
   const data = extractRecords(body).map((r) => normalizeRmpSize(r));
   return {

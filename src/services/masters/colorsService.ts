@@ -46,18 +46,27 @@ function colorFormToBody(
   };
 }
 
+export interface ColorFilter {
+  search?: string;
+}
+
 export async function fetchColorsPaginated(
   params?: Partial<ScottPageParams>,
+  filters?: ColorFilter,
 ): Promise<ScottPaginatedResult<Color>> {
   const p = normalizeScottPageParams(params);
+  const query: Record<string, string | number | boolean | undefined> = {
+    items: p.items,
+    page: p.page,
+    is_deleted: false,
+  };
+  if (filters?.search) {
+    query.search = filters.search;
+  }
   const { body } = await callScottDashboard<Record<string, unknown>>({
     resource: 'colors',
     method: 'GET',
-    query: {
-      items: p.items,
-      page: p.page,
-      is_deleted: false,
-    },
+    query,
   });
   const data = extractRecords(body).map((r) => normalizeColor(r));
   return {

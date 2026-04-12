@@ -4,6 +4,7 @@ import {
   extractScottEntity,
   normalizeId,
 } from '@/services/scott/callScottDashboard';
+import { normalizeHexCode } from '@/services/masters/rmpColorsService';
 import {
   buildScottPaginatedMeta,
   fetchAllScottPages,
@@ -37,6 +38,10 @@ export interface RmpClass {
   rmp_color?: { id: string; name: string; code: string };
 }
 
+export interface RmpClassFilter {
+  search?: string;
+}
+
 // Type for multiple image files
 export interface RmpClassImageFiles {
   image_1?: File;
@@ -46,6 +51,21 @@ export interface RmpClassImageFiles {
   image_5?: File;
 }
 
+function extractEmbeddedRmpColor(
+  r: Record<string, unknown>,
+): { id: string; name: string; code: string } | undefined {
+  const raw = r.rmp_color ?? r.RmpColor ?? r.color;
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return undefined;
+  const o = raw as Record<string, unknown>;
+  const idVal = o.id ?? o.rmp_color_id;
+  if (idVal == null || idVal === '') return undefined;
+  return {
+    id: normalizeId(idVal),
+    name: String(o.name ?? ''),
+    code: normalizeHexCode(o.code),
+  };
+}
+
 function normalizeRmpClass(r: Record<string, unknown>): RmpClass {
   const status =
     typeof r.status === 'string'
@@ -53,6 +73,14 @@ function normalizeRmpClass(r: Record<string, unknown>): RmpClass {
       : r.is_deleted === true || r.is_deleted === 'true'
         ? 'inactive'
         : 'active';
+
+  const embeddedColor = extractEmbeddedRmpColor(r);
+  const rawColorId =
+    r.rmp_color_id ?? r.rmpColorId ?? r.color_id ?? (r as { colorId?: unknown }).colorId;
+  const rmpColorId =
+    rawColorId != null && String(rawColorId) !== ''
+      ? String(rawColorId)
+      : embeddedColor?.id;
 
   return {
     id: normalizeId(r.id ?? r.rmp_class_id),
@@ -64,7 +92,8 @@ function normalizeRmpClass(r: Record<string, unknown>): RmpClass {
           ? Number(r.position)
           : 0,
     is_deleted: r.is_deleted === true || r.is_deleted === 'true',
-    rmp_color_id: r.rmp_color_id ? String(r.rmp_color_id) : undefined,
+    rmp_color_id: rmpColorId,
+    rmp_color: embeddedColor,
     image_1: r.image_1 ? String(r.image_1) : undefined,
     image_1_thumbnail: r.image_1_thumbnail ? String(r.image_1_thumbnail) : undefined,
     image_2: r.image_2 ? String(r.image_2) : undefined,
@@ -125,16 +154,21 @@ function rmpClassToFormData(
 
 export async function fetchRmpClassesPaginated(
   params?: Partial<ScottPageParams>,
+  filters?: RmpClassFilter,
 ): Promise<ScottPaginatedResult<RmpClass>> {
   const p = normalizeScottPageParams(params);
+  const query: Record<string, string | number | boolean | undefined> = {
+    items: p.items,
+    page: p.page,
+    is_deleted: false,
+  };
+  if (filters?.search) {
+    query.search = filters.search;
+  }
   const { body } = await callScottDashboard<Record<string, unknown>>({
     resource: 'rmp_classes',
     method: 'GET',
-    query: {
-      items: p.items,
-      page: p.page,
-      is_deleted: false,
-    },
+    query,
   });
   const data = extractRecords(body).map((r) => normalizeRmpClass(r));
   return {

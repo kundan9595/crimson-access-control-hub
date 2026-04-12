@@ -7,19 +7,21 @@ import {
   updateFabric,
   deleteFabric,
   type Fabric,
+  type FabricFilter,
 } from '@/services/masters/fabricsServiceScott';
 import { useCreateMutation, useUpdateMutation, useDeleteMutation } from './shared/utils';
 import { config } from '@/config/environment';
 
-export { type Fabric } from '@/services/masters/fabricsServiceScott';
+export { type Fabric, type FabricFilter } from '@/services/masters/fabricsServiceScott';
 
 export const useFabrics = (
   page: number = 1,
   pageSize: number = config.pagination.defaultPageSize,
+  filters?: FabricFilter,
 ) => {
   return useQuery({
-    queryKey: ['fabrics', 'list', page, pageSize],
-    queryFn: () => fetchFabricsPaginated({ page, items: pageSize }),
+    queryKey: ['fabrics', 'list', page, pageSize, filters?.search],
+    queryFn: () => fetchFabricsPaginated({ page, items: pageSize }, filters),
     placeholderData: (prev) => prev,
   });
 };

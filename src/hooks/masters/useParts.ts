@@ -8,21 +8,23 @@ import {
   deletePart,
   updatePartColors,
   updatePartAddOns,
+  type PartFilter,
 } from '@/services/masters/partsServiceScott';
 import type { Part } from '@/services/masters/partsServiceScott';
 import { useCreateMutation, useUpdateMutation, useDeleteMutation } from './shared/utils';
 import { config } from '@/config/environment';
 import { toast } from 'sonner';
 
-export type { Part };
+export type { Part, PartFilter };
 
 export const useParts = (
   page: number = 1,
   pageSize: number = config.pagination.defaultPageSize,
+  filters?: PartFilter,
 ) => {
   return useQuery({
-    queryKey: ['parts', 'list', page, pageSize],
-    queryFn: () => fetchPartsPaginated({ page, items: pageSize }),
+    queryKey: ['parts', 'list', page, pageSize, filters?.search],
+    queryFn: () => fetchPartsPaginated({ page, items: pageSize }, filters),
     placeholderData: (prev) => prev,
   });
 };

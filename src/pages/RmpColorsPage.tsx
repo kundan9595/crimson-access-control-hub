@@ -27,23 +27,23 @@ import { config } from '@/config/environment';
 const RmpColorsPage = () => {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(config.pagination.defaultPageSize);
-  const { data: rmpColorsPage, isLoading, isFetching } = useRmpColors(page, pageSize);
+  const [search, setSearch] = useState('');
+
+  const { data: rmpColorsPage, isLoading, isFetching } = useRmpColors(
+    page,
+    pageSize,
+    search ? { search } : undefined
+  );
   const rows = rmpColorsPage?.data ?? [];
   const createMut = useCreateRmpColor();
   const updateMut = useUpdateRmpColor();
   const deleteMut = useDeleteRmpColor();
 
-  const [search, setSearch] = useState('');
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<RmpColor | null>(null);
   const [name, setName] = useState('');
   const [code, setCode] = useState('');
   const [status, setStatus] = useState('active');
-
-  const filtered = rows.filter((r) => 
-    r.name.toLowerCase().includes(search.toLowerCase()) ||
-    r.code.toLowerCase().includes(search.toLowerCase())
-  );
 
   useEffect(() => {
     setPage(1);
@@ -115,16 +115,18 @@ const RmpColorsPage = () => {
       <Card>
         <CardContent className="p-6">
           <SearchFilter
-            placeholder="Search RMP colors (current page)..."
+            placeholder="Search RMP colors..."
             value={search}
             onChange={setSearch}
-            resultCount={filtered.length}
+            resultCount={rows.length}
             totalCount={rmpColorsPage?.totalCount ?? rows.length}
           />
           {isLoading ? (
             <MasterTableSkeleton showToolbar={false} columnCount={4} className="mt-6" />
-          ) : filtered.length === 0 ? (
-            <p className="text-center text-muted-foreground py-8">No RMP colors on this page</p>
+          ) : rows.length === 0 ? (
+            <p className="text-center text-muted-foreground py-8">
+              {search ? 'No RMP colors match your search' : 'No RMP colors found'}
+            </p>
           ) : (
             <Table className="mt-6">
               <TableHeader>
@@ -137,7 +139,7 @@ const RmpColorsPage = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filtered.map((r) => (
+                {rows.map((r) => (
                   <TableRow key={r.id}>
                     <TableCell className="font-medium">{r.name}</TableCell>
                     <TableCell>

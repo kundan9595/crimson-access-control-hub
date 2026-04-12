@@ -7,19 +7,20 @@ import {
   deleteRmpBrand,
   updateRmpBrandCategories,
 } from '@/services/masters/rmpBrandsService';
-import type { RmpBrand } from '@/services/masters/rmpBrandsService';
+import type { RmpBrand, RmpBrandFilter } from '@/services/masters/rmpBrandsService';
 import { useCreateMutation, useUpdateMutation, useDeleteMutation } from './shared/utils';
 import { config } from '@/config/environment';
 
-export type { RmpBrand };
+export type { RmpBrand, RmpBrandFilter };
 
 export const useRmpBrands = (
   page: number = 1,
   pageSize: number = config.pagination.defaultPageSize,
+  filters?: RmpBrandFilter,
 ) => {
   return useQuery({
-    queryKey: ['rmp_brands', 'list', page, pageSize],
-    queryFn: () => fetchRmpBrandsPaginated({ page, items: pageSize }),
+    queryKey: ['rmp_brands', 'list', page, pageSize, filters?.search],
+    queryFn: () => fetchRmpBrandsPaginated({ page, items: pageSize }, filters),
     placeholderData: (prev) => prev,
   });
 };

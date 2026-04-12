@@ -10,20 +10,14 @@ import { Fabric } from '@/services/masters/types';
 import { MasterTableSkeleton } from '@/components/masters/shared/MasterListPageSkeleton';
 
 interface FabricsListProps {
-  searchTerm: string;
   fabrics: Fabric[];
   isLoading: boolean;
 }
 
-export const FabricsList: React.FC<FabricsListProps> = ({ searchTerm, fabrics, isLoading }) => {
+export const FabricsList: React.FC<FabricsListProps> = ({ fabrics, isLoading }) => {
   const deleteFabric = useDeleteFabric();
   const [editingFabric, setEditingFabric] = useState<Fabric | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
-
-  const filteredFabrics = fabrics.filter((fabric) =>
-    fabric.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    fabric.fabric_type.toLowerCase().includes(searchTerm.toLowerCase())
-  );
 
   const handleEdit = (fabric: Fabric) => {
     setEditingFabric(fabric);
@@ -42,16 +36,13 @@ export const FabricsList: React.FC<FabricsListProps> = ({ searchTerm, fabrics, i
   };
 
   if (isLoading) {
-    return <MasterTableSkeleton showToolbar={false} columnCount={7} />;
+    return <MasterTableSkeleton showToolbar={false} columnCount={11} />;
   }
 
-  if (filteredFabrics.length === 0) {
+  if (fabrics.length === 0) {
     return (
       <div className="text-center py-8 text-muted-foreground">
         <p>No fabrics found</p>
-        {searchTerm && (
-          <p className="text-sm">Try adjusting your search terms</p>
-        )}
       </div>
     );
   }
@@ -70,11 +61,13 @@ export const FabricsList: React.FC<FabricsListProps> = ({ searchTerm, fabrics, i
               <TableHead>Price</TableHead>
               <TableHead>Color</TableHead>
               <TableHead>Status</TableHead>
+              <TableHead>Created</TableHead>
+              <TableHead>Updated</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredFabrics.map((fabric) => (
+            {fabrics.map((fabric) => (
               <TableRow key={fabric.id}>
                 <TableCell>
                   {fabric.image_url ? (
@@ -116,6 +109,8 @@ export const FabricsList: React.FC<FabricsListProps> = ({ searchTerm, fabrics, i
                     {fabric.status}
                   </Badge>
                 </TableCell>
+                <TableCell>{new Date(fabric.created_at).toLocaleDateString()}</TableCell>
+                <TableCell>{new Date(fabric.updated_at).toLocaleDateString()}</TableCell>
                 <TableCell className="text-right">
                   <div className="flex justify-end gap-2">
                     <Button

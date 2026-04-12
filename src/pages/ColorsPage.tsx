@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Edit, Trash2 } from 'lucide-react';
-import { useColors, useDeleteColor } from '@/hooks/useMasters';
+import { useColors, useDeleteColor, type ColorFilter } from '@/hooks/masters/useColors';
 import { useSearchParams } from 'react-router-dom';
 import ColorDialog from '@/components/masters/ColorDialog';
 import BulkImportDialog from '@/components/masters/BulkImportDialog';
@@ -16,15 +16,16 @@ import { MasterListPageSkeleton } from '@/components/masters/shared/MasterListPa
 import { MasterServerPagination } from '@/components/masters/shared/MasterServerPagination';
 import { fetchColors } from '@/services/masters/colorsService';
 import { config } from '@/config/environment';
-import type { Color } from '@/services/mastersService';
+import type { Color } from '@/services/masters/types';
 
 const ColorsPage = () => {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(config.pagination.defaultPageSize);
-  const { data: colorsPage, isLoading } = useColors(page, pageSize);
+  const [searchTerm, setSearchTerm] = useState('');
+  const filters: ColorFilter | undefined = searchTerm ? { search: searchTerm } : undefined;
+  const { data: colorsPage, isLoading } = useColors(page, pageSize, filters);
   const colors = colorsPage?.data;
   const deleteColorMutation = useDeleteColor();
-  const [searchTerm, setSearchTerm] = useState('');
   const [editingColor, setEditingColor] = useState<Color | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [bulkImportOpen, setBulkImportOpen] = useState(false);
@@ -36,6 +37,11 @@ const ColorsPage = () => {
       setSearchParams({});
     }
   }, [searchParams, setSearchParams]);
+
+  // Reset to page 1 when search changes
+  useEffect(() => {
+    setPage(1);
+  }, [searchTerm]);
 
   const handleEdit = (color: Color) => {
     setEditingColor(color);
@@ -78,21 +84,11 @@ const ColorsPage = () => {
     URL.revokeObjectURL(url);
   };
 
-  const filteredColors =
-    colors?.filter(
-      (color) =>
-        color.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        color.hex_code.toLowerCase().includes(searchTerm.toLowerCase()),
-    ) || [];
-
-  useEffect(() => {
-    setPage(1);
-  }, [searchTerm]);
 
   if (isLoading) {
     return (
       <MasterListPageSkeleton
-        columnCount={6}
+        columnCount={7}
         header={
           <MasterPageHeader
             title="Colors"
@@ -123,17 +119,17 @@ const ColorsPage = () => {
       <Card>
         <CardContent className="p-6">
           <SearchFilter
-            placeholder="Search colors (current page)..."
+            placeholder="Search colors..."
             value={searchTerm}
             onChange={setSearchTerm}
-            resultCount={filteredColors.length}
+            resultCount={colors?.length ?? 0}
             totalCount={
               colorsPage?.totalCountIsExact ? colorsPage.totalCount : colors?.length
             }
           />
 
           <div className="mt-6">
-            {filteredColors.length > 0 ? (
+            {(colors?.length ?? 0) > 0 ? (
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -142,11 +138,12 @@ const ColorsPage = () => {
                     <TableHead>Hex Code</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Created At</TableHead>
+                    <TableHead>Updated At</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredColors.map((color) => (
+                  {colors?.map((color) => (
                     <TableRow key={color.id}>
                       <TableCell>
                         <div 
@@ -162,6 +159,7 @@ const ColorsPage = () => {
                         </Badge>
                       </TableCell>
                       <TableCell>{new Date(color.created_at).toLocaleDateString()}</TableCell>
+                      <TableCell>{new Date(color.updated_at).toLocaleDateString()}</TableCell>
                       <TableCell className="text-right">
                         <div className="flex items-center justify-end gap-2">
                           <Button

@@ -19,6 +19,7 @@ import {
   useScottPromotionalBanners,
   useDeleteScottPromotionalBanner,
   type ScottPromotionalBanner,
+  type PromotionalBannerFilter,
 } from '@/hooks/masters/useScottPromotionalBanners';
 import { exportToCSV, generateExportFilename } from '@/utils/exportUtils';
 import { Edit, Trash2, Image as ImageIcon, Megaphone } from 'lucide-react';
@@ -31,25 +32,19 @@ const ScottPromotionalBannersPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(config.pagination.defaultPageSize);
+  const filters: PromotionalBannerFilter | undefined = searchTerm ? { search: searchTerm } : undefined;
   const [selectedBanner, setSelectedBanner] = useState<ScottPromotionalBanner | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [importDialogOpen, setImportDialogOpen] = useState(false);
 
-  const { data: bannersPage, isLoading, isFetching } = useScottPromotionalBanners(page, pageSize);
+  const { data: bannersPage, isLoading, isFetching } = useScottPromotionalBanners(page, pageSize, filters);
   const promotionalBanners = bannersPage?.data ?? [];
   const deletePromotionalBannerMutation = useDeleteScottPromotionalBanner();
 
+  // Reset to page 1 when search changes
   useEffect(() => {
     setPage(1);
   }, [searchTerm]);
-
-  const filteredBanners = promotionalBanners.filter(
-    (banner) =>
-      banner.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (banner.rmp_category?.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (banner.rmp_class?.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (banner.rmp_brand?.name || '').toLowerCase().includes(searchTerm.toLowerCase()),
-  );
 
   const handleAdd = () => {
     setSelectedBanner(null);
@@ -101,7 +96,7 @@ const ScottPromotionalBannersPage = () => {
   if (isLoading) {
     return (
       <MasterListPageSkeleton
-        columnCount={7}
+        columnCount={10}
         header={
           <MasterPageHeader
             title="Promotional Banners (RMP)"
@@ -127,27 +122,27 @@ const ScottPromotionalBannersPage = () => {
         onAdd={handleAdd}
         onExport={handleExport}
         onImport={handleImport}
-        canExport={filteredBanners.length > 0}
+        canExport={promotionalBanners.length > 0}
         isScottApi={true}
       />
 
       <Card>
         <CardContent className="p-6">
           <SearchFilter
-            placeholder="Search promotional banners (current page)..."
+            placeholder="Search promotional banners..."
             value={searchTerm}
             onChange={setSearchTerm}
-            resultCount={filteredBanners.length}
+            resultCount={promotionalBanners.length}
             totalCount={
               bannersPage?.totalCountIsExact ? bannersPage.totalCount : promotionalBanners.length
             }
           />
 
           <div className="mt-6">
-            {filteredBanners.length === 0 ? (
+            {promotionalBanners.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
-                <p>No promotional banners on this page</p>
-                <p className="text-sm">Try another page or add an RMP banner</p>
+                <p>{searchTerm ? 'No promotional banners match your search' : 'No promotional banners found'}</p>
+                <p className="text-sm">{searchTerm ? 'Try a different search term' : 'Add an RMP banner to get started'}</p>
               </div>
             ) : (
               <Table>
@@ -160,11 +155,13 @@ const ScottPromotionalBannersPage = () => {
                     <TableHead>Class</TableHead>
                     <TableHead>Brand</TableHead>
                     <TableHead>Status</TableHead>
+                    <TableHead>Created</TableHead>
+                    <TableHead>Updated</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredBanners.map((banner) => (
+                  {promotionalBanners.map((banner) => (
                     <TableRow key={banner.id}>
                       <TableCell>
                         {banner.image_url ? (
@@ -189,6 +186,8 @@ const ScottPromotionalBannersPage = () => {
                           {banner.status}
                         </Badge>
                       </TableCell>
+                      <TableCell>{new Date(banner.created_at).toLocaleDateString()}</TableCell>
+                      <TableCell>{new Date(banner.updated_at).toLocaleDateString()}</TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end space-x-2">
                           <Button

@@ -36,6 +36,27 @@ export interface RmpSku {
   rmp_category?: { id: string; name: string };
 }
 
+export interface RmpSkuFilter {
+  search?: string;
+}
+
+function extractRmpSkuRelation(
+  r: Record<string, unknown>,
+  relKey: 'rmp_size' | 'rmp_class' | 'rmp_brand' | 'rmp_category',
+  pascal: string,
+): { id: string; name: string } | undefined {
+  const raw = r[relKey] ?? r[pascal];
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return undefined;
+  const o = raw as Record<string, unknown>;
+  const idKey = `${relKey}_id` as const;
+  const idVal = o.id ?? o[idKey];
+  if (idVal == null || idVal === '') return undefined;
+  return {
+    id: normalizeId(idVal),
+    name: String(o.name ?? ''),
+  };
+}
+
 function normalizeRmpSku(r: Record<string, unknown>): RmpSku {
   const status =
     typeof r.status === 'string'
@@ -44,6 +65,33 @@ function normalizeRmpSku(r: Record<string, unknown>): RmpSku {
         ? 'inactive'
         : 'active';
 
+  const embeddedSize = extractRmpSkuRelation(r, 'rmp_size', 'RmpSize');
+  const embeddedClass = extractRmpSkuRelation(r, 'rmp_class', 'RmpClass');
+  const embeddedBrand = extractRmpSkuRelation(r, 'rmp_brand', 'RmpBrand');
+  const embeddedCategory = extractRmpSkuRelation(r, 'rmp_category', 'RmpCategory');
+
+  const rawSizeId = r.rmp_size_id ?? r.rmpSizeId;
+  const rawClassId = r.rmp_class_id ?? r.rmpClassId;
+  const rawBrandId = r.rmp_brand_id ?? r.rmpBrandId;
+  const rawCategoryId = r.rmp_category_id ?? r.rmpCategoryId;
+
+  const rmp_size_id =
+    rawSizeId != null && String(rawSizeId) !== ''
+      ? String(rawSizeId)
+      : embeddedSize?.id;
+  const rmp_class_id =
+    rawClassId != null && String(rawClassId) !== ''
+      ? String(rawClassId)
+      : embeddedClass?.id;
+  const rmp_brand_id =
+    rawBrandId != null && String(rawBrandId) !== ''
+      ? String(rawBrandId)
+      : embeddedBrand?.id;
+  const rmp_category_id =
+    rawCategoryId != null && String(rawCategoryId) !== ''
+      ? String(rawCategoryId)
+      : embeddedCategory?.id;
+
   return {
     id: normalizeId(r.id ?? r.rmp_sku_id),
     name: String(r.name ?? ''),
@@ -51,10 +99,10 @@ function normalizeRmpSku(r: Record<string, unknown>): RmpSku {
     igst: typeof r.igst === 'number' ? r.igst : Number(r.igst ?? 0),
     sgst: typeof r.sgst === 'number' ? r.sgst : Number(r.sgst ?? 0),
     is_deleted: r.is_deleted === true || r.is_deleted === 'true',
-    rmp_size_id: r.rmp_size_id ? String(r.rmp_size_id) : undefined,
-    rmp_class_id: r.rmp_class_id ? String(r.rmp_class_id) : undefined,
-    rmp_brand_id: r.rmp_brand_id ? String(r.rmp_brand_id) : undefined,
-    rmp_category_id: r.rmp_category_id ? String(r.rmp_category_id) : undefined,
+    rmp_size_id,
+    rmp_class_id,
+    rmp_brand_id,
+    rmp_category_id,
     image: r.image ? String(r.image) : undefined,
     status,
     created_at:
@@ -63,6 +111,10 @@ function normalizeRmpSku(r: Record<string, unknown>): RmpSku {
       typeof r.updated_at === 'string' ? r.updated_at : new Date().toISOString(),
     created_by: r.created_by ? String(r.created_by) : undefined,
     updated_by: r.updated_by ? String(r.updated_by) : undefined,
+    rmp_size: embeddedSize,
+    rmp_class: embeddedClass,
+    rmp_brand: embeddedBrand,
+    rmp_category: embeddedCategory,
   };
 }
 
@@ -102,16 +154,21 @@ function rmpSkuToFormData(
 
 export async function fetchRmpSkusPaginated(
   params?: Partial<ScottPageParams>,
+  filters?: RmpSkuFilter,
 ): Promise<ScottPaginatedResult<RmpSku>> {
   const p = normalizeScottPageParams(params);
+  const query: Record<string, string | number | boolean | undefined> = {
+    items: p.items,
+    page: p.page,
+    is_deleted: false,
+  };
+  if (filters?.search) {
+    query.search = filters.search;
+  }
   const { body } = await callScottDashboard<Record<string, unknown>>({
     resource: 'rmp_skus',
     method: 'GET',
-    query: {
-      items: p.items,
-      page: p.page,
-      is_deleted: false,
-    },
+    query,
   });
   const data = extractRecords(body).map((r) => normalizeRmpSku(r));
   return {

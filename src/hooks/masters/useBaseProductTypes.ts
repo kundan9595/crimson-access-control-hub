@@ -6,6 +6,7 @@ import {
   updateBaseProductType,
   deleteBaseProductType,
   type BaseProductType,
+  type BaseProductTypeFilter,
 } from '@/services/masters/baseProductTypesService';
 import { toast } from 'sonner';
 import { config } from '@/config/environment';
@@ -13,10 +14,11 @@ import { config } from '@/config/environment';
 export const useBaseProductTypes = (
   page: number = 1,
   pageSize: number = config.pagination.defaultPageSize,
+  filters?: BaseProductTypeFilter,
 ) => {
   return useQuery({
-    queryKey: ['baseProductTypes', 'list', page, pageSize],
-    queryFn: () => fetchBaseProductTypesPaginated({ page, items: pageSize }),
+    queryKey: ['baseProductTypes', 'list', page, pageSize, filters?.search],
+    queryFn: () => fetchBaseProductTypesPaginated({ page, items: pageSize }, filters),
     placeholderData: (prev) => prev,
   });
 };

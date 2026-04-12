@@ -125,6 +125,7 @@ const App = () => {
                     <Route path="users" element={<Users />} />
                     <Route path="masters" element={<Masters />} />
                     <Route path="masters/brands" element={<BrandsPage />} />
+                    <Route path="masters/authorized-brands" element={<BrandsPage />} />
                     <Route path="masters/categories" element={<CategoriesPage />} />
                     <Route path="masters/colors" element={<ColorsPage />} />
                     <Route path="masters/size-groups" element={<SizeGroupsPage />} />

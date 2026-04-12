@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -19,38 +19,89 @@ import {
   useBaseProductAssetInfos,
   useDeleteBaseProductAssetInfo,
   type BaseProductAssetInfo,
+  type BaseProductAssetInfoFilter,
 } from '@/hooks/masters/useBaseProductAssetInfos';
 import { exportToCSV, generateExportFilename } from '@/utils/exportUtils';
 import { Edit, Trash2, Link2 } from 'lucide-react';
 import { MasterListPageSkeleton } from '@/components/masters/shared/MasterListPageSkeleton';
 import { MasterServerPagination } from '@/components/masters/shared/MasterServerPagination';
 import { fetchBaseProductAssetInfos } from '@/services/masters/baseProductAssetInfosService';
+import { fetchBaseProducts } from '@/services/masters/baseProductsServiceScott';
+import { fetchAddOns } from '@/services/masters/addOnsServiceScott';
+import { fetchParts } from '@/services/masters/partsServiceScott';
+import { getAppAssets } from '@/services/masters/appAssetsService';
+import { useAllBaseProducts } from '@/hooks/masters/useBaseProducts';
+import { useAllAddOns } from '@/hooks/masters/useAddOns';
+import { useAllParts } from '@/hooks/masters/useParts';
+import { useAllAppAssets } from '@/hooks/masters/useAppAssets';
 import { config } from '@/config/environment';
 
 const BaseProductAssetInfosPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(config.pagination.defaultPageSize);
+  const filters: BaseProductAssetInfoFilter | undefined = searchTerm ? { search: searchTerm } : undefined;
   const [selectedAssetInfo, setSelectedAssetInfo] = useState<BaseProductAssetInfo | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [importDialogOpen, setImportDialogOpen] = useState(false);
 
-  const { data: assetInfosPage, isLoading, isFetching } = useBaseProductAssetInfos(page, pageSize);
+  const { data: assetInfosPage, isLoading, isFetching } = useBaseProductAssetInfos(page, pageSize, filters);
   const assetInfos = assetInfosPage?.data ?? [];
   const deleteAssetInfoMutation = useDeleteBaseProductAssetInfo();
 
+  const { data: baseProducts = [] } = useAllBaseProducts();
+  const { data: addOns = [] } = useAllAddOns();
+  const { data: parts = [] } = useAllParts();
+  const { data: appAssets = [] } = useAllAppAssets();
+
+  const baseProductById = useMemo(
+    () => new Map(baseProducts.map((p) => [p.id, p] as const)),
+    [baseProducts],
+  );
+  const addOnById = useMemo(() => new Map(addOns.map((a) => [a.id, a] as const)), [addOns]);
+  const partById = useMemo(() => new Map(parts.map((p) => [p.id, p] as const)), [parts]);
+  const assetInfoById = useMemo(
+    () => new Map(appAssets.map((a) => [a.id, a] as const)),
+    [appAssets],
+  );
+
+  const labelBaseProduct = useCallback(
+    (row: BaseProductAssetInfo) => {
+      const full = row.base_product_id ? baseProductById.get(row.base_product_id) : undefined;
+      const resolved = full ?? row.base_product;
+      return resolved?.name?.trim() || row.base_product_id || '-';
+    },
+    [baseProductById],
+  );
+  const labelAddOn = useCallback(
+    (row: BaseProductAssetInfo) => {
+      const full = row.add_on_id ? addOnById.get(row.add_on_id) : undefined;
+      const resolved = full ?? row.add_on;
+      return resolved?.name?.trim() || row.add_on_id || '-';
+    },
+    [addOnById],
+  );
+  const labelPart = useCallback(
+    (row: BaseProductAssetInfo) => {
+      const full = row.part_id ? partById.get(row.part_id) : undefined;
+      const resolved = full ?? row.part;
+      return resolved?.name?.trim() || row.part_id || '-';
+    },
+    [partById],
+  );
+  const labelAssetInfo = useCallback(
+    (row: BaseProductAssetInfo) => {
+      const full = row.asset_info_id ? assetInfoById.get(row.asset_info_id) : undefined;
+      const resolved = full ?? row.asset_info;
+      return resolved?.name?.trim() || row.asset_info_id || '-';
+    },
+    [assetInfoById],
+  );
+
+  // Reset to page 1 when search changes (API handles the search filtering)
   useEffect(() => {
     setPage(1);
   }, [searchTerm]);
-
-  const filteredAssetInfos = assetInfos.filter(
-    (assetInfo) =>
-      assetInfo.base_product?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      assetInfo.add_on?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      assetInfo.part?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      assetInfo.asset_info?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      assetInfo.base_product_id.toLowerCase().includes(searchTerm.toLowerCase())
-  );
 
   const handleAdd = () => {
     setSelectedAssetInfo(null);
@@ -69,18 +120,46 @@ const BaseProductAssetInfosPage = () => {
   };
 
   const handleExport = async () => {
-    const all = await fetchBaseProductAssetInfos();
+    const [all, bps, aos, pts, assets] = await Promise.all([
+      fetchBaseProductAssetInfos(),
+      fetchBaseProducts(),
+      fetchAddOns(),
+      fetchParts(),
+      getAppAssets(),
+    ]);
     if (!all.length) return;
+
+    const bpMap = new Map(bps.map((p) => [p.id, p] as const));
+    const aoMap = new Map(aos.map((a) => [a.id, a] as const));
+    const ptMap = new Map(pts.map((p) => [p.id, p] as const));
+    const aiMap = new Map(assets.map((a) => [a.id, a] as const));
+
+    const exportBp = (item: BaseProductAssetInfo) => {
+      const full = item.base_product_id ? bpMap.get(item.base_product_id) : undefined;
+      return (full ?? item.base_product)?.name?.trim() || item.base_product_id || '-';
+    };
+    const exportAo = (item: BaseProductAssetInfo) => {
+      const full = item.add_on_id ? aoMap.get(item.add_on_id) : undefined;
+      return (full ?? item.add_on)?.name?.trim() || item.add_on_id || '-';
+    };
+    const exportPt = (item: BaseProductAssetInfo) => {
+      const full = item.part_id ? ptMap.get(item.part_id) : undefined;
+      return (full ?? item.part)?.name?.trim() || item.part_id || '-';
+    };
+    const exportAi = (item: BaseProductAssetInfo) => {
+      const full = item.asset_info_id ? aiMap.get(item.asset_info_id) : undefined;
+      return (full ?? item.asset_info)?.name?.trim() || item.asset_info_id || '-';
+    };
 
     exportToCSV({
       filename: generateExportFilename('base-product-asset-links'),
       headers: ['Base Product', 'Add On', 'Part', 'Asset Info', 'Status', 'Created At'],
       data: all,
       fieldMap: {
-        'Base Product': (item: BaseProductAssetInfo) => item.base_product?.name || item.base_product_id,
-        'Add On': (item: BaseProductAssetInfo) => item.add_on?.name || item.add_on_id,
-        'Part': (item: BaseProductAssetInfo) => item.part?.name || item.part_id,
-        'Asset Info': (item: BaseProductAssetInfo) => item.asset_info?.name || item.asset_info_id,
+        'Base Product': exportBp,
+        'Add On': exportAo,
+        'Part': exportPt,
+        'Asset Info': exportAi,
         'Status': (item: BaseProductAssetInfo) => (item.is_deleted ? 'inactive' : 'active'),
         'Created At': (item: BaseProductAssetInfo) =>
           new Date(item.created_at).toLocaleDateString(),
@@ -101,7 +180,7 @@ const BaseProductAssetInfosPage = () => {
   if (isLoading) {
     return (
       <MasterListPageSkeleton
-        columnCount={6}
+        columnCount={8}
         header={
           <MasterPageHeader
             title="Base Product Asset Links"
@@ -127,27 +206,27 @@ const BaseProductAssetInfosPage = () => {
         onAdd={handleAdd}
         onExport={handleExport}
         onImport={handleImport}
-        canExport={filteredAssetInfos.length > 0}
+        canExport={assetInfos.length > 0}
         isScottApi={true}
       />
 
       <Card>
         <CardContent className="p-6">
           <SearchFilter
-            placeholder="Search asset links (current page)..."
+            placeholder="Search asset links..."
             value={searchTerm}
             onChange={setSearchTerm}
-            resultCount={filteredAssetInfos.length}
+            resultCount={assetInfos.length}
             totalCount={
               assetInfosPage?.totalCountIsExact ? assetInfosPage.totalCount : assetInfos.length
             }
           />
 
           <div className="mt-6">
-            {filteredAssetInfos.length === 0 ? (
+            {assetInfos.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
-                <p>No asset links on this page</p>
-                <p className="text-sm">Try another page or add a link</p>
+                <p>{searchTerm ? 'No asset links match your search' : 'No asset links found'}</p>
+                <p className="text-sm">{searchTerm ? 'Try a different search term' : 'Add a link to get started'}</p>
               </div>
             ) : (
               <Table>
@@ -158,29 +237,33 @@ const BaseProductAssetInfosPage = () => {
                     <TableHead>Part</TableHead>
                     <TableHead>Asset Info</TableHead>
                     <TableHead>Status</TableHead>
+                    <TableHead>Created</TableHead>
+                    <TableHead>Updated</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredAssetInfos.map((assetInfo) => (
+                  {assetInfos.map((assetInfo) => (
                     <TableRow key={assetInfo.id}>
                       <TableCell className="font-medium">
-                        {assetInfo.base_product?.name || assetInfo.base_product_id}
+                        {labelBaseProduct(assetInfo)}
                       </TableCell>
                       <TableCell>
-                        {assetInfo.add_on?.name || assetInfo.add_on_id}
+                        {labelAddOn(assetInfo)}
                       </TableCell>
                       <TableCell>
-                        {assetInfo.part?.name || assetInfo.part_id}
+                        {labelPart(assetInfo)}
                       </TableCell>
                       <TableCell>
-                        {assetInfo.asset_info?.name || assetInfo.asset_info_id}
+                        {labelAssetInfo(assetInfo)}
                       </TableCell>
                       <TableCell>
                         <Badge variant={!assetInfo.is_deleted ? 'default' : 'secondary'}>
                           {!assetInfo.is_deleted ? 'active' : 'inactive'}
                         </Badge>
                       </TableCell>
+                      <TableCell>{new Date(assetInfo.created_at).toLocaleDateString()}</TableCell>
+                      <TableCell>{new Date(assetInfo.updated_at).toLocaleDateString()}</TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end space-x-2">
                           <Button

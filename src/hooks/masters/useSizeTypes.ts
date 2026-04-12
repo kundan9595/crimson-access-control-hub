@@ -6,6 +6,7 @@ import {
   updateSizeType,
   deleteSizeType,
   type SizeType,
+  type SizeTypeFilter,
 } from '@/services/masters/sizeTypesService';
 import { toast } from 'sonner';
 import { config } from '@/config/environment';
@@ -13,10 +14,11 @@ import { config } from '@/config/environment';
 export const useSizeTypes = (
   page: number = 1,
   pageSize: number = config.pagination.defaultPageSize,
+  filters?: SizeTypeFilter,
 ) => {
   return useQuery({
-    queryKey: ['sizeTypes', 'list', page, pageSize],
-    queryFn: () => fetchSizeTypesPaginated({ page, items: pageSize }),
+    queryKey: ['sizeTypes', 'list', page, pageSize, filters?.search],
+    queryFn: () => fetchSizeTypesPaginated({ page, items: pageSize }, filters),
     placeholderData: (prev) => prev,
   });
 };

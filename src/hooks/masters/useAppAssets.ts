@@ -7,6 +7,7 @@ import {
   updateAppAsset,
   deleteAppAsset,
   type AppAsset,
+  type AppAssetFilter,
 } from '@/services/masters/appAssetsService';
 import { toast } from 'sonner';
 import { config } from '@/config/environment';
@@ -14,10 +15,11 @@ import { config } from '@/config/environment';
 export const useGetAppAssets = (
   page: number = 1,
   pageSize: number = config.pagination.defaultPageSize,
+  filters?: AppAssetFilter,
 ) => {
   return useQuery({
-    queryKey: ['appAssets', 'list', page, pageSize],
-    queryFn: () => getAppAssetsPaginated({ page, items: pageSize }),
+    queryKey: ['appAssets', 'list', page, pageSize, filters?.search],
+    queryFn: () => getAppAssetsPaginated({ page, items: pageSize }, filters),
     placeholderData: (prev) => prev,
   });
 };

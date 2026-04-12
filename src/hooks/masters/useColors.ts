@@ -6,17 +6,21 @@ import {
   createColor,
   updateColor,
   deleteColor,
+  type ColorFilter,
 } from '@/services/masters/colorsService';
 import { config } from '@/config/environment';
+
+export { type ColorFilter } from '@/services/masters/colorsService';
 
 /** Server-paginated list for table views. */
 export const useColors = (
   page: number = 1,
   pageSize: number = config.pagination.defaultPageSize,
+  filters?: ColorFilter,
 ) => {
   return useQuery({
-    queryKey: ['colors', 'list', page, pageSize],
-    queryFn: () => fetchColorsPaginated({ page, items: pageSize }),
+    queryKey: ['colors', 'list', page, pageSize, filters?.search],
+    queryFn: () => fetchColorsPaginated({ page, items: pageSize }, filters),
     placeholderData: (prev) => prev,
   });
 };

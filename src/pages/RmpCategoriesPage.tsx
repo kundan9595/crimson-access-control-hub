@@ -32,13 +32,18 @@ import { config } from '@/config/environment';
 const RmpCategoriesPage = () => {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(config.pagination.defaultPageSize);
-  const { data: pageData, isLoading, isFetching } = useRmpCategories(page, pageSize);
+  const [search, setSearch] = useState('');
+
+  const { data: pageData, isLoading, isFetching } = useRmpCategories(
+    page,
+    pageSize,
+    search ? { search } : undefined
+  );
   const rows = pageData?.data ?? [];
   const createMut = useCreateRmpCategory();
   const updateMut = useUpdateRmpCategory();
   const deleteMut = useDeleteRmpCategory();
 
-  const [search, setSearch] = useState('');
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<RmpCategory | null>(null);
   const [name, setName] = useState('');
@@ -46,8 +51,6 @@ const RmpCategoriesPage = () => {
   const [status, setStatus] = useState('active');
   const imageInputRef = useRef<HTMLInputElement>(null);
   const [imageFile, setImageFile] = useState<File | null>(null);
-
-  const filtered = rows.filter((r) => r.name.toLowerCase().includes(search.toLowerCase()));
 
   useEffect(() => {
     setPage(1);
@@ -126,30 +129,44 @@ const RmpCategoriesPage = () => {
       <Card>
         <CardContent className="p-6">
           <SearchFilter
-            placeholder="Search categories (current page)..."
+            placeholder="Search categories..."
             value={search}
             onChange={setSearch}
-            resultCount={filtered.length}
+            resultCount={rows.length}
             totalCount={pageData?.totalCount ?? rows.length}
           />
           {isLoading ? (
-            <MasterTableSkeleton showToolbar={false} columnCount={5} className="mt-6" />
-          ) : filtered.length === 0 ? (
-            <p className="text-center text-muted-foreground py-8">No categories on this page</p>
+            <MasterTableSkeleton showToolbar={false} columnCount={6} className="mt-6" />
+          ) : rows.length === 0 ? (
+            <p className="text-center text-muted-foreground py-8">
+              {search ? 'No categories match your search' : 'No categories found'}
+            </p>
           ) : (
             <Table className="mt-6">
               <TableHeader>
                 <TableRow>
                   <TableHead>Name</TableHead>
+                  <TableHead>Image</TableHead>
                   <TableHead>Position</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filtered.map((r) => (
+                {rows.map((r) => (
                   <TableRow key={r.id}>
                     <TableCell className="font-medium">{r.name}</TableCell>
+                    <TableCell>
+                      {r.image ? (
+                        <img
+                          src={r.image}
+                          alt={r.name}
+                          className="w-10 h-10 object-cover rounded-md"
+                        />
+                      ) : (
+                        <span className="text-muted-foreground text-sm">-</span>
+                      )}
+                    </TableCell>
                     <TableCell>{r.position}</TableCell>
                     <TableCell>
                       <Badge variant={r.status === 'active' ? 'default' : 'secondary'}>{r.status}</Badge>

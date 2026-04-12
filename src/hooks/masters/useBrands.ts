@@ -7,7 +7,8 @@ import {
   updateBrand,
   deleteBrand,
   Brand,
-} from '@/services/mastersService';
+  BrandFilter,
+} from '@/services/masters/brandsService';
 import { useCreateMutation, useUpdateMutation, useDeleteMutation } from './shared/utils';
 import { config } from '@/config/environment';
 
@@ -15,10 +16,11 @@ import { config } from '@/config/environment';
 export const useBrands = (
   page: number = 1,
   pageSize: number = config.pagination.defaultPageSize,
+  filters?: BrandFilter,
 ) => {
   return useQuery({
-    queryKey: ['brands', 'list', page, pageSize],
-    queryFn: () => fetchBrandsPaginated({ page, items: pageSize }),
+    queryKey: ['brands', 'list', page, pageSize, filters?.search],
+    queryFn: () => fetchBrandsPaginated({ page, items: pageSize }, filters),
     placeholderData: (prev) => prev,
   });
 };

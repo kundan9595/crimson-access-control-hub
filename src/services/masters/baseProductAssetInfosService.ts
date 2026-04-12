@@ -43,19 +43,61 @@ export interface BaseProductAssetInfo {
   };
 }
 
+function extractLinkedEntity(
+  r: Record<string, unknown>,
+  relKey: 'base_product' | 'add_on' | 'part' | 'asset_info',
+  pascal: string,
+): { id: string; name: string } | undefined {
+  const raw = r[relKey] ?? (r as Record<string, unknown>)[pascal];
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return undefined;
+  const o = raw as Record<string, unknown>;
+  const idKey = `${relKey}_id` as 'base_product_id' | 'add_on_id' | 'part_id' | 'asset_info_id';
+  const idVal = o.id ?? o[idKey];
+  if (idVal == null || idVal === '') return undefined;
+  return {
+    id: normalizeId(idVal),
+    name: String(o.name ?? ''),
+  };
+}
+
 // Normalize Scott API response
 function normalizeBaseProductAssetInfo(r: Record<string, unknown>): BaseProductAssetInfo {
+  const embeddedBp = extractLinkedEntity(r, 'base_product', 'BaseProduct');
+  const embeddedAddOn = extractLinkedEntity(r, 'add_on', 'AddOn');
+  const embeddedPart = extractLinkedEntity(r, 'part', 'Part');
+  const embeddedAsset = extractLinkedEntity(r, 'asset_info', 'AssetInfo');
+
+  const rawBp = r.base_product_id ?? r.baseProductId;
+  const rawAddOn = r.add_on_id ?? r.addOnId;
+  const rawPart = r.part_id ?? r.partId;
+  const rawAsset = r.asset_info_id ?? r.assetInfoId;
+
+  const base_product_id =
+    rawBp != null && String(rawBp) !== '' ? String(rawBp) : embeddedBp?.id ?? '';
+  const add_on_id =
+    rawAddOn != null && String(rawAddOn) !== '' ? String(rawAddOn) : embeddedAddOn?.id ?? '';
+  const part_id =
+    rawPart != null && String(rawPart) !== '' ? String(rawPart) : embeddedPart?.id ?? '';
+  const asset_info_id =
+    rawAsset != null && String(rawAsset) !== '' ? String(rawAsset) : embeddedAsset?.id ?? '';
+
   return {
     id: normalizeId(r.id ?? r.base_product_asset_info_id),
-    base_product_id: String(r.base_product_id ?? ''),
-    add_on_id: String(r.add_on_id ?? ''),
-    part_id: String(r.part_id ?? ''),
-    asset_info_id: String(r.asset_info_id ?? ''),
+    base_product_id,
+    add_on_id,
+    part_id,
+    asset_info_id,
     is_deleted: r.is_deleted === true || r.is_deleted === 'true',
     created_at:
       typeof r.created_at === 'string' ? r.created_at : new Date().toISOString(),
     updated_at:
       typeof r.updated_at === 'string' ? r.updated_at : new Date().toISOString(),
+    created_by: r.created_by ? String(r.created_by) : undefined,
+    updated_by: r.updated_by ? String(r.updated_by) : undefined,
+    base_product: embeddedBp,
+    add_on: embeddedAddOn,
+    part: embeddedPart,
+    asset_info: embeddedAsset,
   };
 }
 
@@ -74,18 +116,27 @@ function baseProductAssetInfoToFormData(
   return form;
 }
 
+export interface BaseProductAssetInfoFilter {
+  search?: string;
+}
+
 export async function fetchBaseProductAssetInfosPaginated(
   params?: Partial<ScottPageParams>,
+  filters?: BaseProductAssetInfoFilter,
 ): Promise<ScottPaginatedResult<BaseProductAssetInfo>> {
   const p = normalizeScottPageParams(params);
+  const query: Record<string, string | number | boolean | undefined> = {
+    items: p.items,
+    page: p.page,
+    is_deleted: false,
+  };
+  if (filters?.search) {
+    query.search = filters.search;
+  }
   const { body } = await callScottDashboard<Record<string, unknown>>({
     resource: 'base_product_asset_infos',
     method: 'GET',
-    query: {
-      items: p.items,
-      page: p.page,
-      is_deleted: false,
-    },
+    query,
   });
   const data = extractRecords(body).map((r) => normalizeBaseProductAssetInfo(r));
   return {

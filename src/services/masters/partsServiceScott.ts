@@ -72,18 +72,27 @@ function partToFormData(
   };
 }
 
+export interface PartFilter {
+  search?: string;
+}
+
 export async function fetchPartsPaginated(
   params?: Partial<ScottPageParams>,
+  filters?: PartFilter,
 ): Promise<ScottPaginatedResult<Part>> {
   const p = normalizeScottPageParams(params);
+  const query: Record<string, string | number | boolean | undefined> = {
+    items: p.items,
+    page: p.page,
+    is_deleted: false,
+  };
+  if (filters?.search) {
+    query.search = filters.search;
+  }
   const { body } = await callScottDashboard<Record<string, unknown>>({
     resource: 'parts',
     method: 'GET',
-    query: {
-      items: p.items,
-      page: p.page,
-      is_deleted: false,
-    },
+    query,
   });
   const data = extractRecords(body).map((r) => normalizePart(r));
   return {

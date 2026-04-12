@@ -6,20 +6,21 @@ import {
   updateRmpCategory,
   deleteRmpCategory,
 } from '@/services/masters/rmpCategoriesService';
-import type { RmpCategory } from '@/services/masters/rmpCategoriesService';
+import type { RmpCategory, RmpCategoriesFilter } from '@/services/masters/rmpCategoriesService';
 import { useDeleteMutation } from './shared/utils';
 import { config } from '@/config/environment';
 import { toast } from 'sonner';
 
-export type { RmpCategory };
+export type { RmpCategory, RmpCategoriesFilter };
 
 export const useRmpCategories = (
   page: number = 1,
   pageSize: number = config.pagination.defaultPageSize,
+  filters?: RmpCategoriesFilter,
 ) => {
   return useQuery({
-    queryKey: ['rmp_categories', 'list', page, pageSize],
-    queryFn: () => fetchRmpCategoriesPaginated({ page, items: pageSize }),
+    queryKey: ['rmp_categories', 'list', page, pageSize, filters?.search],
+    queryFn: () => fetchRmpCategoriesPaginated({ page, items: pageSize }, filters),
     placeholderData: (prev) => prev,
   });
 };

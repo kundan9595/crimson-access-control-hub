@@ -6,19 +6,21 @@ import {
   updateBaseProductAssetInfo,
   deleteBaseProductAssetInfo,
   type BaseProductAssetInfo,
+  type BaseProductAssetInfoFilter,
 } from '@/services/masters/baseProductAssetInfosService';
 import { useCreateMutation, useUpdateMutation, useDeleteMutation } from './shared/utils';
 import { config } from '@/config/environment';
 
-export { type BaseProductAssetInfo } from '@/services/masters/baseProductAssetInfosService';
+export { type BaseProductAssetInfo, type BaseProductAssetInfoFilter } from '@/services/masters/baseProductAssetInfosService';
 
 export const useBaseProductAssetInfos = (
   page: number = 1,
   pageSize: number = config.pagination.defaultPageSize,
+  filters?: BaseProductAssetInfoFilter,
 ) => {
   return useQuery({
-    queryKey: ['baseProductAssetInfos', 'list', page, pageSize],
-    queryFn: () => fetchBaseProductAssetInfosPaginated({ page, items: pageSize }),
+    queryKey: ['baseProductAssetInfos', 'list', page, pageSize, filters?.search],
+    queryFn: () => fetchBaseProductAssetInfosPaginated({ page, items: pageSize }, filters),
     placeholderData: (prev) => prev,
   });
 };

@@ -6,8 +6,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Edit, Trash2, Package, Table2, LayoutGrid, Eye } from 'lucide-react';
-import { useBrands, useDeleteBrand } from '@/hooks/masters/useBrands';
-import { useSearchParams } from 'react-router-dom';
+import { useBrands, useDeleteBrand, type BrandFilter } from '@/hooks/masters/useBrands';
+import { useSearchParams, useLocation } from 'react-router-dom';
 import BrandDialog from '@/components/masters/BrandDialog';
 import BulkImportDialog from '@/components/masters/BulkImportDialog';
 import BrandStylesModal from '@/components/masters/BrandStylesModal';
@@ -24,12 +24,20 @@ import type { Brand } from '@/services/mastersService';
 type ViewType = 'table' | 'card';
 
 const BrandsPage = () => {
+  const location = useLocation();
+  const isAuthorizedBrandsRoute = location.pathname.endsWith('/authorized-brands');
+  const pageTitle = isAuthorizedBrandsRoute ? 'Authorized Brands' : 'Brands';
+  const pageDescription = isAuthorizedBrandsRoute
+    ? 'Scott authorized brands (API: authorized_brands). Use these when linking RMP brands.'
+    : 'Manage your product brands';
+
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(config.pagination.defaultPageSize);
-  const { data: brandsPage, isLoading } = useBrands(page, pageSize);
+  const [searchTerm, setSearchTerm] = useState('');
+  const filters: BrandFilter | undefined = searchTerm ? { search: searchTerm } : undefined;
+  const { data: brandsPage, isLoading } = useBrands(page, pageSize, filters);
   const brands = brandsPage?.data;
   const deleteBrandMutation = useDeleteBrand();
-  const [searchTerm, setSearchTerm] = useState('');
   const [editingBrand, setEditingBrand] = useState<Brand | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [bulkImportOpen, setBulkImportOpen] = useState(false);
@@ -43,6 +51,11 @@ const BrandsPage = () => {
       setSearchParams({});
     }
   }, [searchParams, setSearchParams]);
+
+  // Reset to page 1 when search term changes
+  useEffect(() => {
+    setPage(1);
+  }, [searchTerm]);
 
   const handleEdit = (brand: Brand) => {
     setEditingBrand(brand);
@@ -95,19 +108,8 @@ const BrandsPage = () => {
     URL.revokeObjectURL(url);
   };
 
-  const filteredBrands =
-    brands?.filter(
-      (brand) =>
-        brand.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        brand.description?.toLowerCase().includes(searchTerm.toLowerCase()),
-    ) || [];
-
-  useEffect(() => {
-    setPage(1);
-  }, [searchTerm]);
-
-  // Sort brands by sort_order, then by name
-  const sortedBrands = [...filteredBrands].sort((a, b) => {
+  // Sort brands by sort_order, then by name (server-side search returns filtered results)
+  const sortedBrands = [...(brands || [])].sort((a, b) => {
     const orderA = a.sort_order || 0;
     const orderB = b.sort_order || 0;
     if (orderA !== orderB) return orderA - orderB;
@@ -177,11 +179,11 @@ const BrandsPage = () => {
     return (
       <MasterListPageSkeleton
         showViewToggle
-        columnCount={6}
+        columnCount={7}
         header={
           <MasterPageHeader
-            title="Brands"
-            description="Manage your product brands"
+            title={pageTitle}
+            description={pageDescription}
             icon={<Package className="h-6 w-6 text-blue-600" />}
             onAdd={() => setDialogOpen(true)}
             onExport={handleExport}
@@ -197,8 +199,8 @@ const BrandsPage = () => {
   return (
     <div className="space-y-6">
       <MasterPageHeader
-        title="Brands"
-        description="Manage your product brands"
+        title={pageTitle}
+        description={pageDescription}
         icon={<Package className="h-6 w-6 text-blue-600" />}
         onAdd={() => setDialogOpen(true)}
         onExport={handleExport}
@@ -211,7 +213,7 @@ const BrandsPage = () => {
         <CardContent className="p-6">
           <div className="flex items-center justify-between mb-4">
             <SearchFilter
-              placeholder="Search brands (current page)..."
+              placeholder="Search brands..."
               value={searchTerm}
               onChange={setSearchTerm}
               resultCount={sortedBrands.length}
@@ -242,6 +244,7 @@ const BrandsPage = () => {
                       <TableHead className="w-16">Logo</TableHead>
                       <TableHead>Name</TableHead>
                       <TableHead>Description</TableHead>
+                      <TableHead className="w-24">Sort Order</TableHead>
                       <TableHead className="w-24">Status</TableHead>
                       <TableHead className="w-32">Created At</TableHead>
                       <TableHead className="text-right w-32">Actions</TableHead>

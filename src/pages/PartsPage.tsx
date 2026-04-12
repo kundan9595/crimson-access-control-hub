@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -9,8 +9,10 @@ import { MasterPageHeader } from '@/components/masters/shared/MasterPageHeader';
 import { SearchFilter } from '@/components/masters/shared/SearchFilter';
 import { PartDialog } from '@/components/masters/PartDialog';
 import BulkImportDialog from '@/components/masters/BulkImportDialog';
-import { useParts, useCreatePart, useUpdatePart, useDeletePart } from '@/hooks/masters/useParts';
+import { useParts, useCreatePart, useUpdatePart, useDeletePart, type PartFilter } from '@/hooks/masters/useParts';
 import type { Part } from '@/hooks/masters/useParts';
+import { useAllAddOns } from '@/hooks/masters/useAddOns';
+import { useAllColors } from '@/hooks/masters/useColors';
 import { exportToCSV, generateExportFilename } from '@/utils/exportUtils';
 import { MasterListPageSkeleton } from '@/components/masters/shared/MasterListPageSkeleton';
 import { MasterServerPagination } from '@/components/masters/shared/MasterServerPagination';
@@ -24,23 +26,46 @@ const PartsPage = () => {
   const [importDialogOpen, setImportDialogOpen] = useState(false);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(config.pagination.defaultPageSize);
+  const filters: PartFilter | undefined = searchTerm ? { search: searchTerm } : undefined;
 
-  const { data: partsPage, isLoading } = useParts(page, pageSize);
+  const { data: partsPage, isLoading } = useParts(page, pageSize, filters);
   const parts = partsPage?.data ?? [];
   const createPartMutation = useCreatePart();
   const updatePartMutation = useUpdatePart();
   const deletePartMutation = useDeletePart();
 
-  const filteredParts = parts.filter((part) =>
-    part.name.toLowerCase().includes(searchTerm.toLowerCase()),
-  );
+  // Fetch lookups for resolving relationships
+  const { data: addOns } = useAllAddOns();
+  const { data: colors } = useAllColors();
 
+  // Create lookup maps
+  const addOnsMap = useMemo(() => {
+    return new Map(addOns?.map(a => [a.id, a]) ?? []);
+  }, [addOns]);
+
+  const colorsMap = useMemo(() => {
+    return new Map(colors?.map(c => [c.id, c]) ?? []);
+  }, [colors]);
+
+  // Helper to resolve add-on names
+  const resolveAddOnNames = (ids?: string[]): string[] => {
+    if (!ids?.length) return [];
+    return ids.map(id => addOnsMap.get(id)?.name).filter(Boolean) as string[];
+  };
+
+  // Helper to resolve color data
+  const resolveColors = (ids?: string[]): { id: string; name: string; hex_code: string }[] => {
+    if (!ids?.length) return [];
+    return ids.map(id => colorsMap.get(id)).filter(Boolean) as { id: string; name: string; hex_code: string }[];
+  };
+
+  // Reset to page 1 when search changes
   useEffect(() => {
     setPage(1);
   }, [searchTerm]);
 
-  // Sort parts by sort_position, then by name
-  const sortedParts = [...filteredParts].sort((a, b) => {
+  // Sort parts by sort_position, then by name (server-side search returns filtered results)
+  const sortedParts = [...parts].sort((a, b) => {
     const positionA = a.sort_position || 0;
     const positionB = b.sort_position || 0;
     if (positionA !== positionB) return positionA - positionB;
@@ -120,7 +145,7 @@ const PartsPage = () => {
   if (isLoading) {
     return (
       <MasterListPageSkeleton
-        columnCount={5}
+        columnCount={8}
         header={
           <MasterPageHeader
             title="Parts"
@@ -153,7 +178,7 @@ const PartsPage = () => {
       <Card>
         <CardContent className="p-6">
           <SearchFilter
-            placeholder="Search parts (current page)..."
+            placeholder="Search parts..."
             value={searchTerm}
             onChange={setSearchTerm}
             resultCount={sortedParts.length}
@@ -172,11 +197,16 @@ const PartsPage = () => {
                     <TableHead className="w-20">Sort Position</TableHead>
                     <TableHead className="w-24">Status</TableHead>
                     <TableHead className="w-32">Created At</TableHead>
+                    <TableHead className="w-40">Linked Add-Ons</TableHead>
+                    <TableHead className="w-40">Linked Colors</TableHead>
                     <TableHead className="text-right w-32">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {sortedParts.map((part) => (
+                  {sortedParts.map((part) => {
+                    const linkedAddOns = resolveAddOnNames(part.selected_add_ons);
+                    const linkedColors = resolveColors(part.selected_colors);
+                    return (
                     <TableRow key={part.id}>
                       <TableCell className="font-medium">{part.name}</TableCell>
                       <TableCell className="text-center">
@@ -193,6 +223,36 @@ const PartsPage = () => {
                         </Badge>
                       </TableCell>
                       <TableCell>{new Date(part.created_at).toLocaleDateString()}</TableCell>
+                      <TableCell>
+                        {linkedAddOns.length > 0 ? (
+                          <span className="text-sm text-muted-foreground">
+                            {linkedAddOns.slice(0, 2).join(', ')}
+                            {linkedAddOns.length > 2 && ` +${linkedAddOns.length - 2} more`}
+                          </span>
+                        ) : (
+                          <span className="text-sm text-muted-foreground">-</span>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {linkedColors.length > 0 ? (
+                          <div className="flex flex-wrap gap-1 items-center">
+                            {linkedColors.slice(0, 3).map((color) => (
+                              <div key={color.id} className="flex items-center gap-1" title={color.name}>
+                                <div
+                                  className="w-4 h-4 rounded border"
+                                  style={{ backgroundColor: color.hex_code }}
+                                />
+                                <span className="text-xs text-muted-foreground">{color.name}</span>
+                              </div>
+                            ))}
+                            {linkedColors.length > 3 && (
+                              <span className="text-xs text-muted-foreground">+{linkedColors.length - 3} more</span>
+                            )}
+                          </div>
+                        ) : (
+                          <span className="text-sm text-muted-foreground">-</span>
+                        )}
+                      </TableCell>
                       <TableCell className="text-right">
                         <div className="flex items-center justify-end gap-2">
                           <Button
@@ -213,7 +273,7 @@ const PartsPage = () => {
                         </div>
                       </TableCell>
                     </TableRow>
-                  ))}
+                  )})}
                 </TableBody>
               </Table>
             ) : (

@@ -32,6 +32,7 @@ import {
   Sparkles,
   ShoppingBag,
   LayoutGrid,
+  ShieldCheck,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
@@ -72,6 +73,14 @@ const Masters = () => {
       icon: Package,
       path: '/masters/rmp-brands',
       color: 'text-blue-600',
+      isScottApi: true,
+    },
+    {
+      title: 'Authorized Brands',
+      description: 'Scott authorized brands master — link targets for RMP brands',
+      icon: ShieldCheck,
+      path: '/masters/authorized-brands',
+      color: 'text-blue-700',
       isScottApi: true,
     },
     {
@@ -214,12 +223,20 @@ const Masters = () => {
       color: 'text-orange-500',
       isScottApi: true,
     },
+    {
+      title: 'Sizes',
+      description: 'Create and manage sizes linked to size types',
+      icon: Ruler,
+      path: '/masters/size-groups',
+      color: 'text-orange-600',
+      isScottApi: true,
+    },
   ];
 
   // Other Masters
   const otherMasters: MasterCategory[] = [
     {
-      title: 'Promotional Banners',
+      title: 'Catalogue Promotions',
       description: 'Scott dashboard catalogue promotions (name, link, category, thumbnail)',
       icon: ImageIcon,
       path: '/masters/promotional-banners',
@@ -227,7 +244,7 @@ const Masters = () => {
       isScottApi: true,
     },
     {
-      title: 'Catalogue Promotions',
+      title: 'Promotional Banners',
       description: 'Manage RMP promotional banners with category, class and brand targeting',
       icon: Megaphone,
       path: '/masters/promotional-banners-rmp',
@@ -289,22 +306,6 @@ const Masters = () => {
       path: '/masters/media',
       color: 'text-violet-600',
       isScottApi: false,
-    },
-    {
-      title: 'Size Groups',
-      description: 'Create and manage sizes linked to size types',
-      icon: Ruler,
-      path: '/masters/size-groups',
-      color: 'text-orange-600',
-      isScottApi: true,
-    },
-    {
-      title: 'Brands',
-      description: 'Manage product brands and their information',
-      icon: Package,
-      path: '/masters/brands',
-      color: 'text-blue-600',
-      isScottApi: true,
     },
     {
       title: 'Promotional Assets',

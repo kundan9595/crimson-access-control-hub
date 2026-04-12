@@ -6,19 +6,20 @@ import {
   updateRmpPriceType,
   deleteRmpPriceType,
 } from '@/services/masters/rmpPriceTypesService';
-import type { RmpPriceType } from '@/services/masters/rmpPriceTypesService';
+import type { RmpPriceType, RmpPriceTypesFilter } from '@/services/masters/rmpPriceTypesService';
 import { config } from '@/config/environment';
 import { toast } from 'sonner';
 
-export type { RmpPriceType };
+export type { RmpPriceType, RmpPriceTypesFilter };
 
 export const useRmpPriceTypes = (
   page: number = 1,
   pageSize: number = config.pagination.defaultPageSize,
+  filters?: RmpPriceTypesFilter,
 ) => {
   return useQuery({
-    queryKey: ['rmp_price_types', 'list', page, pageSize],
-    queryFn: () => fetchRmpPriceTypesPaginated({ page, items: pageSize }),
+    queryKey: ['rmp_price_types', 'list', page, pageSize, filters?.search],
+    queryFn: () => fetchRmpPriceTypesPaginated({ page, items: pageSize }, filters),
     placeholderData: (prev) => prev,
   });
 };

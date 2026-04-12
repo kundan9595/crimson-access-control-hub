@@ -29,7 +29,13 @@ import { config } from '@/config/environment';
 const RmpPricesPage = () => {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(config.pagination.defaultPageSize);
-  const { data: pageData, isLoading, isFetching } = useRmpPrices(page, pageSize);
+  const [search, setSearch] = useState('');
+
+  const { data: pageData, isLoading, isFetching } = useRmpPrices(
+    page,
+    pageSize,
+    search ? { search } : undefined
+  );
   const rows = pageData?.data ?? [];
   const createMut = useCreateRmpPrice();
   const updateMut = useUpdateRmpPrice();
@@ -37,7 +43,6 @@ const RmpPricesPage = () => {
   const { data: rmpSkus = [] } = useAllRmpSkus();
   const { data: rmpPriceTypes = [] } = useAllRmpPriceTypes();
 
-  const [search, setSearch] = useState('');
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<RmpPrice | null>(null);
   const [name, setName] = useState('');
@@ -46,8 +51,6 @@ const RmpPricesPage = () => {
   const [rmpSkuId, setRmpSkuId] = useState('');
   const [rmpPriceTypeId, setRmpPriceTypeId] = useState('');
   const [status, setStatus] = useState('active');
-
-  const filtered = rows.filter((r) => r.name.toLowerCase().includes(search.toLowerCase()));
 
   useEffect(() => {
     setPage(1);
@@ -128,16 +131,18 @@ const RmpPricesPage = () => {
       <Card>
         <CardContent className="p-6">
           <SearchFilter
-            placeholder="Search prices (current page)..."
+            placeholder="Search prices..."
             value={search}
             onChange={setSearch}
-            resultCount={filtered.length}
+            resultCount={rows.length}
             totalCount={pageData?.totalCount ?? rows.length}
           />
           {isLoading ? (
-            <MasterTableSkeleton showToolbar={false} columnCount={7} className="mt-6" />
-          ) : filtered.length === 0 ? (
-            <p className="text-center text-muted-foreground py-8">No prices on this page</p>
+            <MasterTableSkeleton showToolbar={false} columnCount={9} className="mt-6" />
+          ) : rows.length === 0 ? (
+            <p className="text-center text-muted-foreground py-8">
+              {search ? 'No prices match your search' : 'No prices found'}
+            </p>
           ) : (
             <Table className="mt-6">
               <TableHeader>
@@ -148,11 +153,13 @@ const RmpPricesPage = () => {
                   <TableHead>SKU</TableHead>
                   <TableHead>Price type</TableHead>
                   <TableHead>Status</TableHead>
+                  <TableHead>Created</TableHead>
+                  <TableHead>Updated</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filtered.map((r) => (
+                {rows.map((r) => (
                   <TableRow key={r.id}>
                     <TableCell className="font-medium">{r.name}</TableCell>
                     <TableCell>{r.price}</TableCell>
@@ -164,6 +171,8 @@ const RmpPricesPage = () => {
                     <TableCell>
                       <Badge variant={r.status === 'active' ? 'default' : 'secondary'}>{r.status}</Badge>
                     </TableCell>
+                    <TableCell>{new Date(r.created_at).toLocaleDateString()}</TableCell>
+                    <TableCell>{new Date(r.updated_at).toLocaleDateString()}</TableCell>
                     <TableCell className="text-right space-x-2">
                       <Button variant="outline" size="sm" onClick={() => openEdit(r)}>
                         <Edit className="h-4 w-4" />

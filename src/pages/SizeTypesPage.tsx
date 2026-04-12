@@ -15,7 +15,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { MasterPageHeader } from '@/components/masters/shared/MasterPageHeader';
 import { SearchFilter } from '@/components/masters/shared/SearchFilter';
-import { useSizeTypes, useCreateSizeType, useUpdateSizeType, useDeleteSizeType } from '@/hooks/masters/useSizeTypes';
+import { useSizeTypes, useCreateSizeType, useUpdateSizeType, useDeleteSizeType, type SizeTypeFilter } from '@/hooks/masters/useSizeTypes';
 import type { SizeType } from '@/services/masters/sizeTypesService';
 import { Ruler, Edit, Trash2 } from 'lucide-react';
 import { MasterTableSkeleton } from '@/components/masters/shared/MasterListPageSkeleton';
@@ -28,21 +28,21 @@ import { config } from '@/config/environment';
 const SizeTypesPage = () => {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(config.pagination.defaultPageSize);
-  const { data: sizeTypesPage, isLoading, isFetching } = useSizeTypes(page, pageSize);
+  const [search, setSearch] = useState('');
+  const filters: SizeTypeFilter | undefined = search ? { search } : undefined;
+  const { data: sizeTypesPage, isLoading, isFetching } = useSizeTypes(page, pageSize, filters);
   const rows = sizeTypesPage?.data ?? [];
   const createMut = useCreateSizeType();
   const updateMut = useUpdateSizeType();
   const deleteMut = useDeleteSizeType();
 
-  const [search, setSearch] = useState('');
   const [open, setOpen] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
   const [editing, setEditing] = useState<SizeType | null>(null);
   const [name, setName] = useState('');
   const [status, setStatus] = useState('active');
 
-  const filtered = rows.filter((r) => r.name.toLowerCase().includes(search.toLowerCase()));
-
+  // Reset to page 1 when search changes
   useEffect(() => {
     setPage(1);
   }, [search]);
@@ -109,7 +109,7 @@ const SizeTypesPage = () => {
       <Card>
         <CardContent className="p-6">
           <SearchFilter
-            placeholder="Search size types (current page)..."
+            placeholder="Search size types..."
             value={search}
             onChange={setSearch}
             resultCount={filtered.length}
@@ -118,25 +118,27 @@ const SizeTypesPage = () => {
             }
           />
           {isLoading ? (
-            <MasterTableSkeleton showToolbar={false} columnCount={3} className="mt-6" />
-          ) : filtered.length === 0 ? (
-            <p className="text-center text-muted-foreground py-8">No size types on this page</p>
+            <MasterTableSkeleton showToolbar={false} columnCount={4} className="mt-6" />
+          ) : rows.length === 0 ? (
+            <p className="text-center text-muted-foreground py-8">{search ? 'No size types match your search' : 'No size types found'}</p>
           ) : (
             <Table className="mt-6">
               <TableHeader>
                 <TableRow>
                   <TableHead>Name</TableHead>
                   <TableHead>Status</TableHead>
+                  <TableHead>Created At</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filtered.map((r) => (
+                {rows.map((r) => (
                   <TableRow key={r.id}>
                     <TableCell className="font-medium">{r.name}</TableCell>
                     <TableCell>
                       <Badge variant={r.status === 'active' ? 'default' : 'secondary'}>{r.status}</Badge>
                     </TableCell>
+                    <TableCell>{new Date(r.created_at).toLocaleDateString()}</TableCell>
                     <TableCell className="text-right space-x-2">
                       <Button variant="outline" size="sm" onClick={() => openEdit(r)}>
                         <Edit className="h-4 w-4" />

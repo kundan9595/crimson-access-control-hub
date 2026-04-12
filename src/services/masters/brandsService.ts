@@ -79,18 +79,27 @@ async function brandPayloadToForm(
   return body;
 }
 
+export interface BrandFilter {
+  search?: string;
+}
+
 export async function fetchBrandsPaginated(
   params?: Partial<ScottPageParams>,
+  filters?: BrandFilter,
 ): Promise<ScottPaginatedResult<Brand>> {
   const p = normalizeScottPageParams(params);
+  const query: Record<string, string | number | boolean | undefined> = {
+    items: p.items,
+    page: p.page,
+    is_deleted: false,
+  };
+  if (filters?.search) {
+    query.search = filters.search;
+  }
   const { body } = await callScottDashboard<Record<string, unknown>>({
     resource: 'authorized_brands',
     method: 'GET',
-    query: {
-      items: p.items,
-      page: p.page,
-      is_deleted: false,
-    },
+    query,
   });
   const data = extractRecords(body).map((r) => normalizeBrand(r));
   return {

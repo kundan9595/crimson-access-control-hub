@@ -6,20 +6,21 @@ import {
   updateRmpClass,
   deleteRmpClass,
 } from '@/services/masters/rmpClassesService';
-import type { RmpClass, RmpClassImageFiles } from '@/services/masters/rmpClassesService';
+import type { RmpClass, RmpClassImageFiles, RmpClassFilter } from '@/services/masters/rmpClassesService';
 import { useDeleteMutation } from './shared/utils';
 import { config } from '@/config/environment';
 import { toast } from 'sonner';
 
-export type { RmpClass, RmpClassImageFiles };
+export type { RmpClass, RmpClassImageFiles, RmpClassFilter };
 
 export const useRmpClasses = (
   page: number = 1,
   pageSize: number = config.pagination.defaultPageSize,
+  filters?: RmpClassFilter,
 ) => {
   return useQuery({
-    queryKey: ['rmp_classes', 'list', page, pageSize],
-    queryFn: () => fetchRmpClassesPaginated({ page, items: pageSize }),
+    queryKey: ['rmp_classes', 'list', page, pageSize, filters?.search],
+    queryFn: () => fetchRmpClassesPaginated({ page, items: pageSize }, filters),
     placeholderData: (prev) => prev,
   });
 };

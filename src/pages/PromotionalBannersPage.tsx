@@ -8,7 +8,7 @@ import { SearchFilter } from '@/components/masters/shared/SearchFilter';
 import { MasterPageHeader } from '@/components/masters/shared/MasterPageHeader';
 import PromotionalBannerDialog from '@/components/masters/PromotionalBannerDialog';
 import BulkImportDialog from '@/components/masters/BulkImportDialog';
-import { usePromotionalBanners, useDeletePromotionalBanner } from '@/hooks/masters/usePromotionalBanners';
+import { usePromotionalBanners, useDeletePromotionalBanner, type PromotionalBannerFilter } from '@/hooks/masters/usePromotionalBanners';
 import { exportToCSV, generateExportFilename } from '@/utils/exportUtils';
 import { Edit, Trash2, Image as ImageIcon } from 'lucide-react';
 import type { PromotionalBanner } from '@/services/masters/types';
@@ -21,24 +21,19 @@ const PromotionalBannersPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(config.pagination.defaultPageSize);
+  const filters: PromotionalBannerFilter | undefined = searchTerm ? { search: searchTerm } : undefined;
   const [selectedBanner, setSelectedBanner] = useState<PromotionalBanner | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [importDialogOpen, setImportDialogOpen] = useState(false);
 
-  const { data: bannersPage, isLoading, isFetching } = usePromotionalBanners(page, pageSize);
+  const { data: bannersPage, isLoading, isFetching } = usePromotionalBanners(page, pageSize, filters);
   const promotionalBanners = bannersPage?.data ?? [];
   const deletePromotionalBannerMutation = useDeletePromotionalBanner();
 
+  // Reset to page 1 when search changes
   useEffect(() => {
     setPage(1);
   }, [searchTerm]);
-
-  const filteredBanners = promotionalBanners.filter(
-    (banner) =>
-      banner.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (banner.category_label || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (banner.link || '').toLowerCase().includes(searchTerm.toLowerCase()),
-  );
 
   const handleAdd = () => {
     setSelectedBanner(null);
@@ -88,7 +83,7 @@ const PromotionalBannersPage = () => {
   if (isLoading) {
     return (
       <MasterListPageSkeleton
-        columnCount={6}
+        columnCount={9}
         header={
           <MasterPageHeader
             title="Catalogue promotions"
@@ -114,27 +109,27 @@ const PromotionalBannersPage = () => {
         onAdd={handleAdd}
         onExport={handleExport}
         onImport={handleImport}
-        canExport={filteredBanners.length > 0}
+        canExport={promotionalBanners.length > 0}
         isScottApi={true}
       />
 
       <Card>
         <CardContent className="p-6">
           <SearchFilter
-            placeholder="Search promotions (current page)..."
+            placeholder="Search promotions..."
             value={searchTerm}
             onChange={setSearchTerm}
-            resultCount={filteredBanners.length}
+            resultCount={promotionalBanners.length}
             totalCount={
               bannersPage?.totalCountIsExact ? bannersPage.totalCount : promotionalBanners.length
             }
           />
 
           <div className="mt-6">
-            {filteredBanners.length === 0 ? (
+            {promotionalBanners.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
-                <p>No promotions on this page</p>
-                <p className="text-sm">Try another page or add a catalogue promotion</p>
+                <p>{searchTerm ? 'No promotions match your search' : 'No promotions found'}</p>
+                <p className="text-sm">{searchTerm ? 'Try a different search term' : 'Add a catalogue promotion to get started'}</p>
               </div>
             ) : (
               <Table>
@@ -144,12 +139,15 @@ const PromotionalBannersPage = () => {
                     <TableHead>Name</TableHead>
                     <TableHead>Link</TableHead>
                     <TableHead>Category</TableHead>
+                    <TableHead>Position</TableHead>
+                    <TableHead>Upload Date</TableHead>
+                    <TableHead>File Size</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredBanners.map((banner) => (
+                  {promotionalBanners.map((banner) => (
                     <TableRow key={banner.id}>
                       <TableCell>
                         {banner.banner_image ? (
@@ -180,6 +178,9 @@ const PromotionalBannersPage = () => {
                         )}
                       </TableCell>
                       <TableCell>{banner.category_label || '—'}</TableCell>
+                      <TableCell>{banner.position || '—'}</TableCell>
+                      <TableCell>{banner.upload_date ? new Date(banner.upload_date).toLocaleDateString() : '—'}</TableCell>
+                      <TableCell>{banner.file_size ? `${(banner.file_size / 1024).toFixed(2)} KB` : '—'}</TableCell>
                       <TableCell>
                         <Badge variant={banner.status === 'active' ? 'default' : 'secondary'}>
                           {banner.status}

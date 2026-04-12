@@ -6,19 +6,21 @@ import {
   updatePromotionalBanner,
   deletePromotionalBanner,
   type ScottPromotionalBanner,
+  type PromotionalBannerFilter,
 } from '@/services/masters/scottPromotionalBannersService';
 import { useCreateMutation, useUpdateMutation, useDeleteMutation } from './shared/utils';
 import { config } from '@/config/environment';
 
-export { type ScottPromotionalBanner } from '@/services/masters/scottPromotionalBannersService';
+export { type ScottPromotionalBanner, type PromotionalBannerFilter } from '@/services/masters/scottPromotionalBannersService';
 
 export const useScottPromotionalBanners = (
   page: number = 1,
   pageSize: number = config.pagination.defaultPageSize,
+  filters?: PromotionalBannerFilter,
 ) => {
   return useQuery({
-    queryKey: ['scottPromotionalBanners', 'list', page, pageSize],
-    queryFn: () => fetchPromotionalBannersPaginated({ page, items: pageSize }),
+    queryKey: ['scottPromotionalBanners', 'list', page, pageSize, filters?.search],
+    queryFn: () => fetchPromotionalBannersPaginated({ page, items: pageSize }, filters),
     placeholderData: (prev) => prev,
   });
 };

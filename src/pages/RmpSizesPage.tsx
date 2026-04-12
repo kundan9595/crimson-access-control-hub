@@ -27,21 +27,24 @@ import { config } from '@/config/environment';
 const RmpSizesPage = () => {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(config.pagination.defaultPageSize);
-  const { data: rmpSizesPage, isLoading, isFetching } = useRmpSizes(page, pageSize);
+  const [search, setSearch] = useState('');
+
+  const { data: rmpSizesPage, isLoading, isFetching } = useRmpSizes(
+    page,
+    pageSize,
+    search ? { search } : undefined
+  );
   const rows = rmpSizesPage?.data ?? [];
   const createMut = useCreateRmpSize();
   const updateMut = useUpdateRmpSize();
   const deleteMut = useDeleteRmpSize();
 
-  const [search, setSearch] = useState('');
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<RmpSize | null>(null);
   const [name, setName] = useState('');
   const [sizeType, setSizeType] = useState<RmpSizeType>('alpha');
   const [position, setPosition] = useState(0);
   const [status, setStatus] = useState('active');
-
-  const filtered = rows.filter((r) => r.name.toLowerCase().includes(search.toLowerCase()));
 
   useEffect(() => {
     setPage(1);
@@ -125,21 +128,24 @@ const RmpSizesPage = () => {
       <Card>
         <CardContent className="p-6">
           <SearchFilter
-            placeholder="Search RMP sizes (current page)..."
+            placeholder="Search RMP sizes..."
             value={search}
             onChange={setSearch}
-            resultCount={filtered.length}
+            resultCount={rows.length}
             totalCount={rmpSizesPage?.totalCount ?? rows.length}
           />
-          {isLoading ? (
-            <MasterTableSkeleton showToolbar={false} columnCount={4} className="mt-6" />
-          ) : filtered.length === 0 ? (
-            <p className="text-center text-muted-foreground py-8">No RMP sizes on this page</p>
+              {isLoading ? (
+            <MasterTableSkeleton showToolbar={false} columnCount={5} className="mt-6" />
+          ) : rows.length === 0 ? (
+            <p className="text-center text-muted-foreground py-8">
+              {search ? 'No RMP sizes match your search' : 'No RMP sizes found'}
+            </p>
           ) : (
             <Table className="mt-6">
               <TableHeader>
                 <TableRow>
                   <TableHead>Name</TableHead>
+                  <TableHead>Image</TableHead>
                   <TableHead>Size Type</TableHead>
                   <TableHead>Position</TableHead>
                   <TableHead>Status</TableHead>
@@ -147,9 +153,20 @@ const RmpSizesPage = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filtered.map((r) => (
+                {rows.map((r) => (
                   <TableRow key={r.id}>
                     <TableCell className="font-medium">{r.name}</TableCell>
+                    <TableCell>
+                      {r.image ? (
+                        <img
+                          src={r.image}
+                          alt={r.name}
+                          className="w-10 h-10 object-cover rounded-md"
+                        />
+                      ) : (
+                        <span className="text-muted-foreground text-sm">-</span>
+                      )}
+                    </TableCell>
                     <TableCell>
                       <Badge variant="outline">{r.size_type}</Badge>
                     </TableCell>

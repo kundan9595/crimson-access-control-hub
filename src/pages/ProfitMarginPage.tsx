@@ -11,7 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { Pencil, Trash2 } from 'lucide-react';
 import BulkImportDialog from '@/components/masters/BulkImportDialog';
 import { ProfitMarginDialog } from '@/components/masters/ProfitMarginDialog';
-import { useProfitMargins, useDeleteProfitMargin } from '@/hooks/masters/useProfitMargins';
+import { useProfitMargins, useDeleteProfitMargin, type ProfitMarginFilter } from '@/hooks/masters/useProfitMargins';
 import { exportToCSV, generateExportFilename } from '@/utils/exportUtils';
 import { useToast } from '@/hooks/use-toast';
 import type { ProfitMargin } from '@/services/masters/profitMarginsService';
@@ -24,22 +24,20 @@ const ProfitMarginPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(config.pagination.defaultPageSize);
+  const filters: ProfitMarginFilter | undefined = searchTerm ? { search: searchTerm } : undefined;
   const [showImportDialog, setShowImportDialog] = useState(false);
   const [selectedProfitMargin, setSelectedProfitMargin] = useState<ProfitMargin | undefined>();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   
-  const { data: marginsPage, isLoading, isFetching } = useProfitMargins(page, pageSize);
+  const { data: marginsPage, isLoading, isFetching } = useProfitMargins(page, pageSize, filters);
   const profitMargins = marginsPage?.data ?? [];
   const deleteProfitMarginMutation = useDeleteProfitMargin();
   const { toast } = useToast();
 
+  // Reset to page 1 when search changes
   useEffect(() => {
     setPage(1);
   }, [searchTerm]);
-
-  const filteredProfitMargins = profitMargins.filter((profitMargin) =>
-    profitMargin.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
 
   const handleAdd = () => {
     setSelectedProfitMargin(undefined);
@@ -131,7 +129,7 @@ const ProfitMarginPage = () => {
   if (isLoading) {
     return (
       <MasterListPageSkeleton
-        columnCount={7}
+        columnCount={9}
         header={
           <MasterPageHeader
             title="Profit Margins"
@@ -164,17 +162,17 @@ const ProfitMarginPage = () => {
       <Card>
         <CardContent className="p-6">
           <SearchFilter
-            placeholder="Search profit margins (current page)..."
+            placeholder="Search profit margins..."
             value={searchTerm}
             onChange={setSearchTerm}
-            resultCount={filteredProfitMargins.length}
+            resultCount={profitMargins.length}
             totalCount={
               marginsPage?.totalCountIsExact ? marginsPage.totalCount : profitMargins.length
             }
           />
           
           <div className="mt-6">
-            {filteredProfitMargins.length > 0 ? (
+            {profitMargins.length > 0 ? (
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -185,11 +183,12 @@ const ProfitMarginPage = () => {
                     <TableHead>Embroidery</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Created</TableHead>
+                    <TableHead>Updated</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredProfitMargins.map((profitMargin) => (
+                  {profitMargins.map((profitMargin) => (
                     <TableRow key={profitMargin.id}>
                       <TableCell className="font-medium">{profitMargin.name}</TableCell>
                       <TableCell>{formatRange(profitMargin.min_range, profitMargin.max_range)}</TableCell>
@@ -203,6 +202,9 @@ const ProfitMarginPage = () => {
                       </TableCell>
                       <TableCell>
                         {new Date(profitMargin.created_at).toLocaleDateString()}
+                      </TableCell>
+                      <TableCell>
+                        {new Date(profitMargin.updated_at).toLocaleDateString()}
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex items-center justify-end gap-2">

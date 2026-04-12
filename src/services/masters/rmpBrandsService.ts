@@ -30,6 +30,24 @@ export interface RmpBrand {
   rmp_categories?: { id: string; name: string }[];
 }
 
+export interface RmpBrandFilter {
+  search?: string;
+}
+
+function extractEmbeddedAuthorizedBrand(
+  r: Record<string, unknown>,
+): { id: string; name: string } | undefined {
+  const raw = r.authorized_brand ?? r.AuthorizedBrand;
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return undefined;
+  const o = raw as Record<string, unknown>;
+  const idVal = o.id ?? o.authorized_brand_id;
+  if (idVal == null || idVal === '') return undefined;
+  return {
+    id: normalizeId(idVal),
+    name: String(o.name ?? ''),
+  };
+}
+
 function normalizeRmpBrand(r: Record<string, unknown>): RmpBrand {
   const status =
     typeof r.status === 'string'
@@ -37,6 +55,13 @@ function normalizeRmpBrand(r: Record<string, unknown>): RmpBrand {
       : r.is_deleted === true || r.is_deleted === 'true'
         ? 'inactive'
         : 'active';
+
+  const embeddedAuth = extractEmbeddedAuthorizedBrand(r);
+  const rawAuthId = r.authorized_brand_id ?? r.authorizedBrandId;
+  const authorized_brand_id =
+    rawAuthId != null && String(rawAuthId) !== ''
+      ? String(rawAuthId)
+      : embeddedAuth?.id;
 
   return {
     id: normalizeId(r.id ?? r.rmp_brand_id),
@@ -49,7 +74,8 @@ function normalizeRmpBrand(r: Record<string, unknown>): RmpBrand {
           : 0,
     is_deleted: r.is_deleted === true || r.is_deleted === 'true',
     main_category: r.main_category ? String(r.main_category) : undefined,
-    authorized_brand_id: r.authorized_brand_id ? String(r.authorized_brand_id) : undefined,
+    authorized_brand_id,
+    authorized_brand: embeddedAuth,
     image: r.image ? String(r.image) : undefined,
     status,
     created_at:
@@ -89,16 +115,21 @@ function rmpBrandToFormData(
 
 export async function fetchRmpBrandsPaginated(
   params?: Partial<ScottPageParams>,
+  filters?: RmpBrandFilter,
 ): Promise<ScottPaginatedResult<RmpBrand>> {
   const p = normalizeScottPageParams(params);
+  const query: Record<string, string | number | boolean | undefined> = {
+    items: p.items,
+    page: p.page,
+    is_deleted: false,
+  };
+  if (filters?.search) {
+    query.search = filters.search;
+  }
   const { body } = await callScottDashboard<Record<string, unknown>>({
     resource: 'rmp_brands',
     method: 'GET',
-    query: {
-      items: p.items,
-      page: p.page,
-      is_deleted: false,
-    },
+    query,
   });
   const data = extractRecords(body).map((r) => normalizeRmpBrand(r));
   return {

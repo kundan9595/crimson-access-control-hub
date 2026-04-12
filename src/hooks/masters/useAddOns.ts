@@ -10,19 +10,21 @@ import {
   updateAddOnColors,
   updateAddOnBaseProducts,
   type AddOn,
+  type AddOnFilter,
 } from '@/services/masters/addOnsServiceScott';
 import { toast } from 'sonner';
 import { config } from '@/config/environment';
 
-export { type AddOn } from '@/services/masters/addOnsServiceScott';
+export { type AddOn, type AddOnFilter } from '@/services/masters/addOnsServiceScott';
 
 export const useAddOns = (
   page: number = 1,
   pageSize: number = config.pagination.defaultPageSize,
+  filters?: AddOnFilter,
 ) => {
   return useQuery({
-    queryKey: ['add-ons', 'list', page, pageSize],
-    queryFn: () => fetchAddOnsPaginated({ page, items: pageSize }),
+    queryKey: ['add-ons', 'list', page, pageSize, filters?.search],
+    queryFn: () => fetchAddOnsPaginated({ page, items: pageSize }, filters),
     placeholderData: (prev) => prev,
   });
 };
