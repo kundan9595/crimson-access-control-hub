@@ -2,10 +2,11 @@
 import React from 'react';
 import { Outlet, useLocation, Link } from 'react-router-dom';
 import { SidebarProvider, Sidebar, SidebarContent, SidebarHeader, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
-import { Users, Settings, Building, Package, ShoppingCart, LogOut, Palette, Truck, UserCheck } from 'lucide-react';
+import { Users, Settings, Building, Package, ShoppingCart, LogOut, Palette, Truck, UserCheck, BarChart2 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { ThemeSwitcher } from '@/components/ui/theme-switcher';
+import { ScottApiEnvBadge } from '@/components/layout/ScottApiEnvBadge';
 
 const DashboardLayout = () => {
   const { signOut } = useAuth();
@@ -22,6 +23,7 @@ const DashboardLayout = () => {
     { icon: Truck, label: 'Inbound', path: '/inbound' },
     { icon: UserCheck, label: 'Customers', path: '/customers' },
     { icon: ShoppingCart, label: 'Orders', path: '/orders' },
+    { icon: BarChart2, label: 'Reports', path: '/reports' },
     { icon: Palette, label: 'Masters', path: '/masters' },
     { icon: Settings, label: 'Settings', path: '/settings' },
   ];
@@ -46,7 +48,7 @@ const DashboardLayout = () => {
             <SidebarMenu>
               {menuItems.map((item) => (
                 <SidebarMenuItem key={item.path}>
-                  <SidebarMenuButton asChild isActive={location.pathname === item.path}>
+                  <SidebarMenuButton asChild isActive={location.pathname === item.path || (item.path !== '/' && location.pathname.startsWith(item.path + '/'))}>
                     <Link to={item.path}>
                       <item.icon className="w-4 h-4" />
                       <span>{item.label}</span>
@@ -73,7 +75,10 @@ const DashboardLayout = () => {
           <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
             <SidebarTrigger className="-ml-1" />
             <div className="flex-1" />
-            <ThemeSwitcher />
+            <div className="flex items-center gap-2">
+              <ScottApiEnvBadge />
+              <ThemeSwitcher />
+            </div>
           </header>
           <main className="flex-1 p-4">
             <Outlet />

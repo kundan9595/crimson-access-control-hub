@@ -13,6 +13,7 @@ import { ErrorBoundary } from '@/components/ui/error-boundary';
 import { Skeleton } from '@/components/ui/skeleton';
 import { MasterServerPagination } from '@/components/masters/shared/MasterServerPagination';
 import { config } from '@/config/environment';
+import { proxifyScottImageUrl } from '@/utils/scottImageProxyUrl';
 
 interface AddOnsListProps {
   searchTerm: string;
@@ -167,7 +168,7 @@ export const AddOnsList = forwardRef<AddOnsListRef, AddOnsListProps>(({ searchTe
                   <div className="flex items-start gap-4 flex-1 min-w-0">
                     {addOn.image_url && (
                       <img
-                        src={addOn.image_url}
+                        src={proxifyScottImageUrl(addOn.image_url)}
                         alt={addOn.name}
                         className="w-16 h-16 object-cover rounded-md border flex-shrink-0"
                       />

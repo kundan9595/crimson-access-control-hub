@@ -19,6 +19,7 @@ import { useRmpColors, useCreateRmpColor, useUpdateRmpColor, useDeleteRmpColor }
 import type { RmpColor } from '@/services/masters/rmpColorsService';
 import { Palette, Edit, Trash2 } from 'lucide-react';
 import { MasterTableSkeleton } from '@/components/masters/shared/MasterListPageSkeleton';
+import { DateCell } from '@/components/masters/shared/DateCell';
 import { MasterServerPagination } from '@/components/masters/shared/MasterServerPagination';
 import { exportToCSV, generateExportFilename } from '@/utils/exportUtils';
 import { fetchRmpColors } from '@/services/masters/rmpColorsService';
@@ -55,13 +56,14 @@ const RmpColorsPage = () => {
 
     exportToCSV({
       filename: generateExportFilename('rmp-colors'),
-      headers: ['Name', 'Code', 'Status', 'Created At'],
+      headers: ['Name', 'Code', 'Status', 'Created At', 'Updated At'],
       data: all,
       fieldMap: {
         'Name': 'name',
         'Code': 'code',
         'Status': 'status',
-        'Created At': (item: RmpColor) => new Date(item.created_at).toLocaleDateString(),
+        'Created At': (item: RmpColor) => item.created_at ? new Date(item.created_at).toLocaleDateString() : '-',
+        'Updated At': (item: RmpColor) => item.updated_at ? new Date(item.updated_at).toLocaleDateString() : '-',
       },
     });
   };
@@ -122,7 +124,7 @@ const RmpColorsPage = () => {
             totalCount={rmpColorsPage?.totalCount ?? rows.length}
           />
           {isLoading ? (
-            <MasterTableSkeleton showToolbar={false} columnCount={4} className="mt-6" />
+            <MasterTableSkeleton showToolbar={false} columnCount={6} className="mt-6" />
           ) : rows.length === 0 ? (
             <p className="text-center text-muted-foreground py-8">
               {search ? 'No RMP colors match your search' : 'No RMP colors found'}
@@ -135,6 +137,8 @@ const RmpColorsPage = () => {
                   <TableHead>Code</TableHead>
                   <TableHead>Preview</TableHead>
                   <TableHead>Status</TableHead>
+                  <TableHead>Created At</TableHead>
+                  <TableHead>Updated At</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -146,7 +150,7 @@ const RmpColorsPage = () => {
                       <code className="bg-muted px-2 py-1 rounded text-sm">{r.code}</code>
                     </TableCell>
                     <TableCell>
-                      <div 
+                      <div
                         className="w-8 h-8 rounded border border-border"
                         style={{ backgroundColor: r.code }}
                         title={r.code}
@@ -155,6 +159,8 @@ const RmpColorsPage = () => {
                     <TableCell>
                       <Badge variant={r.status === 'active' ? 'default' : 'secondary'}>{r.status}</Badge>
                     </TableCell>
+                    <TableCell><DateCell date={r.created_at} /></TableCell>
+                    <TableCell><DateCell date={r.updated_at} /></TableCell>
                     <TableCell className="text-right space-x-2">
                       <Button variant="outline" size="sm" onClick={() => openEdit(r)}>
                         <Edit className="h-4 w-4" />

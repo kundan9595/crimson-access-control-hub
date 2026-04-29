@@ -62,14 +62,14 @@ const RmpPricesPage = () => {
 
     exportToCSV({
       filename: generateExportFilename('rmp-prices'),
-      headers: ['Name', 'Price', 'MRP', 'RMP SKU', 'Price type ID', 'Status', 'Created At'],
+      headers: ['Name', 'Price', 'MRP', 'RMP SKU', 'Price Type', 'Status', 'Created At'],
       data: all,
       fieldMap: {
         Name: 'name',
         Price: 'price',
         MRP: 'mrp',
-        'RMP SKU': (item: RmpPrice) => item.rmp_sku?.name || item.rmp_sku_id || '-',
-        'Price type ID': 'rmp_price_type_id',
+        'RMP SKU': (item: RmpPrice) => item.rmp_sku?.name || '-',
+        'Price Type': (item: RmpPrice) => rmpPriceTypes.find(pt => pt.id === item.rmp_price_type_id)?.name || '-',
         Status: 'status',
         'Created At': (item: RmpPrice) => new Date(item.created_at).toLocaleDateString(),
       },
@@ -164,9 +164,9 @@ const RmpPricesPage = () => {
                     <TableCell className="font-medium">{r.name}</TableCell>
                     <TableCell>{r.price}</TableCell>
                     <TableCell>{r.mrp}</TableCell>
-                    <TableCell>{r.rmp_sku?.name || r.rmp_sku_id}</TableCell>
+                    <TableCell>{r.rmp_sku?.name || '-'}</TableCell>
                     <TableCell>
-                      {rmpPriceTypes.find(pt => pt.id === r.rmp_price_type_id)?.name || r.rmp_price_type_id}
+                      {rmpPriceTypes.find(pt => pt.id === r.rmp_price_type_id)?.name || '-'}
                     </TableCell>
                     <TableCell>
                       <Badge variant={r.status === 'active' ? 'default' : 'secondary'}>{r.status}</Badge>

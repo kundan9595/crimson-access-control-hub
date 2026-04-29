@@ -19,6 +19,7 @@ import { useSizeTypes, useCreateSizeType, useUpdateSizeType, useDeleteSizeType, 
 import type { SizeType } from '@/services/masters/sizeTypesService';
 import { Ruler, Edit, Trash2 } from 'lucide-react';
 import { MasterTableSkeleton } from '@/components/masters/shared/MasterListPageSkeleton';
+import { DateCell } from '@/components/masters/shared/DateCell';
 import { MasterServerPagination } from '@/components/masters/shared/MasterServerPagination';
 import { exportToCSV, generateExportFilename } from '@/utils/exportUtils';
 import BulkImportDialog from '@/components/masters/BulkImportDialog';
@@ -53,12 +54,13 @@ const SizeTypesPage = () => {
 
     exportToCSV({
       filename: generateExportFilename('size-types'),
-      headers: ['Name', 'Status', 'Created At'],
+      headers: ['Name', 'Status', 'Created At', 'Updated At'],
       data: all,
       fieldMap: {
         'Name': 'name',
         'Status': 'status',
-        'Created At': (item: SizeType) => new Date(item.created_at).toLocaleDateString(),
+        'Created At': (item: SizeType) => item.created_at ? new Date(item.created_at).toLocaleDateString() : '-',
+        'Updated At': (item: SizeType) => item.updated_at ? new Date(item.updated_at).toLocaleDateString() : '-',
       },
     });
   };
@@ -112,13 +114,13 @@ const SizeTypesPage = () => {
             placeholder="Search size types..."
             value={search}
             onChange={setSearch}
-            resultCount={filtered.length}
+            resultCount={rows.length}
             totalCount={
               sizeTypesPage?.totalCountIsExact ? sizeTypesPage.totalCount : rows.length
             }
           />
           {isLoading ? (
-            <MasterTableSkeleton showToolbar={false} columnCount={4} className="mt-6" />
+            <MasterTableSkeleton showToolbar={false} columnCount={5} className="mt-6" />
           ) : rows.length === 0 ? (
             <p className="text-center text-muted-foreground py-8">{search ? 'No size types match your search' : 'No size types found'}</p>
           ) : (
@@ -128,6 +130,7 @@ const SizeTypesPage = () => {
                   <TableHead>Name</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Created At</TableHead>
+                  <TableHead>Updated At</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -138,7 +141,8 @@ const SizeTypesPage = () => {
                     <TableCell>
                       <Badge variant={r.status === 'active' ? 'default' : 'secondary'}>{r.status}</Badge>
                     </TableCell>
-                    <TableCell>{new Date(r.created_at).toLocaleDateString()}</TableCell>
+                    <TableCell><DateCell date={r.created_at} /></TableCell>
+                    <TableCell><DateCell date={r.updated_at} /></TableCell>
                     <TableCell className="text-right space-x-2">
                       <Button variant="outline" size="sm" onClick={() => openEdit(r)}>
                         <Edit className="h-4 w-4" />

@@ -18,6 +18,7 @@ import { MasterListPageSkeleton } from '@/components/masters/shared/MasterListPa
 import { MasterServerPagination } from '@/components/masters/shared/MasterServerPagination';
 import { fetchBrands } from '@/services/masters/brandsService';
 import { config } from '@/config/environment';
+import { proxifyScottImageUrl } from '@/utils/scottImageProxyUrl';
 
 import type { Brand } from '@/services/mastersService';
 
@@ -123,7 +124,7 @@ const BrandsPage = () => {
         <div className="w-10 h-10 relative">
           {brand.logo_url ? (
             <img
-              src={brand.logo_url}
+              src={proxifyScottImageUrl(brand.logo_url)}
               alt={`${brand.name} logo`}
               className="w-full h-full object-contain rounded border bg-muted"
               onError={(e) => {
@@ -275,7 +276,7 @@ const BrandsPage = () => {
                             <div className="w-full aspect-square bg-muted rounded mb-3 flex items-center justify-center overflow-hidden">
                               {brand.logo_url ? (
                                 <img
-                                  src={brand.logo_url}
+                                  src={proxifyScottImageUrl(brand.logo_url)}
                                   alt={`${brand.name} logo`}
                                   className="w-full h-full object-contain"
                                   onError={(e) => {

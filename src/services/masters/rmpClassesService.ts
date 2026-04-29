@@ -20,15 +20,15 @@ export interface RmpClass {
   is_deleted: boolean;
   rmp_color_id?: string;
   image_1?: string;
-  image_1_thumbnail?: string;
+  image_1_thumb?: string;
   image_2?: string;
-  image_2_thumbnail?: string;
+  image_2_thumb?: string;
   image_3?: string;
-  image_3_thumbnail?: string;
+  image_3_thumb?: string;
   image_4?: string;
-  image_4_thumbnail?: string;
+  image_4_thumb?: string;
   image_5?: string;
-  image_5_thumbnail?: string;
+  image_5_thumb?: string;
   status: string;
   created_at: string;
   updated_at: string;
@@ -82,6 +82,66 @@ function normalizeRmpClass(r: Record<string, unknown>): RmpClass {
       ? String(rawColorId)
       : embeddedColor?.id;
 
+  // Handle both old individual image fields and new "images" array format
+  let image1: string | undefined, image1Thumb: string | undefined;
+  let image2: string | undefined, image2Thumb: string | undefined;
+  let image3: string | undefined, image3Thumb: string | undefined;
+  let image4: string | undefined, image4Thumb: string | undefined;
+  let image5: string | undefined, image5Thumb: string | undefined;
+
+  // Check for "images" array format - API returns array of URL strings
+  const imagesArray = r.images;
+  if (Array.isArray(imagesArray)) {
+    imagesArray.forEach((img, idx) => {
+      // API returns strings directly, not objects
+      const url = typeof img === 'string' ? img : img?.url || img?.image_url;
+      // For thumb, use same URL (API doesn't provide separate thumbs in array)
+      const thumb = url;
+      switch (idx) {
+        case 0:
+          image1 = url; image1Thumb = thumb;
+          break;
+        case 1:
+          image2 = url; image2Thumb = thumb;
+          break;
+        case 2:
+          image3 = url; image3Thumb = thumb;
+          break;
+        case 3:
+          image4 = url; image4Thumb = thumb;
+          break;
+        case 4:
+          image5 = url; image5Thumb = thumb;
+          break;
+      }
+    });
+  }
+
+  // Helper to extract image URL from various possible API response formats (legacy support)
+  const extractImage = (field: string): string | undefined => {
+    const val = r[field];
+    if (typeof val === 'string') return val;
+    // Handle nested object format: { url: "..." }
+    if (val && typeof val === 'object' && !Array.isArray(val)) {
+      const obj = val as Record<string, unknown>;
+      if (typeof obj.url === 'string') return obj.url;
+      if (typeof obj.image_url === 'string') return obj.image_url;
+    }
+    return undefined;
+  };
+
+  // Fallback to individual fields if array didn't provide values
+  image1 = image1 ?? extractImage('image_1');
+  image1Thumb = image1Thumb ?? extractImage('image_1_thumb') ?? extractImage('image_1_thumbnail');
+  image2 = image2 ?? extractImage('image_2');
+  image2Thumb = image2Thumb ?? extractImage('image_2_thumb') ?? extractImage('image_2_thumbnail');
+  image3 = image3 ?? extractImage('image_3');
+  image3Thumb = image3Thumb ?? extractImage('image_3_thumb') ?? extractImage('image_3_thumbnail');
+  image4 = image4 ?? extractImage('image_4');
+  image4Thumb = image4Thumb ?? extractImage('image_4_thumb') ?? extractImage('image_4_thumbnail');
+  image5 = image5 ?? extractImage('image_5');
+  image5Thumb = image5Thumb ?? extractImage('image_5_thumb') ?? extractImage('image_5_thumbnail');
+
   return {
     id: normalizeId(r.id ?? r.rmp_class_id),
     name: String(r.name ?? ''),
@@ -94,16 +154,16 @@ function normalizeRmpClass(r: Record<string, unknown>): RmpClass {
     is_deleted: r.is_deleted === true || r.is_deleted === 'true',
     rmp_color_id: rmpColorId,
     rmp_color: embeddedColor,
-    image_1: r.image_1 ? String(r.image_1) : undefined,
-    image_1_thumbnail: r.image_1_thumbnail ? String(r.image_1_thumbnail) : undefined,
-    image_2: r.image_2 ? String(r.image_2) : undefined,
-    image_2_thumbnail: r.image_2_thumbnail ? String(r.image_2_thumbnail) : undefined,
-    image_3: r.image_3 ? String(r.image_3) : undefined,
-    image_3_thumbnail: r.image_3_thumbnail ? String(r.image_3_thumbnail) : undefined,
-    image_4: r.image_4 ? String(r.image_4) : undefined,
-    image_4_thumbnail: r.image_4_thumbnail ? String(r.image_4_thumbnail) : undefined,
-    image_5: r.image_5 ? String(r.image_5) : undefined,
-    image_5_thumbnail: r.image_5_thumbnail ? String(r.image_5_thumbnail) : undefined,
+    image_1: image1,
+    image_1_thumb: image1Thumb,
+    image_2: image2,
+    image_2_thumb: image2Thumb,
+    image_3: image3,
+    image_3_thumb: image3Thumb,
+    image_4: image4,
+    image_4_thumb: image4Thumb,
+    image_5: image5,
+    image_5_thumb: image5Thumb,
     status,
     created_at:
       typeof r.created_at === 'string' ? r.created_at : new Date().toISOString(),
@@ -170,7 +230,8 @@ export async function fetchRmpClassesPaginated(
     method: 'GET',
     query,
   });
-  const data = extractRecords(body).map((r) => normalizeRmpClass(r));
+  const records = extractRecords(body);
+  const data = records.map((r) => normalizeRmpClass(r));
   return {
     data,
     ...buildScottPaginatedMeta(body, p, data.length),

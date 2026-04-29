@@ -1,5 +1,5 @@
 
-import React, { useState, useMemo } from 'react';
+import React, { useState } from 'react';
 import { 
   Table, 
   TableBody, 
@@ -26,18 +26,17 @@ import {
 import type { ScottPaginatedResult } from '@/services/scott/scottPagination';
 import { MasterServerPagination } from '@/components/masters/shared/MasterServerPagination';
 import { BaseProductDialog } from './BaseProductDialog';
-import { 
-  AlertDialog, 
-  AlertDialogAction, 
-  AlertDialogCancel, 
-  AlertDialogContent, 
-  AlertDialogDescription, 
-  AlertDialogFooter, 
-  AlertDialogHeader, 
-  AlertDialogTitle 
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle
 } from '@/components/ui/alert-dialog';
 import { MasterTableSkeleton } from '@/components/masters/shared/MasterListPageSkeleton';
-import { useAllSizeTypes } from '@/hooks/masters/useSizeTypes';
 
 type BaseProductsTableProps = {
   rows: ScottBaseProduct[];
@@ -61,20 +60,6 @@ export const BaseProductsTable: React.FC<BaseProductsTableProps> = ({
   const [deletingBaseProduct, setDeletingBaseProduct] = useState<BaseProduct | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
-  // Fetch size types for resolving size_group_ids
-  const { data: sizeTypes } = useAllSizeTypes();
-
-  // Create lookup map for size types
-  const sizeTypesMap = useMemo(() => {
-    return new Map(sizeTypes?.map(st => [st.id, st]) ?? []);
-  }, [sizeTypes]);
-
-  // Helper to resolve size group names
-  const resolveSizeGroupNames = (ids?: string[]): string[] => {
-    if (!ids?.length) return [];
-    return ids.map(id => sizeTypesMap.get(id)?.name).filter(Boolean) as string[];
-  };
-
   const handleEdit = (baseProduct: ScottBaseProduct) => {
     setEditingBaseProduct(baseProduct as unknown as BaseProduct);
     setIsDialogOpen(true);
@@ -97,7 +82,7 @@ export const BaseProductsTable: React.FC<BaseProductsTableProps> = ({
   };
 
   if (isLoading) {
-    return <MasterTableSkeleton showToolbar={false} columnCount={17} className="mt-0" />;
+    return <MasterTableSkeleton showToolbar={false} columnCount={18} className="mt-0" />;
   }
 
   const showPagination =
@@ -125,10 +110,9 @@ export const BaseProductsTable: React.FC<BaseProductsTableProps> = ({
           <TableHeader>
             <TableRow>
               <TableHead>Name</TableHead>
-              <TableHead>Category</TableHead>
+              <TableHead>Type</TableHead>
               <TableHead>Asset Info</TableHead>
               <TableHead>Fabric</TableHead>
-              <TableHead>Size Group</TableHead>
               <TableHead>Base Price</TableHead>
               <TableHead>Base Of</TableHead>
               <TableHead>Base SN</TableHead>
@@ -140,13 +124,13 @@ export const BaseProductsTable: React.FC<BaseProductsTableProps> = ({
               <TableHead>Sample Rate</TableHead>
               <TableHead>Calculator</TableHead>
               <TableHead>Status</TableHead>
+              <TableHead>Created At</TableHead>
+              <TableHead>Updated At</TableHead>
               <TableHead className="w-[50px]"></TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {baseProducts.map((baseProduct: ScottBaseProduct) => {
-              const sizeGroupNames = resolveSizeGroupNames(baseProduct.size_group_ids);
-              return (
+            {baseProducts.map((baseProduct: ScottBaseProduct) => (
               <TableRow key={baseProduct.id}>
                 <TableCell>
                   <div className="flex items-center gap-3">
@@ -163,45 +147,24 @@ export const BaseProductsTable: React.FC<BaseProductsTableProps> = ({
                     )}
                     <div>
                       <div className="font-medium">{baseProduct.name}</div>
-                      <div className="text-sm text-muted-foreground">
-                        {baseProduct.parts?.length || 0} parts selected
-                      </div>
                     </div>
                   </div>
                 </TableCell>
                 <TableCell>
-                  {baseProduct.category?.name || '-'}
+                  {baseProduct.base_product_type?.name || '-'}
                 </TableCell>
                 <TableCell>
                   {baseProduct.asset_info?.name || '-'}
                 </TableCell>
                 <TableCell>
-                  {baseProduct.fabric ? (
+                  {(baseProduct as BaseProduct).fabric ? (
                     <div>
-                      <div>{baseProduct.fabric.name}</div>
+                      <div>{(baseProduct as BaseProduct).fabric?.name}</div>
                       <div className="text-sm text-muted-foreground">
-                        {baseProduct.fabric.fabric_type}
+                        {(baseProduct as BaseProduct).fabric?.fabric_type}
                       </div>
                     </div>
                   ) : '-'}
-                </TableCell>
-                <TableCell>
-                  {sizeGroupNames.length > 0 ? (
-                    <div className="flex flex-wrap gap-1">
-                      {sizeGroupNames.slice(0, 2).map((name) => (
-                        <Badge key={name} variant="outline" className="text-xs">
-                          {name}
-                        </Badge>
-                      ))}
-                      {sizeGroupNames.length > 2 && (
-                        <Badge variant="outline" className="text-xs">
-                          +{sizeGroupNames.length - 2} more
-                        </Badge>
-                      )}
-                    </div>
-                  ) : (
-                    <span className="text-muted-foreground text-sm">-</span>
-                  )}
                 </TableCell>
                 <TableCell>
                   ₹{getBaseProductUnitPriceForDisplay(baseProduct).toFixed(2)}
@@ -221,6 +184,16 @@ export const BaseProductsTable: React.FC<BaseProductsTableProps> = ({
                   <Badge variant={baseProduct.status === 'active' ? 'default' : 'secondary'}>
                     {baseProduct.status}
                   </Badge>
+                </TableCell>
+                <TableCell>
+                  {baseProduct.created_at
+                    ? new Date(baseProduct.created_at).toLocaleDateString()
+                    : '-'}
+                </TableCell>
+                <TableCell>
+                  {baseProduct.updated_at
+                    ? new Date(baseProduct.updated_at).toLocaleDateString()
+                    : '-'}
                 </TableCell>
                 <TableCell>
                   <DropdownMenu>
@@ -245,7 +218,7 @@ export const BaseProductsTable: React.FC<BaseProductsTableProps> = ({
                   </DropdownMenu>
                 </TableCell>
               </TableRow>
-            )})}
+            ))}
           </TableBody>
         </Table>
       </div>

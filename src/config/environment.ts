@@ -24,7 +24,10 @@ export const config = {
 
   /**
    * Scott International REST API (masters / dashboard routes when integrated).
-   * Staging vs production — override with VITE_SCOTT_API_BASE_URL or VITE_API_BASE_URL.
+   * Defaults to staging — same host your Supabase edge SCOTT_AUTH_* usually targets.
+   * For production Scott: set VITE_SCOTT_API_BASE_URL=https://leaderboard.sagarfab.com
+   * (e.g. in Vercel env or .env.local) and use production-valid SCOTT_AUTH_EMAIL/PASSWORD
+   * on the scott-dashboard-masters function, or calls return "Invalid credentials".
    */
   scottApi: {
     stagingBaseUrl: 'http://64.227.186.227',
@@ -32,9 +35,7 @@ export const config = {
     baseUrl:
       import.meta.env.VITE_SCOTT_API_BASE_URL ||
       import.meta.env.VITE_API_BASE_URL ||
-      (import.meta.env.PROD
-        ? 'https://leaderboard.sagarfab.com'
-        : 'http://64.227.186.227'),
+      'http://64.227.186.227',
   },
 
   // Feature Flags

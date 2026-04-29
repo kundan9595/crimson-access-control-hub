@@ -69,7 +69,7 @@ const BaseProductAssetInfosPage = () => {
     (row: BaseProductAssetInfo) => {
       const full = row.base_product_id ? baseProductById.get(row.base_product_id) : undefined;
       const resolved = full ?? row.base_product;
-      return resolved?.name?.trim() || row.base_product_id || '-';
+      return resolved?.name?.trim() || '-';
     },
     [baseProductById],
   );
@@ -77,7 +77,7 @@ const BaseProductAssetInfosPage = () => {
     (row: BaseProductAssetInfo) => {
       const full = row.add_on_id ? addOnById.get(row.add_on_id) : undefined;
       const resolved = full ?? row.add_on;
-      return resolved?.name?.trim() || row.add_on_id || '-';
+      return resolved?.name?.trim() || '-';
     },
     [addOnById],
   );
@@ -85,7 +85,7 @@ const BaseProductAssetInfosPage = () => {
     (row: BaseProductAssetInfo) => {
       const full = row.part_id ? partById.get(row.part_id) : undefined;
       const resolved = full ?? row.part;
-      return resolved?.name?.trim() || row.part_id || '-';
+      return resolved?.name?.trim() || '-';
     },
     [partById],
   );
@@ -93,7 +93,7 @@ const BaseProductAssetInfosPage = () => {
     (row: BaseProductAssetInfo) => {
       const full = row.asset_info_id ? assetInfoById.get(row.asset_info_id) : undefined;
       const resolved = full ?? row.asset_info;
-      return resolved?.name?.trim() || row.asset_info_id || '-';
+      return resolved?.name?.trim() || '-';
     },
     [assetInfoById],
   );
@@ -136,19 +136,19 @@ const BaseProductAssetInfosPage = () => {
 
     const exportBp = (item: BaseProductAssetInfo) => {
       const full = item.base_product_id ? bpMap.get(item.base_product_id) : undefined;
-      return (full ?? item.base_product)?.name?.trim() || item.base_product_id || '-';
+      return (full ?? item.base_product)?.name?.trim() || '-';
     };
     const exportAo = (item: BaseProductAssetInfo) => {
       const full = item.add_on_id ? aoMap.get(item.add_on_id) : undefined;
-      return (full ?? item.add_on)?.name?.trim() || item.add_on_id || '-';
+      return (full ?? item.add_on)?.name?.trim() || '-';
     };
     const exportPt = (item: BaseProductAssetInfo) => {
       const full = item.part_id ? ptMap.get(item.part_id) : undefined;
-      return (full ?? item.part)?.name?.trim() || item.part_id || '-';
+      return (full ?? item.part)?.name?.trim() || '-';
     };
     const exportAi = (item: BaseProductAssetInfo) => {
       const full = item.asset_info_id ? aiMap.get(item.asset_info_id) : undefined;
-      return (full ?? item.asset_info)?.name?.trim() || item.asset_info_id || '-';
+      return (full ?? item.asset_info)?.name?.trim() || '-';
     };
 
     exportToCSV({

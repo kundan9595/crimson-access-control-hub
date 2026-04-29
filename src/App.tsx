@@ -12,7 +12,7 @@ import DashboardLayout from "@/components/layout/DashboardLayout";
 import { GlobalErrorBoundary } from "@/components/common/ErrorBoundary/GlobalErrorBoundary";
 import { Skeleton } from "@/components/ui/skeleton";
 import PWAInstallPrompt from "@/components/common/PWAInstallPrompt";
-import { registerSW } from "@/lib/pwa";
+import { registerSW, unregisterSW } from "@/lib/pwa";
 
 // Lazy load pages for better performance
 const Dashboard = lazy(() => import("./pages/Dashboard"));
@@ -59,6 +59,13 @@ const Settings = lazy(() => import("./pages/Settings"));
 const Auth = lazy(() => import("./pages/Auth"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
+// Reports pages
+const Reports = lazy(() => import("./pages/Reports"));
+const OrderReportsPage = lazy(() => import("./pages/reports/OrderReportsPage"));
+const OrderReportDetailPage = lazy(() => import("./pages/reports/OrderReportDetailPage"));
+const RmpOrderReportsPage = lazy(() => import("./pages/reports/RmpOrderReportsPage"));
+const TailorReportsPage = lazy(() => import("./pages/reports/TailorReportsPage"));
+
 // Configure QueryClient for large-scale applications
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -94,8 +101,13 @@ const PageLoader = () => (
 
 const App = () => {
   useEffect(() => {
-    // Register service worker for PWA functionality
-    registerSW();
+    // Dev: unregister SW so Workbox precache (production hashes) does not intercept Vite requests.
+    // Prod: register for PWA updates.
+    if (import.meta.env.PROD) {
+      void registerSW();
+    } else {
+      void unregisterSW();
+    }
   }, []);
 
   return (
@@ -166,6 +178,11 @@ const App = () => {
                     <Route path="customers" element={<Customers />} />
                     <Route path="distributors/:id/price-types" element={<DistributorPriceTypesPage />} />
                     <Route path="orders" element={<Orders />} />
+                    <Route path="reports" element={<Reports />} />
+                    <Route path="reports/order-reports" element={<OrderReportsPage />} />
+                    <Route path="reports/order-reports/:id" element={<OrderReportDetailPage />} />
+                    <Route path="reports/rmp-order-reports" element={<RmpOrderReportsPage />} />
+                    <Route path="reports/tailor-reports" element={<TailorReportsPage />} />
                     <Route path="settings" element={<Settings />} />
                   </Route>
                   <Route path="*" element={<NotFound />} />

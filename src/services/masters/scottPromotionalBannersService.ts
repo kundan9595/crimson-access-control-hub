@@ -44,6 +44,23 @@ export interface ScottPromotionalBanner {
 }
 
 // Normalize Scott API response
+// Helper to extract populated relations from API response
+function extractScottRelation(
+  r: Record<string, unknown>,
+  relKey: 'rmp_category' | 'rmp_class' | 'rmp_brand',
+): { id: string; name: string } | undefined {
+  const raw = r[relKey];
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return undefined;
+  const o = raw as Record<string, unknown>;
+  const idKey = `${relKey}_id` as const;
+  const idVal = o.id ?? o[idKey];
+  if (idVal == null || idVal === '') return undefined;
+  return {
+    id: normalizeId(idVal),
+    name: String(o.name ?? ''),
+  };
+}
+
 function normalizePromotionalBanner(r: Record<string, unknown>): ScottPromotionalBanner {
   const status =
     typeof r.status === 'string'
@@ -52,20 +69,29 @@ function normalizePromotionalBanner(r: Record<string, unknown>): ScottPromotiona
         ? 'inactive'
         : 'active';
 
+  // Extract populated relations if API returns them
+  const rmpCategory = extractScottRelation(r, 'rmp_category');
+  const rmpClass = extractScottRelation(r, 'rmp_class');
+  const rmpBrand = extractScottRelation(r, 'rmp_brand');
+
   return {
     id: normalizeId(r.id ?? r.promotional_banner_id),
     title: String(r.title ?? ''),
     status,
     position: Number(r.position ?? r.sort_order ?? 0),
     image_url: typeof r.image === 'string' ? r.image : r.image_url as string | undefined,
-    rmp_category_id: r.rmp_category_id ? String(r.rmp_category_id) : undefined,
-    rmp_class_id: r.rmp_class_id ? String(r.rmp_class_id) : undefined,
-    rmp_brand_id: r.rmp_brand_id ? String(r.rmp_brand_id) : undefined,
+    rmp_category_id: rmpCategory?.id ?? (r.rmp_category_id ? String(r.rmp_category_id) : undefined),
+    rmp_class_id: rmpClass?.id ?? (r.rmp_class_id ? String(r.rmp_class_id) : undefined),
+    rmp_brand_id: rmpBrand?.id ?? (r.rmp_brand_id ? String(r.rmp_brand_id) : undefined),
     is_deleted: r.is_deleted === true || r.is_deleted === 'true',
     created_at:
       typeof r.created_at === 'string' ? r.created_at : new Date().toISOString(),
     updated_at:
       typeof r.updated_at === 'string' ? r.updated_at : new Date().toISOString(),
+    // Populated relations
+    rmp_category: rmpCategory,
+    rmp_class: rmpClass,
+    rmp_brand: rmpBrand,
   };
 }
 

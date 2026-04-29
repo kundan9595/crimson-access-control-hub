@@ -16,8 +16,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { MasterPageHeader } from '@/components/masters/shared/MasterPageHeader';
 import { SearchFilter } from '@/components/masters/shared/SearchFilter';
-import { useRmpBrands, useCreateRmpBrand, useUpdateRmpBrand, useDeleteRmpBrand, useUpdateRmpBrandCategories } from '@/hooks/masters/useRmpBrands';
+import { useRmpBrands, useCreateRmpBrand, useUpdateRmpBrand, useDeleteRmpBrand } from '@/hooks/masters/useRmpBrands';
 import { useAllBrands } from '@/hooks/masters/useBrands';
+import { ImageCell } from '@/components/masters/shared/ImageCell';
 import type { RmpBrand } from '@/services/masters/rmpBrandsService';
 import { Package, Edit, Trash2 } from 'lucide-react';
 import { MasterTableSkeleton } from '@/components/masters/shared/MasterListPageSkeleton';
@@ -44,8 +45,8 @@ const RmpBrandsPage = () => {
   const createMut = useCreateRmpBrand();
   const updateMut = useUpdateRmpBrand();
   const deleteMut = useDeleteRmpBrand();
-  const updateCategoriesMut = useUpdateRmpBrandCategories();
   const { data: authorizedBrands = [] } = useAllBrands();
+
   const authorizedBrandById = useMemo(
     () => new Map(authorizedBrands.map((b) => [b.id, b] as const)),
     [authorizedBrands],
@@ -72,6 +73,7 @@ const RmpBrandsPage = () => {
     if (!all.length) return;
 
     const exportById = new Map(authBrands.map((b) => [b.id, b] as const));
+
     const authorizedLabel = (item: RmpBrand) => {
       const ab =
         item.authorized_brand ??
@@ -81,15 +83,17 @@ const RmpBrandsPage = () => {
 
     exportToCSV({
       filename: generateExportFilename('rmp-brands'),
-      headers: ['Name', 'Position', 'Main Category', 'Authorized Brand', 'Status', 'Created At'],
+      headers: ['Name', 'Image', 'Position', 'Main Category', 'Authorized Brand', 'Status', 'Created At', 'Updated At'],
       data: all,
       fieldMap: {
         'Name': 'name',
+        'Image': (item: RmpBrand) => item.image || '-',
         'Position': 'position',
         'Main Category': 'main_category',
         'Authorized Brand': authorizedLabel,
         'Status': 'status',
         'Created At': (item: RmpBrand) => new Date(item.created_at).toLocaleDateString(),
+        'Updated At': (item: RmpBrand) => new Date(item.updated_at).toLocaleDateString(),
       },
     });
   };
@@ -164,7 +168,7 @@ const RmpBrandsPage = () => {
             totalCount={rmpBrandsPage?.totalCount ?? rows.length}
           />
           {isLoading ? (
-            <MasterTableSkeleton showToolbar={false} columnCount={5} className="mt-6" />
+            <MasterTableSkeleton showToolbar={false} columnCount={8} className="mt-6" />
           ) : rows.length === 0 ? (
             <p className="text-center text-muted-foreground py-8">
               {search ? 'No RMP brands match your search' : 'No RMP brands found'}
@@ -174,10 +178,13 @@ const RmpBrandsPage = () => {
               <TableHeader>
                 <TableRow>
                   <TableHead>Name</TableHead>
+                  <TableHead>Image</TableHead>
                   <TableHead>Position</TableHead>
                   <TableHead>Main Category</TableHead>
                   <TableHead>Authorized Brand</TableHead>
                   <TableHead>Status</TableHead>
+                  <TableHead>Created At</TableHead>
+                  <TableHead>Updated At</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -187,6 +194,9 @@ const RmpBrandsPage = () => {
                   return (
                   <TableRow key={r.id}>
                     <TableCell className="font-medium">{r.name}</TableCell>
+                    <TableCell>
+                      <ImageCell src={r.image} alt={r.name} size="sm" />
+                    </TableCell>
                     <TableCell>{r.position}</TableCell>
                     <TableCell>{r.main_category || '-'}</TableCell>
                     <TableCell>
@@ -207,6 +217,8 @@ const RmpBrandsPage = () => {
                     <TableCell>
                       <Badge variant={r.status === 'active' ? 'default' : 'secondary'}>{r.status}</Badge>
                     </TableCell>
+                    <TableCell>{new Date(r.created_at).toLocaleDateString()}</TableCell>
+                    <TableCell>{new Date(r.updated_at).toLocaleDateString()}</TableCell>
                     <TableCell className="text-right space-x-2">
                       <Button variant="outline" size="sm" onClick={() => openEdit(r)}>
                         <Edit className="h-4 w-4" />

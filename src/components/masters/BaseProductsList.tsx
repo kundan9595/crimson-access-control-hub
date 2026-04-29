@@ -16,6 +16,7 @@ import {
   getBaseProductUnitPriceForDisplay,
   type ScottBaseProduct,
 } from '@/services/masters/baseProductsServiceScott';
+import { proxifyScottImageUrl } from '@/utils/scottImageProxyUrl';
 import { BaseProductDialog } from './BaseProductDialog';
 import {
   AlertDialog,
@@ -114,7 +115,7 @@ export const BaseProductsList: React.FC = () => {
                   {baseProduct.image_url && (
                     <div className="mb-3">
                       <img
-                        src={baseProduct.image_url}
+                        src={proxifyScottImageUrl(baseProduct.image_url)}
                         alt={baseProduct.name}
                         className="w-full h-32 object-cover rounded-md"
                       />

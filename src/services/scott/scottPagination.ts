@@ -120,11 +120,16 @@ export async function fetchAllScottPages<T>(
   const maxPages = options?.maxPages ?? 250;
   const out: T[] = [];
   for (let page = 1; page <= maxPages; page++) {
-    const res = await fetchPage({ page, items: pageSize });
-    out.push(...res.data);
-    if (res.data.length < pageSize) break;
-    if (res.totalCountIsExact && page >= res.totalPages) break;
-    if (!res.totalCountIsExact && res.data.length === 0) break;
+    try {
+      const res = await fetchPage({ page, items: pageSize });
+      out.push(...res.data);
+      if (res.data.length < pageSize) break;
+      if (res.totalCountIsExact && page >= res.totalPages) break;
+      if (!res.totalCountIsExact && res.data.length === 0) break;
+    } catch (err) {
+      console.error(`fetchAllScottPages: Error on page ${page}:`, err);
+      throw err;
+    }
   }
   return out;
 }

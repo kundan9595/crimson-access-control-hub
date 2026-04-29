@@ -18,7 +18,9 @@ import { SearchFilter } from '@/components/masters/shared/SearchFilter';
 import { useRmpSizes, useCreateRmpSize, useUpdateRmpSize, useDeleteRmpSize } from '@/hooks/masters/useRmpSizes';
 import type { RmpSize, RmpSizeType } from '@/services/masters/rmpSizesService';
 import { Ruler, Edit, Trash2 } from 'lucide-react';
+import { proxifyScottImageUrl } from '@/utils/scottImageProxyUrl';
 import { MasterTableSkeleton } from '@/components/masters/shared/MasterListPageSkeleton';
+import { DateCell } from '@/components/masters/shared/DateCell';
 import { MasterServerPagination } from '@/components/masters/shared/MasterServerPagination';
 import { exportToCSV, generateExportFilename } from '@/utils/exportUtils';
 import { fetchRmpSizes } from '@/services/masters/rmpSizesService';
@@ -56,14 +58,15 @@ const RmpSizesPage = () => {
 
     exportToCSV({
       filename: generateExportFilename('rmp-sizes'),
-      headers: ['Name', 'Size Type', 'Position', 'Status', 'Created At'],
+      headers: ['Name', 'Size Type', 'Position', 'Status', 'Created At', 'Updated At'],
       data: all,
       fieldMap: {
         'Name': 'name',
         'Size Type': 'size_type',
         'Position': 'position',
         'Status': 'status',
-        'Created At': (item: RmpSize) => new Date(item.created_at).toLocaleDateString(),
+        'Created At': (item: RmpSize) => item.created_at ? new Date(item.created_at).toLocaleDateString() : '-',
+        'Updated At': (item: RmpSize) => item.updated_at ? new Date(item.updated_at).toLocaleDateString() : '-',
       },
     });
   };
@@ -135,7 +138,7 @@ const RmpSizesPage = () => {
             totalCount={rmpSizesPage?.totalCount ?? rows.length}
           />
               {isLoading ? (
-            <MasterTableSkeleton showToolbar={false} columnCount={5} className="mt-6" />
+            <MasterTableSkeleton showToolbar={false} columnCount={7} className="mt-6" />
           ) : rows.length === 0 ? (
             <p className="text-center text-muted-foreground py-8">
               {search ? 'No RMP sizes match your search' : 'No RMP sizes found'}
@@ -149,6 +152,8 @@ const RmpSizesPage = () => {
                   <TableHead>Size Type</TableHead>
                   <TableHead>Position</TableHead>
                   <TableHead>Status</TableHead>
+                  <TableHead>Created At</TableHead>
+                  <TableHead>Updated At</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -159,7 +164,7 @@ const RmpSizesPage = () => {
                     <TableCell>
                       {r.image ? (
                         <img
-                          src={r.image}
+                          src={proxifyScottImageUrl(r.image)}
                           alt={r.name}
                           className="w-10 h-10 object-cover rounded-md"
                         />
@@ -174,6 +179,8 @@ const RmpSizesPage = () => {
                     <TableCell>
                       <Badge variant={r.status === 'active' ? 'default' : 'secondary'}>{r.status}</Badge>
                     </TableCell>
+                    <TableCell><DateCell date={r.created_at} /></TableCell>
+                    <TableCell><DateCell date={r.updated_at} /></TableCell>
                     <TableCell className="text-right space-x-2">
                       <Button variant="outline" size="sm" onClick={() => openEdit(r)}>
                         <Edit className="h-4 w-4" />

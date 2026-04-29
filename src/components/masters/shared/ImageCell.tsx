@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { proxifyScottImageUrl } from '@/utils/scottImageProxyUrl';
 
 interface ImageCellProps {
   src?: string;
@@ -28,8 +29,9 @@ export const ImageCell: React.FC<ImageCellProps> = ({
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [hasError, setHasError] = useState(false);
+  const displaySrc = proxifyScottImageUrl(src);
 
-  if (!src || hasError) {
+  if (!displaySrc || hasError) {
     if (!showPlaceholder) {
       return <span className="text-muted-foreground text-sm">-</span>;
     }
@@ -60,7 +62,7 @@ export const ImageCell: React.FC<ImageCellProps> = ({
   return (
     <>
       <img
-        src={src}
+        src={displaySrc}
         alt={alt}
         className={`${sizeClasses[size]} object-cover rounded-md border cursor-pointer hover:opacity-80 transition-opacity ${className}`}
         onError={() => setHasError(true)}
@@ -71,7 +73,7 @@ export const ImageCell: React.FC<ImageCellProps> = ({
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
           <DialogContent className="max-w-3xl p-0 overflow-hidden bg-transparent border-none">
             <img
-              src={src}
+              src={displaySrc}
               alt={alt}
               className="w-full h-full object-contain max-h-[80vh]"
             />

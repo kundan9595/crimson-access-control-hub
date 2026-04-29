@@ -37,8 +37,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     );
 
-    // Check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    // Check for existing session (stale refresh tokens → clear local session)
+    void supabase.auth.getSession().then(({ data: { session }, error }) => {
+      if (error) {
+        void supabase.auth.signOut({ scope: 'local' });
+        setSession(null);
+        setUser(null);
+        setLoading(false);
+        return;
+      }
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);

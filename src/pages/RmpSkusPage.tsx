@@ -22,7 +22,9 @@ import { useAllRmpBrands } from '@/hooks/masters/useRmpBrands';
 import { useAllRmpCategories } from '@/hooks/masters/useRmpCategories';
 import type { RmpSku } from '@/services/masters/rmpSkusService';
 import { Package2, Edit, Trash2 } from 'lucide-react';
+import { proxifyScottImageUrl } from '@/utils/scottImageProxyUrl';
 import { MasterTableSkeleton } from '@/components/masters/shared/MasterListPageSkeleton';
+import { DateCell } from '@/components/masters/shared/DateCell';
 import { MasterServerPagination } from '@/components/masters/shared/MasterServerPagination';
 import { exportToCSV, generateExportFilename } from '@/utils/exportUtils';
 import { fetchRmpSkus } from '@/services/masters/rmpSkusService';
@@ -74,24 +76,24 @@ const RmpSkusPage = () => {
   const resolveSizeLabel = (row: RmpSku) => {
     const full = row.rmp_size_id ? sizeById.get(row.rmp_size_id) : undefined;
     const sz = full ?? row.rmp_size;
-    if (!sz) return row.rmp_size_id ?? '-';
+    if (!sz) return '-';
     if ('size_type' in sz && sz.size_type) return `${sz.name} (${sz.size_type})`;
     return sz.name;
   };
   const resolveClassLabel = (row: RmpSku) => {
     const full = row.rmp_class_id ? classById.get(row.rmp_class_id) : undefined;
     const c = full ?? row.rmp_class;
-    return c?.name ?? row.rmp_class_id ?? '-';
+    return c?.name ?? '-';
   };
   const resolveBrandLabel = (row: RmpSku) => {
     const full = row.rmp_brand_id ? brandById.get(row.rmp_brand_id) : undefined;
     const b = full ?? row.rmp_brand;
-    return b?.name ?? row.rmp_brand_id ?? '-';
+    return b?.name ?? '-';
   };
   const resolveCategoryLabel = (row: RmpSku) => {
     const full = row.rmp_category_id ? categoryById.get(row.rmp_category_id) : undefined;
     const c = full ?? row.rmp_category;
-    return c?.name ?? row.rmp_category_id ?? '-';
+    return c?.name ?? '-';
   };
 
   const [open, setOpen] = useState(false);
@@ -125,22 +127,22 @@ const RmpSkusPage = () => {
     const sizeLabel = (item: RmpSku) => {
       const full = item.rmp_size_id ? sizeMap.get(item.rmp_size_id) : undefined;
       const sz = full ?? item.rmp_size;
-      if (!sz) return item.rmp_size_id ?? '-';
+      if (!sz) return '-';
       if ('size_type' in sz && sz.size_type) return `${sz.name} (${sz.size_type})`;
       return sz.name;
     };
     const classLabel = (item: RmpSku) => {
       const full = item.rmp_class_id ? classMap.get(item.rmp_class_id) : undefined;
-      return full?.name ?? item.rmp_class?.name ?? item.rmp_class_id ?? '-';
+      return full?.name ?? item.rmp_class?.name ?? '-';
     };
     const brandLabel = (item: RmpSku) => {
       const full = item.rmp_brand_id ? brandMap.get(item.rmp_brand_id) : undefined;
-      return full?.name ?? item.rmp_brand?.name ?? item.rmp_brand_id ?? '-';
+      return full?.name ?? item.rmp_brand?.name ?? '-';
     };
 
     exportToCSV({
       filename: generateExportFilename('rmp-skus'),
-      headers: ['Name', 'CGST', 'IGST', 'SGST', 'Size', 'Class', 'Brand', 'Status', 'Created At'],
+      headers: ['Name', 'CGST', 'IGST', 'SGST', 'Size', 'Class', 'Brand', 'Status', 'Created At', 'Updated At'],
       data: all,
       fieldMap: {
         'Name': 'name',
@@ -151,7 +153,8 @@ const RmpSkusPage = () => {
         'Class': classLabel,
         'Brand': brandLabel,
         'Status': 'status',
-        'Created At': (item: RmpSku) => new Date(item.created_at).toLocaleDateString(),
+        'Created At': (item: RmpSku) => item.created_at ? new Date(item.created_at).toLocaleDateString() : '-',
+        'Updated At': (item: RmpSku) => item.updated_at ? new Date(item.updated_at).toLocaleDateString() : '-',
       },
     });
   };
@@ -227,7 +230,7 @@ const RmpSkusPage = () => {
             totalCount={rmpSkusPage?.totalCount ?? rows.length}
           />
           {isLoading ? (
-            <MasterTableSkeleton showToolbar={false} columnCount={10} className="mt-6" />
+            <MasterTableSkeleton showToolbar={false} columnCount={12} className="mt-6" />
           ) : rows.length === 0 ? (
             <p className="text-center text-muted-foreground py-8">
               {search ? 'No RMP SKUs match your search' : 'No RMP SKUs found'}
@@ -246,6 +249,8 @@ const RmpSkusPage = () => {
                   <TableHead>Brand</TableHead>
                   <TableHead>Category</TableHead>
                   <TableHead>Status</TableHead>
+                  <TableHead>Created At</TableHead>
+                  <TableHead>Updated At</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -256,7 +261,7 @@ const RmpSkusPage = () => {
                     <TableCell>
                       {r.image ? (
                         <img
-                          src={r.image}
+                          src={proxifyScottImageUrl(r.image)}
                           alt={r.name}
                           className="w-10 h-10 object-cover rounded-md"
                         />
@@ -274,6 +279,8 @@ const RmpSkusPage = () => {
                     <TableCell>
                       <Badge variant={r.status === 'active' ? 'default' : 'secondary'}>{r.status}</Badge>
                     </TableCell>
+                    <TableCell><DateCell date={r.created_at} /></TableCell>
+                    <TableCell><DateCell date={r.updated_at} /></TableCell>
                     <TableCell className="text-right space-x-2">
                       <Button variant="outline" size="sm" onClick={() => openEdit(r)}>
                         <Edit className="h-4 w-4" />

@@ -21,17 +21,113 @@ import { useAllRmpSkus } from '@/hooks/masters/useRmpSkus';
 import type { RmpClass } from '@/services/masters/rmpClassesService';
 import type { RmpSku } from '@/services/masters/rmpSkusService';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { Shirt, Edit, Trash2 } from 'lucide-react';
+import { Shirt, Edit, Trash2, Image as ImageIcon } from 'lucide-react';
 import { MasterTableSkeleton } from '@/components/masters/shared/MasterListPageSkeleton';
 import { MasterServerPagination } from '@/components/masters/shared/MasterServerPagination';
 import { exportToCSV, generateExportFilename } from '@/utils/exportUtils';
 import { fetchRmpClasses } from '@/services/masters/rmpClassesService';
 import { fetchRmpColors } from '@/services/masters/rmpColorsService';
 import { fetchRmpSkus } from '@/services/masters/rmpSkusService';
-import { config } from '@/config/environment';
+import { getEffectiveScottApiBaseUrl } from '@/config/scottApiRuntime';
+import { ImageCell } from '@/components/masters/shared/ImageCell';
+import { proxifyScottImageUrl } from '@/utils/scottImageProxyUrl';
 
 /** Radix Select reserves empty string; use a sentinel for optional "None" rows. */
 const SELECT_NONE = '__none__';
+
+// Helper to ensure image URL is absolute (then HTTPS-safe on Vercel via proxy)
+const resolveImageUrl = (url: string | undefined): string | undefined => {
+  if (!url) return undefined;
+  let resolved: string | undefined;
+  if (url.startsWith('http://') || url.startsWith('https://')) {
+    resolved = url;
+  } else if (url.startsWith('/')) {
+    resolved = `${getEffectiveScottApiBaseUrl()}${url}`;
+  } else {
+    resolved = url;
+  }
+  return proxifyScottImageUrl(resolved);
+};
+
+// Gallery component to display all images with preview
+const ImageGallery: React.FC<{
+  row: RmpClass;
+}> = ({ row }) => {
+  const [previewIndex, setPreviewIndex] = useState<number | null>(null);
+
+
+  // Build array of all available images with their thumbnails
+  const images = [
+    { full: resolveImageUrl(row.image_1), thumb: resolveImageUrl(row.image_1_thumb) },
+    { full: resolveImageUrl(row.image_2), thumb: resolveImageUrl(row.image_2_thumb) },
+    { full: resolveImageUrl(row.image_3), thumb: resolveImageUrl(row.image_3_thumb) },
+    { full: resolveImageUrl(row.image_4), thumb: resolveImageUrl(row.image_4_thumb) },
+    { full: resolveImageUrl(row.image_5), thumb: resolveImageUrl(row.image_5_thumb) },
+  ].filter((img) => img.full || img.thumb);
+
+  if (images.length === 0) {
+    return (
+      <div className="flex items-center gap-1 text-muted-foreground text-sm" title="No images available">
+        <ImageIcon className="w-4 h-4" />
+        <span>-</span>
+      </div>
+    );
+  }
+
+  return (
+    <>
+      <div className="flex items-center gap-1.5 flex-wrap">
+        {images.map((img, idx) => (
+          <img
+            key={idx}
+            src={img.thumb || img.full}
+            alt={`${row.name} - image ${idx + 1}`}
+            className="w-10 h-10 object-cover rounded-md border cursor-pointer hover:opacity-80 hover:ring-2 hover:ring-primary/50 transition-all"
+            onClick={() => setPreviewIndex(idx)}
+          />
+        ))}
+      </div>
+
+      {/* Full-size preview dialog */}
+      <Dialog open={previewIndex !== null} onOpenChange={(open) => !open && setPreviewIndex(null)}>
+        <DialogContent className="max-w-4xl p-0 overflow-hidden bg-black/90 border-none">
+          <div className="relative flex items-center justify-center min-h-[300px]">
+            {previewIndex !== null && images[previewIndex] && (
+              <img
+                src={images[previewIndex].full || images[previewIndex].thumb}
+                alt={`${row.name} - full preview`}
+                className="max-w-full max-h-[80vh] object-contain"
+              />
+            )}
+          </div>
+          {images.length > 1 && (
+            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2 bg-black/70 px-4 py-2 rounded-full">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-white hover:bg-white/20"
+                onClick={() => setPreviewIndex((prev) => (prev !== null && prev > 0 ? prev - 1 : images.length - 1))}
+              >
+                ←
+              </Button>
+              <span className="text-white text-sm">
+                {previewIndex !== null ? previewIndex + 1 : 0} / {images.length}
+              </span>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-white hover:bg-white/20"
+                onClick={() => setPreviewIndex((prev) => (prev !== null && prev < images.length - 1 ? prev + 1 : 0))}
+              >
+                →
+              </Button>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+};
 
 const RmpClassesPage = () => {
   const [page, setPage] = useState(1);
@@ -48,7 +144,7 @@ const RmpClassesPage = () => {
   const updateMut = useUpdateRmpClass();
   const deleteMut = useDeleteRmpClass();
   const { data: rmpColors = [] } = useAllRmpColors();
-  const { data: allRmpSkus = [] } = useAllRmpSkus();
+  const { data: allRmpSkus = [], isLoading: skusLoading } = useAllRmpSkus();
 
   const colorById = useMemo(
     () => new Map(rmpColors.map((c) => [c.id, c] as const)),
@@ -115,7 +211,7 @@ const RmpClassesPage = () => {
 
     exportToCSV({
       filename: generateExportFilename('rmp-classes'),
-      headers: ['Name', 'Position', 'Color', 'Linked SKUs', 'Status', 'Created At'],
+      headers: ['Name', 'Position', 'Color', 'Linked SKUs', 'Status', 'Created At', 'Updated At'],
       data: all,
       fieldMap: {
         'Name': 'name',
@@ -124,6 +220,7 @@ const RmpClassesPage = () => {
         'Linked SKUs': skuNamesForClass,
         'Status': 'status',
         'Created At': (item: RmpClass) => new Date(item.created_at).toLocaleDateString(),
+        'Updated At': (item: RmpClass) => new Date(item.updated_at).toLocaleDateString(),
       },
     });
   };
@@ -187,7 +284,7 @@ const RmpClassesPage = () => {
             totalCount={rmpClassesPage?.totalCount ?? rows.length}
           />
               {isLoading ? (
-            <MasterTableSkeleton showToolbar={false} columnCount={7} className="mt-6" />
+            <MasterTableSkeleton showToolbar={false} columnCount={9} className="mt-6" />
           ) : rows.length === 0 ? (
             <p className="text-center text-muted-foreground py-8">
               {search ? 'No RMP classes match your search' : 'No RMP classes found'}
@@ -197,11 +294,13 @@ const RmpClassesPage = () => {
               <TableHeader>
                 <TableRow>
                   <TableHead>Name</TableHead>
-                  <TableHead>Primary Image</TableHead>
+                  <TableHead>Images</TableHead>
                   <TableHead>Position</TableHead>
                   <TableHead>Color</TableHead>
                   <TableHead>Linked SKUs</TableHead>
                   <TableHead>Status</TableHead>
+                  <TableHead>Created At</TableHead>
+                  <TableHead>Updated At</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -218,25 +317,11 @@ const RmpClassesPage = () => {
                             .slice(0, 2)
                             .map((s) => s.name)
                             .join(', ')} +${linkedSkus.length - 2}`;
-                  const additionalImages = [r.image_2, r.image_3, r.image_4, r.image_5].filter(Boolean).length;
                   return (
                   <TableRow key={r.id}>
                     <TableCell className="font-medium">{r.name}</TableCell>
                     <TableCell>
-                      {r.image_1 || r.image_1_thumbnail ? (
-                        <div className="flex items-center gap-2">
-                          <img
-                            src={r.image_1_thumbnail || r.image_1}
-                            alt={r.name}
-                            className="w-10 h-10 object-cover rounded-md"
-                          />
-                          {additionalImages > 0 && (
-                            <Badge variant="outline" className="text-xs">+{additionalImages}</Badge>
-                          )}
-                        </div>
-                      ) : (
-                        <span className="text-muted-foreground text-sm">-</span>
-                      )}
+                      <ImageGallery row={r} />
                     </TableCell>
                     <TableCell>{r.position}</TableCell>
                     <TableCell>
@@ -273,6 +358,12 @@ const RmpClassesPage = () => {
                     </TableCell>
                     <TableCell>
                       <Badge variant={r.status === 'active' ? 'default' : 'secondary'}>{r.status}</Badge>
+                    </TableCell>
+                    <TableCell className="text-sm text-muted-foreground">
+                      {new Date(r.created_at).toLocaleDateString()}
+                    </TableCell>
+                    <TableCell className="text-sm text-muted-foreground">
+                      {new Date(r.updated_at).toLocaleDateString()}
                     </TableCell>
                     <TableCell className="text-right space-x-2">
                       <Button variant="outline" size="sm" onClick={() => openEdit(r)}>

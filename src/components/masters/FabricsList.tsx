@@ -8,6 +8,7 @@ import { useDeleteFabric } from '@/hooks/masters/useFabrics';
 import { FabricDialog } from './FabricDialog';
 import { Fabric } from '@/services/masters/types';
 import { MasterTableSkeleton } from '@/components/masters/shared/MasterListPageSkeleton';
+import { proxifyScottImageUrl } from '@/utils/scottImageProxyUrl';
 
 interface FabricsListProps {
   fabrics: Fabric[];
@@ -72,7 +73,7 @@ export const FabricsList: React.FC<FabricsListProps> = ({ fabrics, isLoading }) 
                 <TableCell>
                   {fabric.image_url ? (
                     <img
-                      src={fabric.image_url}
+                      src={proxifyScottImageUrl(fabric.image_url)}
                       alt={fabric.name}
                       className="w-10 h-10 rounded object-cover"
                     />

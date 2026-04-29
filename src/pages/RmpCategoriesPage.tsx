@@ -23,7 +23,9 @@ import {
 } from '@/hooks/masters/useRmpCategories';
 import type { RmpCategory } from '@/services/masters/rmpCategoriesService';
 import { LayoutGrid, Edit, Trash2 } from 'lucide-react';
+import { proxifyScottImageUrl } from '@/utils/scottImageProxyUrl';
 import { MasterTableSkeleton } from '@/components/masters/shared/MasterListPageSkeleton';
+import { DateCell } from '@/components/masters/shared/DateCell';
 import { MasterServerPagination } from '@/components/masters/shared/MasterServerPagination';
 import { exportToCSV, generateExportFilename } from '@/utils/exportUtils';
 import { fetchRmpCategories } from '@/services/masters/rmpCategoriesService';
@@ -62,13 +64,14 @@ const RmpCategoriesPage = () => {
 
     exportToCSV({
       filename: generateExportFilename('rmp-categories'),
-      headers: ['Name', 'Position', 'Status', 'Created At'],
+      headers: ['Name', 'Position', 'Status', 'Created At', 'Updated At'],
       data: all,
       fieldMap: {
         Name: 'name',
         Position: 'position',
         Status: 'status',
-        'Created At': (item: RmpCategory) => new Date(item.created_at).toLocaleDateString(),
+        'Created At': (item: RmpCategory) => item.created_at ? new Date(item.created_at).toLocaleDateString() : '-',
+        'Updated At': (item: RmpCategory) => item.updated_at ? new Date(item.updated_at).toLocaleDateString() : '-',
       },
     });
   };
@@ -136,7 +139,7 @@ const RmpCategoriesPage = () => {
             totalCount={pageData?.totalCount ?? rows.length}
           />
           {isLoading ? (
-            <MasterTableSkeleton showToolbar={false} columnCount={6} className="mt-6" />
+            <MasterTableSkeleton showToolbar={false} columnCount={7} className="mt-6" />
           ) : rows.length === 0 ? (
             <p className="text-center text-muted-foreground py-8">
               {search ? 'No categories match your search' : 'No categories found'}
@@ -149,6 +152,8 @@ const RmpCategoriesPage = () => {
                   <TableHead>Image</TableHead>
                   <TableHead>Position</TableHead>
                   <TableHead>Status</TableHead>
+                  <TableHead>Created At</TableHead>
+                  <TableHead>Updated At</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -159,7 +164,7 @@ const RmpCategoriesPage = () => {
                     <TableCell>
                       {r.image ? (
                         <img
-                          src={r.image}
+                          src={proxifyScottImageUrl(r.image)}
                           alt={r.name}
                           className="w-10 h-10 object-cover rounded-md"
                         />
@@ -171,6 +176,8 @@ const RmpCategoriesPage = () => {
                     <TableCell>
                       <Badge variant={r.status === 'active' ? 'default' : 'secondary'}>{r.status}</Badge>
                     </TableCell>
+                    <TableCell><DateCell date={r.created_at} /></TableCell>
+                    <TableCell><DateCell date={r.updated_at} /></TableCell>
                     <TableCell className="text-right space-x-2">
                       <Button variant="outline" size="sm" onClick={() => openEdit(r)}>
                         <Edit className="h-4 w-4" />

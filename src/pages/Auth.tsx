@@ -11,6 +11,7 @@ import { toast } from '@/hooks/use-toast';
 import SignInForm from '@/components/auth/SignInForm';
 import SignUpForm from '@/components/auth/SignUpForm';
 import { ThemeSwitcher } from '@/components/ui/theme-switcher';
+import { ScottApiEnvBadge } from '@/components/layout/ScottApiEnvBadge';
 
 const Auth = () => {
   const { user } = useAuth();
@@ -24,7 +25,8 @@ const Auth = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background px-4">
-      <div className="absolute top-4 right-4">
+      <div className="absolute top-4 right-4 flex items-center gap-2">
+        <ScottApiEnvBadge />
         <ThemeSwitcher />
       </div>
       <Card className="w-full max-w-md">

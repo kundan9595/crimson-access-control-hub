@@ -1,5 +1,7 @@
+import { FunctionsHttpError } from '@supabase/functions-js';
 import { supabase } from '@/integrations/supabase/client';
 import { config } from '@/config/environment';
+import { getEffectiveScottApiBaseUrl } from '@/config/scottApiRuntime';
 
 export type ScottResource =
   | 'colors'
@@ -24,7 +26,10 @@ export type ScottResource =
   | 'rmp_skus'
   | 'rmp_categories'
   | 'rmp_prices'
-  | 'rmp_price_types';
+  | 'rmp_price_types'
+  | 'order_reports'
+  | 'rmp_order_reports'
+  | 'tailor_reports';
 
 export interface ScottFilePayload {
   __base64File: true;
@@ -56,15 +61,38 @@ export interface ScottEdgeSuccess<T = unknown> {
 export interface ScottEdgeFailure {
   ok: false;
   upstreamStatus: number;
+  upstreamUrl?: string;
   body: unknown;
 }
 
 type EdgeEnvelope = {
   ok?: boolean;
   upstreamStatus?: number;
+  /** Final Scott URL the edge function called (after dashboard→/api/v1/ fallback on 404). */
+  upstreamUrl?: string;
   body?: unknown;
   error?: string;
 };
+
+/** Non-2xx from the edge function — parse JSON body so Vercel users see Unauthorized vs upstream failures. */
+async function formatScottEdgeInvokeError(error: { message?: string; name?: string; context?: unknown }): Promise<string> {
+  const base = error.message || 'Edge function request failed';
+  if (error instanceof FunctionsHttpError && error.context instanceof Response) {
+    try {
+      const ct = error.context.headers.get('content-type') ?? '';
+      if (ct.includes('application/json')) {
+        const j = (await error.context.clone().json()) as { error?: unknown; reqId?: unknown };
+        if (j?.error != null) {
+          const ref = typeof j.reqId === 'string' ? ` (ref: ${j.reqId})` : '';
+          return `${String(j.error)}${ref}`;
+        }
+      }
+    } catch {
+      /* keep base */
+    }
+  }
+  return base;
+}
 
 /**
  * Calls the scott-dashboard-masters Edge Function (never the Scott API directly).
@@ -73,7 +101,7 @@ export async function callScottDashboard<T = unknown>(
   payload: ScottProxyPayload,
 ): Promise<{ upstreamStatus: number; body: T }> {
   const payloadWithBaseUrl: ScottProxyPayload = {
-    baseUrl: config.scottApi.baseUrl,
+    baseUrl: getEffectiveScottApiBaseUrl(),
     ...payload,
   };
 
@@ -82,7 +110,7 @@ export async function callScottDashboard<T = unknown>(
   });
 
   if (error) {
-    throw new Error(error.message || 'Edge function request failed');
+    throw new Error(await formatScottEdgeInvokeError(error));
   }
 
   if (!data || typeof data !== 'object') {
@@ -99,7 +127,11 @@ export async function callScottDashboard<T = unknown>(
       b && typeof b === 'object' && 'message' in b
         ? String((b as { message: unknown }).message)
         : `Scott API error (${data.upstreamStatus ?? 'unknown'})`;
-    throw new Error(msg);
+    const url =
+      typeof data.upstreamUrl === 'string' && data.upstreamUrl.trim() !== ''
+        ? data.upstreamUrl.trim()
+        : '';
+    throw new Error(url ? `${msg} (${url})` : msg);
   }
 
   // Upstream may return HTTP 2xx with { success: false, message, ... } (validation errors).

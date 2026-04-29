@@ -57,16 +57,19 @@ const PromotionalBannersPage = () => {
 
     exportToCSV({
       filename: generateExportFilename('catalogue-promotions'),
-      headers: ['Name', 'Link', 'Category', 'Upload date', 'Status', 'Created At'],
+      headers: ['Name', 'Link', 'Category', 'File Size', 'Upload date', 'Status', 'Created At', 'Updated At'],
       data: all,
       fieldMap: {
         Name: 'title',
         Link: 'link',
         Category: 'category_label',
+        'File Size': 'file_size',
         'Upload date': 'upload_date',
         Status: 'status',
         'Created At': (item: PromotionalBanner) =>
           new Date(item.created_at).toLocaleDateString(),
+        'Updated At': (item: PromotionalBanner) =>
+          new Date(item.updated_at).toLocaleDateString(),
       },
     });
   };
@@ -83,7 +86,7 @@ const PromotionalBannersPage = () => {
   if (isLoading) {
     return (
       <MasterListPageSkeleton
-        columnCount={9}
+        columnCount={10}
         header={
           <MasterPageHeader
             title="Catalogue promotions"
@@ -139,10 +142,11 @@ const PromotionalBannersPage = () => {
                     <TableHead>Name</TableHead>
                     <TableHead>Link</TableHead>
                     <TableHead>Category</TableHead>
-                    <TableHead>Position</TableHead>
-                    <TableHead>Upload Date</TableHead>
                     <TableHead>File Size</TableHead>
+                    <TableHead>Upload Date</TableHead>
                     <TableHead>Status</TableHead>
+                    <TableHead>Created At</TableHead>
+                    <TableHead>Updated At</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -178,14 +182,15 @@ const PromotionalBannersPage = () => {
                         )}
                       </TableCell>
                       <TableCell>{banner.category_label || '—'}</TableCell>
-                      <TableCell>{banner.position || '—'}</TableCell>
+                      <TableCell>{banner.file_size ? `${(Number(banner.file_size) / 1024).toFixed(2)} KB` : '—'}</TableCell>
                       <TableCell>{banner.upload_date ? new Date(banner.upload_date).toLocaleDateString() : '—'}</TableCell>
-                      <TableCell>{banner.file_size ? `${(banner.file_size / 1024).toFixed(2)} KB` : '—'}</TableCell>
                       <TableCell>
                         <Badge variant={banner.status === 'active' ? 'default' : 'secondary'}>
                           {banner.status}
                         </Badge>
                       </TableCell>
+                      <TableCell>{new Date(banner.created_at).toLocaleDateString()}</TableCell>
+                      <TableCell>{new Date(banner.updated_at).toLocaleDateString()}</TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end space-x-2">
                           <Button variant="outline" size="sm" onClick={() => handleEdit(banner)}>

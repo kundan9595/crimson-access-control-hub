@@ -16,6 +16,7 @@ import { Badge } from '@/components/ui/badge';
 import { MasterPageHeader } from '@/components/masters/shared/MasterPageHeader';
 import { SearchFilter } from '@/components/masters/shared/SearchFilter';
 import ImageUpload from '@/components/ui/ImageUpload';
+import { proxifyScottImageUrl } from '@/utils/scottImageProxyUrl';
 import {
   useBaseProductTypes,
   useCreateBaseProductType,
@@ -171,7 +172,7 @@ const BaseProductTypesPage = () => {
                   <TableRow key={r.id}>
                     <TableCell>
                       {r.image_url ? (
-                        <img src={r.image_url} alt="" className="w-12 h-12 object-cover rounded" />
+                        <img src={proxifyScottImageUrl(r.image_url)} alt="" className="w-12 h-12 object-cover rounded" />
                       ) : (
                         <span className="text-muted-foreground">—</span>
                       )}

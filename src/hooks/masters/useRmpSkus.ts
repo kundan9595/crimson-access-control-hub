@@ -28,7 +28,7 @@ export const useAllRmpSkus = () => {
   return useQuery({
     queryKey: ['rmp_skus', 'all'],
     queryFn: fetchRmpSkus,
-    staleTime: config.cache.staleTime,
+    staleTime: 5 * 60 * 1000,
   });
 };
 

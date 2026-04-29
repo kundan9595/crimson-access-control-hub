@@ -15,6 +15,7 @@ import { MasterPageHeader } from '@/components/masters/shared/MasterPageHeader';
 import { SearchFilter } from '@/components/masters/shared/SearchFilter';
 import { MasterListPageSkeleton } from '@/components/masters/shared/MasterListPageSkeleton';
 import type { Category } from '@/services/mastersService';
+import { proxifyScottImageUrl } from '@/utils/scottImageProxyUrl';
 
 const CategoriesPage = () => {
   const { data: categories, isLoading } = useCategories();
@@ -156,7 +157,7 @@ const CategoriesPage = () => {
                         <div className="w-10 h-10 relative">
                           {category.image_url ? (
                             <img
-                              src={category.image_url}
+                              src={proxifyScottImageUrl(category.image_url)}
                               alt={`${category.name} image`}
                               className="w-full h-full object-cover rounded border bg-muted"
                               onError={(e) => {

@@ -30,7 +30,10 @@ type ScottResource =
   | "rmp_skus"
   | "rmp_categories"
   | "rmp_prices"
-  | "rmp_price_types";
+  | "rmp_price_types"
+  | "order_reports"
+  | "rmp_order_reports"
+  | "tailor_reports";
 
 /** Keep in sync with `ScottResource` in src/services/scott/callScottDashboard.ts */
 const ALLOWED: Set<ScottResource> = new Set([
@@ -57,6 +60,9 @@ const ALLOWED: Set<ScottResource> = new Set([
   "rmp_categories",
   "rmp_prices",
   "rmp_price_types",
+  "order_reports",
+  "rmp_order_reports",
+  "tailor_reports",
 ]);
 
 interface ScottProxyPayload {
@@ -72,7 +78,8 @@ interface ScottProxyPayload {
   baseUrl?: string;
 }
 
-let cachedScott: { token: string; exp: number } | null = null;
+/** Scott JWT cache per API host — token from staging must not be sent to production (and vice versa). */
+const cachedScottByHost = new Map<string, { token: string; exp: number }>();
 
 function decodeJwtExp(token: string): number {
   try {
@@ -83,20 +90,85 @@ function decodeJwtExp(token: string): number {
   }
 }
 
-async function getScottAuthToken(): Promise<string> {
+function safeHost(baseUrl: string): string {
+  try {
+    return new URL(baseUrl.startsWith("http") ? baseUrl : `https://${baseUrl}`).host;
+  } catch {
+    return "(invalid-base-url)";
+  }
+}
+
+/** Hostnames that use optional SCOTT_STAGING_AUTH_* (comma-separated env override). */
+function scottHostIsStaging(hostKey: string): boolean {
+  const host = safeHost(hostKey);
+  const list = (Deno.env.get("SCOTT_STAGING_HOSTS") || "64.227.186.227")
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+  return list.includes(host);
+}
+
+/**
+ * Default `SCOTT_AUTH_*` applies to production (and any host). When the client targets
+ * staging (`SCOTT_STAGING_HOSTS`, default 64.227.186.227), use `SCOTT_STAGING_AUTH_PASSWORD`
+ * and optional `SCOTT_STAGING_AUTH_EMAIL` if staging login differs from production.
+ */
+function resolveScottLoginCredentials(hostKey: string): { email: string; password: string } {
+  const defaultEmail = Deno.env.get("SCOTT_AUTH_EMAIL");
+  const defaultPassword = Deno.env.get("SCOTT_AUTH_PASSWORD");
+  if (!defaultEmail || !defaultPassword) {
+    throw new Error("Missing SCOTT_AUTH_EMAIL or SCOTT_AUTH_PASSWORD");
+  }
+  if (!scottHostIsStaging(hostKey)) {
+    return { email: defaultEmail, password: defaultPassword };
+  }
+  const stagingPassword = Deno.env.get("SCOTT_STAGING_AUTH_PASSWORD")?.trim();
+  if (stagingPassword) {
+    const stagingEmail = (Deno.env.get("SCOTT_STAGING_AUTH_EMAIL") || defaultEmail).trim();
+    return { email: stagingEmail, password: stagingPassword };
+  }
+  return { email: defaultEmail, password: defaultPassword };
+}
+
+/**
+ * Authenticate against the same Scott base URL used for upstream API calls.
+ * `SCOTT_API_BASE_URL` alone caused prod (Vercel) to call leaderboard while still
+ * logging in against a different host from secrets — mismatched tokens and empty data.
+ */
+async function getScottAuthToken(baseUrl: string, reqId: string): Promise<string> {
+  const hostKey = baseUrl.replace(/\/$/, "");
   const now = Math.floor(Date.now() / 1000);
-  if (cachedScott && cachedScott.exp > now + 120) {
-    return cachedScott.token;
+  const cached = cachedScottByHost.get(hostKey);
+  if (cached && cached.exp > now + 120) {
+    return cached.token;
   }
 
-  const baseUrl = Deno.env.get("SCOTT_API_BASE_URL")?.replace(/\/$/, "");
-  const email = Deno.env.get("SCOTT_AUTH_EMAIL");
-  const password = Deno.env.get("SCOTT_AUTH_PASSWORD");
-  if (!baseUrl || !email || !password) {
-    throw new Error("Missing SCOTT_API_BASE_URL, SCOTT_AUTH_EMAIL, or SCOTT_AUTH_PASSWORD");
+  let email: string;
+  let password: string;
+  try {
+    ({ email, password } = resolveScottLoginCredentials(hostKey));
+  } catch (e) {
+    console.error(
+      JSON.stringify({
+        msg: "scott-dashboard-masters missing_scott_credentials",
+        reqId,
+        host: safeHost(hostKey),
+      }),
+    );
+    throw e instanceof Error ? e : new Error("Missing SCOTT_AUTH_EMAIL or SCOTT_AUTH_PASSWORD");
   }
 
-  const res = await fetch(`${baseUrl}/api/v1/auth/authenticate`, {
+  console.log(
+    JSON.stringify({
+      msg: "scott-dashboard-masters scott_authenticate",
+      reqId,
+      host: safeHost(hostKey),
+      stagingCreds: scottHostIsStaging(hostKey) &&
+        Boolean(Deno.env.get("SCOTT_STAGING_AUTH_PASSWORD")?.trim()),
+    }),
+  );
+
+  const res = await fetch(`${hostKey}/api/v1/auth/authenticate`, {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body: new URLSearchParams({ email, password }),
@@ -104,13 +176,35 @@ async function getScottAuthToken(): Promise<string> {
 
   const json = await res.json();
   if (!json?.success || !json?.data?.user?.auth_token) {
-    console.error("Scott authenticate failed", json);
-    throw new Error(json?.message || "Scott authentication failed");
+    const host = safeHost(hostKey);
+    console.error(
+      JSON.stringify({
+        msg: "scott-dashboard-masters scott_authenticate_failed",
+        reqId,
+        host,
+        status: res.status,
+      }),
+    );
+    console.error("Scott authenticate response body:", json);
+    const baseMsg = typeof json?.message === "string" ? json.message : "Scott authentication failed";
+    const onStaging = scottHostIsStaging(hostKey);
+    const stagingPwdSet = Boolean(Deno.env.get("SCOTT_STAGING_AUTH_PASSWORD")?.trim());
+    let hint: string;
+    if (!onStaging) {
+      hint = " Set Supabase Edge secrets SCOTT_AUTH_EMAIL and SCOTT_AUTH_PASSWORD for this host.";
+    } else if (!stagingPwdSet) {
+      hint =
+        " Staging: set Supabase secret SCOTT_STAGING_AUTH_PASSWORD (must differ from production when using both).";
+    } else {
+      hint =
+        " Staging: check SCOTT_STAGING_AUTH_PASSWORD is correct; if staging uses another user, set SCOTT_STAGING_AUTH_EMAIL.";
+    }
+    throw new Error(`${baseMsg} (Scott host: ${host}).${hint}`);
   }
 
   const token = json.data.user.auth_token as string;
   const exp = decodeJwtExp(token) || now + 3600;
-  cachedScott = { token, exp };
+  cachedScottByHost.set(hostKey, { token, exp });
   return token;
 }
 
@@ -274,6 +368,8 @@ serve(async (req) => {
     return new Response("ok", { headers: corsHeaders });
   }
 
+  const reqId = typeof crypto.randomUUID === "function" ? crypto.randomUUID() : String(Date.now());
+
   try {
     const supabaseAdmin = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
@@ -283,7 +379,8 @@ serve(async (req) => {
 
     const authHeader = req.headers.get("Authorization");
     if (!authHeader?.startsWith("Bearer ")) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+      console.warn(JSON.stringify({ msg: "scott-dashboard-masters no_bearer", reqId }));
+      return new Response(JSON.stringify({ error: "Unauthorized", reqId }), {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -292,7 +389,14 @@ serve(async (req) => {
     const jwt = authHeader.replace("Bearer ", "");
     const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(jwt);
     if (authError || !user) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+      console.warn(
+        JSON.stringify({
+          msg: "scott-dashboard-masters invalid_jwt",
+          reqId,
+          authError: authError?.message,
+        }),
+      );
+      return new Response(JSON.stringify({ error: "Unauthorized", reqId }), {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -302,7 +406,14 @@ serve(async (req) => {
       _user_id: user.id,
     });
     if (!hasPermission) {
-      return new Response(JSON.stringify({ error: "Insufficient permissions" }), {
+      console.warn(
+        JSON.stringify({
+          msg: "scott-dashboard-masters forbidden_not_admin",
+          reqId,
+          userId: user.id,
+        }),
+      );
+      return new Response(JSON.stringify({ error: "Insufficient permissions", reqId }), {
         status: 403,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -322,13 +433,37 @@ serve(async (req) => {
       allowlistedBaseUrl(requestedBaseUrl) ??
       Deno.env.get("SCOTT_API_BASE_URL")?.replace(/\/$/, "");
     if (!baseUrl) {
-      return new Response(JSON.stringify({ error: "SCOTT_API_BASE_URL not configured" }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      console.error(
+        JSON.stringify({
+          msg: "scott-dashboard-masters missing_base_url",
+          reqId,
+          hadRequestedBase: Boolean(requestedBaseUrl?.trim()),
+        }),
+      );
+      return new Response(
+        JSON.stringify({
+          error: "SCOTT_API_BASE_URL not configured or client baseUrl not allowlisted",
+          reqId,
+        }),
+        {
+          status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        },
+      );
     }
 
-    const scottToken = await getScottAuthToken();
+    console.log(
+      JSON.stringify({
+        msg: "scott-dashboard-masters proxy",
+        reqId,
+        userId: user.id,
+        resource,
+        method,
+        host: safeHost(baseUrl),
+      }),
+    );
+
+    const scottToken = await getScottAuthToken(baseUrl, reqId);
     const resolved = resolveScottUpstream(
       baseUrl,
       resource,
@@ -359,12 +494,14 @@ serve(async (req) => {
       });
     };
 
+    let upstreamUrl = resolved.url;
     scottRes = await doFetch(resolved.url);
 
     // Fallback: if dashboard routes 404 in an environment, retry under /api/v1/ when possible.
     if (scottRes.status === 404) {
       const fb = fallbackUrlIfDashboard404(resolved.url);
       if (fb) {
+        upstreamUrl = fb;
         scottRes = await doFetch(fb);
       }
     }
@@ -381,6 +518,7 @@ serve(async (req) => {
       JSON.stringify({
         ok: scottRes.ok,
         upstreamStatus: scottRes.status,
+        upstreamUrl,
         body: parsed,
       }),
       {
@@ -389,10 +527,17 @@ serve(async (req) => {
       },
     );
   } catch (e) {
-    console.error("scott-dashboard-masters error:", e);
+    console.error(
+      JSON.stringify({
+        msg: "scott-dashboard-masters unhandled",
+        reqId,
+        error: e instanceof Error ? e.message : String(e),
+      }),
+    );
     return new Response(
       JSON.stringify({
         error: e instanceof Error ? e.message : "Internal server error",
+        reqId,
       }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );

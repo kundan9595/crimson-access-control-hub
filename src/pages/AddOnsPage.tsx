@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -14,6 +14,7 @@ import { MasterListPageSkeleton } from '@/components/masters/shared/MasterListPa
 import { MasterServerPagination } from '@/components/masters/shared/MasterServerPagination';
 import { fetchAddOns } from '@/services/masters/addOnsServiceScott';
 import { config } from '@/config/environment';
+import { proxifyScottImageUrl } from '@/utils/scottImageProxyUrl';
 
 const AddOnsPage = () => {
   const [page, setPage] = useState(1);
@@ -171,7 +172,7 @@ const AddOnsPage = () => {
                         <div className="w-10 h-10 relative">
                           {addOn.image_url ? (
                             <img
-                              src={addOn.image_url}
+                              src={proxifyScottImageUrl(addOn.image_url)}
                               alt={`${addOn.name} image`}
                               className="w-full h-full object-cover rounded border bg-muted"
                               onError={(e) => {

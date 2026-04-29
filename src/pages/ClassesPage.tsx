@@ -14,6 +14,7 @@ import { SearchFilter } from '@/components/masters/shared/SearchFilter';
 import { MasterListPageSkeleton } from '@/components/masters/shared/MasterListPageSkeleton';
 import { getSizeRatioDisplay } from '@/utils/stockUtils';
 import type { Class } from '@/services/mastersService';
+import { proxifyScottImageUrl } from '@/utils/scottImageProxyUrl';
 
 const ClassesPage = () => {
   const { data: classes, isLoading } = useClasses();
@@ -166,7 +167,7 @@ const ClassesPage = () => {
                           <div className="w-10 h-10 relative">
                             {classItem.primary_image_url ? (
                               <img
-                                src={classItem.primary_image_url}
+                                src={proxifyScottImageUrl(classItem.primary_image_url)}
                                 alt={`${classItem.name} image`}
                                 className="w-full h-full object-cover rounded border bg-muted"
                                 onError={(e) => {

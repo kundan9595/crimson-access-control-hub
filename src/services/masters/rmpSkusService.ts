@@ -170,15 +170,26 @@ export async function fetchRmpSkusPaginated(
     method: 'GET',
     query,
   });
-  const data = extractRecords(body).map((r) => normalizeRmpSku(r));
+  const records = extractRecords(body);
+  const data = records.map((r) => normalizeRmpSku(r));
   return {
     data,
     ...buildScottPaginatedMeta(body, p, data.length),
   };
 }
 
-export const fetchRmpSkus = async (): Promise<RmpSku[]> =>
-  fetchAllScottPages((pp) => fetchRmpSkusPaginated(pp));
+export const fetchRmpSkus = async (): Promise<RmpSku[]> => {
+  try {
+    // Limit to 10 pages (1000 SKUs) to avoid edge function timeout
+    return await fetchAllScottPages(
+      (pp) => fetchRmpSkusPaginated(pp), 
+      { pageSize: 100, maxPages: 10 }
+    );
+  } catch (err) {
+    console.error('fetchRmpSkus failed:', err);
+    return [];
+  }
+};
 
 export const getRmpSkuById = async (id: string): Promise<RmpSku | null> => {
   const { body } = await callScottDashboard<Record<string, unknown>>({

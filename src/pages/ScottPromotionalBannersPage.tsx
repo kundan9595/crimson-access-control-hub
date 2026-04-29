@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -21,6 +21,10 @@ import {
   type ScottPromotionalBanner,
   type PromotionalBannerFilter,
 } from '@/hooks/masters/useScottPromotionalBanners';
+import { useAllRmpCategories } from '@/hooks/masters/useRmpCategories';
+import { useAllRmpClasses } from '@/hooks/masters/useRmpClasses';
+import { proxifyScottImageUrl } from '@/utils/scottImageProxyUrl';
+import { useAllRmpBrands } from '@/hooks/masters/useRmpBrands';
 import { exportToCSV, generateExportFilename } from '@/utils/exportUtils';
 import { Edit, Trash2, Image as ImageIcon, Megaphone } from 'lucide-react';
 import { MasterListPageSkeleton } from '@/components/masters/shared/MasterListPageSkeleton';
@@ -40,6 +44,35 @@ const ScottPromotionalBannersPage = () => {
   const { data: bannersPage, isLoading, isFetching } = useScottPromotionalBanners(page, pageSize, filters);
   const promotionalBanners = bannersPage?.data ?? [];
   const deletePromotionalBannerMutation = useDeleteScottPromotionalBanner();
+
+  // Fetch related masters for client-side lookup (fallback if API doesn't return populated relations)
+  const { data: rmpCategories = [] } = useAllRmpCategories();
+  const { data: rmpClasses = [] } = useAllRmpClasses();
+  const { data: rmpBrands = [] } = useAllRmpBrands();
+
+  // Create lookup maps
+  const categoryById = useMemo(() => new Map(rmpCategories.map(c => [c.id, c])), [rmpCategories]);
+  const classById = useMemo(() => new Map(rmpClasses.map(c => [c.id, c])), [rmpClasses]);
+  const brandById = useMemo(() => new Map(rmpBrands.map(b => [b.id, b])), [rmpBrands]);
+
+  // Helper functions to resolve relations (use populated relation if available, otherwise lookup)
+  const resolveCategory = (banner: ScottPromotionalBanner) => {
+    if (banner.rmp_category?.name) return banner.rmp_category.name;
+    if (banner.rmp_category_id) return categoryById.get(banner.rmp_category_id)?.name || '—';
+    return '—';
+  };
+
+  const resolveClass = (banner: ScottPromotionalBanner) => {
+    if (banner.rmp_class?.name) return banner.rmp_class.name;
+    if (banner.rmp_class_id) return classById.get(banner.rmp_class_id)?.name || '—';
+    return '—';
+  };
+
+  const resolveBrand = (banner: ScottPromotionalBanner) => {
+    if (banner.rmp_brand?.name) return banner.rmp_brand.name;
+    if (banner.rmp_brand_id) return brandById.get(banner.rmp_brand_id)?.name || '—';
+    return '—';
+  };
 
   // Reset to page 1 when search changes
   useEffect(() => {
@@ -66,19 +99,50 @@ const ScottPromotionalBannersPage = () => {
     const all = await fetchPromotionalBanners();
     if (!all.length) return;
 
+    // Fetch related masters for export resolution
+    const [{ data: categories }, { data: classes }, { data: brands }] = await Promise.all([
+      import('@/services/masters/rmpCategoriesService').then(m => m.fetchRmpCategories()),
+      import('@/services/masters/rmpClassesService').then(m => m.fetchRmpClasses()),
+      import('@/services/masters/rmpBrandsService').then(m => m.fetchRmpBrands()),
+    ]);
+
+    const catById = new Map((categories || []).map(c => [c.id, c]));
+    const clsById = new Map((classes || []).map(c => [c.id, c]));
+    const brdById = new Map((brands || []).map(b => [b.id, b]));
+
+    const resolveCategoryExport = (item: ScottPromotionalBanner) => {
+      if (item.rmp_category?.name) return item.rmp_category.name;
+      if (item.rmp_category_id) return catById.get(item.rmp_category_id)?.name || '—';
+      return '—';
+    };
+
+    const resolveClassExport = (item: ScottPromotionalBanner) => {
+      if (item.rmp_class?.name) return item.rmp_class.name;
+      if (item.rmp_class_id) return clsById.get(item.rmp_class_id)?.name || '—';
+      return '—';
+    };
+
+    const resolveBrandExport = (item: ScottPromotionalBanner) => {
+      if (item.rmp_brand?.name) return item.rmp_brand.name;
+      if (item.rmp_brand_id) return brdById.get(item.rmp_brand_id)?.name || '—';
+      return '—';
+    };
+
     exportToCSV({
       filename: generateExportFilename('promotional-banners-rmp'),
-      headers: ['Title', 'Position', 'Category', 'Class', 'Brand', 'Status', 'Created At'],
+      headers: ['Title', 'Position', 'Category', 'Class', 'Brand', 'Status', 'Created At', 'Updated At'],
       data: all,
       fieldMap: {
         Title: 'title',
         Position: 'position',
-        Category: (item: ScottPromotionalBanner) => item.rmp_category?.name || '—',
-        Class: (item: ScottPromotionalBanner) => item.rmp_class?.name || '—',
-        Brand: (item: ScottPromotionalBanner) => item.rmp_brand?.name || '—',
+        Category: resolveCategoryExport,
+        Class: resolveClassExport,
+        Brand: resolveBrandExport,
         Status: 'status',
         'Created At': (item: ScottPromotionalBanner) =>
           new Date(item.created_at).toLocaleDateString(),
+        'Updated At': (item: ScottPromotionalBanner) =>
+          new Date(item.updated_at).toLocaleDateString(),
       },
     });
   };
@@ -166,7 +230,7 @@ const ScottPromotionalBannersPage = () => {
                       <TableCell>
                         {banner.image_url ? (
                           <img
-                            src={banner.image_url}
+                            src={proxifyScottImageUrl(banner.image_url)}
                             alt={banner.title}
                             className="w-16 h-12 object-cover rounded"
                           />
@@ -178,9 +242,9 @@ const ScottPromotionalBannersPage = () => {
                       </TableCell>
                       <TableCell className="font-medium">{banner.title}</TableCell>
                       <TableCell>{banner.position}</TableCell>
-                      <TableCell>{banner.rmp_category?.name || '—'}</TableCell>
-                      <TableCell>{banner.rmp_class?.name || '—'}</TableCell>
-                      <TableCell>{banner.rmp_brand?.name || '—'}</TableCell>
+                      <TableCell>{resolveCategory(banner)}</TableCell>
+                      <TableCell>{resolveClass(banner)}</TableCell>
+                      <TableCell>{resolveBrand(banner)}</TableCell>
                       <TableCell>
                         <Badge variant={banner.status === 'active' ? 'default' : 'secondary'}>
                           {banner.status}
