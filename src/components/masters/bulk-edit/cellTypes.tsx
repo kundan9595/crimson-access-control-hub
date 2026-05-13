@@ -123,15 +123,10 @@ export const parseEnum = (value: string, options: EnumOption[]) => {
   const byDisplayName = options.filter(
     (o) => enumOptionDisplayName(o.label).toLowerCase() === tl
   );
-  if (byDisplayName.length === 1) {
+  if (byDisplayName.length > 0) {
+    // If the same display name appears more than once (e.g. duplicate rows in DB), use the first
+    // option in list order so CSV import still resolves instead of failing as "ambiguous".
     return { value: byDisplayName[0].value, valid: true };
-  }
-  if (byDisplayName.length > 1) {
-    return {
-      value: trimmed,
-      valid: false,
-      error: `Ambiguous name "${trimmed}". Use the full label as shown in the app, or the option ID.`,
-    };
   }
 
   const shortNames = options.map((o) => `"${enumOptionDisplayName(o.label)}"`).slice(0, 10);
