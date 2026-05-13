@@ -7,6 +7,9 @@ export const registerSW = async () => {
         scope: '/'
       });
 
+      // Discover a new deployment sooner (pairs with workbox skipWaiting / clientsClaim).
+      void registration.update();
+
       registration.addEventListener('updatefound', () => {
         const newWorker = registration.installing;
         if (newWorker) {

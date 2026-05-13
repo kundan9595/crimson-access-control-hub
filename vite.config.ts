@@ -18,6 +18,10 @@ export default defineConfig(({ mode }) => {
         workbox: {
           navigateFallbackDenylist: [/^\/api\//],
           cleanupOutdatedCaches: true,
+          // Activate new SW immediately so precache matches new hashed chunks (avoids
+          // stale index + old icons-vendor / react-vendor mismatch after deploy).
+          skipWaiting: true,
+          clientsClaim: true,
         },
         includeAssets: ['favicon.ico', 'placeholder.svg', 'robots.txt', 'icon.svg', 'polyfills.js'],
         manifest: {
