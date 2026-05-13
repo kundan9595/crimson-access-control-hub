@@ -25,6 +25,60 @@
     <meta name="twitter:title" content="ScottOne" />
     <meta name="twitter:description" content="A comprehensive access control and inventory management system" />
     <meta name="twitter:image" content="/pwa-512x512.png" />
+
+    <!-- One-time: clear stale Workbox precache / SW so old hashed chunks (e.g. icons-vendor) are not served after critical fixes. Bump BUST when needed. -->
+    <script>
+      (function () {
+        var BUST = 'icons-react-sw-1';
+        var KEY = 'scottone-sw-cache-bust';
+        try {
+          if (localStorage.getItem(KEY) === BUST) return;
+        } catch (e) {
+          return;
+        }
+        var shouldReload = false;
+        var chain = Promise.resolve();
+        if ('serviceWorker' in navigator) {
+          chain = chain
+            .then(function () {
+              return navigator.serviceWorker.getRegistrations();
+            })
+            .then(function (regs) {
+              if (!regs || !regs.length) return;
+              shouldReload = true;
+              return Promise.all(regs.map(function (r) {
+                return r.unregister();
+              }));
+            });
+        }
+        chain = chain.then(function () {
+          if (!('caches' in window)) return;
+          return caches.keys().then(function (keys) {
+            if (!keys || !keys.length) return;
+            shouldReload = true;
+            return Promise.all(
+              keys.map(function (k) {
+                return caches.delete(k);
+              })
+            );
+          });
+        });
+        chain
+          .then(function () {
+            try {
+              localStorage.setItem(KEY, BUST);
+            } catch (e) {}
+            if (shouldReload) {
+              location.reload();
+            }
+          })
+          .catch(function () {
+            try {
+              localStorage.setItem(KEY, BUST);
+            } catch (e) {}
+          });
+      })();
+    </script>
     
     <!-- Browser polyfills for Node.js modules -->
     <script src="/polyfills.js"></script>
