@@ -116,8 +116,14 @@ export default defineConfig(({ mode }) => {
       rollupOptions: {
         output: {
           manualChunks: (id) => {
-            // Vendor chunks
-            if (id.includes('node_modules/react') || id.includes('node_modules/react-dom')) {
+            // Vendor chunks — only the real `react` / `react-dom` packages.
+            // `id.includes('node_modules/react')` falsely matches react-router-dom,
+            // react-hook-form, react-is, etc., which can create chunk cycles where
+            // icons-vendor imports react-vendor before its exports exist (forwardRef undefined).
+            if (
+              /[/\\]node_modules[/\\]react[/\\]/.test(id) ||
+              /[/\\]node_modules[/\\]react-dom[/\\]/.test(id)
+            ) {
               return 'react-vendor';
             }
             if (id.includes('node_modules/@radix-ui')) {
