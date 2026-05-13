@@ -18,7 +18,7 @@ import { Upload, Download, FileSpreadsheet, AlertCircle, CheckCircle2, X, Chevro
 import { toast } from 'sonner';
 import { useQueryClient, type UseMutateAsyncFunction } from '@tanstack/react-query';
 import { parseCSV, createCSVContent, downloadCSV } from '@/components/masters/bulk-import/csvUtils';
-import { validateCellValue } from './cellTypes';
+import { parseEnum, validateCellValue } from './cellTypes';
 import type { BulkEditColumn } from './types';
 
 export interface BulkImportFromConfigDialogProps<TRow, TCreate, TUpdate> {
@@ -219,13 +219,11 @@ function BulkImportFromConfigDialog<TRow, TCreate, TUpdate>({
       }
 
       if (col?.type === 'enum') {
-        // For enums, match on the value (id) if available, otherwise fall back to label lookup
         const strVal = String(rawValue);
-        const option = col.options?.find((o) => o.value === strVal);
-        if (option) return strVal; // Use the underlying value/id for matching
-        // Try to match by label (case-insensitive)
-        const byLabel = col.options?.find((o) => o.label.toLowerCase() === strVal.toLowerCase());
-        return byLabel?.value ?? strVal.toLowerCase();
+        const opts = col.options ?? [];
+        const parsed = parseEnum(strVal, opts);
+        if (parsed.valid) return String(parsed.value);
+        return strVal.trim().toLowerCase();
       }
 
       // Text and everything else: trim + lowercase

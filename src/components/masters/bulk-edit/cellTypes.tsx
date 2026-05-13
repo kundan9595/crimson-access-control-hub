@@ -97,23 +97,54 @@ export const parseUrl = (value: string) => {
   }
 };
 
+/**
+ * For labels like `Blue (#1a2b3c)` or `Widget (SKU-12)`, the user-facing "name" is the part before ` (`.
+ * Used so CSV/import can match on name alone when the value (e.g. hex) already lives in the DB.
+ */
+export const enumOptionDisplayName = (label: string): string => {
+  const open = label.indexOf(' (');
+  if (open === -1) return label.trim();
+  return label.slice(0, open).trim();
+};
+
 export const parseEnum = (value: string, options: EnumOption[]) => {
   const trimmed = value.trim();
-  const match = options.find(
-    (o) => o.value.toLowerCase() === trimmed.toLowerCase() || o.label.toLowerCase() === trimmed.toLowerCase()
+  const tl = trimmed.toLowerCase();
+
+  const byValueExact = options.find((o) => o.value === trimmed);
+  if (byValueExact) return { value: byValueExact.value, valid: true };
+
+  const byValueI = options.find((o) => o.value.toLowerCase() === tl);
+  if (byValueI) return { value: byValueI.value, valid: true };
+
+  const byLabel = options.find((o) => o.label.toLowerCase() === tl);
+  if (byLabel) return { value: byLabel.value, valid: true };
+
+  const byDisplayName = options.filter(
+    (o) => enumOptionDisplayName(o.label).toLowerCase() === tl
   );
-  if (!match) {
-    // Show labels for readability, but include a few example IDs if labels differ
-    const labels = options.map((o) => `"${o.label}"`).slice(0, 10);
-    const more = options.length > 10 ? ` and ${options.length - 10} more` : '';
-    const examples = options.slice(0, 3).map(o => `"${o.label}" (ID: ${o.value})`).join(', ');
+  if (byDisplayName.length === 1) {
+    return { value: byDisplayName[0].value, valid: true };
+  }
+  if (byDisplayName.length > 1) {
     return {
       value: trimmed,
       valid: false,
-      error: `Invalid value "${trimmed}". Use: ${labels.join(', ')}${more}. Examples: ${examples}`
+      error: `Ambiguous name "${trimmed}". Use the full label as shown in the app, or the option ID.`,
     };
   }
-  return { value: match.value, valid: true };
+
+  const shortNames = options.map((o) => `"${enumOptionDisplayName(o.label)}"`).slice(0, 10);
+  const more = options.length > 10 ? ` and ${options.length - 10} more` : '';
+  const examples = options
+    .slice(0, 3)
+    .map((o) => `"${enumOptionDisplayName(o.label)}" (ID: ${o.value})`)
+    .join(', ');
+  return {
+    value: trimmed,
+    valid: false,
+    error: `Invalid value "${trimmed}". Allowed names: ${shortNames.join(', ')}${more}. You can also use the full dropdown label or ID. Examples: ${examples}`,
+  };
 };
 
 // ===== Cell Renderers =====
