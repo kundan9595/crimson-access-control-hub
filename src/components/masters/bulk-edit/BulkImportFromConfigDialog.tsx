@@ -265,13 +265,12 @@ function BulkImportFromConfigDialog<TRow, TCreate, TUpdate>({
     try {
       const rows = await fetchAll();
       setExistingRows(rows);
-      console.info(`[BulkImport "${title}"] duplicate-index fetch: ${rows.length} rows`);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : 'Failed to fetch existing records');
     } finally {
       setIsFetchingExisting(false);
     }
-  }, [fetchAll, title]);
+  }, [fetchAll]);
 
   useEffect(() => {
     if (step === 'review' && existingRows.length === 0 && !isFetchingExisting) {
@@ -532,8 +531,8 @@ function BulkImportFromConfigDialog<TRow, TCreate, TUpdate>({
         <DialogHeader className="px-6 py-4 border-b shrink-0">
           <DialogTitle>Bulk Import · {title}</DialogTitle>
           <DialogDescription className="sr-only">
-            Upload a CSV, review validation and duplicate matching, then confirm to create or update {title}{' '}
-            records.
+            Review and import CSV rows for {title}. Successful saves are logged in the browser console
+            (filter by BulkImport).
           </DialogDescription>
         </DialogHeader>
 

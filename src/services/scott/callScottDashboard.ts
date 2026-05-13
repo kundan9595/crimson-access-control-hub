@@ -335,7 +335,10 @@ export function extractScottEntity(body: unknown): Record<string, unknown> | nul
   }
 
   const fromList = extractRecords(body);
-  if (fromList.length > 0 && isScottRecordShape(fromList[0])) {
+  // Only trust list[0] when the response is a single-record list. POST responses that echo a
+  // full index (many rows) must not use an arbitrary first row — fall through to nested extraction
+  // or field-based matching in the resource-specific create handler.
+  if (fromList.length === 1 && isScottRecordShape(fromList[0])) {
     return withCanonicalPrimaryKey(fromList[0]!);
   }
 
@@ -365,6 +368,7 @@ export function extractScottEntity(body: unknown): Record<string, unknown> | nul
         const nested = v as Record<string, unknown>;
         if (
           Array.isArray(nested.data) &&
+          nested.data.length === 1 &&
           nested.data[0] &&
           isScottRecordShape(nested.data[0])
         ) {
@@ -379,6 +383,30 @@ export function extractScottEntity(body: unknown): Record<string, unknown> | nul
   }
 
   return deepExtractScottEntity(body, 0);
+}
+
+/**
+ * When a POST body embeds a long list (e.g. full index), find the row whose `field` matches
+ * `expected` (case-insensitive trim). Used when {@link extractScottEntity} returns a row that
+ * does not match the submitted payload (e.g. wrong list[0]).
+ */
+export function pickScottListRowByFieldMatch(
+  body: unknown,
+  field: string,
+  expected: string,
+): Record<string, unknown> | null {
+  const want = expected.trim().toLowerCase();
+  if (!want) return null;
+  for (const r of extractRecords(body)) {
+    if (!r || typeof r !== 'object') continue;
+    const row = r as Record<string, unknown>;
+    const v = String(row[field] ?? '').trim().toLowerCase();
+    if (v !== want) continue;
+    if (isScottRecordShape(row)) {
+      return withCanonicalPrimaryKey(row);
+    }
+  }
+  return null;
 }
 
 export function normalizeId(id: unknown): string {

@@ -3,6 +3,7 @@ import {
   extractRecords,
   extractScottEntity,
   normalizeId,
+  pickScottListRowByFieldMatch,
 } from '@/services/scott/callScottDashboard';
 import { normalizeHexCode } from '@/services/masters/rmpColorsService';
 import {
@@ -270,9 +271,26 @@ export const createRmpClass = async (
     method: 'POST',
     body: form,
   });
-  const row = extractScottEntity(body);
+  const expectedName = (rmpClassData.name ?? '').trim();
+  let row = extractScottEntity(body);
+  if (expectedName) {
+    const got = row ? String((row as Record<string, unknown>).name ?? '').trim().toLowerCase() : '';
+    if (!row || got !== expectedName.toLowerCase()) {
+      const matched = pickScottListRowByFieldMatch(body, 'name', expectedName);
+      if (matched) {
+        row = matched;
+      }
+    }
+  }
   if (row) {
-    return normalizeRmpClass(row);
+    const normalized = normalizeRmpClass(row);
+    const exp = expectedName.trim().toLowerCase();
+    if (exp && normalized.name.trim().toLowerCase() !== exp) {
+      throw new Error(
+        `Create RMP Class: response did not include a row named "${expectedName}". The API may not have persisted the record, or the response shape changed.`,
+      );
+    }
+    return normalized;
   }
   throw new Error('Failed to create RMP Class: invalid response');
 };
