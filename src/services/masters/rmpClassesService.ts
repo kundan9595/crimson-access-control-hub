@@ -40,6 +40,8 @@ export interface RmpClass {
 
 export interface RmpClassFilter {
   search?: string;
+  /** When true, list endpoint omits `is_deleted` filter so inactive rows are included (bulk import duplicate matching). */
+  includeInactive?: boolean;
 }
 
 // Type for multiple image files
@@ -220,8 +222,10 @@ export async function fetchRmpClassesPaginated(
   const query: Record<string, string | number | boolean | undefined> = {
     items: p.items,
     page: p.page,
-    is_deleted: false,
   };
+  if (!filters?.includeInactive) {
+    query.is_deleted = false;
+  }
   if (filters?.search) {
     query.search = filters.search;
   }
@@ -240,6 +244,10 @@ export async function fetchRmpClassesPaginated(
 
 export const fetchRmpClasses = async (): Promise<RmpClass[]> =>
   fetchAllScottPages((pp) => fetchRmpClassesPaginated(pp));
+
+/** All classes including inactive — used for bulk import so re-uploads match rows keyed by name. */
+export const fetchRmpClassesForBulkImport = async (): Promise<RmpClass[]> =>
+  fetchAllScottPages((pp) => fetchRmpClassesPaginated(pp, { includeInactive: true }));
 
 export const getRmpClassById = async (id: string): Promise<RmpClass | null> => {
   const { body } = await callScottDashboard<Record<string, unknown>>({

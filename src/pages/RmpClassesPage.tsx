@@ -25,7 +25,6 @@ import { Shirt, Edit, Trash2, Image as ImageIcon } from 'lucide-react';
 import { MasterTableSkeleton } from '@/components/masters/shared/MasterListPageSkeleton';
 import { MasterServerPagination } from '@/components/masters/shared/MasterServerPagination';
 import { exportToCSV, generateExportFilename } from '@/utils/exportUtils';
-import { fetchRmpClasses } from '@/services/masters/rmpClassesService';
 import { fetchRmpColors } from '@/services/masters/rmpColorsService';
 import { fetchRmpSkus } from '@/services/masters/rmpSkusService';
 import { getEffectiveScottApiBaseUrl } from '@/config/scottApiRuntime';
@@ -41,7 +40,7 @@ import {
   rmpClassesToUpdatePayload,
   rmpClassesQueryKey,
 } from '@/components/masters/bulk-edit/configs/rmpClassesConfig';
-import { createRmpClass, updateRmpClass } from '@/services/masters/rmpClassesService';
+import { createRmpClass, fetchRmpClasses, fetchRmpClassesForBulkImport, updateRmpClass } from '@/services/masters/rmpClassesService';
 
 /** Radix Select reserves empty string; use a sentinel for optional "None" rows. */
 const SELECT_NONE = '__none__';
@@ -495,19 +494,17 @@ const RmpClassesPage = () => {
         toCreatePayload={rmpClassesToCreatePayload}
         toUpdatePayload={rmpClassesToUpdatePayload}
         queryKey={rmpClassesQueryKey}
-        createMutation={async (payload) => {
-          await createRmpClass({
+        createMutation={async (payload) =>
+          createRmpClass({
             name: payload.name,
             position: payload.position,
             status: payload.status,
             is_deleted: payload.is_deleted,
             rmp_color_id: payload.rmp_color_id,
-          });
-        }}
-        updateMutation={async ({ id, updates }) => {
-          await updateRmpClass(id, updates);
-        }}
-        fetchAll={fetchRmpClasses}
+          })
+        }
+        updateMutation={async ({ id, updates }) => updateRmpClass(id, updates)}
+        fetchAll={fetchRmpClassesForBulkImport}
         getRowId={rmpClassesGetRowId}
         defaultKeyFields={['name']}
       />
