@@ -76,6 +76,20 @@ interface SaveResult {
   }>;
 }
 
+/** Compact server response for console logs (avoid dumping huge objects). */
+function summarizeBulkImportMutationResult(result: unknown): unknown {
+  if (result == null) return null;
+  if (typeof result !== 'object') return result;
+  const o = result as Record<string, unknown>;
+  const out: Record<string, unknown> = {};
+  for (const k of ['id', 'name', 'code', 'position', 'status', 'message', 'error']) {
+    if (k in o) out[k] = o[k];
+  }
+  if (Object.keys(out).length > 0) return out;
+  const keys = Object.keys(o);
+  return keys.length <= 24 ? o : { _keys: keys.slice(0, 24), _moreKeys: keys.length - 24 };
+}
+
 function BulkImportFromConfigDialog<TRow, TCreate, TUpdate>({
   open,
   onOpenChange,
@@ -403,6 +417,16 @@ function BulkImportFromConfigDialog<TRow, TCreate, TUpdate>({
   const confirmImport = useCallback(async () => {
     if (actionableRows.length === 0) return;
 
+    const logTag = `[BulkImport "${title}"]`;
+    const plannedCreates = actionableRows.filter((r) => r.action === 'create').length;
+    const plannedUpdates = actionableRows.filter((r) => r.action === 'update').length;
+    console.info(`${logTag} session start`, {
+      plannedCreates,
+      plannedUpdates,
+      total: actionableRows.length,
+      skippedInFile: classifiedRows.skip.length,
+    });
+
     setIsImporting(true);
     setImportProgress({ completed: 0, total: actionableRows.length });
 
@@ -415,19 +439,47 @@ function BulkImportFromConfigDialog<TRow, TCreate, TUpdate>({
       const row = actionableRows[i];
       try {
         if (row.action === 'create') {
-          await createMutation(toCreatePayload(row.data as TRow));
+          const payload = toCreatePayload(row.data as TRow);
+          const result = await createMutation(payload);
           createdCount++;
+          console.info(`${logTag} CREATE ok`, {
+            indexInBatch: i + 1,
+            of: actionableRows.length,
+            csvRow: row.rowNumber,
+            payload,
+            serverResponse: summarizeBulkImportMutationResult(result),
+            csvPreview: row.raw.slice(0, 16),
+          });
         } else if (row.action === 'update' && row.matchedExisting) {
           const existingId = getRowId(row.matchedExisting);
           // Merge: overlay parsed data onto existing row so unmentioned columns aren't lost
           const merged = { ...row.matchedExisting, ...(row.data as TRow) };
-          await updateMutation({ id: existingId, updates: toUpdatePayload(merged) });
+          const updates = toUpdatePayload(merged);
+          const result = await updateMutation({ id: existingId, updates });
           updatedCount++;
+          console.info(`${logTag} UPDATE ok`, {
+            indexInBatch: i + 1,
+            of: actionableRows.length,
+            csvRow: row.rowNumber,
+            id: existingId,
+            updates,
+            serverResponse: summarizeBulkImportMutationResult(result),
+            csvPreview: row.raw.slice(0, 16),
+          });
         }
       } catch (e) {
+        const msg = e instanceof Error ? e.message : 'Unknown error';
+        console.warn(`${logTag} FAILED`, {
+          indexInBatch: i + 1,
+          of: actionableRows.length,
+          csvRow: row.rowNumber,
+          action: row.action,
+          error: msg,
+          csvPreview: row.raw.slice(0, 16),
+        });
         failures.push({
           rowNumber: row.rowNumber,
-          error: e instanceof Error ? e.message : 'Unknown error',
+          error: msg,
           raw: row.raw, // Include original CSV data for re-export
         });
       }
@@ -439,16 +491,26 @@ function BulkImportFromConfigDialog<TRow, TCreate, TUpdate>({
 
     await queryClient.invalidateQueries({ queryKey });
 
+    console.info(`${logTag} session end`, {
+      createdCount,
+      updatedCount,
+      skippedCount,
+      failureCount: failures.length,
+      failures: failures.length ? failures.slice(0, 50) : [],
+    });
+
     setSaveResult({ createdCount, updatedCount, skippedCount, failures });
     setIsImporting(false);
     setStep('complete');
 
     if (failures.length === 0) {
       toast.success(
-        `Import complete: ${createdCount} created, ${updatedCount} updated, ${skippedCount} skipped`,
+        `Import complete: ${createdCount} created, ${updatedCount} updated, ${skippedCount} skipped. Open the browser console and filter "BulkImport" for a per-row log.`,
       );
     } else {
-      toast.error(`${failures.length} of ${actionableRows.length} rows failed.`);
+      toast.error(
+        `${failures.length} of ${actionableRows.length} rows failed. Console: filter "BulkImport" for each ok/failed row.`,
+      );
     }
   }, [
     actionableRows,
@@ -460,6 +522,7 @@ function BulkImportFromConfigDialog<TRow, TCreate, TUpdate>({
     getRowId,
     queryClient,
     queryKey,
+    title,
   ]);
 
   return (
