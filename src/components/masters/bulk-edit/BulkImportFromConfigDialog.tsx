@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -18,7 +18,7 @@ import { Upload, Download, FileSpreadsheet, AlertCircle, CheckCircle2, X, Chevro
 import { toast } from 'sonner';
 import { useQueryClient, type UseMutateAsyncFunction } from '@tanstack/react-query';
 import { parseCSV, createCSVContent, downloadCSV } from '@/components/masters/bulk-import/csvUtils';
-import { parseEnum, validateCellValue } from './cellTypes';
+import { parseEnum, validateCellValue, enumOptionDisplayName } from './cellTypes';
 import type { BulkEditColumn } from './types';
 
 export interface BulkImportFromConfigDialogProps<TRow, TCreate, TUpdate> {
@@ -74,20 +74,6 @@ interface SaveResult {
     error: string;
     raw?: string[]; // Original CSV row data for re-export
   }>;
-}
-
-/** Compact server response for console logs (avoid dumping huge objects). */
-function summarizeBulkImportMutationResult(result: unknown): unknown {
-  if (result == null) return null;
-  if (typeof result !== 'object') return result;
-  const o = result as Record<string, unknown>;
-  const out: Record<string, unknown> = {};
-  for (const k of ['id', 'name', 'code', 'position', 'status', 'message', 'error']) {
-    if (k in o) out[k] = o[k];
-  }
-  if (Object.keys(out).length > 0) return out;
-  const keys = Object.keys(o);
-  return keys.length <= 24 ? o : { _keys: keys.slice(0, 24), _moreKeys: keys.length - 24 };
 }
 
 function BulkImportFromConfigDialog<TRow, TCreate, TUpdate>({
@@ -236,12 +222,21 @@ function BulkImportFromConfigDialog<TRow, TCreate, TUpdate>({
         const strVal = String(rawValue);
         const opts = col.options ?? [];
         const parsed = parseEnum(strVal, opts);
-        if (parsed.valid) return String(parsed.value);
+        if (parsed.valid) {
+          const resolved = String(parsed.value);
+          const opt = opts.find((o) => o.value === resolved);
+          if (opt) {
+            // Match on human-readable name, not raw id, so duplicate options (same name, different ids)
+            // still align with DB rows that reference another id for the same label.
+            return enumOptionDisplayName(opt.label).trim().toLowerCase();
+          }
+          return resolved.toLowerCase();
+        }
         return strVal.trim().toLowerCase();
       }
 
-      // Text and everything else: trim + lowercase
-      return String(rawValue).trim().toLowerCase();
+      // Text and everything else: trim + lowercase (strip BOM often present on Excel CSV first cell)
+      return String(rawValue).trim().replace(/^\uFEFF/, '').toLowerCase();
     });
     return parts.join('|');
   }, [columns]);
@@ -417,16 +412,6 @@ function BulkImportFromConfigDialog<TRow, TCreate, TUpdate>({
   const confirmImport = useCallback(async () => {
     if (actionableRows.length === 0) return;
 
-    const logTag = `[BulkImport "${title}"]`;
-    const plannedCreates = actionableRows.filter((r) => r.action === 'create').length;
-    const plannedUpdates = actionableRows.filter((r) => r.action === 'update').length;
-    console.info(`${logTag} session start`, {
-      plannedCreates,
-      plannedUpdates,
-      total: actionableRows.length,
-      skippedInFile: classifiedRows.skip.length,
-    });
-
     setIsImporting(true);
     setImportProgress({ completed: 0, total: actionableRows.length });
 
@@ -439,47 +424,19 @@ function BulkImportFromConfigDialog<TRow, TCreate, TUpdate>({
       const row = actionableRows[i];
       try {
         if (row.action === 'create') {
-          const payload = toCreatePayload(row.data as TRow);
-          const result = await createMutation(payload);
+          await createMutation(toCreatePayload(row.data as TRow));
           createdCount++;
-          console.info(`${logTag} CREATE ok`, {
-            indexInBatch: i + 1,
-            of: actionableRows.length,
-            csvRow: row.rowNumber,
-            payload,
-            serverResponse: summarizeBulkImportMutationResult(result),
-            csvPreview: row.raw.slice(0, 16),
-          });
         } else if (row.action === 'update' && row.matchedExisting) {
           const existingId = getRowId(row.matchedExisting);
           // Merge: overlay parsed data onto existing row so unmentioned columns aren't lost
           const merged = { ...row.matchedExisting, ...(row.data as TRow) };
-          const updates = toUpdatePayload(merged);
-          const result = await updateMutation({ id: existingId, updates });
+          await updateMutation({ id: existingId, updates: toUpdatePayload(merged) });
           updatedCount++;
-          console.info(`${logTag} UPDATE ok`, {
-            indexInBatch: i + 1,
-            of: actionableRows.length,
-            csvRow: row.rowNumber,
-            id: existingId,
-            updates,
-            serverResponse: summarizeBulkImportMutationResult(result),
-            csvPreview: row.raw.slice(0, 16),
-          });
         }
       } catch (e) {
-        const msg = e instanceof Error ? e.message : 'Unknown error';
-        console.warn(`${logTag} FAILED`, {
-          indexInBatch: i + 1,
-          of: actionableRows.length,
-          csvRow: row.rowNumber,
-          action: row.action,
-          error: msg,
-          csvPreview: row.raw.slice(0, 16),
-        });
         failures.push({
           rowNumber: row.rowNumber,
-          error: msg,
+          error: e instanceof Error ? e.message : 'Unknown error',
           raw: row.raw, // Include original CSV data for re-export
         });
       }
@@ -491,26 +448,16 @@ function BulkImportFromConfigDialog<TRow, TCreate, TUpdate>({
 
     await queryClient.invalidateQueries({ queryKey });
 
-    console.info(`${logTag} session end`, {
-      createdCount,
-      updatedCount,
-      skippedCount,
-      failureCount: failures.length,
-      failures: failures.length ? failures.slice(0, 50) : [],
-    });
-
     setSaveResult({ createdCount, updatedCount, skippedCount, failures });
     setIsImporting(false);
     setStep('complete');
 
     if (failures.length === 0) {
       toast.success(
-        `Import complete: ${createdCount} created, ${updatedCount} updated, ${skippedCount} skipped. Open the browser console and filter "BulkImport" for a per-row log.`,
+        `Import complete: ${createdCount} created, ${updatedCount} updated, ${skippedCount} skipped`,
       );
     } else {
-      toast.error(
-        `${failures.length} of ${actionableRows.length} rows failed. Console: filter "BulkImport" for each ok/failed row.`,
-      );
+      toast.error(`${failures.length} of ${actionableRows.length} rows failed.`);
     }
   }, [
     actionableRows,
@@ -522,7 +469,6 @@ function BulkImportFromConfigDialog<TRow, TCreate, TUpdate>({
     getRowId,
     queryClient,
     queryKey,
-    title,
   ]);
 
   return (
@@ -530,10 +476,6 @@ function BulkImportFromConfigDialog<TRow, TCreate, TUpdate>({
       <DialogContent className="max-w-3xl max-h-[90vh] flex flex-col p-0">
         <DialogHeader className="px-6 py-4 border-b shrink-0">
           <DialogTitle>Bulk Import · {title}</DialogTitle>
-          <DialogDescription className="sr-only">
-            Review and import CSV rows for {title}. Successful saves are logged in the browser console
-            (filter by BulkImport).
-          </DialogDescription>
         </DialogHeader>
 
         <div className="flex-1 min-h-0 overflow-y-auto px-6 py-4 space-y-4">
