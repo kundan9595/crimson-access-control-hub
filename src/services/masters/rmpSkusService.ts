@@ -170,7 +170,17 @@ export async function fetchRmpSkusPaginated(
     method: 'GET',
     query,
   });
-  const records = extractRecords(body);
+  let records = extractRecords(body);
+
+  // Client-side filtering fallback since rmp_skus API doesn't support search
+  if (filters?.search) {
+    const searchLower = filters.search.toLowerCase();
+    records = records.filter((r) => {
+      const name = String((r as Record<string, unknown>).name ?? '').toLowerCase();
+      return name.includes(searchLower);
+    });
+  }
+
   const data = records.map((r) => normalizeRmpSku(r));
   return {
     data,

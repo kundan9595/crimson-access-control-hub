@@ -1,0 +1,169 @@
+/* react-data-grid shadcn theme overrides */
+
+/* Root container */
+.rdg {
+  --rdg-color: hsl(var(--foreground));
+  --rdg-border-color: hsl(var(--border));
+  --rdg-background-color: hsl(var(--background));
+  --rdg-header-background-color: hsl(var(--muted));
+  --rdg-header-row-border: 1px solid hsl(var(--border));
+  --rdg-row-hover-background-color: hsl(var(--accent));
+  --rdg-selection-color: hsl(var(--primary));
+  --rdg-font-size: 14px;
+  --rdg-font-family: var(--font-sans);
+
+  border: 1px solid hsl(var(--border));
+  border-radius: calc(var(--radius) - 2px);
+}
+
+/* Header cells */
+.rdg-header-cell {
+  padding: 8px 12px;
+  font-weight: 600;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: hsl(var(--muted-foreground));
+  background-color: hsl(var(--muted));
+  border-bottom: 1px solid hsl(var(--border));
+}
+
+/* Row cells */
+.rdg-cell {
+  padding: 8px 12px;
+  border-bottom: 1px solid hsl(var(--border));
+  border-right: 1px solid hsl(var(--border));
+}
+
+.rdg-cell:last-child {
+  border-right: none;
+}
+
+/* Row hover */
+.rdg-row {
+  transition: background-color 0.15s ease;
+}
+
+.rdg-row:hover {
+  background-color: hsl(var(--accent));
+}
+
+/* Selected row */
+.rdg-row[aria-selected='true'] {
+  background-color: hsl(var(--accent));
+}
+
+/* Cell focus ring */
+.rdg-cell[aria-selected='true'] {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: -2px;
+}
+
+/* Editable cell indicator */
+.rdg-cell-editing {
+  padding: 0 !important;
+}
+
+/* Invalid cell styling */
+.rdg-cell-invalid {
+  background-color: hsl(var(--destructive) / 0.1);
+  box-shadow: inset 0 0 0 2px hsl(var(--destructive));
+}
+
+/* Deleted row styling (strikethrough) */
+.rdg-row-deleted {
+  opacity: 0.5;
+  text-decoration: line-through;
+  background-color: hsl(var(--muted) / 0.5);
+}
+
+/* New row styling */
+.rdg-row-new {
+  background-color: hsl(var(--primary) / 0.05);
+}
+
+.rdg-row-new:hover {
+  background-color: hsl(var(--primary) / 0.1);
+}
+
+/* Checkbox cell */
+.rdg-cell-checkbox {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Sort indicator */
+.rdg-sort-indicator {
+  color: hsl(var(--muted-foreground));
+}
+
+/* Frozen column shadows */
+.rdg-cell-frozen-last {
+  box-shadow: 2px 0 5px -2px rgba(0, 0, 0, 0.1);
+}
+
+/* Scrollbar styling */
+.rdg-viewport {
+  scrollbar-width: thin;
+  scrollbar-color: hsl(var(--border)) transparent;
+}
+
+.rdg-viewport::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.rdg-viewport::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.rdg-viewport::-webkit-scrollbar-thumb {
+  background-color: hsl(var(--border));
+  border-radius: 4px;
+}
+
+.rdg-viewport::-webkit-scrollbar-thumb:hover {
+  background-color: hsl(var(--muted-foreground));
+}
+
+/* Copied cell indicator */
+.rdg-cell-copied {
+  background-color: hsl(var(--primary) / 0.2);
+}
+
+/* Dragged row */
+.rdg-row-dragged {
+  opacity: 0.5;
+}
+
+/* Summary row */
+.rdg-summary-row {
+  font-weight: 600;
+  background-color: hsl(var(--muted));
+}
+
+/* Group row */
+.rdg-group-row {
+  font-weight: 500;
+  background-color: hsl(var(--muted) / 0.5);
+}
+
+/* Expand/collapse icon */
+.rdg-expand-icon {
+  color: hsl(var(--muted-foreground));
+}
+
+.rdg-expand-icon:hover {
+  color: hsl(var(--foreground));
+}
+
+/* Dark mode adjustments */
+@media (prefers-color-scheme: dark) {
+  .rdg {
+    --rdg-border-color: hsl(var(--border));
+    --rdg-background-color: hsl(var(--background));
+    --rdg-header-background-color: hsl(var(--muted));
+    --rdg-row-hover-background-color: hsl(var(--accent));
+  }
+}

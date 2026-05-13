@@ -27,11 +27,21 @@ import { MasterTableSkeleton } from '@/components/masters/shared/MasterListPageS
 import { DateCell } from '@/components/masters/shared/DateCell';
 import { MasterServerPagination } from '@/components/masters/shared/MasterServerPagination';
 import { exportToCSV, generateExportFilename } from '@/utils/exportUtils';
-import { fetchRmpSkus } from '@/services/masters/rmpSkusService';
+import { fetchRmpSkus, createRmpSku, updateRmpSku } from '@/services/masters/rmpSkusService';
 import { fetchRmpSizes } from '@/services/masters/rmpSizesService';
 import { fetchRmpClasses } from '@/services/masters/rmpClassesService';
 import { fetchRmpBrands } from '@/services/masters/rmpBrandsService';
+import { fetchRmpCategories } from '@/services/masters/rmpCategoriesService';
 import { config } from '@/config/environment';
+import { BulkImportFromConfigDialog } from '@/components/masters/bulk-edit';
+import {
+  buildRmpSkusColumns,
+  rmpSkusGetRowId,
+  rmpSkusCreateEmptyRow,
+  rmpSkusToCreatePayload,
+  rmpSkusToUpdatePayload,
+  rmpSkusQueryKey,
+} from '@/components/masters/bulk-edit/configs/rmpSkusConfig';
 
 /** Radix Select reserves empty string; use a sentinel for optional "None" rows. */
 const SELECT_NONE = '__none__';
@@ -106,10 +116,24 @@ const RmpSkusPage = () => {
   const [rmpClassId, setRmpClassId] = useState('');
   const [rmpBrandId, setRmpBrandId] = useState('');
   const [status, setStatus] = useState('active');
+  const [importOpen, setImportOpen] = useState(false);
 
   useEffect(() => {
     setPage(1);
   }, [search]);
+
+  const importColumns = useMemo(() => {
+    const rmpSizeOptions = rmpSizes.map((s) => ({ value: s.id, label: s.name }));
+    const rmpClassOptions = rmpClasses.map((c) => ({ value: c.id, label: c.name }));
+    const rmpBrandOptions = rmpBrands.map((b) => ({ value: b.id, label: b.name }));
+    const rmpCategoryOptions = rmpCategories.map((c) => ({ value: c.id, label: c.name }));
+    return buildRmpSkusColumns({
+      rmpSizeOptions,
+      rmpClassOptions,
+      rmpBrandOptions,
+      rmpCategoryOptions,
+    });
+  }, [rmpSizes, rmpClasses, rmpBrands, rmpCategories]);
 
   const handleExport = async () => {
     const [all, sizes, classes, brands] = await Promise.all([
@@ -215,6 +239,7 @@ const RmpSkusPage = () => {
         description="Manage RMP SKUs with GST rates and product associations"
         icon={<Package2 className="h-6 w-6 text-emerald-700" />}
         onAdd={openCreate}
+        onImport={() => setImportOpen(true)}
         onExport={handleExport}
         canExport={rows.length > 0}
         isScottApi={true}
@@ -434,6 +459,38 @@ const RmpSkusPage = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <BulkImportFromConfigDialog<RmpSku, ReturnType<typeof rmpSkusToCreatePayload>, ReturnType<typeof rmpSkusToUpdatePayload>>
+        open={importOpen}
+        onOpenChange={setImportOpen}
+        title="RMP SKUs"
+        filenameStem="rmp-skus"
+        columns={importColumns}
+        createEmptyRow={rmpSkusCreateEmptyRow}
+        toCreatePayload={rmpSkusToCreatePayload}
+        toUpdatePayload={rmpSkusToUpdatePayload}
+        queryKey={rmpSkusQueryKey}
+        createMutation={async (payload) => {
+          await createRmpSku({
+            name: payload.name,
+            cgst: payload.cgst,
+            igst: payload.igst,
+            sgst: payload.sgst,
+            status: payload.status,
+            is_deleted: payload.is_deleted,
+            rmp_size_id: payload.rmp_size_id,
+            rmp_class_id: payload.rmp_class_id,
+            rmp_brand_id: payload.rmp_brand_id,
+            rmp_category_id: payload.rmp_category_id,
+          });
+        }}
+        updateMutation={async ({ id, updates }) => {
+          await updateRmpSku(id, updates);
+        }}
+        fetchAll={fetchRmpSkus}
+        getRowId={rmpSkusGetRowId}
+        defaultKeyFields={['name']}
+      />
     </div>
   );
 };

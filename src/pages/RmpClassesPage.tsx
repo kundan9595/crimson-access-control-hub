@@ -29,8 +29,19 @@ import { fetchRmpClasses } from '@/services/masters/rmpClassesService';
 import { fetchRmpColors } from '@/services/masters/rmpColorsService';
 import { fetchRmpSkus } from '@/services/masters/rmpSkusService';
 import { getEffectiveScottApiBaseUrl } from '@/config/scottApiRuntime';
+import { config } from '@/config/environment';
 import { ImageCell } from '@/components/masters/shared/ImageCell';
 import { proxifyScottImageUrl } from '@/utils/scottImageProxyUrl';
+import { BulkImportFromConfigDialog } from '@/components/masters/bulk-edit';
+import {
+  buildRmpClassesColumns,
+  rmpClassesGetRowId,
+  rmpClassesCreateEmptyRow,
+  rmpClassesToCreatePayload,
+  rmpClassesToUpdatePayload,
+  rmpClassesQueryKey,
+} from '@/components/masters/bulk-edit/configs/rmpClassesConfig';
+import { createRmpClass, updateRmpClass } from '@/services/masters/rmpClassesService';
 
 /** Radix Select reserves empty string; use a sentinel for optional "None" rows. */
 const SELECT_NONE = '__none__';
@@ -175,10 +186,18 @@ const RmpClassesPage = () => {
   const [position, setPosition] = useState(0);
   const [rmpColorId, setRmpColorId] = useState('');
   const [status, setStatus] = useState('active');
+  const [importOpen, setImportOpen] = useState(false);
 
   useEffect(() => {
     setPage(1);
   }, [search]);
+
+  const importColumns = useMemo(() => {
+    const rmpColorOptions = rmpColors.map((c) => ({ value: c.id, label: `${c.name} (${c.code})` }));
+    return buildRmpClassesColumns({
+      rmpColorOptions,
+    });
+  }, [rmpColors]);
 
   const handleExport = async () => {
     const [all, colors, skus] = await Promise.all([
@@ -269,6 +288,7 @@ const RmpClassesPage = () => {
         description="Manage RMP product classes with multiple image support"
         icon={<Shirt className="h-6 w-6 text-cyan-700" />}
         onAdd={openCreate}
+        onImport={() => setImportOpen(true)}
         onExport={handleExport}
         canExport={rows.length > 0}
         isScottApi={true}
@@ -464,6 +484,33 @@ const RmpClassesPage = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <BulkImportFromConfigDialog<RmpClass, ReturnType<typeof rmpClassesToCreatePayload>, ReturnType<typeof rmpClassesToUpdatePayload>>
+        open={importOpen}
+        onOpenChange={setImportOpen}
+        title="RMP Classes"
+        filenameStem="rmp-classes"
+        columns={importColumns}
+        createEmptyRow={rmpClassesCreateEmptyRow}
+        toCreatePayload={rmpClassesToCreatePayload}
+        toUpdatePayload={rmpClassesToUpdatePayload}
+        queryKey={rmpClassesQueryKey}
+        createMutation={async (payload) => {
+          await createRmpClass({
+            name: payload.name,
+            position: payload.position,
+            status: payload.status,
+            is_deleted: payload.is_deleted,
+            rmp_color_id: payload.rmp_color_id,
+          });
+        }}
+        updateMutation={async ({ id, updates }) => {
+          await updateRmpClass(id, updates);
+        }}
+        fetchAll={fetchRmpClasses}
+        getRowId={rmpClassesGetRowId}
+        defaultKeyFields={['name']}
+      />
     </div>
   );
 };

@@ -24,9 +24,18 @@ import { Package, Edit, Trash2 } from 'lucide-react';
 import { MasterTableSkeleton } from '@/components/masters/shared/MasterListPageSkeleton';
 import { MasterServerPagination } from '@/components/masters/shared/MasterServerPagination';
 import { exportToCSV, generateExportFilename } from '@/utils/exportUtils';
-import { fetchRmpBrands } from '@/services/masters/rmpBrandsService';
+import { fetchRmpBrands, createRmpBrand, updateRmpBrand } from '@/services/masters/rmpBrandsService';
 import { fetchBrands } from '@/services/masters/brandsService';
 import { config } from '@/config/environment';
+import { openBulkEditTab, BulkImportFromConfigDialog } from '@/components/masters/bulk-edit';
+import {
+  buildRmpBrandsColumns,
+  rmpBrandsGetRowId,
+  rmpBrandsCreateEmptyRow,
+  rmpBrandsToCreatePayload,
+  rmpBrandsToUpdatePayload,
+  rmpBrandsQueryKey,
+} from '@/components/masters/bulk-edit/configs/rmpBrandsConfig';
 
 /** Radix Select reserves empty string; use a sentinel for optional "None" rows. */
 const SELECT_NONE = '__none__';
@@ -63,6 +72,15 @@ const RmpBrandsPage = () => {
   const [mainCategory, setMainCategory] = useState('');
   const [authorizedBrandId, setAuthorizedBrandId] = useState('');
   const [status, setStatus] = useState('active');
+  const [importOpen, setImportOpen] = useState(false);
+
+  const importColumns = useMemo(() => {
+    const options = authorizedBrands.map((b) => ({ value: b.id, label: b.name }));
+    return buildRmpBrandsColumns({
+      authorizedBrandOptions: options,
+      authorizedBrandEditorOptions: options,
+    });
+  }, [authorizedBrands]);
 
   useEffect(() => {
     setPage(1);
@@ -145,6 +163,8 @@ const RmpBrandsPage = () => {
         description="Ready Made Product brands. Link each to an authorized brand from the authorized brands master."
         icon={<Package className="h-6 w-6 text-blue-700" />}
         onAdd={openCreate}
+        onBulkEdit={() => openBulkEditTab('/masters/rmp-brands/bulk-edit')}
+        onImport={() => setImportOpen(true)}
         onExport={handleExport}
         canExport={rows.length > 0}
         isScottApi={true}
@@ -274,9 +294,9 @@ const RmpBrandsPage = () => {
             </div>
             <div className="space-y-2">
               <Label>Main Category</Label>
-              <Input 
-                value={mainCategory} 
-                onChange={(e) => setMainCategory(e.target.value)} 
+              <Input
+                value={mainCategory}
+                onChange={(e) => setMainCategory(e.target.value)}
                 placeholder="Enter main category"
               />
             </div>
@@ -299,6 +319,12 @@ const RmpBrandsPage = () => {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value={SELECT_NONE}>None</SelectItem>
+                  {/* Show current value if not in active list (e.g., inactive authorized brand) */}
+                  {authorizedBrandId && !authorizedBrands.find(b => b.id === authorizedBrandId) && editing?.authorized_brand && (
+                    <SelectItem value={authorizedBrandId}>
+                      {editing.authorized_brand.name} (Inactive)
+                    </SelectItem>
+                  )}
                   {authorizedBrands.map((brand) => (
                     <SelectItem key={brand.id} value={brand.id}>
                       {brand.name}
@@ -328,6 +354,35 @@ const RmpBrandsPage = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <BulkImportFromConfigDialog<RmpBrand, ReturnType<typeof rmpBrandsToCreatePayload>, ReturnType<typeof rmpBrandsToUpdatePayload>>
+        open={importOpen}
+        onOpenChange={setImportOpen}
+        title="RMP Brands"
+        filenameStem="rmp-brands"
+        columns={importColumns}
+        createEmptyRow={rmpBrandsCreateEmptyRow}
+        toCreatePayload={rmpBrandsToCreatePayload}
+        toUpdatePayload={rmpBrandsToUpdatePayload}
+        queryKey={rmpBrandsQueryKey}
+        createMutation={async (payload) => {
+          await createRmpBrand({
+            name: payload.name,
+            position: payload.position,
+            main_category: payload.main_category,
+            authorized_brand_id: payload.authorized_brand_id,
+            status: payload.status,
+            is_deleted: payload.is_deleted,
+            image: '',
+          });
+        }}
+        updateMutation={async ({ id, updates }) => {
+          await updateRmpBrand(id, updates);
+        }}
+        fetchAll={fetchRmpBrands}
+        getRowId={rmpBrandsGetRowId}
+        defaultKeyFields={['name']}
+      />
     </div>
   );
 };

@@ -18,6 +18,16 @@ import { SearchFilter } from '@/components/masters/shared/SearchFilter';
 import { useRmpSizes, useCreateRmpSize, useUpdateRmpSize, useDeleteRmpSize } from '@/hooks/masters/useRmpSizes';
 import type { RmpSize, RmpSizeType } from '@/services/masters/rmpSizesService';
 import { Ruler, Edit, Trash2 } from 'lucide-react';
+import { openBulkEditTab, BulkImportFromConfigDialog } from '@/components/masters/bulk-edit';
+import {
+  rmpSizesColumns,
+  rmpSizesGetRowId,
+  rmpSizesCreateEmptyRow,
+  rmpSizesToCreatePayload,
+  rmpSizesToUpdatePayload,
+  rmpSizesQueryKey,
+} from '@/components/masters/bulk-edit/configs/rmpSizesConfig';
+import { createRmpSize, updateRmpSize } from '@/services/masters/rmpSizesService';
 import { proxifyScottImageUrl } from '@/utils/scottImageProxyUrl';
 import { MasterTableSkeleton } from '@/components/masters/shared/MasterListPageSkeleton';
 import { DateCell } from '@/components/masters/shared/DateCell';
@@ -47,6 +57,7 @@ const RmpSizesPage = () => {
   const [sizeType, setSizeType] = useState<RmpSizeType>('alpha');
   const [position, setPosition] = useState(0);
   const [status, setStatus] = useState('active');
+  const [importOpen, setImportOpen] = useState(false);
 
   useEffect(() => {
     setPage(1);
@@ -123,6 +134,8 @@ const RmpSizesPage = () => {
         description="Configure size types for RMP products (alpha, numeric, free_size, kids, bags)"
         icon={<Ruler className="h-6 w-6 text-orange-700" />}
         onAdd={openCreate}
+        onBulkEdit={() => openBulkEditTab('/masters/rmp-sizes/bulk-edit')}
+        onImport={() => setImportOpen(true)}
         onExport={handleExport}
         canExport={rows.length > 0}
         isScottApi={true}
@@ -267,6 +280,35 @@ const RmpSizesPage = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <BulkImportFromConfigDialog<RmpSize, ReturnType<typeof rmpSizesToCreatePayload>, ReturnType<typeof rmpSizesToUpdatePayload>>
+        open={importOpen}
+        onOpenChange={setImportOpen}
+        title="RMP Sizes"
+        filenameStem="rmp-sizes"
+        columns={rmpSizesColumns}
+        createEmptyRow={rmpSizesCreateEmptyRow}
+        toCreatePayload={rmpSizesToCreatePayload}
+        toUpdatePayload={rmpSizesToUpdatePayload}
+        queryKey={rmpSizesQueryKey}
+        createMutation={async (payload) => {
+          await createRmpSize({
+            name: payload.name,
+            position: payload.position,
+            size_type: payload.size_type,
+            status: payload.status,
+            is_deleted: payload.is_deleted,
+            image: '',
+          });
+        }}
+        updateMutation={async ({ id, updates }) => {
+          await updateRmpSize(id, updates);
+        }}
+        fetchAll={fetchRmpSizes}
+        getRowId={rmpSizesGetRowId}
+        defaultKeyFields={['name']}
+      />
+
     </div>
   );
 };

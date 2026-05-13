@@ -23,6 +23,16 @@ import {
 } from '@/hooks/masters/useRmpPriceTypes';
 import type { RmpPriceType, PriceForType } from '@/services/masters/rmpPriceTypesService';
 import { DollarSign, Edit, Trash2 } from 'lucide-react';
+import { openBulkEditTab, BulkImportFromConfigDialog } from '@/components/masters/bulk-edit';
+import {
+  rmpPriceTypesColumns,
+  rmpPriceTypesGetRowId,
+  rmpPriceTypesCreateEmptyRow,
+  rmpPriceTypesToCreatePayload,
+  rmpPriceTypesToUpdatePayload,
+  rmpPriceTypesQueryKey,
+} from '@/components/masters/bulk-edit/configs/rmpPriceTypesConfig';
+import { createRmpPriceType, updateRmpPriceType } from '@/services/masters/rmpPriceTypesService';
 import { MasterTableSkeleton } from '@/components/masters/shared/MasterListPageSkeleton';
 import { MasterServerPagination } from '@/components/masters/shared/MasterServerPagination';
 import { exportToCSV, generateExportFilename } from '@/utils/exportUtils';
@@ -50,6 +60,7 @@ const RmpPriceTypesPage = () => {
   const [priceFor, setPriceFor] = useState<PriceForType>('zone');
   const [zoneId, setZoneId] = useState('');
   const [status, setStatus] = useState('active');
+  const [importOpen, setImportOpen] = useState(false);
 
   useEffect(() => {
     setPage(1);
@@ -115,6 +126,8 @@ const RmpPriceTypesPage = () => {
         description="Price type definitions for RMP (customer, dealer, zone)"
         icon={<DollarSign className="h-6 w-6 text-emerald-600" />}
         onAdd={openCreate}
+        onBulkEdit={() => openBulkEditTab('/masters/rmp-price-types/bulk-edit')}
+        onImport={() => setImportOpen(true)}
         onExport={handleExport}
         canExport={rows.length > 0}
         isScottApi={true}
@@ -256,6 +269,34 @@ const RmpPriceTypesPage = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <BulkImportFromConfigDialog<RmpPriceType, ReturnType<typeof rmpPriceTypesToCreatePayload>, ReturnType<typeof rmpPriceTypesToUpdatePayload>>
+        open={importOpen}
+        onOpenChange={setImportOpen}
+        title="RMP Price Types"
+        filenameStem="rmp-price-types"
+        columns={rmpPriceTypesColumns}
+        createEmptyRow={rmpPriceTypesCreateEmptyRow}
+        toCreatePayload={rmpPriceTypesToCreatePayload}
+        toUpdatePayload={rmpPriceTypesToUpdatePayload}
+        queryKey={rmpPriceTypesQueryKey}
+        createMutation={async (payload) => {
+          await createRmpPriceType({
+            name: payload.name,
+            price_for: payload.price_for,
+            zone_id: payload.zone_id,
+            status: payload.status,
+            is_deleted: payload.is_deleted,
+          });
+        }}
+        updateMutation={async ({ id, updates }) => {
+          await updateRmpPriceType(id, updates);
+        }}
+        fetchAll={fetchRmpPriceTypes}
+        getRowId={rmpPriceTypesGetRowId}
+        defaultKeyFields={['name']}
+      />
+
     </div>
   );
 };

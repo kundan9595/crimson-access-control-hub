@@ -26,10 +26,22 @@ export interface RmpPrice {
   created_by?: string;
   updated_by?: string;
   rmp_sku?: { id: string; name: string };
+  rmp_price_type?: { id: string; name: string; price_for?: string };
 }
 
 export interface RmpPriceFilter {
   search?: string;
+}
+
+function extractIdFromRelation(
+  r: Record<string, unknown>,
+  relKey: 'rmp_sku' | 'rmp_price_type',
+): string {
+  const rel = r[relKey];
+  if (!rel || typeof rel !== 'object' || Array.isArray(rel)) return '';
+  const o = rel as Record<string, unknown>;
+  const id = o.id ?? o[`${relKey}_id`];
+  return id ? normalizeId(id) : '';
 }
 
 function normalizeRmpPrice(r: Record<string, unknown>): RmpPrice {
@@ -40,6 +52,7 @@ function normalizeRmpPrice(r: Record<string, unknown>): RmpPrice {
         ? 'inactive'
         : 'active';
 
+  // Extract RMP SKU relation
   const sku = r.rmp_sku;
   let rmpSku: { id: string; name: string } | undefined;
   if (sku && typeof sku === 'object' && !Array.isArray(sku)) {
@@ -50,6 +63,22 @@ function normalizeRmpPrice(r: Record<string, unknown>): RmpPrice {
     };
   }
 
+  // Extract RMP Price Type relation
+  const priceType = r.rmp_price_type;
+  let rmpPriceType: { id: string; name: string; price_for?: string } | undefined;
+  if (priceType && typeof priceType === 'object' && !Array.isArray(priceType)) {
+    const o = priceType as Record<string, unknown>;
+    rmpPriceType = {
+      id: normalizeId(o.id),
+      name: String(o.name ?? ''),
+      price_for: o.price_for ? String(o.price_for) : undefined,
+    };
+  }
+
+  // Extract IDs from nested relation objects or use direct ID fields if present
+  const rmp_sku_id = extractIdFromRelation(r, 'rmp_sku') || String(r.rmp_sku_id ?? '');
+  const rmp_price_type_id = extractIdFromRelation(r, 'rmp_price_type') || String(r.rmp_price_type_id ?? '');
+
   return {
     id: normalizeId(r.id ?? r.rmp_price_id),
     name: String(r.name ?? ''),
@@ -57,13 +86,14 @@ function normalizeRmpPrice(r: Record<string, unknown>): RmpPrice {
     mrp: r.mrp != null ? Number(r.mrp) : 0,
     is_deleted: r.is_deleted === true || r.is_deleted === 'true',
     status,
-    rmp_sku_id: String(r.rmp_sku_id ?? ''),
-    rmp_price_type_id: String(r.rmp_price_type_id ?? ''),
+    rmp_sku_id,
+    rmp_price_type_id,
     created_at:
       typeof r.created_at === 'string' ? r.created_at : new Date().toISOString(),
     updated_at:
       typeof r.updated_at === 'string' ? r.updated_at : new Date().toISOString(),
     rmp_sku: rmpSku,
+    rmp_price_type: rmpPriceType,
   };
 }
 
@@ -94,12 +124,19 @@ export async function fetchRmpPricesPaginated(
   if (filters?.search) {
     query.search = filters.search;
   }
+  // eslint-disable-next-line no-console
+  console.log('[fetchRmpPricesPaginated] API query:', query);
   const { body } = await callScottDashboard<Record<string, unknown>>({
     resource: 'rmp_prices',
     method: 'GET',
     query,
   });
-  const data = extractRecords(body).map((r) => normalizeRmpPrice(r));
+  const records = extractRecords(body);
+  // eslint-disable-next-line no-console
+  console.log('[fetchRmpPricesPaginated] Total records from API:', records.length);
+  // eslint-disable-next-line no-console
+  console.log('[fetchRmpPricesPaginated] First record name:', (records[0] as Record<string, unknown>)?.name);
+  const data = records.map((r) => normalizeRmpPrice(r));
   return {
     data,
     ...buildScottPaginatedMeta(body, p, data.length),

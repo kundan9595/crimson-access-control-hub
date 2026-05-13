@@ -26,6 +26,23 @@ export interface RmpCategory {
   updated_by?: string;
 }
 
+function extractRmpCategoryImage(r: Record<string, unknown>): string | undefined {
+  const raw = r.image ?? r.image_url;
+  if (typeof raw === 'string' && raw.trim() !== '') {
+    return raw;
+  }
+  if (raw && typeof raw === 'object' && !Array.isArray(raw)) {
+    const image = raw as Record<string, unknown>;
+    if (typeof image.url === 'string' && image.url.trim() !== '') {
+      return image.url;
+    }
+    if (typeof image.image_url === 'string' && image.image_url.trim() !== '') {
+      return image.image_url;
+    }
+  }
+  return undefined;
+}
+
 function normalizeRmpCategory(r: Record<string, unknown>): RmpCategory {
   const status =
     typeof r.status === 'string'
@@ -45,7 +62,7 @@ function normalizeRmpCategory(r: Record<string, unknown>): RmpCategory {
           : 0,
     is_deleted: r.is_deleted === true || r.is_deleted === 'true',
     status,
-    image: r.image ? String(r.image) : undefined,
+    image: extractRmpCategoryImage(r),
     created_at:
       typeof r.created_at === 'string' ? r.created_at : new Date().toISOString(),
     updated_at:

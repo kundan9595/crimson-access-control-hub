@@ -16,6 +16,7 @@ import { exportToCSV, generateExportFilename } from '@/utils/exportUtils';
 import { useToast } from '@/hooks/use-toast';
 import type { ProfitMargin } from '@/services/masters/profitMarginsService';
 import { profitMarginsService } from '@/services/masters/profitMarginsService';
+import { openBulkEditTab } from '@/components/masters/bulk-edit';
 import { MasterListPageSkeleton } from '@/components/masters/shared/MasterListPageSkeleton';
 import { MasterServerPagination } from '@/components/masters/shared/MasterServerPagination';
 import { config } from '@/config/environment';
@@ -28,7 +29,7 @@ const ProfitMarginPage = () => {
   const [showImportDialog, setShowImportDialog] = useState(false);
   const [selectedProfitMargin, setSelectedProfitMargin] = useState<ProfitMargin | undefined>();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  
+
   const { data: marginsPage, isLoading, isFetching } = useProfitMargins(page, pageSize, filters);
   const profitMargins = marginsPage?.data ?? [];
   const deleteProfitMarginMutation = useDeleteProfitMargin();
@@ -131,33 +132,35 @@ const ProfitMarginPage = () => {
       <MasterListPageSkeleton
         columnCount={9}
         header={
-          <MasterPageHeader
-            title="Profit Margins"
-            description="Configure profit margins and pricing strategies"
-            icon={<TrendingUp className="h-6 w-6 text-teal-600" />}
-            onAdd={handleAdd}
-            onExport={handleExport}
-            onImport={handleImport}
-            canExport={!!marginsPage?.data.length}
-            isScottApi={true}
-          />
-        }
-      />
-    );
-  }
-
-  return (
-    <div className="space-y-6">
       <MasterPageHeader
         title="Profit Margins"
         description="Configure profit margins and pricing strategies"
         icon={<TrendingUp className="h-6 w-6 text-teal-600" />}
         onAdd={handleAdd}
+        onBulkEdit={() => openBulkEditTab('/masters/profit-margin/bulk-edit')}
         onExport={handleExport}
         onImport={handleImport}
-        canExport={profitMargins.length > 0}
+        canExport={!!marginsPage?.data.length}
         isScottApi={true}
       />
+    }
+  />
+);
+}
+
+return (
+<div className="space-y-6">
+  <MasterPageHeader
+    title="Profit Margins"
+    description="Configure profit margins and pricing strategies"
+    icon={<TrendingUp className="h-6 w-6 text-teal-600" />}
+    onAdd={handleAdd}
+    onBulkEdit={() => openBulkEditTab('/masters/profit-margin/bulk-edit')}
+    onExport={handleExport}
+    onImport={handleImport}
+    canExport={profitMargins.length > 0}
+    isScottApi={true}
+  />
 
       <Card>
         <CardContent className="p-6">
@@ -262,6 +265,7 @@ const ProfitMarginPage = () => {
         templateHeaders={importTemplateHeaders}
         sampleData={importSampleData}
       />
+
     </div>
   );
 };

@@ -18,6 +18,16 @@ import { SearchFilter } from '@/components/masters/shared/SearchFilter';
 import { useRmpColors, useCreateRmpColor, useUpdateRmpColor, useDeleteRmpColor } from '@/hooks/masters/useRmpColors';
 import type { RmpColor } from '@/services/masters/rmpColorsService';
 import { Palette, Edit, Trash2 } from 'lucide-react';
+import { openBulkEditTab, BulkImportFromConfigDialog } from '@/components/masters/bulk-edit';
+import {
+  rmpColorsColumns,
+  rmpColorsGetRowId,
+  rmpColorsCreateEmptyRow,
+  rmpColorsToCreatePayload,
+  rmpColorsToUpdatePayload,
+  rmpColorsQueryKey,
+} from '@/components/masters/bulk-edit/configs/rmpColorsConfig';
+import { createRmpColor, updateRmpColor } from '@/services/masters/rmpColorsService';
 import { MasterTableSkeleton } from '@/components/masters/shared/MasterListPageSkeleton';
 import { DateCell } from '@/components/masters/shared/DateCell';
 import { MasterServerPagination } from '@/components/masters/shared/MasterServerPagination';
@@ -45,6 +55,7 @@ const RmpColorsPage = () => {
   const [name, setName] = useState('');
   const [code, setCode] = useState('');
   const [status, setStatus] = useState('active');
+  const [importOpen, setImportOpen] = useState(false);
 
   useEffect(() => {
     setPage(1);
@@ -109,6 +120,8 @@ const RmpColorsPage = () => {
         description="Define color variants with hex codes for RMP products"
         icon={<Palette className="h-6 w-6 text-purple-700" />}
         onAdd={openCreate}
+        onBulkEdit={() => openBulkEditTab('/masters/rmp-colors/bulk-edit')}
+        onImport={() => setImportOpen(true)}
         onExport={handleExport}
         canExport={rows.length > 0}
         isScottApi={true}
@@ -240,6 +253,27 @@ const RmpColorsPage = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <BulkImportFromConfigDialog<RmpColor, ReturnType<typeof rmpColorsToCreatePayload>, ReturnType<typeof rmpColorsToUpdatePayload>>
+        open={importOpen}
+        onOpenChange={setImportOpen}
+        title="RMP Colors"
+        filenameStem="rmp-colors"
+        columns={rmpColorsColumns}
+        createEmptyRow={rmpColorsCreateEmptyRow}
+        toCreatePayload={rmpColorsToCreatePayload}
+        toUpdatePayload={rmpColorsToUpdatePayload}
+        queryKey={rmpColorsQueryKey}
+        createMutation={async (payload) => {
+          await createRmpColor(payload);
+        }}
+        updateMutation={async ({ id, updates }) => {
+          await updateRmpColor(id, updates);
+        }}
+        fetchAll={fetchRmpColors}
+        getRowId={rmpColorsGetRowId}
+        defaultKeyFields={['name']}
+      />
     </div>
   );
 };

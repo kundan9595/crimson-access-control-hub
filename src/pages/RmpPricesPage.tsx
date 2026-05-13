@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -25,6 +25,16 @@ import { MasterServerPagination } from '@/components/masters/shared/MasterServer
 import { exportToCSV, generateExportFilename } from '@/utils/exportUtils';
 import { fetchRmpPrices } from '@/services/masters/rmpPricesService';
 import { config } from '@/config/environment';
+import { openBulkEditTab, BulkImportFromConfigDialog } from '@/components/masters/bulk-edit';
+import {
+  buildRmpPricesColumns,
+  rmpPricesGetRowId,
+  rmpPricesCreateEmptyRow,
+  rmpPricesToCreatePayload,
+  rmpPricesToUpdatePayload,
+  rmpPricesQueryKey,
+} from '@/components/masters/bulk-edit/configs/rmpPricesConfig';
+import { createRmpPrice, updateRmpPrice } from '@/services/masters/rmpPricesService';
 
 const RmpPricesPage = () => {
   const [page, setPage] = useState(1);
@@ -51,10 +61,28 @@ const RmpPricesPage = () => {
   const [rmpSkuId, setRmpSkuId] = useState('');
   const [rmpPriceTypeId, setRmpPriceTypeId] = useState('');
   const [status, setStatus] = useState('active');
+  const [importOpen, setImportOpen] = useState(false);
 
   useEffect(() => {
     setPage(1);
   }, [search]);
+
+  const importColumns = useMemo(() => {
+    const rmpSkuOptions = rmpSkus.map((s) => ({ value: s.id, label: s.name }));
+    const rmpSkuEditorOptions = rmpSkus
+      .filter((s) => s.status === 'active')
+      .map((s) => ({ value: s.id, label: s.name }));
+    const rmpPriceTypeOptions = rmpPriceTypes.map((p) => ({ value: p.id, label: p.name }));
+    const rmpPriceTypeEditorOptions = rmpPriceTypes
+      .filter((p) => p.status === 'active')
+      .map((p) => ({ value: p.id, label: p.name }));
+    return buildRmpPricesColumns({
+      rmpSkuOptions,
+      rmpSkuEditorOptions,
+      rmpPriceTypeOptions,
+      rmpPriceTypeEditorOptions,
+    });
+  }, [rmpSkus, rmpPriceTypes]);
 
   const handleExport = async () => {
     const all = await fetchRmpPrices();
@@ -123,6 +151,8 @@ const RmpPricesPage = () => {
         description="Price rows linked to RMP SKUs and Scott price types"
         icon={<DollarSign className="h-6 w-6 text-amber-600" />}
         onAdd={openCreate}
+        onBulkEdit={() => openBulkEditTab('/masters/rmp-prices/bulk-edit')}
+        onImport={() => setImportOpen(true)}
         onExport={handleExport}
         canExport={rows.length > 0}
         isScottApi={true}
@@ -243,6 +273,12 @@ const RmpPricesPage = () => {
                   <SelectValue placeholder="Select SKU" />
                 </SelectTrigger>
                 <SelectContent>
+                  {/* Show current value first if not in active list (e.g., inactive SKU) */}
+                  {rmpSkuId && !rmpSkus.find(s => s.id === rmpSkuId) && editing?.rmp_sku && (
+                    <SelectItem value={rmpSkuId}>
+                      {editing.rmp_sku.name} (Inactive)
+                    </SelectItem>
+                  )}
                   {rmpSkus.map((s) => (
                     <SelectItem key={s.id} value={s.id}>
                       {s.name}
@@ -258,6 +294,12 @@ const RmpPricesPage = () => {
                   <SelectValue placeholder="Select price type" />
                 </SelectTrigger>
                 <SelectContent>
+                  {/* Show current value first if not in active list (e.g., inactive price type) */}
+                  {rmpPriceTypeId && !rmpPriceTypes.find(pt => pt.id === rmpPriceTypeId) && editing?.rmp_price_type && (
+                    <SelectItem value={rmpPriceTypeId}>
+                      {editing.rmp_price_type.name} {editing.rmp_price_type.price_for ? `(${editing.rmp_price_type.price_for})` : ''} (Inactive)
+                    </SelectItem>
+                  )}
                   {rmpPriceTypes.map((pt) => (
                     <SelectItem key={pt.id} value={pt.id}>
                       {pt.name} ({pt.price_for})
@@ -298,6 +340,35 @@ const RmpPricesPage = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <BulkImportFromConfigDialog<RmpPrice, ReturnType<typeof rmpPricesToCreatePayload>, ReturnType<typeof rmpPricesToUpdatePayload>>
+        open={importOpen}
+        onOpenChange={setImportOpen}
+        title="RMP Prices"
+        filenameStem="rmp-prices"
+        columns={importColumns}
+        createEmptyRow={rmpPricesCreateEmptyRow}
+        toCreatePayload={rmpPricesToCreatePayload}
+        toUpdatePayload={rmpPricesToUpdatePayload}
+        queryKey={rmpPricesQueryKey}
+        createMutation={async (payload) => {
+          await createRmpPrice({
+            name: payload.name,
+            price: payload.price,
+            mrp: payload.mrp,
+            rmp_sku_id: payload.rmp_sku_id,
+            rmp_price_type_id: payload.rmp_price_type_id,
+            status: payload.status,
+            is_deleted: payload.is_deleted,
+          });
+        }}
+        updateMutation={async ({ id, updates }) => {
+          await updateRmpPrice(id, updates);
+        }}
+        fetchAll={fetchRmpPrices}
+        getRowId={rmpPricesGetRowId}
+        defaultKeyFields={['rmp_sku_id', 'rmp_price_type_id']}
+      />
     </div>
   );
 };

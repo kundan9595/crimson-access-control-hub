@@ -1,4 +1,5 @@
 import { config } from '@/config/environment';
+import { getEffectiveScottApiBaseUrl } from '@/config/scottApiRuntime';
 
 const allowedHosts = (): string[] => {
   try {
@@ -16,21 +17,34 @@ const allowedHosts = (): string[] => {
  */
 export function proxifyScottImageUrl(url: string | undefined): string | undefined {
   if (!url) return undefined;
-  if (!import.meta.env.PROD) return url;
-  if (typeof window === 'undefined') return url;
-  if (window.location.protocol !== 'https:') return url;
+  const trimmed = url.trim();
+  if (!trimmed) return undefined;
+  if (/^(data|blob):/i.test(trimmed)) return trimmed;
+
+  let absoluteUrl: string;
+  try {
+    absoluteUrl = /^https?:\/\//i.test(trimmed)
+      ? trimmed
+      : new URL(trimmed.startsWith('/') ? trimmed : `/${trimmed}`, getEffectiveScottApiBaseUrl()).toString();
+  } catch {
+    return trimmed;
+  }
+
+  if (!import.meta.env.PROD) return absoluteUrl;
+  if (typeof window === 'undefined') return absoluteUrl;
+  if (window.location.protocol !== 'https:') return absoluteUrl;
 
   let parsed: URL;
   try {
-    parsed = new URL(url);
+    parsed = new URL(absoluteUrl);
   } catch {
-    return url;
+    return absoluteUrl;
   }
 
-  if (parsed.protocol !== 'http:') return url;
+  if (parsed.protocol !== 'http:') return absoluteUrl;
 
   const hosts = allowedHosts();
-  if (!hosts.includes(parsed.hostname)) return url;
+  if (!hosts.includes(parsed.hostname)) return absoluteUrl;
 
   return `/api/scott-image-proxy?url=${encodeURIComponent(parsed.toString())}`;
 }

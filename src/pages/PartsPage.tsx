@@ -11,6 +11,7 @@ import { PartDialog } from '@/components/masters/PartDialog';
 import BulkImportDialog from '@/components/masters/BulkImportDialog';
 import { useParts, useCreatePart, useUpdatePart, useDeletePart, type PartFilter } from '@/hooks/masters/useParts';
 import type { Part } from '@/hooks/masters/useParts';
+import { openBulkEditTab } from '@/components/masters/bulk-edit';
 import { useAllAddOns } from '@/hooks/masters/useAddOns';
 import { useAllColors } from '@/hooks/masters/useColors';
 import { exportToCSV, generateExportFilename } from '@/utils/exportUtils';
@@ -152,6 +153,7 @@ const PartsPage = () => {
             description="Define and manage product parts and components"
             icon={<Wrench className="h-6 w-6 text-slate-600" />}
             onAdd={handleAdd}
+            onBulkEdit={() => openBulkEditTab('/masters/parts/bulk-edit')}
             onExport={handleExport}
             onImport={handleImport}
             canExport={!!partsPage?.data.length}
@@ -169,6 +171,7 @@ const PartsPage = () => {
         description="Define and manage product parts and components"
         icon={<Wrench className="h-6 w-6 text-slate-600" />}
         onAdd={handleAdd}
+        onBulkEdit={() => openBulkEditTab('/masters/parts/bulk-edit')}
         onExport={handleExport}
         onImport={handleImport}
         canExport={parts.length > 0}
@@ -323,6 +326,7 @@ const PartsPage = () => {
         templateHeaders={templateHeaders}
         sampleData={sampleData}
       />
+
     </div>
   );
 };

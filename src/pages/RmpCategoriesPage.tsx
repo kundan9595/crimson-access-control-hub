@@ -23,13 +23,23 @@ import {
 } from '@/hooks/masters/useRmpCategories';
 import type { RmpCategory } from '@/services/masters/rmpCategoriesService';
 import { LayoutGrid, Edit, Trash2 } from 'lucide-react';
-import { proxifyScottImageUrl } from '@/utils/scottImageProxyUrl';
+import { openBulkEditTab, BulkImportFromConfigDialog } from '@/components/masters/bulk-edit';
+import {
+  rmpCategoriesColumns,
+  rmpCategoriesGetRowId,
+  rmpCategoriesCreateEmptyRow,
+  rmpCategoriesToCreatePayload,
+  rmpCategoriesToUpdatePayload,
+  rmpCategoriesQueryKey,
+} from '@/components/masters/bulk-edit/configs/rmpCategoriesConfig';
+import { createRmpCategory, updateRmpCategory } from '@/services/masters/rmpCategoriesService';
 import { MasterTableSkeleton } from '@/components/masters/shared/MasterListPageSkeleton';
 import { DateCell } from '@/components/masters/shared/DateCell';
 import { MasterServerPagination } from '@/components/masters/shared/MasterServerPagination';
 import { exportToCSV, generateExportFilename } from '@/utils/exportUtils';
 import { fetchRmpCategories } from '@/services/masters/rmpCategoriesService';
 import { config } from '@/config/environment';
+import { ImageCell } from '@/components/masters/shared/ImageCell';
 
 const RmpCategoriesPage = () => {
   const [page, setPage] = useState(1);
@@ -53,6 +63,7 @@ const RmpCategoriesPage = () => {
   const [status, setStatus] = useState('active');
   const imageInputRef = useRef<HTMLInputElement>(null);
   const [imageFile, setImageFile] = useState<File | null>(null);
+  const [importOpen, setImportOpen] = useState(false);
 
   useEffect(() => {
     setPage(1);
@@ -124,6 +135,8 @@ const RmpCategoriesPage = () => {
         description="Ready Made Product categories (Scott dashboard)"
         icon={<LayoutGrid className="h-6 w-6 text-indigo-600" />}
         onAdd={openCreate}
+        onBulkEdit={() => openBulkEditTab('/masters/rmp-categories/bulk-edit')}
+        onImport={() => setImportOpen(true)}
         onExport={handleExport}
         canExport={rows.length > 0}
         isScottApi={true}
@@ -162,15 +175,7 @@ const RmpCategoriesPage = () => {
                   <TableRow key={r.id}>
                     <TableCell className="font-medium">{r.name}</TableCell>
                     <TableCell>
-                      {r.image ? (
-                        <img
-                          src={proxifyScottImageUrl(r.image)}
-                          alt={r.name}
-                          className="w-10 h-10 object-cover rounded-md"
-                        />
-                      ) : (
-                        <span className="text-muted-foreground text-sm">-</span>
-                      )}
+                      <ImageCell src={r.image} alt={r.name} size="md" />
                     </TableCell>
                     <TableCell>{r.position}</TableCell>
                     <TableCell>
@@ -266,6 +271,27 @@ const RmpCategoriesPage = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <BulkImportFromConfigDialog<RmpCategory, ReturnType<typeof rmpCategoriesToCreatePayload>, ReturnType<typeof rmpCategoriesToUpdatePayload>>
+        open={importOpen}
+        onOpenChange={setImportOpen}
+        title="RMP Categories"
+        filenameStem="rmp-categories"
+        columns={rmpCategoriesColumns}
+        createEmptyRow={rmpCategoriesCreateEmptyRow}
+        toCreatePayload={rmpCategoriesToCreatePayload}
+        toUpdatePayload={rmpCategoriesToUpdatePayload}
+        queryKey={rmpCategoriesQueryKey}
+        createMutation={async (payload) => {
+          await createRmpCategory(payload);
+        }}
+        updateMutation={async ({ id, updates }) => {
+          await updateRmpCategory(id, updates);
+        }}
+        fetchAll={fetchRmpCategories}
+        getRowId={rmpCategoriesGetRowId}
+        defaultKeyFields={['name']}
+      />
     </div>
   );
 };

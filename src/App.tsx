@@ -66,6 +66,16 @@ const OrderReportDetailPage = lazy(() => import("./pages/reports/OrderReportDeta
 const RmpOrderReportsPage = lazy(() => import("./pages/reports/RmpOrderReportsPage"));
 const TailorReportsPage = lazy(() => import("./pages/reports/TailorReportsPage"));
 
+// Bulk-edit pages (open in their own browser tab; full-screen, no dashboard chrome)
+const RmpBrandsBulkEditPage = lazy(() => import("./pages/bulk-edit/RmpBrandsBulkEditPage"));
+const RmpCategoriesBulkEditPage = lazy(() => import("./pages/bulk-edit/RmpCategoriesBulkEditPage"));
+const RmpColorsBulkEditPage = lazy(() => import("./pages/bulk-edit/RmpColorsBulkEditPage"));
+const RmpSizesBulkEditPage = lazy(() => import("./pages/bulk-edit/RmpSizesBulkEditPage"));
+const RmpPriceTypesBulkEditPage = lazy(() => import("./pages/bulk-edit/RmpPriceTypesBulkEditPage"));
+const ProfitMarginBulkEditPage = lazy(() => import("./pages/bulk-edit/ProfitMarginBulkEditPage"));
+const PartsBulkEditPage = lazy(() => import("./pages/bulk-edit/PartsBulkEditPage"));
+const RmpPricesBulkEditPage = lazy(() => import("./pages/bulk-edit/RmpPricesBulkEditPage"));
+
 // Configure QueryClient for large-scale applications
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -128,6 +138,18 @@ const App = () => {
                 <Suspense fallback={<PageLoader />}>
                   <Routes>
                   <Route path="/auth" element={<Auth />} />
+
+                  {/* Bulk-edit pages render full-screen (no DashboardLayout). */}
+                  {/* Declared before the dashboard routes so React Router prefers the more specific path. */}
+                  <Route path="/masters/rmp-brands/bulk-edit" element={<ProtectedRoute><RmpBrandsBulkEditPage /></ProtectedRoute>} />
+                  <Route path="/masters/rmp-categories/bulk-edit" element={<ProtectedRoute><RmpCategoriesBulkEditPage /></ProtectedRoute>} />
+                  <Route path="/masters/rmp-colors/bulk-edit" element={<ProtectedRoute><RmpColorsBulkEditPage /></ProtectedRoute>} />
+                  <Route path="/masters/rmp-sizes/bulk-edit" element={<ProtectedRoute><RmpSizesBulkEditPage /></ProtectedRoute>} />
+                  <Route path="/masters/rmp-price-types/bulk-edit" element={<ProtectedRoute><RmpPriceTypesBulkEditPage /></ProtectedRoute>} />
+                  <Route path="/masters/profit-margin/bulk-edit" element={<ProtectedRoute><ProfitMarginBulkEditPage /></ProtectedRoute>} />
+                  <Route path="/masters/parts/bulk-edit" element={<ProtectedRoute><PartsBulkEditPage /></ProtectedRoute>} />
+                  <Route path="/masters/rmp-prices/bulk-edit" element={<ProtectedRoute><RmpPricesBulkEditPage /></ProtectedRoute>} />
+
                   <Route path="/" element={
                     <ProtectedRoute>
                       <DashboardLayout />
