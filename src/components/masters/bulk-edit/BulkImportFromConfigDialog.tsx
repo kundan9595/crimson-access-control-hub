@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -476,6 +476,9 @@ function BulkImportFromConfigDialog<TRow, TCreate, TUpdate>({
       <DialogContent className="max-w-3xl max-h-[90vh] flex flex-col p-0">
         <DialogHeader className="px-6 py-4 border-b shrink-0">
           <DialogTitle>Bulk Import · {title}</DialogTitle>
+          <DialogDescription className="sr-only">
+            Bulk import for {title}. Review CSV rows, then confirm to create or update records.
+          </DialogDescription>
         </DialogHeader>
 
         <div className="flex-1 min-h-0 overflow-y-auto px-6 py-4 space-y-4">
