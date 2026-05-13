@@ -495,13 +495,13 @@ function BulkImportFromConfigDialog<TRow, TCreate, TUpdate>({
               importProgress={importProgress}
               onStartOver={resetAll}
               onConfirmImport={confirmImport}
-              columns={columns}
               keyEligibleColumns={keyEligibleColumns}
               selectedKeys={selectedKeys}
               setSelectedKeys={setSelectedKeys}
               strategy={strategy}
               setStrategy={setStrategy}
               onRefreshExisting={fetchExistingRows}
+              filenameStem={filenameStem}
             />
           )}
 
@@ -697,13 +697,13 @@ interface ReviewStepProps<TRow> {
   importProgress: { completed: number; total: number };
   onStartOver: () => void;
   onConfirmImport: () => void;
-  columns: BulkEditColumn<TRow>[];
   keyEligibleColumns: BulkEditColumn<TRow>[];
   selectedKeys: string[];
   setSelectedKeys: (keys: string[]) => void;
   strategy: DuplicateStrategy;
   setStrategy: (s: DuplicateStrategy) => void;
   onRefreshExisting: () => void;
+  filenameStem: string;
 }
 
 function ReviewStep<TRow>({
@@ -724,9 +724,32 @@ function ReviewStep<TRow>({
   strategy,
   setStrategy,
   onRefreshExisting,
+  filenameStem,
 }: ReviewStepProps<TRow>) {
   const previewLimit = 6;
   const actionableCount = classifiedRows.create.length + classifiedRows.update.length;
+
+  const exportValidationErrorsCsv = useCallback(() => {
+    const errorRows = classifiedRows.error;
+    if (errorRows.length === 0) return;
+    const hasWarnings = errorRows.some((r) => (r.warnings?.length ?? 0) > 0);
+    const headers = ['Row', ...csvHeaders, 'Errors', ...(hasWarnings ? (['Warnings'] as const) : [])];
+    const data = errorRows.map((r) => {
+      const padded = csvHeaders.map((_, i) => r.raw[i] ?? '');
+      const errStr = Object.entries(r.errors)
+        .map(([k, v]) => `${k}: ${v}`)
+        .join(' | ');
+      const row: string[] = [String(r.rowNumber), ...padded, errStr];
+      if (hasWarnings) {
+        row.push(r.warnings?.length ? r.warnings.join(' | ') : '');
+      }
+      return row;
+    });
+    const content = createCSVContent(headers, data);
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+    downloadCSV(content, `${filenameStem}-import-errors-${timestamp}.csv`);
+    toast.success(`Exported ${errorRows.length} error row${errorRows.length === 1 ? '' : 's'} to CSV`);
+  }, [classifiedRows.error, csvHeaders, filenameStem]);
 
   return (
     <div className="space-y-4">
@@ -908,10 +931,26 @@ function ReviewStep<TRow>({
       {classifiedRows.error.length > 0 && (
         <Card className="border-destructive/40">
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm text-destructive">Errors</CardTitle>
-            <CardDescription>
-              Fix these in your CSV and re-upload, or import only the {actionableCount} actionable rows.
-            </CardDescription>
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+              <div className="space-y-1 min-w-0">
+                <CardTitle className="text-sm text-destructive">Errors</CardTitle>
+                <CardDescription>
+                  Fix these in your CSV and re-upload, or import only the {actionableCount} actionable rows. Use the
+                  Export errors CSV button to download every failed row (the list below shows at most 50).
+                </CardDescription>
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="shrink-0"
+                onClick={exportValidationErrorsCsv}
+                disabled={isImporting}
+              >
+                <Download className="h-4 w-4 mr-2" />
+                Export errors CSV
+              </Button>
+            </div>
           </CardHeader>
           <CardContent>
             <ScrollArea className="h-48">

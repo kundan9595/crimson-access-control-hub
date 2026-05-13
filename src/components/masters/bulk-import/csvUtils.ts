@@ -1,3 +1,11 @@
+/** Escape a single CSV field per RFC 4180 (quotes, commas, newlines). */
+export const escapeCsvCell = (value: string | number | null | undefined): string => {
+  const s = value == null ? '' : String(value);
+  if (/[",\n\r]/.test(s)) {
+    return `"${s.replace(/"/g, '""')}"`;
+  }
+  return s;
+};
 
 export const parseCSV = (csv: string): string[][] => {
   const lines = csv.trim().split('\n');
@@ -25,10 +33,9 @@ export const parseCSV = (csv: string): string[][] => {
 };
 
 export const createCSVContent = (headers: string[], data: string[][]): string => {
-  return [
-    headers.join(','),
-    ...data.map(row => row.join(','))
-  ].join('\n');
+  const headerLine = headers.map((h) => escapeCsvCell(h)).join(',');
+  const bodyLines = data.map((row) => row.map((cell) => escapeCsvCell(cell)).join(','));
+  return [headerLine, ...bodyLines].join('\n');
 };
 
 export const downloadCSV = (content: string, filename: string): void => {
