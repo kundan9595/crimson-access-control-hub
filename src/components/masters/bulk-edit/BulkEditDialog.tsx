@@ -6,7 +6,7 @@ import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Skeleton } from '@/components/ui/skeleton';
 import DataGrid, { type Column, type RenderCellProps, type RenderEditCellProps } from 'react-data-grid';
-import { Plus, Trash2, X, Save, AlertCircle, Pencil } from 'lucide-react';
+import { Plus, Trash2, X, Save, AlertCircle, Pencil, CheckSquare } from 'lucide-react';
 import { useQueryClient, type UseMutateAsyncFunction } from '@tanstack/react-query';
 import { useBulkEditGrid } from './useBulkEditGrid';
 import { batchSave } from './batchSave';
@@ -58,6 +58,7 @@ function BulkEditDialog<TRow, TCreate, TUpdate>({
     selectedRows,
     setSelectedRows,
     addNewRow,
+    selectAllRows,
     deleteSelectedRows,
     markRowDirty,
     hasChanges,
@@ -161,6 +162,8 @@ function BulkEditDialog<TRow, TCreate, TUpdate>({
           },
     }));
   }, [columns, getRowId, markRowDirty]);
+
+  const selectableRowCount = useMemo(() => rows.filter((r) => !r.isDeleted).length, [rows]);
 
   // Handle row selection change
   const handleSelectedRowsChange = useCallback(
@@ -362,6 +365,16 @@ function BulkEditDialog<TRow, TCreate, TUpdate>({
               >
                 <Plus className="h-4 w-4 mr-1" />
                 Add Row
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={selectAllRows}
+                disabled={isSaving || selectableRowCount === 0}
+                title="Select every row that is not already marked for deletion"
+              >
+                <CheckSquare className="h-4 w-4 mr-1" />
+                Select all
               </Button>
               <Button
                 variant="outline"

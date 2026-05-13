@@ -15,6 +15,7 @@ interface UseBulkEditGridResult<TRow> {
   selectedRows: Set<string>;
   setSelectedRows: React.Dispatch<React.SetStateAction<Set<string>>>;
   addNewRow: () => void;
+  selectAllRows: () => void;
   deleteSelectedRows: () => void;
   markRowDirty: (rowId: string, newRow: TRow) => void;
   validateRow: (row: GridRowState<TRow>) => Record<string, string>;
@@ -186,6 +187,12 @@ export function useBulkEditGrid<TRow>({
     setRows((prev) => [...prev, newRowState]);
     setSelectedRows(new Set([tempId]));
   }, [createEmptyRow, validateRow]);
+
+  const selectAllRows = useCallback(() => {
+    setSelectedRows(
+      new Set(rows.filter((r) => !r.isDeleted).map((r) => String(getRowId(r.current)))),
+    );
+  }, [rows, getRowId]);
 
   // Delete selected rows
   const deleteSelectedRows = useCallback(() => {
@@ -430,6 +437,7 @@ export function useBulkEditGrid<TRow>({
     selectedRows,
     setSelectedRows,
     addNewRow,
+    selectAllRows,
     deleteSelectedRows,
     markRowDirty,
     validateRow,
