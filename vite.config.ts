@@ -120,32 +120,13 @@ export default defineConfig(({ mode }) => {
       rollupOptions: {
         output: {
           manualChunks: (id) => {
-            // Vendor chunks — only the real `react` / `react-dom` packages.
-            // `id.includes('node_modules/react')` falsely matches react-router-dom,
-            // react-hook-form, react-is, etc., which can create chunk cycles where
-            // icons-vendor imports react-vendor before its exports exist (forwardRef undefined).
-            if (
-              /[/\\]node_modules[/\\]react[/\\]/.test(id) ||
-              /[/\\]node_modules[/\\]react-dom[/\\]/.test(id)
-            ) {
-              return 'react-vendor';
-            }
-            if (id.includes('node_modules/@radix-ui')) {
-              return 'ui-vendor';
-            }
-            if (id.includes('node_modules/react-hook-form') || id.includes('node_modules/@hookform') || id.includes('node_modules/zod')) {
-              return 'form-vendor';
-            }
-            if (id.includes('node_modules/@tanstack/react-query')) {
-              return 'query-vendor';
-            }
+            // Only split stable, large vendor libraries that have NO cross-chunk circular deps.
+            // Aggressive vendor splitting with many small chunks causes Rollup circular-dep TDZ
+            // errors (e.g. icons-vendor accessing React.forwardRef before react-vendor loads).
             if (id.includes('node_modules/@supabase')) {
               return 'supabase-vendor';
             }
-            if (id.includes('node_modules/lucide-react')) {
-              return 'icons-vendor';
-            }
-            // Feature chunks
+            // Feature chunks — group source code by feature area
             if (id.includes('src/components/masters') || id.includes('src/hooks/masters') || id.includes('src/services/masters')) {
               return 'masters';
             }
