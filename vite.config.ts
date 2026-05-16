@@ -99,19 +99,9 @@ export default defineConfig(({ mode }) => {
       // Optimize CSS
       cssCodeSplit: true,
 
-      // Minify options
-      minify: mode === 'production' ? 'terser' : false,
-      terserOptions: mode === 'production' ? {
-        compress: {
-          drop_console: true,
-          drop_debugger: true,
-          pure_funcs: ['console.log', 'console.info', 'console.debug'],
-          passes: 2,
-        },
-        mangle: {
-          toplevel: false,
-        },
-      } : undefined,
+      // Use esbuild for minification — more reliable than terser for complex bundles
+      // and avoids TDZ/variable-mangling bugs that arise with terser's multi-pass compression.
+      minify: mode === 'production' ? 'esbuild' : false,
 
       // Target modern browsers for smaller bundles
       target: 'es2015',
