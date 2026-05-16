@@ -1,6 +1,8 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -24,6 +26,10 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { Shirt, Edit, Trash2, Image as ImageIcon } from 'lucide-react';
 import { MasterTableSkeleton } from '@/components/masters/shared/MasterListPageSkeleton';
 import { MasterServerPagination } from '@/components/masters/shared/MasterServerPagination';
+import { MasterListBulkBar } from '@/components/masters/shared/MasterListBulkBar';
+import { useMasterListBulkSelection } from '@/hooks/masters/useMasterListBulkSelection';
+import { fetchAllRecordIds } from '@/services/scott/scottPagination';
+import { callScottBulkDelete } from '@/services/scott/callScottDashboard';
 import { exportToCSV, generateExportFilename } from '@/utils/exportUtils';
 import { fetchRmpColors } from '@/services/masters/rmpColorsService';
 import { fetchRmpSkus } from '@/services/masters/rmpSkusService';
@@ -40,7 +46,13 @@ import {
   rmpClassesToUpdatePayload,
   rmpClassesQueryKey,
 } from '@/components/masters/bulk-edit/configs/rmpClassesConfig';
-import { createRmpClass, fetchRmpClasses, fetchRmpClassesForBulkImport, updateRmpClass } from '@/services/masters/rmpClassesService';
+import {
+  createRmpClass,
+  fetchRmpClasses,
+  fetchRmpClassesForBulkImport,
+  fetchRmpClassesPaginated,
+  updateRmpClass,
+} from '@/services/masters/rmpClassesService';
 
 /** Radix Select reserves empty string; use a sentinel for optional "None" rows. */
 const SELECT_NONE = '__none__';
@@ -155,6 +167,8 @@ const RmpClassesPage = () => {
   const deleteMut = useDeleteRmpClass();
   const { data: rmpColors = [] } = useAllRmpColors();
   const { data: allRmpSkus = [], isLoading: skusLoading } = useAllRmpSkus();
+  const queryClient = useQueryClient();
+  const bulk = useMasterListBulkSelection();
 
   const colorById = useMemo(
     () => new Map(rmpColors.map((c) => [c.id, c] as const)),
@@ -190,6 +204,21 @@ const RmpClassesPage = () => {
   useEffect(() => {
     setPage(1);
   }, [search]);
+
+  useEffect(() => {
+    bulk.clearSelection();
+  }, [search, bulk.clearSelection]);
+
+  const pageRowIds = useMemo(() => rows.map((r) => r.id), [rows]);
+  const listTotal = rmpClassesPage?.totalCount ?? rows.length;
+
+  const fetchAllMatchingIds = useCallback(
+    () =>
+      fetchAllRecordIds((pp) =>
+        fetchRmpClassesPaginated(pp, search ? { search } : undefined),
+      ),
+    [search],
+  );
 
   const importColumns = useMemo(() => {
     const rmpColorOptions = rmpColors.map((c) => ({ value: c.id, label: `${c.name} (${c.code})` }));
@@ -300,10 +329,25 @@ const RmpClassesPage = () => {
             value={search}
             onChange={setSearch}
             resultCount={rows.length}
-            totalCount={rmpClassesPage?.totalCount ?? rows.length}
+            totalCount={listTotal}
           />
+          {listTotal > 0 && (
+            <MasterListBulkBar
+              entityPlural="RMP classes"
+              totalCount={listTotal}
+              pageRowIds={pageRowIds}
+              selection={bulk}
+              fetchAllMatchingIds={fetchAllMatchingIds}
+              deleteOne={(id) => deleteMut.mutateAsync(id)}
+              bulkDeleteAll={(ids) => callScottBulkDelete('rmp_classes', ids)}
+              disabled={isLoading || isFetching}
+              onAfterBulk={() => {
+                void queryClient.invalidateQueries({ queryKey: ['rmp_classes'] });
+              }}
+            />
+          )}
               {isLoading ? (
-            <MasterTableSkeleton showToolbar={false} columnCount={9} className="mt-6" />
+            <MasterTableSkeleton showToolbar={false} columnCount={10} className="mt-6" />
           ) : rows.length === 0 ? (
             <p className="text-center text-muted-foreground py-8">
               {search ? 'No RMP classes match your search' : 'No RMP classes found'}
@@ -312,6 +356,14 @@ const RmpClassesPage = () => {
             <Table className="mt-6">
               <TableHeader>
                 <TableRow>
+                  <TableHead className="w-10 p-2">
+                    <Checkbox
+                      checked={bulk.pageHeaderChecked(pageRowIds)}
+                      onCheckedChange={() => bulk.togglePageHeader(pageRowIds)}
+                      disabled={rows.length === 0}
+                      aria-label="Select all rows on this page"
+                    />
+                  </TableHead>
                   <TableHead>Name</TableHead>
                   <TableHead>Images</TableHead>
                   <TableHead>Position</TableHead>
@@ -338,6 +390,13 @@ const RmpClassesPage = () => {
                             .join(', ')} +${linkedSkus.length - 2}`;
                   return (
                   <TableRow key={r.id}>
+                    <TableCell className="w-10 p-2 align-middle">
+                      <Checkbox
+                        checked={bulk.selectedIds.has(r.id)}
+                        onCheckedChange={() => bulk.toggleRow(r.id)}
+                        aria-label={`Select ${r.name}`}
+                      />
+                    </TableCell>
                     <TableCell className="font-medium">{r.name}</TableCell>
                     <TableCell>
                       <ImageGallery row={r} />

@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   fetchRmpClasses,
+  fetchRmpClassesForBulkImport,
   fetchRmpClassesPaginated,
   createRmpClass,
   updateRmpClass,
@@ -29,6 +30,14 @@ export const useAllRmpClasses = () => {
   return useQuery({
     queryKey: ['rmp_classes', 'all'],
     queryFn: fetchRmpClasses,
+    staleTime: config.cache.staleTime,
+  });
+};
+
+export const useAllRmpClassesForImport = () => {
+  return useQuery({
+    queryKey: ['rmp_classes', 'all_for_import'],
+    queryFn: fetchRmpClassesForBulkImport,
     staleTime: config.cache.staleTime,
   });
 };

@@ -1,9 +1,11 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Edit, Trash2, Wrench } from 'lucide-react';
 import { MasterPageHeader } from '@/components/masters/shared/MasterPageHeader';
 import { SearchFilter } from '@/components/masters/shared/SearchFilter';
@@ -17,7 +19,11 @@ import { useAllColors } from '@/hooks/masters/useColors';
 import { exportToCSV, generateExportFilename } from '@/utils/exportUtils';
 import { MasterListPageSkeleton } from '@/components/masters/shared/MasterListPageSkeleton';
 import { MasterServerPagination } from '@/components/masters/shared/MasterServerPagination';
-import { fetchParts } from '@/services/masters/partsServiceScott';
+import { MasterListBulkBar } from '@/components/masters/shared/MasterListBulkBar';
+import { useMasterListBulkSelection } from '@/hooks/masters/useMasterListBulkSelection';
+import { fetchAllRecordIds } from '@/services/scott/scottPagination';
+import { callScottBulkDelete } from '@/services/scott/callScottDashboard';
+import { fetchParts, fetchPartsPaginated } from '@/services/masters/partsServiceScott';
 import { config } from '@/config/environment';
 
 const PartsPage = () => {
@@ -34,6 +40,8 @@ const PartsPage = () => {
   const createPartMutation = useCreatePart();
   const updatePartMutation = useUpdatePart();
   const deletePartMutation = useDeletePart();
+  const queryClient = useQueryClient();
+  const bulk = useMasterListBulkSelection();
 
   // Fetch lookups for resolving relationships
   const { data: addOns } = useAllAddOns();
@@ -72,6 +80,21 @@ const PartsPage = () => {
     if (positionA !== positionB) return positionA - positionB;
     return a.name.localeCompare(b.name);
   });
+
+  useEffect(() => {
+    bulk.clearSelection();
+  }, [searchTerm, bulk.clearSelection]);
+
+  const pageRowIds = useMemo(() => sortedParts.map((p) => p.id), [sortedParts]);
+  const listTotal = partsPage?.totalCountIsExact ? partsPage.totalCount : parts.length;
+
+  const fetchAllMatchingIds = useCallback(
+    () =>
+      fetchAllRecordIds((pp) =>
+        fetchPartsPaginated(pp, searchTerm ? { search: searchTerm } : undefined),
+      ),
+    [searchTerm],
+  );
 
   const handleAdd = () => {
     setEditingPart(undefined);
@@ -146,7 +169,7 @@ const PartsPage = () => {
   if (isLoading) {
     return (
       <MasterListPageSkeleton
-        columnCount={8}
+        columnCount={9}
         header={
           <MasterPageHeader
             title="Parts"
@@ -189,12 +212,35 @@ const PartsPage = () => {
               partsPage?.totalCountIsExact ? partsPage.totalCount : parts.length
             }
           />
+          {listTotal > 0 && (
+            <MasterListBulkBar
+              entityPlural="parts"
+              totalCount={listTotal}
+              pageRowIds={pageRowIds}
+              selection={bulk}
+              fetchAllMatchingIds={fetchAllMatchingIds}
+              deleteOne={(id) => deletePartMutation.mutateAsync(id)}
+              bulkDeleteAll={(ids) => callScottBulkDelete('parts', ids)}
+              disabled={isLoading}
+              onAfterBulk={() => {
+                void queryClient.invalidateQueries({ queryKey: ['parts'] });
+              }}
+            />
+          )}
           
           <div className="mt-6">
             {sortedParts.length > 0 ? (
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead className="w-10 p-2">
+                      <Checkbox
+                        checked={bulk.pageHeaderChecked(pageRowIds)}
+                        onCheckedChange={() => bulk.togglePageHeader(pageRowIds)}
+                        disabled={sortedParts.length === 0}
+                        aria-label="Select all rows on this page"
+                      />
+                    </TableHead>
                     <TableHead>Name</TableHead>
                     <TableHead className="w-24">Order Criteria</TableHead>
                     <TableHead className="w-20">Sort Position</TableHead>
@@ -211,6 +257,13 @@ const PartsPage = () => {
                     const linkedColors = resolveColors(part.selected_colors);
                     return (
                     <TableRow key={part.id}>
+                      <TableCell className="w-10 p-2 align-middle">
+                        <Checkbox
+                          checked={bulk.selectedIds.has(part.id)}
+                          onCheckedChange={() => bulk.toggleRow(part.id)}
+                          aria-label={`Select ${part.name}`}
+                        />
+                      </TableCell>
                       <TableCell className="font-medium">{part.name}</TableCell>
                       <TableCell className="text-center">
                         {part.order_criteria ? (

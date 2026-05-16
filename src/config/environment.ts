@@ -49,8 +49,8 @@ export const config = {
   // Pagination Configuration
   pagination: {
     defaultPageSize: 20,
-    maxPageSize: 100,
-    pageSizeOptions: [10, 20, 50, 100],
+    maxPageSize: 10000,
+    pageSizeOptions: [10, 20, 50, 100, 1000, 10000],
   },
 
   // Cache Configuration

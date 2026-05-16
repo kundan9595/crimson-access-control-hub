@@ -1,6 +1,8 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -17,7 +19,7 @@ import { MasterPageHeader } from '@/components/masters/shared/MasterPageHeader';
 import { SearchFilter } from '@/components/masters/shared/SearchFilter';
 import { useRmpSkus, useCreateRmpSku, useUpdateRmpSku, useDeleteRmpSku } from '@/hooks/masters/useRmpSkus';
 import { useAllRmpSizes } from '@/hooks/masters/useRmpSizes';
-import { useAllRmpClasses } from '@/hooks/masters/useRmpClasses';
+import { useAllRmpClasses, useAllRmpClassesForImport } from '@/hooks/masters/useRmpClasses';
 import { useAllRmpBrands } from '@/hooks/masters/useRmpBrands';
 import { useAllRmpCategories } from '@/hooks/masters/useRmpCategories';
 import type { RmpSku } from '@/services/masters/rmpSkusService';
@@ -26,8 +28,12 @@ import { proxifyScottImageUrl } from '@/utils/scottImageProxyUrl';
 import { MasterTableSkeleton } from '@/components/masters/shared/MasterListPageSkeleton';
 import { DateCell } from '@/components/masters/shared/DateCell';
 import { MasterServerPagination } from '@/components/masters/shared/MasterServerPagination';
+import { MasterListBulkBar } from '@/components/masters/shared/MasterListBulkBar';
+import { useMasterListBulkSelection } from '@/hooks/masters/useMasterListBulkSelection';
+import { fetchAllScottPages } from '@/services/scott/scottPagination';
+import { callScottBulkDelete } from '@/services/scott/callScottDashboard';
 import { exportToCSV, generateExportFilename } from '@/utils/exportUtils';
-import { fetchRmpSkus, createRmpSku, updateRmpSku } from '@/services/masters/rmpSkusService';
+import { fetchRmpSkus, fetchRmpSkusForBulkImport, createRmpSku, updateRmpSku, fetchRmpSkusPaginated } from '@/services/masters/rmpSkusService';
 import { fetchRmpSizes } from '@/services/masters/rmpSizesService';
 import { fetchRmpClasses } from '@/services/masters/rmpClassesService';
 import { fetchRmpBrands } from '@/services/masters/rmpBrandsService';
@@ -60,9 +66,12 @@ const RmpSkusPage = () => {
   const createMut = useCreateRmpSku();
   const updateMut = useUpdateRmpSku();
   const deleteMut = useDeleteRmpSku();
+  const queryClient = useQueryClient();
+  const bulk = useMasterListBulkSelection();
   
   const { data: rmpSizes = [] } = useAllRmpSizes();
   const { data: rmpClasses = [] } = useAllRmpClasses();
+  const { data: rmpClassesForImport = [], isLoading: isLoadingClassesForImport } = useAllRmpClassesForImport();
   const { data: rmpBrands = [] } = useAllRmpBrands();
   const { data: rmpCategories = [] } = useAllRmpCategories();
 
@@ -122,9 +131,26 @@ const RmpSkusPage = () => {
     setPage(1);
   }, [search]);
 
+  useEffect(() => {
+    bulk.clearSelection();
+  }, [search, bulk.clearSelection]);
+
+  const pageRowIds = useMemo(() => rows.map((r) => r.id), [rows]);
+  const listTotal = rmpSkusPage?.totalCount ?? rows.length;
+
+  const fetchAllMatchingIds = useCallback(async () => {
+    const term = search.trim().toLowerCase();
+    const allRows = await fetchAllScottPages((pp) => fetchRmpSkusPaginated(pp), {
+      pageSize: 100,
+      maxPages: 250,
+    });
+    if (!term) return allRows.map((r) => r.id);
+    return allRows.filter((r) => r.name.toLowerCase().includes(term)).map((r) => r.id);
+  }, [search]);
+
   const importColumns = useMemo(() => {
     const rmpSizeOptions = rmpSizes.map((s) => ({ value: s.id, label: s.name }));
-    const rmpClassOptions = rmpClasses.map((c) => ({ value: c.id, label: c.name }));
+    const rmpClassOptions = rmpClassesForImport.map((c) => ({ value: c.id, label: c.name }));
     const rmpBrandOptions = rmpBrands.map((b) => ({ value: b.id, label: b.name }));
     const rmpCategoryOptions = rmpCategories.map((c) => ({ value: c.id, label: c.name }));
     return buildRmpSkusColumns({
@@ -133,7 +159,7 @@ const RmpSkusPage = () => {
       rmpBrandOptions,
       rmpCategoryOptions,
     });
-  }, [rmpSizes, rmpClasses, rmpBrands, rmpCategories]);
+  }, [rmpSizes, rmpClassesForImport, rmpBrands, rmpCategories]);
 
   const handleExport = async () => {
     const [all, sizes, classes, brands] = await Promise.all([
@@ -252,10 +278,25 @@ const RmpSkusPage = () => {
             value={search}
             onChange={setSearch}
             resultCount={rows.length}
-            totalCount={rmpSkusPage?.totalCount ?? rows.length}
+            totalCount={listTotal}
           />
+          {listTotal > 0 && (
+            <MasterListBulkBar
+              entityPlural="RMP SKUs"
+              totalCount={listTotal}
+              pageRowIds={pageRowIds}
+              selection={bulk}
+              fetchAllMatchingIds={fetchAllMatchingIds}
+              deleteOne={(id) => deleteMut.mutateAsync(id)}
+              bulkDeleteAll={(ids) => callScottBulkDelete('rmp_skus', ids)}
+              disabled={isLoading || isFetching}
+              onAfterBulk={() => {
+                void queryClient.invalidateQueries({ queryKey: ['rmp_skus'] });
+              }}
+            />
+          )}
           {isLoading ? (
-            <MasterTableSkeleton showToolbar={false} columnCount={12} className="mt-6" />
+            <MasterTableSkeleton showToolbar={false} columnCount={13} className="mt-6" />
           ) : rows.length === 0 ? (
             <p className="text-center text-muted-foreground py-8">
               {search ? 'No RMP SKUs match your search' : 'No RMP SKUs found'}
@@ -264,6 +305,14 @@ const RmpSkusPage = () => {
             <Table className="mt-6">
               <TableHeader>
                 <TableRow>
+                  <TableHead className="w-10 p-2">
+                    <Checkbox
+                      checked={bulk.pageHeaderChecked(pageRowIds)}
+                      onCheckedChange={() => bulk.togglePageHeader(pageRowIds)}
+                      disabled={rows.length === 0}
+                      aria-label="Select all rows on this page"
+                    />
+                  </TableHead>
                   <TableHead>Name</TableHead>
                   <TableHead>Image</TableHead>
                   <TableHead>CGST</TableHead>
@@ -282,6 +331,13 @@ const RmpSkusPage = () => {
               <TableBody>
                 {rows.map((r) => (
                   <TableRow key={r.id}>
+                    <TableCell className="w-10 p-2 align-middle">
+                      <Checkbox
+                        checked={bulk.selectedIds.has(r.id)}
+                        onCheckedChange={() => bulk.toggleRow(r.id)}
+                        aria-label={`Select ${r.name}`}
+                      />
+                    </TableCell>
                     <TableCell className="font-medium">{r.name}</TableCell>
                     <TableCell>
                       {r.image ? (
@@ -466,6 +522,7 @@ const RmpSkusPage = () => {
         title="RMP SKUs"
         filenameStem="rmp-skus"
         columns={importColumns}
+        columnsLoading={isLoadingClassesForImport}
         createEmptyRow={rmpSkusCreateEmptyRow}
         toCreatePayload={rmpSkusToCreatePayload}
         toUpdatePayload={rmpSkusToUpdatePayload}
@@ -487,7 +544,7 @@ const RmpSkusPage = () => {
         updateMutation={async ({ id, updates }) => {
           await updateRmpSku(id, updates);
         }}
-        fetchAll={fetchRmpSkus}
+        fetchAll={fetchRmpSkusForBulkImport}
         getRowId={rmpSkusGetRowId}
         defaultKeyFields={['name']}
       />

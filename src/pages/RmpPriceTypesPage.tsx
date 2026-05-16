@@ -1,6 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -32,11 +34,19 @@ import {
   rmpPriceTypesToUpdatePayload,
   rmpPriceTypesQueryKey,
 } from '@/components/masters/bulk-edit/configs/rmpPriceTypesConfig';
-import { createRmpPriceType, updateRmpPriceType } from '@/services/masters/rmpPriceTypesService';
+import {
+  createRmpPriceType,
+  updateRmpPriceType,
+  fetchRmpPriceTypes,
+  fetchRmpPriceTypesPaginated,
+} from '@/services/masters/rmpPriceTypesService';
 import { MasterTableSkeleton } from '@/components/masters/shared/MasterListPageSkeleton';
 import { MasterServerPagination } from '@/components/masters/shared/MasterServerPagination';
+import { MasterListBulkBar } from '@/components/masters/shared/MasterListBulkBar';
+import { useMasterListBulkSelection } from '@/hooks/masters/useMasterListBulkSelection';
+import { fetchAllRecordIds } from '@/services/scott/scottPagination';
+import { callScottBulkDelete } from '@/services/scott/callScottDashboard';
 import { exportToCSV, generateExportFilename } from '@/utils/exportUtils';
-import { fetchRmpPriceTypes } from '@/services/masters/rmpPriceTypesService';
 import { config } from '@/config/environment';
 
 const RmpPriceTypesPage = () => {
@@ -53,6 +63,8 @@ const RmpPriceTypesPage = () => {
   const createMut = useCreateRmpPriceType();
   const updateMut = useUpdateRmpPriceType();
   const deleteMut = useDeleteRmpPriceType();
+  const queryClient = useQueryClient();
+  const bulk = useMasterListBulkSelection();
 
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<RmpPriceType | null>(null);
@@ -65,6 +77,21 @@ const RmpPriceTypesPage = () => {
   useEffect(() => {
     setPage(1);
   }, [search]);
+
+  useEffect(() => {
+    bulk.clearSelection();
+  }, [search, bulk.clearSelection]);
+
+  const pageRowIds = useMemo(() => rows.map((r) => r.id), [rows]);
+  const listTotal = pageData?.totalCount ?? rows.length;
+
+  const fetchAllMatchingIds = useCallback(
+    () =>
+      fetchAllRecordIds((pp) =>
+        fetchRmpPriceTypesPaginated(pp, search ? { search } : undefined),
+      ),
+    [search],
+  );
 
   const handleExport = async () => {
     const all = await fetchRmpPriceTypes();
@@ -140,10 +167,25 @@ const RmpPriceTypesPage = () => {
             value={search}
             onChange={setSearch}
             resultCount={rows.length}
-            totalCount={pageData?.totalCount ?? rows.length}
+            totalCount={listTotal}
           />
+          {listTotal > 0 && (
+            <MasterListBulkBar
+              entityPlural="RMP price types"
+              totalCount={listTotal}
+              pageRowIds={pageRowIds}
+              selection={bulk}
+              fetchAllMatchingIds={fetchAllMatchingIds}
+              deleteOne={(id) => deleteMut.mutateAsync(id)}
+              bulkDeleteAll={(ids) => callScottBulkDelete('rmp_price_types', ids)}
+              disabled={isLoading || isFetching}
+              onAfterBulk={() => {
+                void queryClient.invalidateQueries({ queryKey: ['rmp_price_types'] });
+              }}
+            />
+          )}
           {isLoading ? (
-            <MasterTableSkeleton showToolbar={false} columnCount={8} className="mt-6" />
+            <MasterTableSkeleton showToolbar={false} columnCount={9} className="mt-6" />
           ) : rows.length === 0 ? (
             <p className="text-center text-muted-foreground py-8">
               {search ? 'No price types match your search' : 'No price types found'}
@@ -152,6 +194,14 @@ const RmpPriceTypesPage = () => {
             <Table className="mt-6">
               <TableHeader>
                 <TableRow>
+                  <TableHead className="w-10 p-2">
+                    <Checkbox
+                      checked={bulk.pageHeaderChecked(pageRowIds)}
+                      onCheckedChange={() => bulk.togglePageHeader(pageRowIds)}
+                      disabled={rows.length === 0}
+                      aria-label="Select all rows on this page"
+                    />
+                  </TableHead>
                   <TableHead>Name</TableHead>
                   <TableHead>Price For</TableHead>
                   <TableHead>Zone ID</TableHead>
@@ -165,6 +215,13 @@ const RmpPriceTypesPage = () => {
               <TableBody>
                 {rows.map((r) => (
                   <TableRow key={r.id}>
+                    <TableCell className="w-10 p-2 align-middle">
+                      <Checkbox
+                        checked={bulk.selectedIds.has(r.id)}
+                        onCheckedChange={() => bulk.toggleRow(r.id)}
+                        aria-label={`Select ${r.name}`}
+                      />
+                    </TableCell>
                     <TableCell className="font-medium">{r.name}</TableCell>
                     <TableCell className="capitalize">{r.price_for}</TableCell>
                     <TableCell className="font-mono text-xs">{r.zone_id}</TableCell>

@@ -1,7 +1,9 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -23,8 +25,17 @@ import type { RmpBrand } from '@/services/masters/rmpBrandsService';
 import { Package, Edit, Trash2 } from 'lucide-react';
 import { MasterTableSkeleton } from '@/components/masters/shared/MasterListPageSkeleton';
 import { MasterServerPagination } from '@/components/masters/shared/MasterServerPagination';
+import { MasterListBulkBar } from '@/components/masters/shared/MasterListBulkBar';
+import { useMasterListBulkSelection } from '@/hooks/masters/useMasterListBulkSelection';
+import { fetchAllRecordIds } from '@/services/scott/scottPagination';
+import { callScottBulkDelete } from '@/services/scott/callScottDashboard';
 import { exportToCSV, generateExportFilename } from '@/utils/exportUtils';
-import { fetchRmpBrands, createRmpBrand, updateRmpBrand } from '@/services/masters/rmpBrandsService';
+import {
+  fetchRmpBrands,
+  fetchRmpBrandsPaginated,
+  createRmpBrand,
+  updateRmpBrand,
+} from '@/services/masters/rmpBrandsService';
 import { fetchBrands } from '@/services/masters/brandsService';
 import { config } from '@/config/environment';
 import { openBulkEditTab, BulkImportFromConfigDialog } from '@/components/masters/bulk-edit';
@@ -45,7 +56,7 @@ const RmpBrandsPage = () => {
   const [pageSize, setPageSize] = useState(config.pagination.defaultPageSize);
   const [search, setSearch] = useState('');
 
-  const { data: rmpBrandsPage, isLoading, isFetching } = useRmpBrands(
+  const { data: rmpBrandsPage, isLoading, isFetching, error, isError } = useRmpBrands(
     page,
     pageSize,
     search ? { search } : undefined
@@ -54,6 +65,8 @@ const RmpBrandsPage = () => {
   const createMut = useCreateRmpBrand();
   const updateMut = useUpdateRmpBrand();
   const deleteMut = useDeleteRmpBrand();
+  const queryClient = useQueryClient();
+  const bulk = useMasterListBulkSelection();
   const { data: authorizedBrands = [] } = useAllBrands();
 
   const authorizedBrandById = useMemo(
@@ -85,6 +98,21 @@ const RmpBrandsPage = () => {
   useEffect(() => {
     setPage(1);
   }, [search]);
+
+  useEffect(() => {
+    bulk.clearSelection();
+  }, [search, bulk.clearSelection]);
+
+  const pageRowIds = useMemo(() => rows.map((r) => r.id), [rows]);
+  const listTotal = rmpBrandsPage?.totalCount ?? rows.length;
+
+  const fetchAllMatchingIds = useCallback(
+    () =>
+      fetchAllRecordIds((pp) =>
+        fetchRmpBrandsPaginated(pp, search ? { search } : undefined),
+      ),
+    [search],
+  );
 
   const handleExport = async () => {
     const [all, authBrands] = await Promise.all([fetchRmpBrands(), fetchBrands()]);
@@ -185,10 +213,30 @@ const RmpBrandsPage = () => {
             value={search}
             onChange={setSearch}
             resultCount={rows.length}
-            totalCount={rmpBrandsPage?.totalCount ?? rows.length}
+            totalCount={listTotal}
           />
-          {isLoading ? (
-            <MasterTableSkeleton showToolbar={false} columnCount={8} className="mt-6" />
+          {listTotal > 0 && (
+            <MasterListBulkBar
+              entityPlural="RMP brands"
+              totalCount={listTotal}
+              pageRowIds={pageRowIds}
+              selection={bulk}
+              fetchAllMatchingIds={fetchAllMatchingIds}
+              deleteOne={(id) => deleteMut.mutateAsync(id)}
+              bulkDeleteAll={(ids) => callScottBulkDelete('rmp_brands', ids)}
+              disabled={isLoading || isFetching}
+              onAfterBulk={() => {
+                void queryClient.invalidateQueries({ queryKey: ['rmp_brands'] });
+              }}
+            />
+          )}
+          {isError ? (
+            <div className="mt-6 rounded-md border border-destructive/50 bg-destructive/10 p-4 text-sm text-destructive">
+              <p className="font-semibold">Failed to load RMP brands</p>
+              <p className="mt-1 text-xs opacity-80">{error instanceof Error ? error.message : 'Unknown error'}</p>
+            </div>
+          ) : isLoading ? (
+            <MasterTableSkeleton showToolbar={false} columnCount={9} className="mt-6" />
           ) : rows.length === 0 ? (
             <p className="text-center text-muted-foreground py-8">
               {search ? 'No RMP brands match your search' : 'No RMP brands found'}
@@ -197,6 +245,14 @@ const RmpBrandsPage = () => {
             <Table className="mt-6">
               <TableHeader>
                 <TableRow>
+                  <TableHead className="w-10 p-2">
+                    <Checkbox
+                      checked={bulk.pageHeaderChecked(pageRowIds)}
+                      onCheckedChange={() => bulk.togglePageHeader(pageRowIds)}
+                      disabled={rows.length === 0}
+                      aria-label="Select all rows on this page"
+                    />
+                  </TableHead>
                   <TableHead>Name</TableHead>
                   <TableHead>Image</TableHead>
                   <TableHead>Position</TableHead>
@@ -213,6 +269,13 @@ const RmpBrandsPage = () => {
                   const authBrand = resolveAuthorizedBrand(r);
                   return (
                   <TableRow key={r.id}>
+                    <TableCell className="w-10 p-2 align-middle">
+                      <Checkbox
+                        checked={bulk.selectedIds.has(r.id)}
+                        onCheckedChange={() => bulk.toggleRow(r.id)}
+                        aria-label={`Select ${r.name}`}
+                      />
+                    </TableCell>
                     <TableCell className="font-medium">{r.name}</TableCell>
                     <TableCell>
                       <ImageCell src={r.image} alt={r.name} size="sm" />

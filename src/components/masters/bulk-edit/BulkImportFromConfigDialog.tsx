@@ -29,6 +29,8 @@ export interface BulkImportFromConfigDialogProps<TRow, TCreate, TUpdate> {
   /** Filename stem used for the CSV template, e.g. "rmp-brands" → "rmp-brands-template.csv" */
   filenameStem: string;
   columns: BulkEditColumn<TRow>[];
+  /** When true, enum option data is still loading — disables file upload until ready */
+  columnsLoading?: boolean;
   createEmptyRow: () => TRow;
   toCreatePayload: (row: TRow) => TCreate;
   toUpdatePayload: (row: TRow) => TUpdate;
@@ -43,7 +45,7 @@ export interface BulkImportFromConfigDialogProps<TRow, TCreate, TUpdate> {
   defaultKeyFields?: Array<keyof TRow & string>;
 }
 
-type Step = 'upload' | 'review' | 'complete';
+type Step = 'upload' | 'configure' | 'review' | 'complete';
 type DuplicateStrategy = 'update' | 'skip' | 'create_new';
 type RowAction = 'create' | 'update' | 'skip' | 'error';
 
@@ -82,6 +84,7 @@ function BulkImportFromConfigDialog<TRow, TCreate, TUpdate>({
   title,
   filenameStem,
   columns,
+  columnsLoading = false,
   createEmptyRow,
   toCreatePayload,
   toUpdatePayload,
@@ -245,10 +248,38 @@ function BulkImportFromConfigDialog<TRow, TCreate, TUpdate>({
   const existingIndex = useMemo(() => {
     const index = new Map<string, TRow>();
     if (selectedKeys.length === 0) return index;
+
+    const emptyKeyRows: TRow[] = [];
+    const overwrittenKeys: Array<{ key: string; prev: TRow; next: TRow }> = [];
+
     for (const row of existingRows) {
       const key = normalizeKeyValue(row, selectedKeys);
-      if (key) {
-        index.set(key, row);
+      if (!key) {
+        emptyKeyRows.push(row);
+        continue;
+      }
+      if (index.has(key)) {
+        overwrittenKeys.push({ key, prev: index.get(key)!, next: row });
+      }
+      index.set(key, row);
+    }
+
+    if (import.meta.env.DEV) {
+      console.log(
+        `[BulkImport] existingIndex built: ${index.size} entries from ${existingRows.length} fetched rows`,
+        { selectedKeys },
+      );
+      if (emptyKeyRows.length > 0) {
+        console.warn(
+          `[BulkImport] ${emptyKeyRows.length} DB rows had EMPTY key — skipped from index:`,
+          emptyKeyRows.map((r) => ({ id: (r as Record<string, unknown>).id, name: (r as Record<string, unknown>).name })),
+        );
+      }
+      if (overwrittenKeys.length > 0) {
+        const dupKeys = overwrittenKeys.map((o) => o.key).join(', ');
+        console.warn(
+          `[BulkImport] ${overwrittenKeys.length} DB rows share a key (duplicate names) — DUPLICATE KEYS: ${dupKeys}`,
+        );
       }
     }
     return index;
@@ -259,6 +290,9 @@ function BulkImportFromConfigDialog<TRow, TCreate, TUpdate>({
     setIsFetchingExisting(true);
     try {
       const rows = await fetchAll();
+      if (import.meta.env.DEV) {
+        console.log(`[BulkImport] fetchAll returned ${rows.length} existing rows`);
+      }
       setExistingRows(rows);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : 'Failed to fetch existing records');
@@ -267,15 +301,19 @@ function BulkImportFromConfigDialog<TRow, TCreate, TUpdate>({
     }
   }, [fetchAll]);
 
-  useEffect(() => {
-    if (step === 'review' && existingRows.length === 0 && !isFetchingExisting) {
-      void fetchExistingRows();
-    }
-  }, [step, existingRows.length, isFetchingExisting, fetchExistingRows]);
+  const runMatch = useCallback(async () => {
+    await fetchExistingRows();
+    setStep('review');
+  }, [fetchExistingRows]);
 
   // Re-classify parsed rows whenever keys, strategy, or existing data changes
   useEffect(() => {
     if (parsedRows.length === 0) return;
+
+    const misses: Array<{ rowNumber: number; keyValue: string; raw: string[] }> = [];
+
+    // Track keys seen within this CSV to detect intra-CSV duplicates
+    const seenCsvKeys = new Map<string, number>(); // key → first rowNumber
 
     const classified = parsedRows.map((pr): ParsedRow<TRow> => {
       if (!pr.valid || !pr.data) {
@@ -283,9 +321,26 @@ function BulkImportFromConfigDialog<TRow, TCreate, TUpdate>({
       }
 
       const keyValue = normalizeKeyValue(pr.data, selectedKeys);
+
+      // Detect duplicate keys within the CSV itself
+      if (keyValue && seenCsvKeys.has(keyValue)) {
+        const firstRow = seenCsvKeys.get(keyValue)!;
+        return {
+          ...pr,
+          action: 'error',
+          keyValue,
+          errors: {
+            ...(pr.errors ?? {}),
+            _duplicate: `Duplicate of row ${firstRow} — same key "${keyValue}" already appears in this file`,
+          },
+        };
+      }
+      if (keyValue) seenCsvKeys.set(keyValue, pr.rowNumber);
+
       const matched = existingIndex.get(keyValue);
 
       if (!matched) {
+        misses.push({ rowNumber: pr.rowNumber, keyValue, raw: pr.raw });
         return { ...pr, action: 'create', keyValue };
       }
 
@@ -300,6 +355,24 @@ function BulkImportFromConfigDialog<TRow, TCreate, TUpdate>({
           return { ...pr, action: 'create', keyValue };
       }
     });
+
+    if (import.meta.env.DEV && misses.length > 0 && existingIndex.size > 0) {
+      console.group(`[BulkImport] ${misses.length} rows have no match in existing ${existingIndex.size} records`);
+      console.log('Key fields used:', selectedKeys);
+      console.log('Miss details (keyValue | rawRow):');
+      misses.forEach((m) => {
+        // Also check if the key appears anywhere in the index with a loose search
+        const nearby = [...existingIndex.keys()].filter(
+          (k) => k.includes(m.keyValue) || m.keyValue.includes(k),
+        );
+        console.log(
+          `  Row ${m.rowNumber}: keyValue="${m.keyValue}"`,
+          nearby.length ? `  ← near-matches in index: ${nearby.slice(0, 3).join(', ')}` : '  ← no near-matches found',
+          '\n  raw:', m.raw,
+        );
+      });
+      console.groupEnd();
+    }
 
     setParsedRows(classified);
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -375,7 +448,7 @@ function BulkImportFromConfigDialog<TRow, TCreate, TUpdate>({
         });
 
         setParsedRows(rows);
-        setStep('review');
+        setStep('configure');
       } catch (e) {
         toast.error(e instanceof Error ? e.message : 'Failed to parse CSV');
       }
@@ -400,6 +473,7 @@ function BulkImportFromConfigDialog<TRow, TCreate, TUpdate>({
       create: parsedRows.filter((r) => r.valid && r.action === 'create'),
       update: parsedRows.filter((r) => r.valid && r.action === 'update'),
       skip: parsedRows.filter((r) => r.valid && r.action === 'skip'),
+      duplicate: parsedRows.filter((r) => r.valid && r.action === 'error'),
       error: parsedRows.filter((r) => !r.valid),
     };
   }, [parsedRows]);
@@ -415,36 +489,69 @@ function BulkImportFromConfigDialog<TRow, TCreate, TUpdate>({
     setIsImporting(true);
     setImportProgress({ completed: 0, total: actionableRows.length });
 
+    // Re-fetch existing rows right before executing so we never act on stale state
+    // (e.g. the user deleted records while the dialog was already open on the review step).
+    let freshExisting: TRow[] = existingRows;
+    try {
+      freshExisting = await fetchAll();
+      setExistingRows(freshExisting);
+    } catch {
+      // Non-fatal: fall back to cached rows; worst case some updates fail and the user retries
+    }
+
+    // Build a fresh index from the live data
+    const freshIndex = new Map<string, TRow>();
+    for (const row of freshExisting) {
+      const key = normalizeKeyValue(row, selectedKeys);
+      freshIndex.set(key, row);
+    }
+
+    // Re-classify each row against the fresh index so actions are always accurate
+    const freshRows = actionableRows.map((pr) => {
+      if (!pr.valid || !pr.data) return pr;
+      const keyValue = normalizeKeyValue(pr.data as TRow, selectedKeys);
+      const matched = freshIndex.get(keyValue);
+      if (!matched) return { ...pr, action: 'create' as const, matchedExisting: undefined };
+      if (strategy === 'skip') return { ...pr, action: 'skip' as const, matchedExisting: matched };
+      if (strategy === 'create_new') return { ...pr, action: 'create' as const, matchedExisting: undefined };
+      return { ...pr, action: 'update' as const, matchedExisting: matched };
+    }).filter((r) => r.action !== 'skip');
+
     const failures: SaveResult['failures'] = [];
     let createdCount = 0;
     let updatedCount = 0;
     let skippedCount = 0;
 
-    for (let i = 0; i < actionableRows.length; i++) {
-      const row = actionableRows[i];
-      try {
-        if (row.action === 'create') {
-          await createMutation(toCreatePayload(row.data as TRow));
-          createdCount++;
-        } else if (row.action === 'update' && row.matchedExisting) {
-          const existingId = getRowId(row.matchedExisting);
-          // Merge: overlay parsed data onto existing row so unmentioned columns aren't lost
-          const merged = { ...row.matchedExisting, ...(row.data as TRow) };
-          await updateMutation({ id: existingId, updates: toUpdatePayload(merged) });
-          updatedCount++;
-        }
-      } catch (e) {
-        failures.push({
-          rowNumber: row.rowNumber,
-          error: e instanceof Error ? e.message : 'Unknown error',
-          raw: row.raw, // Include original CSV data for re-export
-        });
-      }
-      setImportProgress({ completed: i + 1, total: actionableRows.length });
+    const CONCURRENCY = 20;
+    for (let i = 0; i < freshRows.length; i += CONCURRENCY) {
+      const batch = freshRows.slice(i, i + CONCURRENCY);
+      await Promise.all(
+        batch.map(async (row) => {
+          try {
+            if (row.action === 'create') {
+              await createMutation(toCreatePayload(row.data as TRow));
+              createdCount++;
+            } else if (row.action === 'update' && row.matchedExisting) {
+              const existingId = getRowId(row.matchedExisting);
+              // Merge: overlay parsed data onto existing row so unmentioned columns aren't lost
+              const merged = { ...row.matchedExisting, ...(row.data as TRow) };
+              await updateMutation({ id: existingId, updates: toUpdatePayload(merged) });
+              updatedCount++;
+            }
+          } catch (e) {
+            failures.push({
+              rowNumber: row.rowNumber,
+              error: e instanceof Error ? e.message : 'Unknown error',
+              raw: row.raw,
+            });
+          }
+        }),
+      );
+      setImportProgress({ completed: Math.min(i + CONCURRENCY, freshRows.length), total: freshRows.length });
     }
 
-    // Count skips separately (they weren't in actionableRows)
-    skippedCount = classifiedRows.skip.length;
+    // Count skips: original skips from pre-flight + any rows reclassified to skip at run time
+    skippedCount = classifiedRows.skip.length + (actionableRows.length - freshRows.length);
 
     await queryClient.invalidateQueries({ queryKey });
 
@@ -469,6 +576,12 @@ function BulkImportFromConfigDialog<TRow, TCreate, TUpdate>({
     getRowId,
     queryClient,
     queryKey,
+    fetchAll,
+    existingRows,
+    setExistingRows,
+    normalizeKeyValue,
+    selectedKeys,
+    strategy,
   ]);
 
   return (
@@ -485,12 +598,28 @@ function BulkImportFromConfigDialog<TRow, TCreate, TUpdate>({
           {step === 'upload' && (
             <UploadStep
               columns={columns}
+              columnsLoading={columnsLoading}
               isDragOver={isDragOver}
               setIsDragOver={setIsDragOver}
               fileInputRef={fileInputRef}
               onFile={handleFile}
               onDownloadTemplate={downloadTemplate}
               filenameStem={filenameStem}
+            />
+          )}
+
+          {step === 'configure' && (
+            <ConfigureStep
+              file={selectedFile}
+              parsedRows={parsedRows}
+              keyEligibleColumns={keyEligibleColumns}
+              selectedKeys={selectedKeys}
+              setSelectedKeys={setSelectedKeys}
+              strategy={strategy}
+              setStrategy={setStrategy}
+              isFetchingExisting={isFetchingExisting}
+              onStartOver={resetAll}
+              onRunMatch={runMatch}
             />
           )}
 
@@ -535,6 +664,7 @@ function BulkImportFromConfigDialog<TRow, TCreate, TUpdate>({
 
 interface UploadStepProps<TRow> {
   columns: BulkEditColumn<TRow>[];
+  columnsLoading?: boolean;
   isDragOver: boolean;
   setIsDragOver: (v: boolean) => void;
   fileInputRef: React.RefObject<HTMLInputElement | null>;
@@ -545,6 +675,7 @@ interface UploadStepProps<TRow> {
 
 function UploadStep<TRow>({
   columns,
+  columnsLoading = false,
   isDragOver,
   setIsDragOver,
   fileInputRef,
@@ -652,42 +783,220 @@ function UploadStep<TRow>({
           <CardTitle className="text-sm">Step 2 — Upload the filled CSV</CardTitle>
         </CardHeader>
         <CardContent>
-          <div
-            className={`border-2 border-dashed rounded-md p-10 text-center transition-colors cursor-pointer ${
-              isDragOver ? 'border-primary bg-primary/5' : 'border-muted-foreground/30 hover:border-muted-foreground/60'
-            }`}
-            onClick={() => fileInputRef.current?.click()}
-            onDragOver={(e) => {
-              e.preventDefault();
-              setIsDragOver(true);
-            }}
-            onDragLeave={(e) => {
-              e.preventDefault();
-              setIsDragOver(false);
-            }}
-            onDrop={(e) => {
-              e.preventDefault();
-              setIsDragOver(false);
-              const file = e.dataTransfer.files?.[0];
-              if (file) onFile(file);
-            }}
-          >
-            <Upload className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
-            <p className="text-sm font-medium">Drop your CSV here, or click to browse</p>
-            <p className="text-xs text-muted-foreground mt-1">CSV files only</p>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept=".csv,text/csv"
-              className="hidden"
-              onChange={(e) => {
-                const file = e.target.files?.[0];
+          {columnsLoading ? (
+            <div className="border-2 border-dashed rounded-md p-10 text-center border-muted-foreground/20 bg-muted/20">
+              <div className="h-8 w-8 mx-auto mb-2 animate-spin rounded-full border-2 border-muted-foreground/30 border-t-primary" />
+              <p className="text-sm font-medium text-muted-foreground">Loading valid options…</p>
+              <p className="text-xs text-muted-foreground mt-1">Please wait before uploading your CSV</p>
+            </div>
+          ) : (
+            <div
+              className={`border-2 border-dashed rounded-md p-10 text-center transition-colors cursor-pointer ${
+                isDragOver ? 'border-primary bg-primary/5' : 'border-muted-foreground/30 hover:border-muted-foreground/60'
+              }`}
+              onClick={() => fileInputRef.current?.click()}
+              onDragOver={(e) => {
+                e.preventDefault();
+                setIsDragOver(true);
+              }}
+              onDragLeave={(e) => {
+                e.preventDefault();
+                setIsDragOver(false);
+              }}
+              onDrop={(e) => {
+                e.preventDefault();
+                setIsDragOver(false);
+                const file = e.dataTransfer.files?.[0];
                 if (file) onFile(file);
               }}
-            />
+            >
+              <Upload className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
+              <p className="text-sm font-medium">Drop your CSV here, or click to browse</p>
+              <p className="text-xs text-muted-foreground mt-1">CSV files only</p>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".csv,text/csv"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) onFile(file);
+                }}
+              />
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+interface ConfigureStepProps<TRow> {
+  file: File | null;
+  parsedRows: ParsedRow<TRow>[];
+  keyEligibleColumns: BulkEditColumn<TRow>[];
+  selectedKeys: string[];
+  setSelectedKeys: (keys: string[]) => void;
+  strategy: DuplicateStrategy;
+  setStrategy: (s: DuplicateStrategy) => void;
+  isFetchingExisting: boolean;
+  onStartOver: () => void;
+  onRunMatch: () => void;
+}
+
+function ConfigureStep<TRow>({
+  file,
+  parsedRows,
+  keyEligibleColumns,
+  selectedKeys,
+  setSelectedKeys,
+  strategy,
+  setStrategy,
+  isFetchingExisting,
+  onStartOver,
+  onRunMatch,
+}: ConfigureStepProps<TRow>) {
+  return (
+    <div className="space-y-4">
+      {/* File summary */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-sm flex items-center gap-2">
+            <FileSpreadsheet className="h-4 w-4" />
+            {file?.name ?? 'Selected CSV'}
+          </CardTitle>
+          <CardDescription>
+            {parsedRows.length} data row{parsedRows.length === 1 ? '' : 's'} ready to be matched
+          </CardDescription>
+        </CardHeader>
+      </Card>
+
+      {/* Match settings */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-sm">Configure matching</CardTitle>
+          <CardDescription>
+            Choose the key field(s) used to detect duplicates, then decide what happens when a match is found.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {/* Key Field Multi-Select */}
+          <div className="space-y-2">
+            <Label className="text-xs font-medium">Key field(s) for matching</Label>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-8 justify-between font-normal"
+                  disabled={isFetchingExisting}
+                >
+                  <span className="truncate max-w-[200px]">
+                    {selectedKeys.length === 0
+                      ? 'Select key fields…'
+                      : keyEligibleColumns
+                          .filter((c) => selectedKeys.includes(c.key))
+                          .map((c) => c.name)
+                          .join(' + ')}
+                  </span>
+                  <ChevronDown className="h-4 w-4 ml-2 opacity-50" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-56 p-2" align="start">
+                <div className="space-y-1 max-h-48 overflow-auto">
+                  {keyEligibleColumns.map((col) => (
+                    <div key={col.key} className="flex items-center space-x-2 px-2 py-1 hover:bg-muted rounded">
+                      <Checkbox
+                        id={`cfg-key-${String(col.key)}`}
+                        checked={selectedKeys.includes(col.key)}
+                        onCheckedChange={(checked) => {
+                          if (checked) {
+                            setSelectedKeys([...selectedKeys, col.key]);
+                          } else {
+                            setSelectedKeys(selectedKeys.filter((k) => k !== col.key));
+                          }
+                        }}
+                      />
+                      <Label
+                        htmlFor={`cfg-key-${String(col.key)}`}
+                        className="text-sm font-normal cursor-pointer flex-1"
+                      >
+                        {col.name}
+                        {col.required && <span className="text-destructive ml-0.5">*</span>}
+                      </Label>
+                    </div>
+                  ))}
+                </div>
+                <div className="border-t mt-2 pt-2 px-2">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="w-full h-7 text-xs"
+                    onClick={() => setSelectedKeys([])}
+                    disabled={selectedKeys.length === 0}
+                  >
+                    Clear selection
+                  </Button>
+                </div>
+              </PopoverContent>
+            </Popover>
+            <p className="text-xs text-muted-foreground">
+              Rows are matched on the combined value of selected fields. Use multiple fields for composite keys.
+            </p>
+          </div>
+
+          {/* Strategy Radio */}
+          <div className="space-y-2">
+            <Label className="text-xs font-medium">When a duplicate is found</Label>
+            <RadioGroup
+              value={strategy}
+              onValueChange={(v) => setStrategy(v as DuplicateStrategy)}
+              className="flex flex-col gap-2"
+              disabled={isFetchingExisting}
+            >
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="update" id="cfg-strategy-update" />
+                <Label htmlFor="cfg-strategy-update" className="text-sm font-normal cursor-pointer">
+                  Update existing record
+                </Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="skip" id="cfg-strategy-skip" />
+                <Label htmlFor="cfg-strategy-skip" className="text-sm font-normal cursor-pointer">
+                  Skip (do nothing)
+                </Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="create_new" id="cfg-strategy-create" />
+                <Label htmlFor="cfg-strategy-create" className="text-sm font-normal cursor-pointer">
+                  Always create new record
+                </Label>
+              </div>
+            </RadioGroup>
           </div>
         </CardContent>
       </Card>
+
+      <Separator />
+
+      <div className="flex items-center justify-end gap-2">
+        <Button variant="outline" onClick={onStartOver} disabled={isFetchingExisting}>
+          Start over
+        </Button>
+        <Button
+          onClick={onRunMatch}
+          disabled={isFetchingExisting || selectedKeys.length === 0}
+        >
+          {isFetchingExisting ? (
+            <>
+              <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+              Loading records…
+            </>
+          ) : (
+            'Match & Preview'
+          )}
+        </Button>
+      </div>
     </div>
   );
 }
@@ -702,6 +1011,7 @@ interface ReviewStepProps<TRow> {
     create: ParsedRow<TRow>[];
     update: ParsedRow<TRow>[];
     skip: ParsedRow<TRow>[];
+    duplicate: ParsedRow<TRow>[];
     error: ParsedRow<TRow>[];
   };
   isImporting: boolean;
@@ -749,7 +1059,7 @@ function ReviewStep<TRow>({
     const data = errorRows.map((r) => {
       const padded = csvHeaders.map((_, i) => r.raw[i] ?? '');
       const errStr = Object.entries(r.errors)
-        .map(([k, v]) => `${k}: ${v}`)
+        .map(([k, v]) => `${k.startsWith('_') ? k.replace(/^_/, '') : k}: ${v}`)
         .join(' | ');
       const row: string[] = [String(r.rowNumber), ...padded, errStr];
       if (hasWarnings) {
@@ -792,6 +1102,12 @@ function ReviewStep<TRow>({
             {classifiedRows.skip.length > 0 && (
               <Badge variant="outline" className="text-xs bg-muted text-muted-foreground border-muted-foreground/20">
                 {classifiedRows.skip.length} skip (duplicate)
+              </Badge>
+            )}
+            {classifiedRows.duplicate.length > 0 && (
+              <Badge variant="outline" className="text-xs bg-amber-500/10 text-amber-600 border-amber-500/20">
+                <AlertCircle className="h-3 w-3 mr-1" />
+                {classifiedRows.duplicate.length} duplicate{classifiedRows.duplicate.length === 1 ? '' : 's'} skipped
               </Badge>
             )}
             {classifiedRows.error.length > 0 && (
@@ -973,7 +1289,10 @@ function ReviewStep<TRow>({
                     <ul className="mt-1 space-y-0.5 text-muted-foreground">
                       {Object.entries(r.errors).map(([col, err]) => (
                         <li key={col}>
-                          <span className="text-foreground">{col}:</span> {err}
+                          <span className="text-foreground">
+                            {col.startsWith('_') ? col.replace(/^_/, '').replace(/-/g, ' ') : col}:
+                          </span>{' '}
+                          {err}
                         </li>
                       ))}
                     </ul>

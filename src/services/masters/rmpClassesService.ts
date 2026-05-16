@@ -3,7 +3,6 @@ import {
   extractRecords,
   extractScottEntity,
   normalizeId,
-  pickScottListRowByFieldMatch,
 } from '@/services/scott/callScottDashboard';
 import { normalizeHexCode } from '@/services/masters/rmpColorsService';
 import {
@@ -246,9 +245,20 @@ export async function fetchRmpClassesPaginated(
 export const fetchRmpClasses = async (): Promise<RmpClass[]> =>
   fetchAllScottPages((pp) => fetchRmpClassesPaginated(pp));
 
-/** All classes including inactive — used for bulk import so re-uploads match rows keyed by name. */
-export const fetchRmpClassesForBulkImport = async (): Promise<RmpClass[]> =>
-  fetchAllScottPages((pp) => fetchRmpClassesPaginated(pp, { includeInactive: true }));
+/** Fetches ALL records (active + soft-deleted) for bulk import duplicate matching.
+ *  Including inactive records ensures that records deleted via bulk-delete are correctly
+ *  classified as "update" (reactivation) instead of "create" on re-import.
+ *  Deduplicates by id because the Scott API cursor may return repeated records across pages.
+ */
+export const fetchRmpClassesForBulkImport = async (): Promise<RmpClass[]> => {
+  const all = await fetchAllScottPages((pp) => fetchRmpClassesPaginated(pp, { includeInactive: true }));
+  const seen = new Set<string>();
+  return all.filter((c) => {
+    if (seen.has(c.id)) return false;
+    seen.add(c.id);
+    return true;
+  });
+};
 
 export const getRmpClassById = async (id: string): Promise<RmpClass | null> => {
   const { body } = await callScottDashboard<Record<string, unknown>>({
@@ -271,26 +281,33 @@ export const createRmpClass = async (
     method: 'POST',
     body: form,
   });
-  const expectedName = (rmpClassData.name ?? '').trim();
-  let row = extractScottEntity(body);
-  if (expectedName) {
-    const got = row ? String((row as Record<string, unknown>).name ?? '').trim().toLowerCase() : '';
-    if (!row || got !== expectedName.toLowerCase()) {
-      const matched = pickScottListRowByFieldMatch(body, 'name', expectedName);
-      if (matched) {
-        row = matched;
-      }
-    }
-  }
+  const row = extractScottEntity(body);
   if (row) {
-    const normalized = normalizeRmpClass(row);
-    const exp = expectedName.trim().toLowerCase();
-    if (exp && normalized.name.trim().toLowerCase() !== exp) {
-      throw new Error(
-        `Create RMP Class: response did not include a row named "${expectedName}". The API may not have persisted the record, or the response shape changed.`,
+    const isDeleted = row.is_deleted === true || row.is_deleted === 'true';
+    const returnedName = String(row.name ?? '');
+    const requestedName = String(rmpClassData.name ?? '');
+
+    // The Scott API soft-deletes records rather than hard-deleting them.
+    // When a POST is sent for a name that already exists as soft-deleted, the API
+    // returns the existing soft-deleted record without creating a new one or reactivating it.
+    // Detect this case and reactivate via PATCH so the record becomes visible (is_deleted=false).
+    if (isDeleted && row.id) {
+      if (import.meta.env.DEV) {
+        console.warn(
+          `[createRmpClass] Soft-deleted record returned for "${requestedName}" (id=${row.id}) — reactivating via PATCH`,
+        );
+      }
+      return updateRmpClass(String(row.id), { status: 'active', name: requestedName }, imageFiles);
+    }
+
+    if (import.meta.env.DEV && requestedName.toLowerCase() !== returnedName.toLowerCase()) {
+      console.warn(
+        `[createRmpClass] NAME MISMATCH — requested "${requestedName}" but API returned name="${returnedName}"`,
+        { requestedName, returnedName, id: row.id },
       );
     }
-    return normalized;
+
+    return normalizeRmpClass(row);
   }
   throw new Error('Failed to create RMP Class: invalid response');
 };

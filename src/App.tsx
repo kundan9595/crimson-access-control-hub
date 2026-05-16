@@ -2,7 +2,8 @@
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClient, QueryClientProvider, QueryCache } from "@tanstack/react-query";
+import { toast } from "sonner";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { Suspense, lazy, useEffect } from "react";
 import { AuthProvider } from "@/contexts/AuthContext";
@@ -78,6 +79,13 @@ const RmpPricesBulkEditPage = lazy(() => import("./pages/bulk-edit/RmpPricesBulk
 
 // Configure QueryClient for large-scale applications
 const queryClient = new QueryClient({
+  queryCache: new QueryCache({
+    onError: (error, query) => {
+      const msg = error instanceof Error ? error.message : 'Unknown error';
+      const key = Array.isArray(query.queryKey) ? query.queryKey.slice(0, 2).join(' › ') : String(query.queryKey);
+      toast.error(`Failed to load: ${key}`, { description: msg, duration: 8000 });
+    },
+  }),
   defaultOptions: {
     queries: {
       staleTime: 5 * 60 * 1000, // 5 minutes

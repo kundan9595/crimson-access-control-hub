@@ -248,7 +248,11 @@ function bodyToFormData(body: Record<string, unknown>): FormData {
       const bytes = base64ToUint8Array(v.data);
       const blob = new Blob([bytes]);
       fd.append(key, blob, v.filename);
-    } else if (typeof v === "object" && v !== null && !Array.isArray(v)) {
+    } else if (Array.isArray(v)) {
+      for (const item of v) {
+        fd.append(key, String(item));
+      }
+    } else if (typeof v === "object" && v !== null) {
       continue;
     } else {
       fd.append(key, String(v));
@@ -324,22 +328,33 @@ function resolveScottUpstream(
     };
   }
 
+  const hasBody = body && typeof body === "object" && Object.keys(body).length > 0;
+  const needsBodyOnDelete = method === "DELETE" && hasBody;
+
   const v1Masters: ScottResource[] = ["profit_margins", "promotions", "size_types"];
   if (v1Masters.includes(resource)) {
-    const b = body && typeof body === "object" ? body : {};
+    const b = (body && typeof body === "object" ? body : {}) as Record<string, unknown>;
+    // bulk_delete always lives under the dashboard namespace, even for v1Masters resources
+    const apiPath = pathSuffix === "bulk_delete"
+      ? `${baseUrl}/api/dashboard/v1/${resource}${suffix}${qs}`
+      : `${baseUrl}/api/v1/${resource}${suffix}${qs}`;
     return {
-      url: `${baseUrl}/api/v1/${resource}${suffix}${qs}`,
+      url: apiPath,
       fetchMethod: method,
-      fetchBody: method === "POST" || method === "PATCH" ? bodyToFormData(b as Record<string, unknown>) : undefined,
+      fetchBody: (method === "POST" || method === "PATCH" || needsBodyOnDelete)
+        ? bodyToFormData(b)
+        : undefined,
     };
   }
 
   const seg = resource;
-  const b = body && typeof body === "object" ? body : {};
+  const b = (body && typeof body === "object" ? body : {}) as Record<string, unknown>;
   return {
     url: `${baseUrl}/api/dashboard/v1/${seg}${suffix}${qs}`,
     fetchMethod: method,
-    fetchBody: method === "POST" || method === "PATCH" ? bodyToFormData(b as Record<string, unknown>) : undefined,
+    fetchBody: (method === "POST" || method === "PATCH" || needsBodyOnDelete)
+      ? bodyToFormData(b)
+      : undefined,
   };
 }
 
@@ -481,8 +496,11 @@ serve(async (req) => {
     let scottRes: Response;
 
     const doFetch = async (url: string): Promise<Response> => {
-      if (resolved.fetchMethod === "GET" || resolved.fetchMethod === "DELETE") {
-        return await fetch(url, { method: resolved.fetchMethod, headers });
+      if (resolved.fetchMethod === "GET") {
+        return await fetch(url, { method: "GET", headers });
+      }
+      if (resolved.fetchMethod === "DELETE" && !resolved.fetchBody) {
+        return await fetch(url, { method: "DELETE", headers });
       }
       const fd =
         resolved.fetchBody ??

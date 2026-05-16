@@ -1,5 +1,6 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 
 import { Card, CardContent } from '@/components/ui/card';
 import { TrendingUp } from 'lucide-react';
@@ -7,6 +8,7 @@ import { MasterPageHeader } from '@/components/masters/shared/MasterPageHeader';
 import { SearchFilter } from '@/components/masters/shared/SearchFilter';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { Pencil, Trash2 } from 'lucide-react';
 import BulkImportDialog from '@/components/masters/BulkImportDialog';
@@ -19,6 +21,10 @@ import { profitMarginsService } from '@/services/masters/profitMarginsService';
 import { openBulkEditTab } from '@/components/masters/bulk-edit';
 import { MasterListPageSkeleton } from '@/components/masters/shared/MasterListPageSkeleton';
 import { MasterServerPagination } from '@/components/masters/shared/MasterServerPagination';
+import { MasterListBulkBar } from '@/components/masters/shared/MasterListBulkBar';
+import { useMasterListBulkSelection } from '@/hooks/masters/useMasterListBulkSelection';
+import { fetchAllRecordIds } from '@/services/scott/scottPagination';
+import { callScottBulkDelete } from '@/services/scott/callScottDashboard';
 import { config } from '@/config/environment';
 
 const ProfitMarginPage = () => {
@@ -34,11 +40,28 @@ const ProfitMarginPage = () => {
   const profitMargins = marginsPage?.data ?? [];
   const deleteProfitMarginMutation = useDeleteProfitMargin();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const bulk = useMasterListBulkSelection();
 
   // Reset to page 1 when search changes
   useEffect(() => {
     setPage(1);
   }, [searchTerm]);
+
+  useEffect(() => {
+    bulk.clearSelection();
+  }, [searchTerm, bulk.clearSelection]);
+
+  const pageRowIds = useMemo(() => profitMargins.map((p) => p.id), [profitMargins]);
+  const listTotal = marginsPage?.totalCountIsExact ? marginsPage.totalCount : profitMargins.length;
+
+  const fetchAllMatchingIds = useCallback(
+    () =>
+      fetchAllRecordIds((pp) =>
+        profitMarginsService.getPage(pp, searchTerm ? { search: searchTerm } : undefined),
+      ),
+    [searchTerm],
+  );
 
   const handleAdd = () => {
     setSelectedProfitMargin(undefined);
@@ -130,7 +153,7 @@ const ProfitMarginPage = () => {
   if (isLoading) {
     return (
       <MasterListPageSkeleton
-        columnCount={9}
+        columnCount={10}
         header={
       <MasterPageHeader
         title="Profit Margins"
@@ -173,12 +196,35 @@ return (
               marginsPage?.totalCountIsExact ? marginsPage.totalCount : profitMargins.length
             }
           />
+          {listTotal > 0 && (
+            <MasterListBulkBar
+              entityPlural="profit margins"
+              totalCount={listTotal}
+              pageRowIds={pageRowIds}
+              selection={bulk}
+              fetchAllMatchingIds={fetchAllMatchingIds}
+              deleteOne={(id) => deleteProfitMarginMutation.mutateAsync(id)}
+              bulkDeleteAll={(ids) => callScottBulkDelete('profit_margins', ids)}
+              disabled={isLoading || isFetching}
+              onAfterBulk={() => {
+                void queryClient.invalidateQueries({ queryKey: ['profitMargins'] });
+              }}
+            />
+          )}
           
           <div className="mt-6">
             {profitMargins.length > 0 ? (
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead className="w-10 p-2">
+                      <Checkbox
+                        checked={bulk.pageHeaderChecked(pageRowIds)}
+                        onCheckedChange={() => bulk.togglePageHeader(pageRowIds)}
+                        disabled={profitMargins.length === 0}
+                        aria-label="Select all rows on this page"
+                      />
+                    </TableHead>
                     <TableHead>Name</TableHead>
                     <TableHead>Range</TableHead>
                     <TableHead>Margin %</TableHead>
@@ -193,6 +239,13 @@ return (
                 <TableBody>
                   {profitMargins.map((profitMargin) => (
                     <TableRow key={profitMargin.id}>
+                      <TableCell className="w-10 p-2 align-middle">
+                        <Checkbox
+                          checked={bulk.selectedIds.has(profitMargin.id)}
+                          onCheckedChange={() => bulk.toggleRow(profitMargin.id)}
+                          aria-label={`Select ${profitMargin.name}`}
+                        />
+                      </TableCell>
                       <TableCell className="font-medium">{profitMargin.name}</TableCell>
                       <TableCell>{formatRange(profitMargin.min_range, profitMargin.max_range)}</TableCell>
                       <TableCell>{formatPercentage(profitMargin.margin_percentage)}</TableCell>

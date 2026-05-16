@@ -1,6 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -27,12 +29,15 @@ import {
   rmpColorsToUpdatePayload,
   rmpColorsQueryKey,
 } from '@/components/masters/bulk-edit/configs/rmpColorsConfig';
-import { createRmpColor, updateRmpColor } from '@/services/masters/rmpColorsService';
+import { createRmpColor, updateRmpColor, fetchRmpColors, fetchRmpColorsPaginated } from '@/services/masters/rmpColorsService';
 import { MasterTableSkeleton } from '@/components/masters/shared/MasterListPageSkeleton';
 import { DateCell } from '@/components/masters/shared/DateCell';
 import { MasterServerPagination } from '@/components/masters/shared/MasterServerPagination';
+import { MasterListBulkBar } from '@/components/masters/shared/MasterListBulkBar';
+import { useMasterListBulkSelection } from '@/hooks/masters/useMasterListBulkSelection';
+import { fetchAllRecordIds } from '@/services/scott/scottPagination';
+import { callScottBulkDelete } from '@/services/scott/callScottDashboard';
 import { exportToCSV, generateExportFilename } from '@/utils/exportUtils';
-import { fetchRmpColors } from '@/services/masters/rmpColorsService';
 import { config } from '@/config/environment';
 
 const RmpColorsPage = () => {
@@ -49,6 +54,8 @@ const RmpColorsPage = () => {
   const createMut = useCreateRmpColor();
   const updateMut = useUpdateRmpColor();
   const deleteMut = useDeleteRmpColor();
+  const queryClient = useQueryClient();
+  const bulk = useMasterListBulkSelection();
 
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<RmpColor | null>(null);
@@ -60,6 +67,21 @@ const RmpColorsPage = () => {
   useEffect(() => {
     setPage(1);
   }, [search]);
+
+  useEffect(() => {
+    bulk.clearSelection();
+  }, [search, bulk.clearSelection]);
+
+  const pageRowIds = useMemo(() => rows.map((r) => r.id), [rows]);
+  const listTotal = rmpColorsPage?.totalCount ?? rows.length;
+
+  const fetchAllMatchingIds = useCallback(
+    () =>
+      fetchAllRecordIds((pp) =>
+        fetchRmpColorsPaginated(pp, search ? { search } : undefined),
+      ),
+    [search],
+  );
 
   const handleExport = async () => {
     const all = await fetchRmpColors();
@@ -134,10 +156,25 @@ const RmpColorsPage = () => {
             value={search}
             onChange={setSearch}
             resultCount={rows.length}
-            totalCount={rmpColorsPage?.totalCount ?? rows.length}
+            totalCount={listTotal}
           />
+          {listTotal > 0 && (
+            <MasterListBulkBar
+              entityPlural="RMP colors"
+              totalCount={listTotal}
+              pageRowIds={pageRowIds}
+              selection={bulk}
+              fetchAllMatchingIds={fetchAllMatchingIds}
+              deleteOne={(id) => deleteMut.mutateAsync(id)}
+              bulkDeleteAll={(ids) => callScottBulkDelete('rmp_colors', ids)}
+              disabled={isLoading || isFetching}
+              onAfterBulk={() => {
+                void queryClient.invalidateQueries({ queryKey: ['rmp_colors'] });
+              }}
+            />
+          )}
           {isLoading ? (
-            <MasterTableSkeleton showToolbar={false} columnCount={6} className="mt-6" />
+            <MasterTableSkeleton showToolbar={false} columnCount={7} className="mt-6" />
           ) : rows.length === 0 ? (
             <p className="text-center text-muted-foreground py-8">
               {search ? 'No RMP colors match your search' : 'No RMP colors found'}
@@ -146,6 +183,14 @@ const RmpColorsPage = () => {
             <Table className="mt-6">
               <TableHeader>
                 <TableRow>
+                  <TableHead className="w-10 p-2">
+                    <Checkbox
+                      checked={bulk.pageHeaderChecked(pageRowIds)}
+                      onCheckedChange={() => bulk.togglePageHeader(pageRowIds)}
+                      disabled={rows.length === 0}
+                      aria-label="Select all rows on this page"
+                    />
+                  </TableHead>
                   <TableHead>Name</TableHead>
                   <TableHead>Code</TableHead>
                   <TableHead>Preview</TableHead>
@@ -158,6 +203,13 @@ const RmpColorsPage = () => {
               <TableBody>
                 {rows.map((r) => (
                   <TableRow key={r.id}>
+                    <TableCell className="w-10 p-2 align-middle">
+                      <Checkbox
+                        checked={bulk.selectedIds.has(r.id)}
+                        onCheckedChange={() => bulk.toggleRow(r.id)}
+                        aria-label={`Select ${r.name}`}
+                      />
+                    </TableCell>
                     <TableCell className="font-medium">{r.name}</TableCell>
                     <TableCell>
                       <code className="bg-muted px-2 py-1 rounded text-sm">{r.code}</code>

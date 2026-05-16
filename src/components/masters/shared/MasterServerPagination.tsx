@@ -66,7 +66,7 @@ export function MasterServerPagination<T>({
           onValueChange={(v) => onPageSizeChange(Number(v))}
           disabled={disabled}
         >
-          <SelectTrigger className="h-9 w-[4.5rem]">
+          <SelectTrigger className="h-9 w-[5.5rem]">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>

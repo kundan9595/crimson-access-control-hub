@@ -133,3 +133,12 @@ export async function fetchAllScottPages<T>(
   }
   return out;
 }
+
+/** Load every matching row (same paging rules as `fetchAllScottPages`) and return their ids. */
+export async function fetchAllRecordIds<T extends { id: string }>(
+  fetchPage: (p: ScottPageParams) => Promise<ScottPaginatedResult<T>>,
+  options?: { maxPages?: number; pageSize?: number },
+): Promise<string[]> {
+  const rows = await fetchAllScottPages(fetchPage, options);
+  return rows.map((r) => r.id);
+}

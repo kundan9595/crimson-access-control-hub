@@ -190,13 +190,29 @@ export async function fetchRmpSkusPaginated(
 
 export const fetchRmpSkus = async (): Promise<RmpSku[]> => {
   try {
-    // Limit to 10 pages (1000 SKUs) to avoid edge function timeout
     return await fetchAllScottPages(
-      (pp) => fetchRmpSkusPaginated(pp), 
+      (pp) => fetchRmpSkusPaginated(pp),
       { pageSize: 100, maxPages: 10 }
     );
   } catch (err) {
     console.error('fetchRmpSkus failed:', err);
+    return [];
+  }
+};
+
+/**
+ * Fetches ALL SKU records (no page cap) for bulk import duplicate matching.
+ * Unlike fetchRmpSkus, this does not cap at 10 pages so the full dataset
+ * is available for accurate create vs update classification.
+ */
+export const fetchRmpSkusForBulkImport = async (): Promise<RmpSku[]> => {
+  try {
+    return await fetchAllScottPages(
+      (pp) => fetchRmpSkusPaginated(pp),
+      { pageSize: 100, maxPages: 250 },
+    );
+  } catch (err) {
+    console.error('fetchRmpSkusForBulkImport failed:', err);
     return [];
   }
 };

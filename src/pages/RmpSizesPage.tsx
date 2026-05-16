@@ -1,6 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -27,13 +29,16 @@ import {
   rmpSizesToUpdatePayload,
   rmpSizesQueryKey,
 } from '@/components/masters/bulk-edit/configs/rmpSizesConfig';
-import { createRmpSize, updateRmpSize } from '@/services/masters/rmpSizesService';
+import { createRmpSize, updateRmpSize, fetchRmpSizes, fetchRmpSizesPaginated } from '@/services/masters/rmpSizesService';
 import { proxifyScottImageUrl } from '@/utils/scottImageProxyUrl';
 import { MasterTableSkeleton } from '@/components/masters/shared/MasterListPageSkeleton';
 import { DateCell } from '@/components/masters/shared/DateCell';
 import { MasterServerPagination } from '@/components/masters/shared/MasterServerPagination';
+import { MasterListBulkBar } from '@/components/masters/shared/MasterListBulkBar';
+import { useMasterListBulkSelection } from '@/hooks/masters/useMasterListBulkSelection';
+import { fetchAllRecordIds } from '@/services/scott/scottPagination';
+import { callScottBulkDelete } from '@/services/scott/callScottDashboard';
 import { exportToCSV, generateExportFilename } from '@/utils/exportUtils';
-import { fetchRmpSizes } from '@/services/masters/rmpSizesService';
 import { config } from '@/config/environment';
 
 const RmpSizesPage = () => {
@@ -50,6 +55,8 @@ const RmpSizesPage = () => {
   const createMut = useCreateRmpSize();
   const updateMut = useUpdateRmpSize();
   const deleteMut = useDeleteRmpSize();
+  const queryClient = useQueryClient();
+  const bulk = useMasterListBulkSelection();
 
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<RmpSize | null>(null);
@@ -62,6 +69,21 @@ const RmpSizesPage = () => {
   useEffect(() => {
     setPage(1);
   }, [search]);
+
+  useEffect(() => {
+    bulk.clearSelection();
+  }, [search, bulk.clearSelection]);
+
+  const pageRowIds = useMemo(() => rows.map((r) => r.id), [rows]);
+  const listTotal = rmpSizesPage?.totalCount ?? rows.length;
+
+  const fetchAllMatchingIds = useCallback(
+    () =>
+      fetchAllRecordIds((pp) =>
+        fetchRmpSizesPaginated(pp, search ? { search } : undefined),
+      ),
+    [search],
+  );
 
   const handleExport = async () => {
     const all = await fetchRmpSizes();
@@ -148,10 +170,25 @@ const RmpSizesPage = () => {
             value={search}
             onChange={setSearch}
             resultCount={rows.length}
-            totalCount={rmpSizesPage?.totalCount ?? rows.length}
+            totalCount={listTotal}
           />
+          {listTotal > 0 && (
+            <MasterListBulkBar
+              entityPlural="RMP sizes"
+              totalCount={listTotal}
+              pageRowIds={pageRowIds}
+              selection={bulk}
+              fetchAllMatchingIds={fetchAllMatchingIds}
+              deleteOne={(id) => deleteMut.mutateAsync(id)}
+              bulkDeleteAll={(ids) => callScottBulkDelete('rmp_sizes', ids)}
+              disabled={isLoading || isFetching}
+              onAfterBulk={() => {
+                void queryClient.invalidateQueries({ queryKey: ['rmp_sizes'] });
+              }}
+            />
+          )}
               {isLoading ? (
-            <MasterTableSkeleton showToolbar={false} columnCount={7} className="mt-6" />
+            <MasterTableSkeleton showToolbar={false} columnCount={8} className="mt-6" />
           ) : rows.length === 0 ? (
             <p className="text-center text-muted-foreground py-8">
               {search ? 'No RMP sizes match your search' : 'No RMP sizes found'}
@@ -160,6 +197,14 @@ const RmpSizesPage = () => {
             <Table className="mt-6">
               <TableHeader>
                 <TableRow>
+                  <TableHead className="w-10 p-2">
+                    <Checkbox
+                      checked={bulk.pageHeaderChecked(pageRowIds)}
+                      onCheckedChange={() => bulk.togglePageHeader(pageRowIds)}
+                      disabled={rows.length === 0}
+                      aria-label="Select all rows on this page"
+                    />
+                  </TableHead>
                   <TableHead>Name</TableHead>
                   <TableHead>Image</TableHead>
                   <TableHead>Size Type</TableHead>
@@ -173,6 +218,13 @@ const RmpSizesPage = () => {
               <TableBody>
                 {rows.map((r) => (
                   <TableRow key={r.id}>
+                    <TableCell className="w-10 p-2 align-middle">
+                      <Checkbox
+                        checked={bulk.selectedIds.has(r.id)}
+                        onCheckedChange={() => bulk.toggleRow(r.id)}
+                        aria-label={`Select ${r.name}`}
+                      />
+                    </TableCell>
                     <TableCell className="font-medium">{r.name}</TableCell>
                     <TableCell>
                       {r.image ? (
