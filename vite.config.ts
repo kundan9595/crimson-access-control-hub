@@ -109,25 +109,6 @@ export default defineConfig(({ mode }) => {
       // Optimize bundle splitting and tree shaking
       rollupOptions: {
         output: {
-          manualChunks: (id) => {
-            // Only split stable, large vendor libraries that have NO cross-chunk circular deps.
-            // Aggressive vendor splitting with many small chunks causes Rollup circular-dep TDZ
-            // errors (e.g. icons-vendor accessing React.forwardRef before react-vendor loads).
-            if (id.includes('node_modules/@supabase')) {
-              return 'supabase-vendor';
-            }
-            // Feature chunks — group source code by feature area
-            if (id.includes('src/components/masters') || id.includes('src/hooks/masters') || id.includes('src/services/masters')) {
-              return 'masters';
-            }
-            if (id.includes('src/components/warehouse') || id.includes('src/hooks/warehouse')) {
-              return 'warehouse';
-            }
-            if (id.includes('src/components/inventory') || id.includes('src/hooks/inventory') || id.includes('src/services/inventory')) {
-              return 'inventory';
-            }
-          },
-        },
         treeshake: {
           moduleSideEffects: true,
           propertyReadSideEffects: true,
