@@ -109,7 +109,7 @@ export default defineConfig(({ mode }) => {
           passes: 2,
         },
         mangle: {
-          toplevel: true,
+          toplevel: false,
         },
       } : undefined,
 
