@@ -108,7 +108,6 @@ export default defineConfig(({ mode }) => {
 
       // Optimize bundle splitting and tree shaking
       rollupOptions: {
-        output: {
         treeshake: {
           moduleSideEffects: true,
           propertyReadSideEffects: true,
