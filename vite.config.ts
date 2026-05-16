@@ -142,9 +142,6 @@ export default defineConfig(({ mode }) => {
             if (id.includes('node_modules/@supabase')) {
               return 'supabase-vendor';
             }
-            if (id.includes('node_modules/react-beautiful-dnd')) {
-              return 'dnd-vendor';
-            }
             if (id.includes('node_modules/lucide-react')) {
               return 'icons-vendor';
             }
@@ -199,11 +196,11 @@ export default defineConfig(({ mode }) => {
         'hoist-non-react-statics',
         'react-redux',
         'react-is',
+        'react-beautiful-dnd',
       ],
       exclude: [
         // Exclude large dependencies from pre-bundling
         '@tanstack/react-virtual',
-        'react-beautiful-dnd',
       ],
       // Force optimization of specific packages
       force: true,
