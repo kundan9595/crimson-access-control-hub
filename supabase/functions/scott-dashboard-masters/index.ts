@@ -524,6 +524,7 @@ serve(async (req) => {
       }
     }
 
+
     const text = await scottRes.text();
     let parsed: unknown;
     try {

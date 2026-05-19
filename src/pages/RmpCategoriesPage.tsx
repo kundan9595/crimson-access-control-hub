@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
 import {
   Dialog,
   DialogContent,
@@ -24,7 +25,7 @@ import {
   useDeleteRmpCategory,
 } from '@/hooks/masters/useRmpCategories';
 import type { RmpCategory } from '@/services/masters/rmpCategoriesService';
-import { LayoutGrid, Edit, Trash2 } from 'lucide-react';
+import { LayoutGrid, Edit, Trash2, RotateCcw } from 'lucide-react';
 import { openBulkEditTab, BulkImportFromConfigDialog } from '@/components/masters/bulk-edit';
 import {
   rmpCategoriesColumns,
@@ -50,11 +51,12 @@ const RmpCategoriesPage = () => {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(config.pagination.defaultPageSize);
   const [search, setSearch] = useState('');
+  const [showInactive, setShowInactive] = useState(false);
 
   const { data: pageData, isLoading, isFetching } = useRmpCategories(
     page,
     pageSize,
-    search ? { search } : undefined
+    { search: search || undefined, includeInactive: showInactive }
   );
   const rows = pageData?.data ?? [];
   const createMut = useCreateRmpCategory();
@@ -74,11 +76,11 @@ const RmpCategoriesPage = () => {
 
   useEffect(() => {
     setPage(1);
-  }, [search]);
+  }, [search, showInactive]);
 
   useEffect(() => {
     bulk.clearSelection();
-  }, [search, bulk.clearSelection]);
+  }, [search, showInactive, bulk.clearSelection]);
 
   const pageRowIds = useMemo(() => rows.map((r) => r.id), [rows]);
   const listTotal = pageData?.totalCount ?? rows.length;
@@ -86,9 +88,9 @@ const RmpCategoriesPage = () => {
   const fetchAllMatchingIds = useCallback(
     () =>
       fetchAllRecordIds((pp) =>
-        fetchRmpCategoriesPaginated(pp, search ? { search } : undefined),
+        fetchRmpCategoriesPaginated(pp, { search: search || undefined, includeInactive: showInactive }),
       ),
-    [search],
+    [search, showInactive],
   );
 
   const handleExport = async () => {
@@ -150,6 +152,13 @@ const RmpCategoriesPage = () => {
     }
   };
 
+  const onReactivate = (r: RmpCategory) => {
+    // Must include name + position — Scott API validates name uniqueness even on PATCH.
+    updateMut.mutate(
+      { id: r.id, updates: { name: r.name, position: r.position, status: 'active', is_deleted: false } },
+    );
+  };
+
   return (
     <div className="space-y-6">
       <MasterPageHeader
@@ -166,13 +175,25 @@ const RmpCategoriesPage = () => {
 
       <Card>
         <CardContent className="p-6">
-          <SearchFilter
-            placeholder="Search categories..."
-            value={search}
-            onChange={setSearch}
-            resultCount={rows.length}
-            totalCount={listTotal}
-          />
+          <div className="flex items-center justify-between gap-4">
+            <SearchFilter
+              placeholder="Search categories..."
+              value={search}
+              onChange={setSearch}
+              resultCount={rows.length}
+              totalCount={listTotal}
+            />
+            <div className="flex items-center gap-2 shrink-0">
+              <Switch
+                id="show-inactive"
+                checked={showInactive}
+                onCheckedChange={setShowInactive}
+              />
+              <Label htmlFor="show-inactive" className="text-sm text-muted-foreground whitespace-nowrap cursor-pointer">
+                Show inactive
+              </Label>
+            </div>
+          </div>
           {listTotal > 0 && (
             <MasterListBulkBar
               entityPlural="RMP categories"
@@ -217,7 +238,7 @@ const RmpCategoriesPage = () => {
               </TableHeader>
               <TableBody>
                 {rows.map((r) => (
-                  <TableRow key={r.id}>
+                  <TableRow key={r.id} className={r.is_deleted ? 'opacity-50' : undefined}>
                     <TableCell className="w-10 p-2 align-middle">
                       <Checkbox
                         checked={bulk.selectedIds.has(r.id)}
@@ -236,19 +257,56 @@ const RmpCategoriesPage = () => {
                     <TableCell><DateCell date={r.created_at} /></TableCell>
                     <TableCell><DateCell date={r.updated_at} /></TableCell>
                     <TableCell className="text-right space-x-2">
-                      <Button variant="outline" size="sm" onClick={() => openEdit(r)}>
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="text-red-600"
-                        onClick={() => {
-                          if (confirm('Delete this category?')) deleteMut.mutate(r.id);
-                        }}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                      {r.is_deleted ? (
+                        <>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => openEdit(r)}
+                            title="Rename before reactivating if there's a name conflict"
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="text-green-600"
+                            onClick={() => onReactivate(r)}
+                            disabled={updateMut.isPending}
+                            title="Reactivate this category"
+                          >
+                            <RotateCcw className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="text-red-600"
+                            onClick={() => {
+                              if (confirm('Permanently delete this inactive category?')) deleteMut.mutate(r.id);
+                            }}
+                            disabled={deleteMut.isPending}
+                            title="Delete this category"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </>
+                      ) : (
+                        <>
+                          <Button variant="outline" size="sm" onClick={() => openEdit(r)}>
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="text-red-600"
+                            onClick={() => {
+                              if (confirm('Delete this category?')) deleteMut.mutate(r.id);
+                            }}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </>
+                      )}
                     </TableCell>
                   </TableRow>
                 ))}

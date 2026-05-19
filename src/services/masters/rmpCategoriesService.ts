@@ -94,6 +94,7 @@ async function toFormDataAsync(
 
 export interface RmpCategoriesFilter {
   search?: string;
+  includeInactive?: boolean;
 }
 
 export async function fetchRmpCategoriesPaginated(
@@ -104,8 +105,10 @@ export async function fetchRmpCategoriesPaginated(
   const query: Record<string, string | number | boolean | undefined> = {
     items: p.items,
     page: p.page,
-    is_deleted: false,
   };
+  if (!filters?.includeInactive) {
+    query.is_deleted = false;
+  }
   if (filters?.search) {
     query.search = filters.search;
   }
