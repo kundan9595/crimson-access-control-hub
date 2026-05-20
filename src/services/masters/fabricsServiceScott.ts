@@ -3,6 +3,7 @@ import {
   extractRecords,
   extractScottEntity,
   normalizeId,
+  fileToScottPayload,
 } from '@/services/scott/callScottDashboard';
 import { fetchColors } from '@/services/masters/colorsService';
 import {
@@ -83,7 +84,7 @@ function fabricToFormData(
   }
 
   if (imageFile) {
-    form.image = imageFile;
+    form.image = await fileToScottPayload(imageFile);
   }
 
   return form;
@@ -202,7 +203,7 @@ export const updateFabric = async (
     });
   }
   if (imageFile) {
-    form.image = imageFile;
+    form.image = await fileToScottPayload(imageFile);
   }
 
   const { body } = await callScottDashboard<Record<string, unknown>>({

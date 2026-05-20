@@ -403,6 +403,19 @@ export async function callScottBulkDelete(
   });
 }
 
+/** Convert a browser File object to a base64 payload the edge function can forward as multipart */
+export async function fileToScottPayload(file: File): Promise<ScottFilePayload> {
+  const buf = await file.arrayBuffer();
+  const bytes = new Uint8Array(buf);
+  let binary = '';
+  for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
+  return {
+    __base64File: true,
+    data: btoa(binary),
+    filename: file.name,
+  };
+}
+
 /** Fetch remote image URL (e.g. Supabase public URL) and build a file payload for the edge function */
 export async function urlToScottFile(
   url: string,

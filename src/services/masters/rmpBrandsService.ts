@@ -3,6 +3,7 @@ import {
   extractRecords,
   extractScottEntity,
   normalizeId,
+  fileToScottPayload,
 } from '@/services/scott/callScottDashboard';
 import {
   buildScottPaginatedMeta,
@@ -107,7 +108,7 @@ function rmpBrandToFormData(
   }
 
   if (imageFile) {
-    form.image = imageFile;
+    form.image = await fileToScottPayload(imageFile);
   }
 
   return form;
@@ -188,7 +189,7 @@ export const updateRmpBrand = async (
     form.authorized_brand_id = updates.authorized_brand_id || '';
   }
   if (imageFile) {
-    form.image = imageFile;
+    form.image = await fileToScottPayload(imageFile);
   }
 
   const { body } = await callScottDashboard<Record<string, unknown>>({

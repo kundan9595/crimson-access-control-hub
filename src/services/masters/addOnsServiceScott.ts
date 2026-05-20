@@ -3,6 +3,7 @@ import {
   extractRecords,
   extractScottEntity,
   normalizeId,
+  fileToScottPayload,
 } from '@/services/scott/callScottDashboard';
 import {
   buildScottPaginatedMeta,
@@ -82,7 +83,7 @@ function addOnToFormData(
   };
 
   if (imageFile) {
-    form.image = imageFile;
+    form.image = await fileToScottPayload(imageFile);
   }
 
   return form;
@@ -168,7 +169,7 @@ export const updateAddOn = async (
     form.is_deleted = updates.status === 'active' ? 'false' : 'true';
   }
   if (imageFile) {
-    form.image = imageFile;
+    form.image = await fileToScottPayload(imageFile);
   }
 
   const { body } = await callScottDashboard<Record<string, unknown>>({

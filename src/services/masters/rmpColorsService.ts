@@ -3,6 +3,7 @@ import {
   extractRecords,
   extractScottEntity,
   normalizeId,
+  fileToScottPayload,
 } from '@/services/scott/callScottDashboard';
 import {
   buildScottPaginatedMeta,

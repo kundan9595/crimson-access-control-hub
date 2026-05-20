@@ -4,6 +4,7 @@ import {
   extractScottEntity,
   normalizeId,
   urlToScottFile,
+  fileToScottPayload,
 } from '@/services/scott/callScottDashboard';
 import {
   buildScottPaginatedMeta,
@@ -81,7 +82,7 @@ async function toFormDataAsync(
     is_deleted: isActive ? 'false' : 'true',
   };
   if (imageFile) {
-    form.image = imageFile;
+    form.image = await fileToScottPayload(imageFile);
   } else if (data.image?.startsWith('http://') || data.image?.startsWith('https://')) {
     try {
       form.image = await urlToScottFile(data.image, 'category.png');
@@ -167,7 +168,7 @@ export const updateRmpCategory = async (
     form.is_deleted = updates.status === 'active' ? 'false' : 'true';
   }
   if (imageFile) {
-    form.image = imageFile;
+    form.image = await fileToScottPayload(imageFile);
   } else if (updates.image?.startsWith('http://') || updates.image?.startsWith('https://')) {
     try {
       form.image = await urlToScottFile(updates.image, 'category.png');

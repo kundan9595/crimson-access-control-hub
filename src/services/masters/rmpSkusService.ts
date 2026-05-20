@@ -3,6 +3,7 @@ import {
   extractRecords,
   extractScottEntity,
   normalizeId,
+  fileToScottPayload,
 } from '@/services/scott/callScottDashboard';
 import {
   buildScottPaginatedMeta,
@@ -146,7 +147,7 @@ function rmpSkuToFormData(
   }
 
   if (imageFile) {
-    form.image = imageFile;
+    form.image = await fileToScottPayload(imageFile);
   }
 
   return form;
@@ -272,7 +273,7 @@ export const updateRmpSku = async (
     form.rmp_category_id = updates.rmp_category_id || '';
   }
   if (imageFile) {
-    form.image = imageFile;
+    form.image = await fileToScottPayload(imageFile);
   }
 
   const { body } = await callScottDashboard<Record<string, unknown>>({

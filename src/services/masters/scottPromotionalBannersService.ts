@@ -4,6 +4,7 @@ import {
   extractScottEntity,
   normalizeId,
   urlToScottFile,
+  fileToScottPayload,
 } from '@/services/scott/callScottDashboard';
 import {
   buildScottPaginatedMeta,
@@ -121,7 +122,7 @@ async function promotionalBannerToFormData(
 
   // Handle image upload
   if (imageFile) {
-    form.image = imageFile;
+    form.image = await fileToScottPayload(imageFile);
   } else if (bannerData.image_url) {
     try {
       form.image = await urlToScottFile(bannerData.image_url, 'banner_image.png');
@@ -215,7 +216,7 @@ export const updatePromotionalBanner = async (
 
   // Handle image
   if (imageFile) {
-    form.image = imageFile;
+    form.image = await fileToScottPayload(imageFile);
   } else if (updates.image_url) {
     try {
       form.image = await urlToScottFile(updates.image_url, 'banner_image.png');
