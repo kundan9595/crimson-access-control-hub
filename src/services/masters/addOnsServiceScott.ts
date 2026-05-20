@@ -64,10 +64,10 @@ function normalizeAddOn(r: Record<string, unknown>): AddOn {
   };
 }
 
-function addOnToFormData(
+async function addOnToFormData(
   addOnData: Omit<AddOn, 'id' | 'created_at' | 'updated_at' | 'created_by' | 'updated_by' | 'image_url'>,
   imageFile?: File,
-): Record<string, unknown> {
+): Promise<Record<string, unknown>> {
   const isActive = addOnData.status === 'active';
   const form: Record<string, unknown> = {
     add_on: addOnData.name,
@@ -136,7 +136,7 @@ export const createAddOn = async (
   addOnData: Omit<AddOn, 'id' | 'created_at' | 'updated_at' | 'created_by' | 'updated_by' | 'image_url'>,
   imageFile?: File,
 ): Promise<AddOn> => {
-  const form = addOnToFormData(addOnData, imageFile);
+  const form = await addOnToFormData(addOnData, imageFile);
   const { body } = await callScottDashboard<Record<string, unknown>>({
     resource: 'add_ons',
     method: 'POST',

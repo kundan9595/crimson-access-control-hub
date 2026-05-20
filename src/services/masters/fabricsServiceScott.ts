@@ -62,10 +62,10 @@ function normalizeFabric(r: Record<string, unknown>): Fabric {
   };
 }
 
-function fabricToFormData(
+async function fabricToFormData(
   fabricData: Omit<Fabric, 'id' | 'created_at' | 'updated_at' | 'created_by' | 'updated_by' | 'colors'>,
   imageFile?: File,
-): Record<string, unknown> {
+): Promise<Record<string, unknown>> {
   const isActive = fabricData.status === 'active';
   const form: Record<string, unknown> = {
     name: fabricData.name,
@@ -167,7 +167,7 @@ export const createFabric = async (
   fabricData: Omit<Fabric, 'id' | 'created_at' | 'updated_at' | 'created_by' | 'updated_by' | 'colors'>,
   imageFile?: File,
 ): Promise<Fabric> => {
-  const form = fabricToFormData(fabricData, imageFile);
+  const form = await fabricToFormData(fabricData, imageFile);
   const { body } = await callScottDashboard<Record<string, unknown>>({
     resource: 'fabrics',
     method: 'POST',

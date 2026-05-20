@@ -88,10 +88,10 @@ function normalizeRmpBrand(r: Record<string, unknown>): RmpBrand {
   };
 }
 
-function rmpBrandToFormData(
+async function rmpBrandToFormData(
   rmpBrandData: Omit<RmpBrand, 'id' | 'created_at' | 'updated_at' | 'created_by' | 'updated_by' | 'authorized_brand' | 'rmp_categories'>,
   imageFile?: File,
-): Record<string, unknown> {
+): Promise<Record<string, unknown>> {
   const isActive = rmpBrandData.status === 'active';
 
   const form: Record<string, unknown> = {
@@ -157,7 +157,7 @@ export const createRmpBrand = async (
   rmpBrandData: Omit<RmpBrand, 'id' | 'created_at' | 'updated_at' | 'created_by' | 'updated_by' | 'authorized_brand' | 'rmp_categories'>,
   imageFile?: File,
 ): Promise<RmpBrand> => {
-  const form = rmpBrandToFormData(rmpBrandData, imageFile);
+  const form = await rmpBrandToFormData(rmpBrandData, imageFile);
   const { body } = await callScottDashboard<Record<string, unknown>>({
     resource: 'rmp_brands',
     method: 'POST',

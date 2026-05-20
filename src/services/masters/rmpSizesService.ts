@@ -77,10 +77,10 @@ function normalizeRmpSize(r: Record<string, unknown>): RmpSize {
   };
 }
 
-function rmpSizeToFormData(
+async function rmpSizeToFormData(
   rmpSizeData: Omit<RmpSize, 'id' | 'created_at' | 'updated_at' | 'created_by' | 'updated_by'>,
   imageFile?: File,
-): Record<string, unknown> {
+): Promise<Record<string, unknown>> {
   const isActive = rmpSizeData.status === 'active';
 
   const form: Record<string, unknown> = {
@@ -140,7 +140,7 @@ export const createRmpSize = async (
   rmpSizeData: Omit<RmpSize, 'id' | 'created_at' | 'updated_at' | 'created_by' | 'updated_by'>,
   imageFile?: File,
 ): Promise<RmpSize> => {
-  const form = rmpSizeToFormData(rmpSizeData, imageFile);
+  const form = await rmpSizeToFormData(rmpSizeData, imageFile);
   const { body } = await callScottDashboard<Record<string, unknown>>({
     resource: 'rmp_sizes',
     method: 'POST',

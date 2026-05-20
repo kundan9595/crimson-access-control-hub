@@ -119,10 +119,10 @@ function normalizeRmpSku(r: Record<string, unknown>): RmpSku {
   };
 }
 
-function rmpSkuToFormData(
+async function rmpSkuToFormData(
   rmpSkuData: Omit<RmpSku, 'id' | 'created_at' | 'updated_at' | 'created_by' | 'updated_by' | 'rmp_size' | 'rmp_class' | 'rmp_brand' | 'rmp_category'>,
   imageFile?: File,
-): Record<string, unknown> {
+): Promise<Record<string, unknown>> {
   const isActive = rmpSkuData.status === 'active';
 
   const form: Record<string, unknown> = {
@@ -233,7 +233,7 @@ export const createRmpSku = async (
   rmpSkuData: Omit<RmpSku, 'id' | 'created_at' | 'updated_at' | 'created_by' | 'updated_by' | 'rmp_size' | 'rmp_class' | 'rmp_brand' | 'rmp_category'>,
   imageFile?: File,
 ): Promise<RmpSku> => {
-  const form = rmpSkuToFormData(rmpSkuData, imageFile);
+  const form = await rmpSkuToFormData(rmpSkuData, imageFile);
   const { body } = await callScottDashboard<Record<string, unknown>>({
     resource: 'rmp_skus',
     method: 'POST',
