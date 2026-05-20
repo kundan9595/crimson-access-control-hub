@@ -116,6 +116,14 @@ export default defineConfig(({ mode }) => {
       },
     },
 
+    // Explicitly disable development JSX transform so esbuild always uses
+    // react/jsx-runtime (jsx/jsxs) instead of react/jsx-dev-runtime (jsxDEV).
+    // esbuild 0.20+ auto-enables jsxDev when NODE_ENV !== 'production', which
+    // breaks production builds in environments like Vercel that set NODE_ENV=development.
+    esbuild: {
+      jsxDev: false,
+    },
+
     // Development server optimization
     server: {
       port: 3000,
