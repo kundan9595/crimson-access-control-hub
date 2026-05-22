@@ -16,13 +16,25 @@ import {
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from '@/components/ui/command';
 import { MasterPageHeader } from '@/components/masters/shared/MasterPageHeader';
 import { SearchFilter } from '@/components/masters/shared/SearchFilter';
 import { useRmpBrands, useCreateRmpBrand, useUpdateRmpBrand, useDeleteRmpBrand } from '@/hooks/masters/useRmpBrands';
 import { useAllBrands } from '@/hooks/masters/useBrands';
+import { useAllRmpCategories } from '@/hooks/masters/useRmpCategories';
 import { ImageCell } from '@/components/masters/shared/ImageCell';
 import type { RmpBrand } from '@/services/masters/rmpBrandsService';
-import { Package, Edit, Trash2 } from 'lucide-react';
+import { updateRmpBrandCategories } from '@/services/masters/rmpBrandsService';
+import { Check, ChevronsUpDown, Package, Edit, Trash2, X } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import { MasterTableSkeleton } from '@/components/masters/shared/MasterListPageSkeleton';
 import { MasterServerPagination } from '@/components/masters/shared/MasterServerPagination';
 import { MasterListBulkBar } from '@/components/masters/shared/MasterListBulkBar';
@@ -51,6 +63,32 @@ import {
 /** Radix Select reserves empty string; use a sentinel for optional "None" rows. */
 const SELECT_NONE = '__none__';
 
+// Client-side cache for rmp_brand → category IDs, since the API never returns
+// the linked categories in GET responses. Persists across page refreshes.
+const RMP_BRAND_CAT_CACHE_KEY = 'rmp_brand_categories_v1';
+
+function loadBrandCategoryCache(): Record<string, string[]> {
+  try {
+    return JSON.parse(localStorage.getItem(RMP_BRAND_CAT_CACHE_KEY) ?? '{}');
+  } catch {
+    return {};
+  }
+}
+
+function getCachedBrandCategories(brandId: string): string[] {
+  return loadBrandCategoryCache()[brandId] ?? [];
+}
+
+function saveBrandCategoryCache(brandId: string, categoryIds: string[]): void {
+  try {
+    const cache = loadBrandCategoryCache();
+    cache[brandId] = categoryIds;
+    localStorage.setItem(RMP_BRAND_CAT_CACHE_KEY, JSON.stringify(cache));
+  } catch {
+    // localStorage unavailable — graceful degradation
+  }
+}
+
 const RmpBrandsPage = () => {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(config.pagination.defaultPageSize);
@@ -78,11 +116,14 @@ const RmpBrandsPage = () => {
     row.authorized_brand ??
     (row.authorized_brand_id ? authorizedBrandById.get(row.authorized_brand_id) : undefined);
 
+  const { data: allCategories = [], isLoading: categoriesLoading } = useAllRmpCategories();
+
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<RmpBrand | null>(null);
   const [name, setName] = useState('');
   const [position, setPosition] = useState(0);
-  const [mainCategory, setMainCategory] = useState('');
+  const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>([]);
+  const [categoryPopoverOpen, setCategoryPopoverOpen] = useState(false);
   const [authorizedBrandId, setAuthorizedBrandId] = useState('');
   const [status, setStatus] = useState('active');
   const [importOpen, setImportOpen] = useState(false);
@@ -129,13 +170,13 @@ const RmpBrandsPage = () => {
 
     exportToCSV({
       filename: generateExportFilename('rmp-brands'),
-      headers: ['Name', 'Image', 'Position', 'Main Category', 'Authorized Brand', 'Status', 'Created At', 'Updated At'],
+      headers: ['Name', 'Image', 'Position', 'Categories', 'Authorized Brand', 'Status', 'Created At', 'Updated At'],
       data: all,
       fieldMap: {
         'Name': 'name',
         'Image': (item: RmpBrand) => item.image || '-',
         'Position': 'position',
-        'Main Category': 'main_category',
+        'Categories': (item: RmpBrand) => item.rmp_categories?.map((c) => c.name).join(', ') || '-',
         'Authorized Brand': authorizedLabel,
         'Status': 'status',
         'Created At': (item: RmpBrand) => new Date(item.created_at).toLocaleDateString(),
@@ -148,7 +189,7 @@ const RmpBrandsPage = () => {
     setEditing(null);
     setName('');
     setPosition(0);
-    setMainCategory('');
+    setSelectedCategoryIds([]);
     setAuthorizedBrandId('');
     setStatus('active');
     setOpen(true);
@@ -158,29 +199,58 @@ const RmpBrandsPage = () => {
     setEditing(r);
     setName(r.name);
     setPosition(r.position);
-    setMainCategory(r.main_category || '');
+    // The API never returns linked categories — read from localStorage cache instead.
+    setSelectedCategoryIds(getCachedBrandCategories(r.id));
     setAuthorizedBrandId(r.authorized_brand_id || '');
     setStatus(r.status === 'inactive' ? 'inactive' : 'active');
     setOpen(true);
   };
 
-  const onSave = () => {
+  const patchCategoryCache = (brandId: string, categoryIds: string[]) => {
+    const linkedCategories = categoryIds.map((id) => ({
+      id,
+      name: allCategories.find((c) => c.id === id)?.name ?? id,
+    }));
+    queryClient.setQueriesData(
+      { queryKey: ['rmp_brands'] },
+      (old: unknown) => {
+        if (!old || typeof old !== 'object') return old;
+        const page = old as { data?: RmpBrand[]; [k: string]: unknown };
+        if (!Array.isArray(page.data)) return old;
+        return {
+          ...page,
+          data: page.data.map((r) =>
+            r.id === brandId ? { ...r, rmp_categories: linkedCategories } : r,
+          ),
+        };
+      },
+    );
+  };
+
+  const onSave = async () => {
     if (!name.trim()) return;
-    const data = { 
-      name: name.trim(), 
+    const data = {
+      name: name.trim(),
       position,
-      main_category: mainCategory || undefined,
       authorized_brand_id: authorizedBrandId || undefined,
       status,
       is_deleted: status === 'inactive',
     };
-    if (editing) {
-      updateMut.mutate(
-        { id: editing.id, updates: data },
-        { onSuccess: () => setOpen(false) },
-      );
-    } else {
-      createMut.mutate(data, { onSuccess: () => setOpen(false) });
+    try {
+      if (editing) {
+        await updateMut.mutateAsync({ id: editing.id, updates: data });
+        await updateRmpBrandCategories(editing.id, selectedCategoryIds);
+        saveBrandCategoryCache(editing.id, selectedCategoryIds);
+        patchCategoryCache(editing.id, selectedCategoryIds);
+      } else {
+        const newBrand = await createMut.mutateAsync(data) as RmpBrand;
+        await updateRmpBrandCategories(newBrand.id, selectedCategoryIds);
+        saveBrandCategoryCache(newBrand.id, selectedCategoryIds);
+        patchCategoryCache(newBrand.id, selectedCategoryIds);
+      }
+      setOpen(false);
+    } catch {
+      // Individual errors are already toasted by the mutation hooks
     }
   };
 
@@ -256,7 +326,7 @@ const RmpBrandsPage = () => {
                   <TableHead>Name</TableHead>
                   <TableHead>Image</TableHead>
                   <TableHead>Position</TableHead>
-                  <TableHead>Main Category</TableHead>
+                  <TableHead>Categories</TableHead>
                   <TableHead>Authorized Brand</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Created At</TableHead>
@@ -281,7 +351,23 @@ const RmpBrandsPage = () => {
                       <ImageCell src={r.image} alt={r.name} size="sm" />
                     </TableCell>
                     <TableCell>{r.position}</TableCell>
-                    <TableCell>{r.main_category || '-'}</TableCell>
+                    <TableCell>
+                      {r.rmp_categories && r.rmp_categories.length > 0 ? (
+                        <div className="flex flex-wrap gap-1">
+                          {r.rmp_categories.map((c) => (
+                            <Badge key={c.id} variant="secondary" className="text-xs font-normal">
+                              {c.name}
+                            </Badge>
+                          ))}
+                        </div>
+                      ) : r.main_category ? (
+                        <Badge variant="outline" className="text-xs font-normal text-muted-foreground">
+                          {r.main_category}
+                        </Badge>
+                      ) : (
+                        <span className="text-muted-foreground">-</span>
+                      )}
+                    </TableCell>
                     <TableCell>
                       {authBrand ? (
                         <Link
@@ -356,12 +442,74 @@ const RmpBrandsPage = () => {
               />
             </div>
             <div className="space-y-2">
-              <Label>Main Category</Label>
-              <Input
-                value={mainCategory}
-                onChange={(e) => setMainCategory(e.target.value)}
-                placeholder="Enter main category"
-              />
+              <Label>Categories</Label>
+              <Popover open={categoryPopoverOpen} onOpenChange={setCategoryPopoverOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={categoryPopoverOpen}
+                    className="w-full justify-between h-auto min-h-10 font-normal"
+                    disabled={categoriesLoading}
+                  >
+                    <div className="flex flex-wrap gap-1 py-0.5">
+                      {selectedCategoryIds.length === 0 ? (
+                        <span className="text-muted-foreground">
+                          {categoriesLoading ? 'Loading categories…' : 'Select categories…'}
+                        </span>
+                      ) : (
+                        selectedCategoryIds.map((id) => {
+                          const cat = allCategories.find((c) => c.id === id);
+                          return (
+                            <Badge key={id} variant="secondary" className="text-xs gap-1">
+                              {cat?.name ?? id}
+                              <X
+                                className="h-3 w-3 cursor-pointer"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setSelectedCategoryIds((prev) => prev.filter((i) => i !== id));
+                                }}
+                              />
+                            </Badge>
+                          );
+                        })
+                      )}
+                    </div>
+                    <ChevronsUpDown className="h-4 w-4 ml-2 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
+                  <Command>
+                    <CommandInput placeholder="Search categories…" />
+                    <CommandList>
+                      <CommandEmpty>No categories found.</CommandEmpty>
+                      <CommandGroup>
+                        {allCategories.map((cat) => (
+                          <CommandItem
+                            key={cat.id}
+                            value={cat.name}
+                            onSelect={() => {
+                              setSelectedCategoryIds((prev) =>
+                                prev.includes(cat.id)
+                                  ? prev.filter((id) => id !== cat.id)
+                                  : [...prev, cat.id],
+                              );
+                            }}
+                          >
+                            <Check
+                              className={cn(
+                                'h-4 w-4 mr-2 shrink-0',
+                                selectedCategoryIds.includes(cat.id) ? 'opacity-100' : 'opacity-0',
+                              )}
+                            />
+                            {cat.name}
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
             </div>
             <div className="space-y-2">
               <div className="flex items-center justify-between gap-2">
@@ -411,8 +559,11 @@ const RmpBrandsPage = () => {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
-            <Button onClick={onSave} disabled={!name.trim() || createMut.isPending || updateMut.isPending}>
-              {editing ? 'Update' : 'Create'}
+            <Button
+              onClick={() => void onSave()}
+              disabled={!name.trim() || createMut.isPending || updateMut.isPending}
+            >
+              {createMut.isPending || updateMut.isPending ? 'Saving…' : editing ? 'Update' : 'Create'}
             </Button>
           </DialogFooter>
         </DialogContent>

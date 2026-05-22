@@ -4,7 +4,6 @@ import type { RmpBrand } from '@/services/masters/rmpBrandsService';
 export interface RmpBrandCreatePayload {
   name: string;
   position: number;
-  main_category?: string;
   authorized_brand_id?: string;
   status: string;
   is_deleted: boolean;
@@ -14,7 +13,6 @@ export interface RmpBrandCreatePayload {
 export interface RmpBrandUpdatePayload {
   name?: string;
   position?: string;
-  main_category?: string;
   authorized_brand_id?: string;
   status?: string;
   is_deleted?: boolean;
@@ -45,12 +43,6 @@ export const buildRmpBrandsColumns = ({
     type: 'integer',
     min: 0,
     width: 100,
-  },
-  {
-    key: 'main_category',
-    name: 'Main Category',
-    type: 'text',
-    width: 150,
   },
   {
     key: 'status',
@@ -110,7 +102,6 @@ function getImageFileFromRow(row: RmpBrand): File | undefined {
 export const rmpBrandsToCreatePayload = (row: RmpBrand): RmpBrandCreatePayload => ({
   name: row.name,
   position: row.position,
-  main_category: row.main_category || undefined,
   authorized_brand_id: row.authorized_brand_id || undefined,
   status: row.status,
   is_deleted: row.status === 'inactive',
@@ -120,7 +111,6 @@ export const rmpBrandsToCreatePayload = (row: RmpBrand): RmpBrandCreatePayload =
 export const rmpBrandsToUpdatePayload = (row: RmpBrand): RmpBrandUpdatePayload => ({
   name: row.name,
   position: row.position,
-  main_category: row.main_category || undefined,
   authorized_brand_id: row.authorized_brand_id || undefined,
   status: row.status,
   is_deleted: row.status === 'inactive',

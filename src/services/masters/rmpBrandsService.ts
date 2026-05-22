@@ -64,6 +64,13 @@ function normalizeRmpBrand(r: Record<string, unknown>): RmpBrand {
       ? String(rawAuthId)
       : embeddedAuth?.id;
 
+  const rmp_categories = Array.isArray(r.rmp_categories)
+    ? (r.rmp_categories as Record<string, unknown>[]).map((c) => ({
+        id: normalizeId(c.id ?? c.rmp_category_id),
+        name: String(c.name ?? ''),
+      }))
+    : undefined;
+
   return {
     id: normalizeId(r.id ?? r.rmp_brand_id),
     name: String(r.name ?? ''),
@@ -77,6 +84,7 @@ function normalizeRmpBrand(r: Record<string, unknown>): RmpBrand {
     main_category: r.main_category ? String(r.main_category) : undefined,
     authorized_brand_id,
     authorized_brand: embeddedAuth,
+    rmp_categories,
     image: r.image ? String(r.image) : undefined,
     status,
     created_at:
@@ -148,7 +156,9 @@ export const getRmpBrandById = async (id: string): Promise<RmpBrand | null> => {
     method: 'GET',
     pathSuffix: id,
   });
-  const data = (body as { data?: Record<string, unknown> }).data;
+  // Body shape: { data: { rmp_brand: { ... } } }
+  const wrapper = (body as { data?: { rmp_brand?: Record<string, unknown> } }).data;
+  const data = wrapper?.rmp_brand ?? null;
   if (!data) return null;
   return normalizeRmpBrand(data);
 };
