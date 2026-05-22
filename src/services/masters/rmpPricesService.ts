@@ -124,18 +124,12 @@ export async function fetchRmpPricesPaginated(
   if (filters?.search) {
     query.search = filters.search;
   }
-  // eslint-disable-next-line no-console
-  console.log('[fetchRmpPricesPaginated] API query:', query);
   const { body } = await callScottDashboard<Record<string, unknown>>({
     resource: 'rmp_prices',
     method: 'GET',
     query,
   });
   const records = extractRecords(body);
-  // eslint-disable-next-line no-console
-  console.log('[fetchRmpPricesPaginated] Total records from API:', records.length);
-  // eslint-disable-next-line no-console
-  console.log('[fetchRmpPricesPaginated] First record name:', (records[0] as Record<string, unknown>)?.name);
   const data = records.map((r) => normalizeRmpPrice(r));
   return {
     data,
@@ -144,7 +138,7 @@ export async function fetchRmpPricesPaginated(
 }
 
 export const fetchRmpPrices = async (): Promise<RmpPrice[]> =>
-  fetchAllScottPages((pp) => fetchRmpPricesPaginated(pp));
+  fetchAllScottPages((pp) => fetchRmpPricesPaginated(pp), { pageSize: 1000 });
 
 export const getRmpPriceById = async (id: string): Promise<RmpPrice | null> => {
   const { body } = await callScottDashboard<Record<string, unknown>>({

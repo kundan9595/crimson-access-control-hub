@@ -111,26 +111,67 @@ export function hasNextScottPage<T>(result: ScottPaginatedResult<T>): boolean {
 /** Load every page until the last short page or maxPages safety cap. */
 export async function fetchAllScottPages<T>(
   fetchPage: (p: ScottPageParams) => Promise<ScottPaginatedResult<T>>,
-  options?: { maxPages?: number; pageSize?: number },
+  options?: { maxPages?: number; pageSize?: number; concurrency?: number },
 ): Promise<T[]> {
   const pageSize = Math.min(
     options?.pageSize ?? config.pagination.maxPageSize,
     config.pagination.maxPageSize,
   );
   const maxPages = options?.maxPages ?? 250;
-  const out: T[] = [];
-  for (let page = 1; page <= maxPages; page++) {
-    try {
-      const res = await fetchPage({ page, items: pageSize });
-      out.push(...res.data);
-      if (res.data.length < pageSize) break;
-      if (res.totalCountIsExact && page >= res.totalPages) break;
-      if (!res.totalCountIsExact && res.data.length === 0) break;
-    } catch (err) {
-      console.error(`fetchAllScottPages: Error on page ${page}:`, err);
-      throw err;
+  // Cap concurrent requests to avoid overwhelming the Edge Function
+  const concurrency = options?.concurrency ?? 5;
+
+  // Fetch page 1 to discover the total page count
+  let firstResult: ScottPaginatedResult<T>;
+  try {
+    firstResult = await fetchPage({ page: 1, items: pageSize });
+  } catch (err) {
+    console.error('fetchAllScottPages: Error on page 1:', err);
+    throw err;
+  }
+
+  const out: T[] = [...firstResult.data];
+
+  // If everything fit on the first page we're done
+  if (firstResult.data.length < pageSize) return out;
+  if (firstResult.totalCountIsExact && firstResult.totalPages <= 1) return out;
+
+  // Determine remaining pages
+  const totalPages = firstResult.totalCountIsExact
+    ? Math.min(firstResult.totalPages, maxPages)
+    : maxPages;
+
+  if (totalPages <= 1) return out;
+
+  // Fetch remaining pages in batches to avoid overwhelming the Edge Function
+  const remainingPageNums = Array.from(
+    { length: totalPages - 1 },
+    (_, i) => i + 2,
+  );
+
+  // Process in chunks of `concurrency` pages at a time
+  const resultsByPage = new Array<ScottPaginatedResult<T>>(totalPages - 1);
+  for (let i = 0; i < remainingPageNums.length; i += concurrency) {
+    const batch = remainingPageNums.slice(i, i + concurrency);
+    const batchResults = await Promise.all(
+      batch.map(async (page) => {
+        try {
+          return { page, result: await fetchPage({ page, items: pageSize }) };
+        } catch (err) {
+          console.error(`fetchAllScottPages: Error on page ${page}:`, err);
+          throw err;
+        }
+      }),
+    );
+    for (const { page, result } of batchResults) {
+      resultsByPage[page - 2] = result;
     }
   }
+
+  for (const res of resultsByPage) {
+    if (res) out.push(...res.data);
+  }
+
   return out;
 }
 

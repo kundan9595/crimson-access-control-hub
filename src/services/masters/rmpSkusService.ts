@@ -191,10 +191,11 @@ export async function fetchRmpSkusPaginated(
 
 export const fetchRmpSkus = async (): Promise<RmpSku[]> => {
   try {
-    return await fetchAllScottPages(
+    const result = await fetchAllScottPages(
       (pp) => fetchRmpSkusPaginated(pp),
       { pageSize: 100, maxPages: 10 }
     );
+    return result;
   } catch (err) {
     console.error('fetchRmpSkus failed:', err);
     return [];

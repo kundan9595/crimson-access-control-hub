@@ -57,8 +57,8 @@ const RmpPricesPage = () => {
   const deleteMut = useDeleteRmpPrice();
   const queryClient = useQueryClient();
   const bulk = useMasterListBulkSelection();
-  const { data: rmpSkus = [] } = useAllRmpSkus();
-  const { data: rmpPriceTypes = [] } = useAllRmpPriceTypes();
+  const { data: rmpSkus = [], isLoading: isLoadingSkus } = useAllRmpSkus();
+  const { data: rmpPriceTypes = [], isLoading: isLoadingPriceTypes } = useAllRmpPriceTypes();
 
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<RmpPrice | null>(null);
@@ -399,6 +399,7 @@ const RmpPricesPage = () => {
         title="RMP Prices"
         filenameStem="rmp-prices"
         columns={importColumns}
+        columnsLoading={isLoadingSkus || isLoadingPriceTypes}
         createEmptyRow={rmpPricesCreateEmptyRow}
         toCreatePayload={rmpPricesToCreatePayload}
         toUpdatePayload={rmpPricesToUpdatePayload}

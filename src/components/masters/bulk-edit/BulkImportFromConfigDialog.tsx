@@ -97,6 +97,7 @@ function BulkImportFromConfigDialog<TRow, TCreate, TUpdate>({
 }: BulkImportFromConfigDialogProps<TRow, TCreate, TUpdate>) {
   const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const prevProcessFileRef = useRef<((file: File) => Promise<void>) | null>(null);
 
   const [step, setStep] = useState<Step>('upload');
   const [isDragOver, setIsDragOver] = useState(false);
@@ -106,8 +107,9 @@ function BulkImportFromConfigDialog<TRow, TCreate, TUpdate>({
   const [unknownHeaders, setUnknownHeaders] = useState<string[]>([]);
   const [missingRequiredLabels, setMissingRequiredLabels] = useState<string[]>([]);
   const [isImporting, setIsImporting] = useState(false);
-  const [importProgress, setImportProgress] = useState({ completed: 0, total: 0 });
+  const [importProgress, setImportProgress] = useState({ completed: 0, total: 0, startTime: 0 });
   const [saveResult, setSaveResult] = useState<SaveResult | null>(null);
+  const abortRef = useRef(false);
 
   // Upsert-specific state
   const [existingRows, setExistingRows] = useState<TRow[]>([]);
@@ -186,8 +188,9 @@ function BulkImportFromConfigDialog<TRow, TCreate, TUpdate>({
     setCsvHeaders([]);
     setUnknownHeaders([]);
     setMissingRequiredLabels([]);
+    abortRef.current = false;
     setIsImporting(false);
-    setImportProgress({ completed: 0, total: 0 });
+    setImportProgress({ completed: 0, total: 0, startTime: 0 });
     setSaveResult(null);
     setExistingRows([]);
     setIsFetchingExisting(false);
@@ -200,6 +203,137 @@ function BulkImportFromConfigDialog<TRow, TCreate, TUpdate>({
     resetAll();
     onOpenChange(false);
   }, [isImporting, onOpenChange, resetAll]);
+
+  const handleCancelImport = useCallback(() => {
+    abortRef.current = true;
+  }, []);
+
+  const processFile = useCallback(
+    async (file: File) => {
+      try {
+        const text = await file.text();
+        const parsed = parseCSV(text);
+        if (parsed.length < 2) {
+          toast.error('CSV is empty or only contains a header row.');
+          return;
+        }
+
+        const headers = parsed[0];
+        setCsvHeaders(headers);
+
+        const headerColumns = headers.map((h) => columnByHeader.get(h.trim().toLowerCase()));
+        const unknown = headers.filter((h, i) => !headerColumns[i]);
+        setUnknownHeaders(unknown);
+
+        const requiredKeys = columns.filter((c) => c.required).map((c) => c.key as string);
+        const presentKeys = new Set(
+          headerColumns.filter(Boolean).map((c) => (c as BulkEditColumn<TRow>).key as string),
+        );
+        const missingKeys = requiredKeys.filter((k) => !presentKeys.has(k));
+        setMissingRequiredLabels(
+          missingKeys.map((k) => columns.find((c) => (c.key as string) === k)?.name ?? k),
+        );
+
+        // Pre-build O(1) lookup maps for every enum column so validation is fast
+        // even for large files (65k+ rows). Without this, each cell calls options.find()
+        // which is O(options.length), making the total O(rows × options) = millions of comparisons.
+        type EnumResolver = (value: string) => { valid: boolean; error?: string; parsedValue: unknown };
+        const enumResolvers = new Map<string, EnumResolver>();
+        for (const col of headerColumns) {
+          if (!col || col.type !== 'enum' || !col.options) continue;
+          const opts = col.options as Array<{ value: string; label: string }>;
+          const byValue = new Map<string, string>();
+          const byValueLower = new Map<string, string>();
+          const byLabelLower = new Map<string, string>();
+          const byDisplayNameLower = new Map<string, string>();
+          for (const o of opts) {
+            byValue.set(o.value, o.value);
+            byValueLower.set(o.value.toLowerCase(), o.value);
+            byLabelLower.set(o.label.toLowerCase(), o.value);
+            byDisplayNameLower.set(enumOptionDisplayName(o.label).toLowerCase(), o.value);
+          }
+          const nullable = (col as BulkEditColumn<TRow>).nullable ?? !(col as BulkEditColumn<TRow>).required;
+          const shortNames = opts.map((o) => `"${enumOptionDisplayName(o.label)}"`).slice(0, 10).join(', ');
+          const more = opts.length > 10 ? ` and ${opts.length - 10} more` : '';
+          const examples = opts.slice(0, 3).map((o) => `"${enumOptionDisplayName(o.label)}" (ID: ${o.value})`).join(', ');
+          enumResolvers.set(col.key as string, (value: string) => {
+            const trimmed = value.trim();
+            const tl = trimmed.toLowerCase();
+            if (!trimmed && nullable) return { valid: true, parsedValue: '' };
+            const resolved = byValue.get(trimmed) ?? byValueLower.get(tl) ?? byLabelLower.get(tl) ?? byDisplayNameLower.get(tl);
+            if (resolved !== undefined) return { valid: true, parsedValue: resolved };
+            return { valid: false, parsedValue: trimmed, error: `Invalid value "${trimmed}". Allowed names: ${shortNames}${more}. You can also use the full dropdown label or ID. Examples: ${examples}` };
+          });
+        }
+
+        // Process rows in async chunks to keep the UI thread responsive on large files.
+        const CHUNK = 2_000;
+        const dataRows = parsed.slice(1);
+        const rows: ParsedRow<TRow>[] = [];
+
+        for (let start = 0; start < dataRows.length; start += CHUNK) {
+          const chunk = dataRows.slice(start, start + CHUNK);
+          for (let ci = 0; ci < chunk.length; ci++) {
+            const rawRow = chunk[ci];
+            const rowNumber = start + ci + 2;
+            const errors: Record<string, string> = {};
+            const warnings: string[] = [];
+            const draft = createEmptyRow();
+
+            headers.forEach((header, colIdx) => {
+              const col = headerColumns[colIdx];
+              if (!col) {
+                if (rawRow[colIdx]?.trim()) {
+                  warnings.push(`Ignoring unknown column "${header}"`);
+                }
+                return;
+              }
+              const cellValue = rawRow[colIdx] ?? '';
+              // Use pre-built O(1) enum resolver if available, otherwise fall back to validateCellValue
+              const resolver = col.type === 'enum' ? enumResolvers.get(col.key as string) : undefined;
+              const result = resolver
+                ? resolver(cellValue)
+                : validateCellValue(col.type, cellValue, col as unknown as BulkEditColumn<unknown>);
+              if (!result.valid) {
+                errors[col.name] = result.error ?? 'Invalid value';
+                return;
+              }
+              (draft as Record<string, unknown>)[col.key as string] = result.parsedValue ?? '';
+            });
+
+            for (const key of missingKeys) {
+              const col = columns.find((c) => (c.key as string) === key);
+              if (col) errors[col.name] = 'Required column missing in CSV';
+            }
+
+            const valid = Object.keys(errors).length === 0;
+            rows.push({ rowNumber, raw: rawRow, data: valid ? draft : undefined, errors, warnings, valid });
+          }
+          // Yield to the main thread between chunks so the browser stays responsive
+          await new Promise<void>((r) => setTimeout(r, 0));
+        }
+
+        setParsedRows(rows);
+        setStep('configure');
+      } catch (e) {
+        toast.error(e instanceof Error ? e.message : 'Failed to parse CSV');
+      }
+    },
+    [columns, columnByHeader, createEmptyRow],
+  );
+
+  // When columns update (e.g. enum options finish loading after the file was already uploaded),
+  // re-run processFile so rows are validated against the now-populated options.
+  useEffect(() => {
+    if (prevProcessFileRef.current !== processFile) {
+      prevProcessFileRef.current = processFile;
+      if (selectedFile && (step === 'configure' || step === 'review')) {
+        void processFile(selectedFile);
+      }
+    } else {
+      prevProcessFileRef.current = processFile;
+    }
+  }, [processFile, selectedFile, step]);
 
   const downloadTemplate = useCallback(() => {
     const content = createCSVContent(headerNames, [sampleRow]);
@@ -302,9 +436,14 @@ function BulkImportFromConfigDialog<TRow, TCreate, TUpdate>({
   }, [fetchAll]);
 
   const runMatch = useCallback(async () => {
-    await fetchExistingRows();
+    // For create_new strategy we never need to compare against existing rows
+    if (strategy !== 'create_new') {
+      await fetchExistingRows();
+    } else {
+      setExistingRows([]);
+    }
     setStep('review');
-  }, [fetchExistingRows]);
+  }, [fetchExistingRows, strategy]);
 
   // Re-classify parsed rows whenever keys, strategy, or existing data changes
   useEffect(() => {
@@ -378,84 +517,6 @@ function BulkImportFromConfigDialog<TRow, TCreate, TUpdate>({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedKeys, strategy, existingIndex]); // Don't include parsedRows to avoid loop
 
-  const processFile = useCallback(
-    async (file: File) => {
-      try {
-        const text = await file.text();
-        const parsed = parseCSV(text);
-        if (parsed.length < 2) {
-          toast.error('CSV is empty or only contains a header row.');
-          return;
-        }
-
-        const headers = parsed[0];
-        setCsvHeaders(headers);
-
-        const headerColumns = headers.map((h) => columnByHeader.get(h.trim().toLowerCase()));
-        const unknown = headers.filter((h, i) => !headerColumns[i]);
-        setUnknownHeaders(unknown);
-
-        const requiredKeys = columns.filter((c) => c.required).map((c) => c.key as string);
-        const presentKeys = new Set(
-          headerColumns.filter(Boolean).map((c) => (c as BulkEditColumn<TRow>).key as string),
-        );
-        const missingKeys = requiredKeys.filter((k) => !presentKeys.has(k));
-        setMissingRequiredLabels(
-          missingKeys.map((k) => columns.find((c) => (c.key as string) === k)?.name ?? k),
-        );
-
-        const rows: ParsedRow<TRow>[] = parsed.slice(1).map((rawRow, idx) => {
-          const rowNumber = idx + 2;
-          const errors: Record<string, string> = {};
-          const warnings: string[] = [];
-          const draft = createEmptyRow();
-
-          headers.forEach((header, colIdx) => {
-            const col = headerColumns[colIdx];
-            if (!col) {
-              if (rawRow[colIdx]?.trim()) {
-                warnings.push(`Ignoring unknown column "${header}"`);
-              }
-              return;
-            }
-            const cellValue = rawRow[colIdx] ?? '';
-            const result = validateCellValue(
-              col.type,
-              cellValue,
-              col as unknown as BulkEditColumn<unknown>,
-            );
-            if (!result.valid) {
-              errors[col.name] = result.error ?? 'Invalid value';
-              return;
-            }
-            (draft as Record<string, unknown>)[col.key as string] = result.parsedValue ?? '';
-          });
-
-          for (const key of missingKeys) {
-            const col = columns.find((c) => (c.key as string) === key);
-            if (col) errors[col.name] = 'Required column missing in CSV';
-          }
-
-          const valid = Object.keys(errors).length === 0;
-          return {
-            rowNumber,
-            raw: rawRow,
-            data: valid ? draft : undefined,
-            errors,
-            warnings,
-            valid,
-          };
-        });
-
-        setParsedRows(rows);
-        setStep('configure');
-      } catch (e) {
-        toast.error(e instanceof Error ? e.message : 'Failed to parse CSV');
-      }
-    },
-    [columns, columnByHeader, createEmptyRow],
-  );
-
   const handleFile = useCallback(
     (file: File) => {
       if (!file.name.toLowerCase().endsWith('.csv') && file.type !== 'text/csv') {
@@ -486,8 +547,9 @@ function BulkImportFromConfigDialog<TRow, TCreate, TUpdate>({
   const confirmImport = useCallback(async () => {
     if (actionableRows.length === 0) return;
 
+    abortRef.current = false;
     setIsImporting(true);
-    setImportProgress({ completed: 0, total: actionableRows.length });
+    setImportProgress({ completed: 0, total: actionableRows.length, startTime: Date.now() });
 
     // Re-fetch existing rows right before executing so we never act on stale state
     // (e.g. the user deleted records while the dialog was already open on the review step).
@@ -522,8 +584,12 @@ function BulkImportFromConfigDialog<TRow, TCreate, TUpdate>({
     let updatedCount = 0;
     let skippedCount = 0;
 
-    const CONCURRENCY = 20;
+    // Scale concurrency with dataset size to keep large imports reasonably fast
+    // without hammering the API on small datasets.
+    const CONCURRENCY = freshRows.length > 10_000 ? 80 : freshRows.length > 1_000 ? 40 : 20;
+
     for (let i = 0; i < freshRows.length; i += CONCURRENCY) {
+      if (abortRef.current) break;
       const batch = freshRows.slice(i, i + CONCURRENCY);
       await Promise.all(
         batch.map(async (row) => {
@@ -547,7 +613,15 @@ function BulkImportFromConfigDialog<TRow, TCreate, TUpdate>({
           }
         }),
       );
-      setImportProgress({ completed: Math.min(i + CONCURRENCY, freshRows.length), total: freshRows.length });
+      setImportProgress((prev) => ({ ...prev, completed: Math.min(i + CONCURRENCY, freshRows.length) }));
+    }
+
+    if (abortRef.current) {
+      toast.warning(`Import cancelled after ${createdCount + updatedCount} rows.`);
+      abortRef.current = false;
+      setIsImporting(false);
+      setImportProgress({ completed: 0, total: 0, startTime: 0 });
+      return;
     }
 
     // Count skips: original skips from pre-flight + any rows reclassified to skip at run time
@@ -636,6 +710,7 @@ function BulkImportFromConfigDialog<TRow, TCreate, TUpdate>({
               importProgress={importProgress}
               onStartOver={resetAll}
               onConfirmImport={confirmImport}
+              onCancelImport={handleCancelImport}
               keyEligibleColumns={keyEligibleColumns}
               selectedKeys={selectedKeys}
               setSelectedKeys={setSelectedKeys}
@@ -1016,9 +1091,10 @@ interface ReviewStepProps<TRow> {
   };
   isImporting: boolean;
   isFetchingExisting: boolean;
-  importProgress: { completed: number; total: number };
+  importProgress: { completed: number; total: number; startTime: number };
   onStartOver: () => void;
   onConfirmImport: () => void;
+  onCancelImport: () => void;
   keyEligibleColumns: BulkEditColumn<TRow>[];
   selectedKeys: string[];
   setSelectedKeys: (keys: string[]) => void;
@@ -1040,6 +1116,7 @@ function ReviewStep<TRow>({
   importProgress,
   onStartOver,
   onConfirmImport,
+  onCancelImport,
   keyEligibleColumns,
   selectedKeys,
   setSelectedKeys,
@@ -1075,6 +1152,19 @@ function ReviewStep<TRow>({
 
   return (
     <div className="space-y-4">
+      {parsedRows.length > 10_000 && !isImporting && (
+        <div className="rounded-md border border-amber-500/30 bg-amber-500/10 px-3 py-2.5 text-sm text-amber-700 dark:text-amber-400 space-y-1">
+          <p className="font-medium flex items-center gap-1.5">
+            <AlertCircle className="h-3.5 w-3.5 shrink-0" />
+            Large dataset — {parsedRows.length.toLocaleString()} rows
+          </p>
+          <p className="text-xs text-amber-600/80 dark:text-amber-500/80">
+            Each row requires an individual API call. At this volume, import may take
+            {' '}<strong>10–20 minutes</strong>. Keep this tab open and do not navigate away.
+            {' '}Consider splitting the file into smaller batches (&lt;10k rows) for faster results.
+          </p>
+        </div>
+      )}
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-sm flex items-center gap-2">
@@ -1352,9 +1442,19 @@ function ReviewStep<TRow>({
       {isImporting && (
         <div className="space-y-2">
           <Progress value={(importProgress.completed / Math.max(1, importProgress.total)) * 100} />
-          <p className="text-xs text-muted-foreground text-center">
-            Importing {importProgress.completed} / {importProgress.total}…
-          </p>
+          <div className="flex items-center justify-between text-xs text-muted-foreground">
+            <span>Importing {importProgress.completed.toLocaleString()} / {importProgress.total.toLocaleString()}</span>
+            {importProgress.startTime > 0 && importProgress.completed > 0 && (() => {
+              const elapsed = (Date.now() - importProgress.startTime) / 1000;
+              const rate = importProgress.completed / elapsed;
+              const remaining = (importProgress.total - importProgress.completed) / Math.max(rate, 0.1);
+              if (remaining < 5) return null;
+              const mins = Math.floor(remaining / 60);
+              const secs = Math.round(remaining % 60);
+              return <span>~{mins > 0 ? `${mins}m ` : ''}{secs}s remaining</span>;
+            })()}
+          </div>
+          <p className="text-xs text-amber-600/80 text-center">Do not close this tab — import is in progress.</p>
         </div>
       )}
 
@@ -1364,12 +1464,17 @@ function ReviewStep<TRow>({
         <Button variant="outline" onClick={onStartOver} disabled={isImporting}>
           Start over
         </Button>
+        {isImporting && (
+          <Button variant="destructive" size="sm" onClick={onCancelImport}>
+            Cancel import
+          </Button>
+        )}
         <Button
           onClick={onConfirmImport}
           disabled={isImporting || actionableCount === 0}
         >
           {isImporting
-            ? `Importing ${importProgress.completed}/${importProgress.total}…`
+            ? `Importing ${importProgress.completed.toLocaleString()}/${importProgress.total.toLocaleString()}…`
             : `Import ${actionableCount} row${actionableCount === 1 ? '' : 's'}`}
         </Button>
       </div>
