@@ -32,7 +32,7 @@ import { useAllBrands } from '@/hooks/masters/useBrands';
 import { useAllRmpCategories } from '@/hooks/masters/useRmpCategories';
 import { ImageCell } from '@/components/masters/shared/ImageCell';
 import type { RmpBrand } from '@/services/masters/rmpBrandsService';
-import { updateRmpBrandCategories } from '@/services/masters/rmpBrandsService';
+import { updateRmpBrandCategories, getRmpBrandById } from '@/services/masters/rmpBrandsService';
 import { Check, ChevronsUpDown, Package, Edit, Trash2, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { MasterTableSkeleton } from '@/components/masters/shared/MasterListPageSkeleton';
@@ -199,11 +199,24 @@ const RmpBrandsPage = () => {
     setEditing(r);
     setName(r.name);
     setPosition(r.position);
-    // The API never returns linked categories — read from localStorage cache instead.
-    setSelectedCategoryIds(getCachedBrandCategories(r.id));
+    // Seed immediately from list row (may already have categories if API returns them)
+    // or fall back to localStorage while the Show endpoint loads.
+    const seed = r.rmp_categories?.length
+      ? r.rmp_categories.map((c) => c.id)
+      : getCachedBrandCategories(r.id);
+    setSelectedCategoryIds(seed);
     setAuthorizedBrandId(r.authorized_brand_id || '');
     setStatus(r.status === 'inactive' ? 'inactive' : 'active');
     setOpen(true);
+
+    // Fetch the full record — the backend now returns rmp_categories in the Show endpoint.
+    getRmpBrandById(r.id)
+      .then((full) => {
+        if (full?.rmp_categories?.length) {
+          setSelectedCategoryIds(full.rmp_categories.map((c) => c.id));
+        }
+      })
+      .catch(() => { /* non-fatal — seeded value stays */ });
   };
 
   const patchCategoryCache = (brandId: string, categoryIds: string[]) => {
