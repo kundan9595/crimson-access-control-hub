@@ -1150,6 +1150,27 @@ function ReviewStep<TRow>({
     toast.success(`Exported ${errorRows.length} error row${errorRows.length === 1 ? '' : 's'} to CSV`);
   }, [classifiedRows.error, csvHeaders, filenameStem]);
 
+  const exportDuplicateRowsCsv = useCallback(() => {
+    const duplicateRows = classifiedRows.duplicate;
+    if (duplicateRows.length === 0) return;
+    const headers = ['Row', ...csvHeaders, 'Reason'];
+    const data = duplicateRows.map((r) => {
+      const padded = csvHeaders.map((_, i) => r.raw[i] ?? '');
+      const reason =
+        r.errors._duplicate ??
+        Object.entries(r.errors)
+          .map(([k, v]) => `${k.startsWith('_') ? k.replace(/^_/, '') : k}: ${v}`)
+          .join(' | ');
+      return [String(r.rowNumber), ...padded, reason];
+    });
+    const content = createCSVContent(headers, data);
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+    downloadCSV(content, `${filenameStem}-import-duplicates-${timestamp}.csv`);
+    toast.success(
+      `Exported ${duplicateRows.length} duplicate row${duplicateRows.length === 1 ? '' : 's'} to CSV`,
+    );
+  }, [classifiedRows.duplicate, csvHeaders, filenameStem]);
+
   return (
     <div className="space-y-4">
       {parsedRows.length > 10_000 && !isImporting && (
@@ -1197,7 +1218,7 @@ function ReviewStep<TRow>({
             {classifiedRows.duplicate.length > 0 && (
               <Badge variant="outline" className="text-xs bg-amber-500/10 text-amber-600 border-amber-500/20">
                 <AlertCircle className="h-3 w-3 mr-1" />
-                {classifiedRows.duplicate.length} duplicate{classifiedRows.duplicate.length === 1 ? '' : 's'} skipped
+                {classifiedRows.duplicate.length} duplicate{classifiedRows.duplicate.length === 1 ? '' : 's'} in file
               </Badge>
             )}
             {classifiedRows.error.length > 0 && (
@@ -1345,6 +1366,36 @@ function ReviewStep<TRow>({
           </Button>
         </CardContent>
       </Card>
+
+      {classifiedRows.duplicate.length > 0 && (
+        <Card className="border-amber-500/40">
+          <CardHeader className="pb-3">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="space-y-1 min-w-0">
+                <CardTitle className="text-sm text-amber-700 dark:text-amber-400">
+                  Duplicates within your file
+                </CardTitle>
+                <CardDescription>
+                  {classifiedRows.duplicate.length} row{classifiedRows.duplicate.length === 1 ? '' : 's'} repeat
+                  the same match key as an earlier row in this CSV (only the first occurrence is imported). Export
+                  the list to fix or remove them, then re-upload.
+                </CardDescription>
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="shrink-0"
+                onClick={exportDuplicateRowsCsv}
+                disabled={isImporting}
+              >
+                <Download className="h-4 w-4 mr-2" />
+                Export duplicates CSV
+              </Button>
+            </div>
+          </CardHeader>
+        </Card>
+      )}
 
       {classifiedRows.error.length > 0 && (
         <Card className="border-destructive/40">

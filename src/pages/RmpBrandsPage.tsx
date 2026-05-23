@@ -118,6 +118,32 @@ const RmpBrandsPage = () => {
 
   const { data: allCategories = [], isLoading: categoriesLoading } = useAllRmpCategories();
 
+  const activeCategories = useMemo(
+    () => allCategories.filter((c) => c.status === 'active'),
+    [allCategories],
+  );
+
+  const activeCategoryIdSet = useMemo(
+    () => new Set(activeCategories.map((c) => c.id)),
+    [activeCategories],
+  );
+
+  const isActiveCategoryId = useCallback(
+    (categoryId: string) => {
+      if (activeCategoryIdSet.has(categoryId)) return true;
+      const cat = allCategories.find((c) => c.id === categoryId);
+      if (!cat) return categoriesLoading;
+      return cat.status === 'active';
+    },
+    [activeCategoryIdSet, allCategories, categoriesLoading],
+  );
+
+  const visibleBrandCategories = useCallback(
+    (categories: { id: string; name: string }[] | undefined) =>
+      (categories ?? []).filter((c) => isActiveCategoryId(c.id)),
+    [isActiveCategoryId],
+  );
+
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<RmpBrand | null>(null);
   const [name, setName] = useState('');
@@ -176,7 +202,10 @@ const RmpBrandsPage = () => {
         'Name': 'name',
         'Image': (item: RmpBrand) => item.image || '-',
         'Position': 'position',
-        'Categories': (item: RmpBrand) => item.rmp_categories?.map((c) => c.name).join(', ') || '-',
+        'Categories': (item: RmpBrand) =>
+          visibleBrandCategories(item.rmp_categories)
+            .map((c) => c.name)
+            .join(', ') || '-',
         'Authorized Brand': authorizedLabel,
         'Status': 'status',
         'Created At': (item: RmpBrand) => new Date(item.created_at).toLocaleDateString(),
@@ -220,10 +249,12 @@ const RmpBrandsPage = () => {
   };
 
   const patchCategoryCache = (brandId: string, categoryIds: string[]) => {
-    const linkedCategories = categoryIds.map((id) => ({
-      id,
-      name: allCategories.find((c) => c.id === id)?.name ?? id,
-    }));
+    const linkedCategories = categoryIds
+      .filter((id) => isActiveCategoryId(id))
+      .map((id) => ({
+        id,
+        name: allCategories.find((c) => c.id === id)?.name ?? id,
+      }));
     queryClient.setQueriesData(
       { queryKey: ['rmp_brands'] },
       (old: unknown) => {
@@ -350,6 +381,7 @@ const RmpBrandsPage = () => {
               <TableBody>
                 {rows.map((r) => {
                   const authBrand = resolveAuthorizedBrand(r);
+                  const displayCategories = visibleBrandCategories(r.rmp_categories);
                   return (
                   <TableRow key={r.id}>
                     <TableCell className="w-10 p-2 align-middle">
@@ -365,9 +397,9 @@ const RmpBrandsPage = () => {
                     </TableCell>
                     <TableCell>{r.position}</TableCell>
                     <TableCell>
-                      {r.rmp_categories && r.rmp_categories.length > 0 ? (
+                      {displayCategories.length > 0 ? (
                         <div className="flex flex-wrap gap-1">
-                          {r.rmp_categories.map((c) => (
+                          {displayCategories.map((c) => (
                             <Badge key={c.id} variant="secondary" className="text-xs font-normal">
                               {c.name}
                             </Badge>
@@ -471,21 +503,23 @@ const RmpBrandsPage = () => {
                           {categoriesLoading ? 'Loading categories…' : 'Select categories…'}
                         </span>
                       ) : (
-                        selectedCategoryIds.map((id) => {
-                          const cat = allCategories.find((c) => c.id === id);
-                          return (
-                            <Badge key={id} variant="secondary" className="text-xs gap-1">
-                              {cat?.name ?? id}
-                              <X
-                                className="h-3 w-3 cursor-pointer"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setSelectedCategoryIds((prev) => prev.filter((i) => i !== id));
-                                }}
-                              />
-                            </Badge>
-                          );
-                        })
+                        selectedCategoryIds
+                          .filter((id) => isActiveCategoryId(id))
+                          .map((id) => {
+                            const cat = allCategories.find((c) => c.id === id);
+                            return (
+                              <Badge key={id} variant="secondary" className="text-xs gap-1">
+                                {cat?.name ?? id}
+                                <X
+                                  className="h-3 w-3 cursor-pointer"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setSelectedCategoryIds((prev) => prev.filter((i) => i !== id));
+                                  }}
+                                />
+                              </Badge>
+                            );
+                          })
                       )}
                     </div>
                     <ChevronsUpDown className="h-4 w-4 ml-2 shrink-0 opacity-50" />
@@ -497,7 +531,7 @@ const RmpBrandsPage = () => {
                     <CommandList>
                       <CommandEmpty>No categories found.</CommandEmpty>
                       <CommandGroup>
-                        {allCategories.map((cat) => (
+                        {activeCategories.map((cat) => (
                           <CommandItem
                             key={cat.id}
                             value={cat.name}
