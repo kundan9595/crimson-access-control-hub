@@ -189,35 +189,26 @@ export async function fetchRmpSkusPaginated(
   };
 }
 
-export const fetchRmpSkus = async (): Promise<RmpSku[]> => {
-  try {
-    const result = await fetchAllScottPages(
-      (pp) => fetchRmpSkusPaginated(pp),
-      { pageSize: 100, maxPages: 10 }
-    );
-    return result;
-  } catch (err) {
-    console.error('fetchRmpSkus failed:', err);
-    return [];
-  }
-};
-
 /**
- * Fetches ALL SKU records (no page cap) for bulk import duplicate matching.
- * Unlike fetchRmpSkus, this does not cap at 10 pages so the full dataset
- * is available for accurate create vs update classification.
+ * Fetches ALL SKU records so dropdowns, bulk-import matching, and any other
+ * consumer always sees the full dataset (not just the first page or two).
+ * The Scott rmp_skus endpoint is happiest at ~100 items per request, so we
+ * page through with the default 250-page safety cap (= up to 25,000 SKUs).
  */
-export const fetchRmpSkusForBulkImport = async (): Promise<RmpSku[]> => {
+export const fetchRmpSkus = async (): Promise<RmpSku[]> => {
   try {
     return await fetchAllScottPages(
       (pp) => fetchRmpSkusPaginated(pp),
       { pageSize: 100, maxPages: 250 },
     );
   } catch (err) {
-    console.error('fetchRmpSkusForBulkImport failed:', err);
+    console.error('fetchRmpSkus failed:', err);
     return [];
   }
 };
+
+/** @deprecated Use {@link fetchRmpSkus} — both now load the complete dataset. */
+export const fetchRmpSkusForBulkImport = fetchRmpSkus;
 
 export const getRmpSkuById = async (id: string): Promise<RmpSku | null> => {
   const { body } = await callScottDashboard<Record<string, unknown>>({
