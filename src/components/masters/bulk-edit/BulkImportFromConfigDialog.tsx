@@ -39,10 +39,17 @@ export interface BulkImportFromConfigDialogProps<TRow, TCreate, TUpdate> {
   updateMutation: UseMutateAsyncFunction<unknown, Error, { id: string; updates: TUpdate }, unknown>;
   /** Fetch all existing records for matching (upsert) */
   fetchAll: () => Promise<TRow[]>;
+  /**
+   * When set, used for match + import instead of {@link fetchAll}.
+   * Receives parsed CSV row payloads so large tables can use targeted API lookups.
+   */
+  fetchAllForMatching?: (parsedRows: TRow[]) => Promise<TRow[]>;
   /** Get the unique ID from a row */
   getRowId: (row: TRow) => string;
   /** Default key field(s) to use for matching (defaults to first required text column) */
   defaultKeyFields?: Array<keyof TRow & string>;
+  /** Match enum columns by option id (recommended for FK fields like rmp_sku_id) */
+  matchEnumKeysByValueId?: boolean;
 }
 
 type Step = 'upload' | 'configure' | 'review' | 'complete';
@@ -92,8 +99,10 @@ function BulkImportFromConfigDialog<TRow, TCreate, TUpdate>({
   createMutation,
   updateMutation,
   fetchAll,
+  fetchAllForMatching,
   getRowId,
   defaultKeyFields,
+  matchEnumKeysByValueId = false,
 }: BulkImportFromConfigDialogProps<TRow, TCreate, TUpdate>) {
   const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -210,6 +219,7 @@ function BulkImportFromConfigDialog<TRow, TCreate, TUpdate>({
 
   const processFile = useCallback(
     async (file: File) => {
+      const parseT0 = performance.now();
       try {
         const text = await file.text();
         const parsed = parseCSV(text);
@@ -315,11 +325,12 @@ function BulkImportFromConfigDialog<TRow, TCreate, TUpdate>({
 
         setParsedRows(rows);
         setStep('configure');
+        const enumCols = columns.filter((c) => c.type === 'enum' && c.options);
       } catch (e) {
         toast.error(e instanceof Error ? e.message : 'Failed to parse CSV');
       }
     },
-    [columns, columnByHeader, createEmptyRow],
+    [columns, columnByHeader, createEmptyRow, title],
   );
 
   // When columns update (e.g. enum options finish loading after the file was already uploaded),
@@ -361,6 +372,9 @@ function BulkImportFromConfigDialog<TRow, TCreate, TUpdate>({
         const parsed = parseEnum(strVal, opts);
         if (parsed.valid) {
           const resolved = String(parsed.value);
+          if (matchEnumKeysByValueId) {
+            return resolved.toLowerCase();
+          }
           const opt = opts.find((o) => o.value === resolved);
           if (opt) {
             // Match on human-readable name, not raw id, so duplicate options (same name, different ids)
@@ -376,7 +390,7 @@ function BulkImportFromConfigDialog<TRow, TCreate, TUpdate>({
       return String(rawValue).trim().replace(/^\uFEFF/, '').toLowerCase();
     });
     return parts.join('|');
-  }, [columns]);
+  }, [columns, matchEnumKeysByValueId]);
 
   // Build lookup index from existing rows
   const existingIndex = useMemo(() => {
@@ -419,11 +433,25 @@ function BulkImportFromConfigDialog<TRow, TCreate, TUpdate>({
     return index;
   }, [existingRows, selectedKeys, normalizeKeyValue]);
 
+  const loadExistingForMatch = useCallback(
+    async (rowPayloads: TRow[]) => {
+      if (fetchAllForMatching) {
+        return fetchAllForMatching(rowPayloads);
+      }
+      return fetchAll();
+    },
+    [fetchAll, fetchAllForMatching],
+  );
+
   // Fetch existing rows once when entering review step
   const fetchExistingRows = useCallback(async () => {
     setIsFetchingExisting(true);
+    const t0 = performance.now();
     try {
-      const rows = await fetchAll();
+      const payloads = parsedRows
+        .filter((r) => r.valid && r.data)
+        .map((r) => r.data as TRow);
+      const rows = await loadExistingForMatch(payloads);
       if (import.meta.env.DEV) {
         console.log(`[BulkImport] fetchAll returned ${rows.length} existing rows`);
       }
@@ -433,7 +461,7 @@ function BulkImportFromConfigDialog<TRow, TCreate, TUpdate>({
     } finally {
       setIsFetchingExisting(false);
     }
-  }, [fetchAll]);
+  }, [fetchAll, fetchAllForMatching, loadExistingForMatch, parsedRows, title]);
 
   const runMatch = useCallback(async () => {
     // For create_new strategy we never need to compare against existing rows
@@ -513,6 +541,9 @@ function BulkImportFromConfigDialog<TRow, TCreate, TUpdate>({
       console.groupEnd();
     }
 
+    const createCount = classified.filter((r) => r.action === 'create').length;
+    const updateCount = classified.filter((r) => r.action === 'update').length;
+
     setParsedRows(classified);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedKeys, strategy, existingIndex]); // Don't include parsedRows to avoid loop
@@ -550,13 +581,22 @@ function BulkImportFromConfigDialog<TRow, TCreate, TUpdate>({
     abortRef.current = false;
     setIsImporting(true);
     setImportProgress({ completed: 0, total: actionableRows.length, startTime: Date.now() });
+    const importT0 = performance.now();
 
     // Re-fetch existing rows right before executing so we never act on stale state
     // (e.g. the user deleted records while the dialog was already open on the review step).
     let freshExisting: TRow[] = existingRows;
+    const refetchT0 = performance.now();
     try {
-      freshExisting = await fetchAll();
-      setExistingRows(freshExisting);
+      if (fetchAllForMatching && existingRows.length > 0) {
+        // Targeted/full-scan match already ran on the review step — skip a second slow fetch.
+      } else {
+        const payloads = actionableRows
+          .filter((r) => r.valid && r.data)
+          .map((r) => r.data as TRow);
+        freshExisting = await loadExistingForMatch(payloads);
+        setExistingRows(freshExisting);
+      }
     } catch {
       // Non-fatal: fall back to cached rows; worst case some updates fail and the user retries
     }
@@ -587,12 +627,15 @@ function BulkImportFromConfigDialog<TRow, TCreate, TUpdate>({
     // Scale concurrency with dataset size to keep large imports reasonably fast
     // without hammering the API on small datasets.
     const CONCURRENCY = freshRows.length > 10_000 ? 80 : freshRows.length > 1_000 ? 40 : 20;
+    const mutationsT0 = performance.now();
 
     for (let i = 0; i < freshRows.length; i += CONCURRENCY) {
       if (abortRef.current) break;
       const batch = freshRows.slice(i, i + CONCURRENCY);
+      const batchT0 = performance.now();
       await Promise.all(
         batch.map(async (row) => {
+          const rowT0 = performance.now();
           try {
             if (row.action === 'create') {
               await createMutation(toCreatePayload(row.data as TRow));
@@ -651,6 +694,8 @@ function BulkImportFromConfigDialog<TRow, TCreate, TUpdate>({
     queryClient,
     queryKey,
     fetchAll,
+    fetchAllForMatching,
+    loadExistingForMatch,
     existingRows,
     setExistingRows,
     normalizeKeyValue,

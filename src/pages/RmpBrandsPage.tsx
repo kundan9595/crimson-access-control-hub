@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { useQueryClient } from '@tanstack/react-query';
+import { useQueryClient, useQueries } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -16,6 +16,7 @@ import {
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import {
   Command,
@@ -33,6 +34,7 @@ import { useAllRmpCategories } from '@/hooks/masters/useRmpCategories';
 import { ImageCell } from '@/components/masters/shared/ImageCell';
 import type { RmpBrand } from '@/services/masters/rmpBrandsService';
 import { updateRmpBrandCategories, getRmpBrandById } from '@/services/masters/rmpBrandsService';
+import { toast } from 'sonner';
 import { Check, ChevronsUpDown, Package, Edit, Trash2, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { MasterTableSkeleton } from '@/components/masters/shared/MasterListPageSkeleton';
@@ -63,31 +65,7 @@ import {
 /** Radix Select reserves empty string; use a sentinel for optional "None" rows. */
 const SELECT_NONE = '__none__';
 
-// Client-side cache for rmp_brand → category IDs, since the API never returns
-// the linked categories in GET responses. Persists across page refreshes.
-const RMP_BRAND_CAT_CACHE_KEY = 'rmp_brand_categories_v1';
-
-function loadBrandCategoryCache(): Record<string, string[]> {
-  try {
-    return JSON.parse(localStorage.getItem(RMP_BRAND_CAT_CACHE_KEY) ?? '{}');
-  } catch {
-    return {};
-  }
-}
-
-function getCachedBrandCategories(brandId: string): string[] {
-  return loadBrandCategoryCache()[brandId] ?? [];
-}
-
-function saveBrandCategoryCache(brandId: string, categoryIds: string[]): void {
-  try {
-    const cache = loadBrandCategoryCache();
-    cache[brandId] = categoryIds;
-    localStorage.setItem(RMP_BRAND_CAT_CACHE_KEY, JSON.stringify(cache));
-  } catch {
-    // localStorage unavailable — graceful degradation
-  }
-}
+const rmpBrandDetailQueryKey = (id: string) => ['rmp_brands', 'detail', id] as const;
 
 const RmpBrandsPage = () => {
   const [page, setPage] = useState(1);
@@ -100,6 +78,25 @@ const RmpBrandsPage = () => {
     search ? { search } : undefined
   );
   const rows = rmpBrandsPage?.data ?? [];
+
+  const brandDetailQueries = useQueries({
+    queries: rows.map((row) => ({
+      queryKey: rmpBrandDetailQueryKey(row.id),
+      queryFn: () => getRmpBrandById(row.id),
+      enabled: Boolean(row.id),
+      staleTime: config.cache.staleTime,
+    })),
+  });
+
+  const brandCategoriesById = useMemo(() => {
+    const map = new Map<string, { id: string; name: string }[]>();
+    rows.forEach((row, index) => {
+      const detail = brandDetailQueries[index]?.data;
+      map.set(row.id, detail?.rmp_categories ?? row.rmp_categories ?? []);
+    });
+    return map;
+  }, [rows, brandDetailQueries]);
+
   const createMut = useCreateRmpBrand();
   const updateMut = useUpdateRmpBrand();
   const deleteMut = useDeleteRmpBrand();
@@ -150,6 +147,7 @@ const RmpBrandsPage = () => {
   const [position, setPosition] = useState(0);
   const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>([]);
   const [categoryPopoverOpen, setCategoryPopoverOpen] = useState(false);
+  const [loadingBrandCategories, setLoadingBrandCategories] = useState(false);
   const [authorizedBrandId, setAuthorizedBrandId] = useState('');
   const [status, setStatus] = useState('active');
   const [importOpen, setImportOpen] = useState(false);
@@ -219,6 +217,7 @@ const RmpBrandsPage = () => {
     setName('');
     setPosition(0);
     setSelectedCategoryIds([]);
+    setLoadingBrandCategories(false);
     setAuthorizedBrandId('');
     setStatus('active');
     setOpen(true);
@@ -228,47 +227,25 @@ const RmpBrandsPage = () => {
     setEditing(r);
     setName(r.name);
     setPosition(r.position);
-    // Seed immediately from list row (may already have categories if API returns them)
-    // or fall back to localStorage while the Show endpoint loads.
-    const seed = r.rmp_categories?.length
-      ? r.rmp_categories.map((c) => c.id)
-      : getCachedBrandCategories(r.id);
+    const cachedDetail = queryClient.getQueryData<RmpBrand | null>(rmpBrandDetailQueryKey(r.id));
+    const seed =
+      cachedDetail?.rmp_categories?.map((c) => c.id) ??
+      r.rmp_categories?.map((c) => c.id) ??
+      [];
     setSelectedCategoryIds(seed);
+    setLoadingBrandCategories(true);
     setAuthorizedBrandId(r.authorized_brand_id || '');
     setStatus(r.status === 'inactive' ? 'inactive' : 'active');
     setOpen(true);
 
-    // Fetch the full record — the backend now returns rmp_categories in the Show endpoint.
     getRmpBrandById(r.id)
       .then((full) => {
-        if (full?.rmp_categories?.length) {
-          setSelectedCategoryIds(full.rmp_categories.map((c) => c.id));
-        }
+        if (!full) return;
+        queryClient.setQueryData(rmpBrandDetailQueryKey(r.id), full);
+        setSelectedCategoryIds(full.rmp_categories?.map((c) => c.id) ?? []);
       })
-      .catch(() => { /* non-fatal — seeded value stays */ });
-  };
-
-  const patchCategoryCache = (brandId: string, categoryIds: string[]) => {
-    const linkedCategories = categoryIds
-      .filter((id) => isActiveCategoryId(id))
-      .map((id) => ({
-        id,
-        name: allCategories.find((c) => c.id === id)?.name ?? id,
-      }));
-    queryClient.setQueriesData(
-      { queryKey: ['rmp_brands'] },
-      (old: unknown) => {
-        if (!old || typeof old !== 'object') return old;
-        const page = old as { data?: RmpBrand[]; [k: string]: unknown };
-        if (!Array.isArray(page.data)) return old;
-        return {
-          ...page,
-          data: page.data.map((r) =>
-            r.id === brandId ? { ...r, rmp_categories: linkedCategories } : r,
-          ),
-        };
-      },
-    );
+      .catch(() => { /* non-fatal — seeded value stays */ })
+      .finally(() => setLoadingBrandCategories(false));
   };
 
   const onSave = async () => {
@@ -280,21 +257,32 @@ const RmpBrandsPage = () => {
       status,
       is_deleted: status === 'inactive',
     };
+    const finalCategoryIds = [...new Set(selectedCategoryIds)];
+
     try {
+      let brandId: string;
       if (editing) {
         await updateMut.mutateAsync({ id: editing.id, updates: data });
-        await updateRmpBrandCategories(editing.id, selectedCategoryIds);
-        saveBrandCategoryCache(editing.id, selectedCategoryIds);
-        patchCategoryCache(editing.id, selectedCategoryIds);
+        brandId = editing.id;
       } else {
-        const newBrand = await createMut.mutateAsync(data) as RmpBrand;
-        await updateRmpBrandCategories(newBrand.id, selectedCategoryIds);
-        saveBrandCategoryCache(newBrand.id, selectedCategoryIds);
-        patchCategoryCache(newBrand.id, selectedCategoryIds);
+        const newBrand = (await createMut.mutateAsync(data)) as RmpBrand;
+        brandId = newBrand.id;
       }
+
+      try {
+        await updateRmpBrandCategories(brandId, finalCategoryIds);
+      } catch (categoryErr) {
+        const detail = categoryErr instanceof Error ? categoryErr.message : String(categoryErr);
+        toast.error(`Brand saved, but failed to update categories: ${detail}`);
+        void queryClient.invalidateQueries({ queryKey: rmpBrandDetailQueryKey(brandId) });
+        return;
+      }
+
+      void queryClient.invalidateQueries({ queryKey: ['rmp_brands'] });
+      void queryClient.invalidateQueries({ queryKey: rmpBrandDetailQueryKey(brandId) });
       setOpen(false);
     } catch {
-      // Individual errors are already toasted by the mutation hooks
+      // Create/update mutation hooks already show error toasts.
     }
   };
 
@@ -379,9 +367,10 @@ const RmpBrandsPage = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {rows.map((r) => {
+                {rows.map((r, rowIndex) => {
                   const authBrand = resolveAuthorizedBrand(r);
-                  const displayCategories = visibleBrandCategories(r.rmp_categories);
+                  const categoriesLoading = brandDetailQueries[rowIndex]?.isLoading;
+                  const displayCategories = visibleBrandCategories(brandCategoriesById.get(r.id));
                   return (
                   <TableRow key={r.id}>
                     <TableCell className="w-10 p-2 align-middle">
@@ -397,7 +386,9 @@ const RmpBrandsPage = () => {
                     </TableCell>
                     <TableCell>{r.position}</TableCell>
                     <TableCell>
-                      {displayCategories.length > 0 ? (
+                      {categoriesLoading ? (
+                        <Skeleton className="h-5 w-24" />
+                      ) : displayCategories.length > 0 ? (
                         <div className="flex flex-wrap gap-1">
                           {displayCategories.map((c) => (
                             <Badge key={c.id} variant="secondary" className="text-xs font-normal">
@@ -405,10 +396,6 @@ const RmpBrandsPage = () => {
                             </Badge>
                           ))}
                         </div>
-                      ) : r.main_category ? (
-                        <Badge variant="outline" className="text-xs font-normal text-muted-foreground">
-                          {r.main_category}
-                        </Badge>
                       ) : (
                         <span className="text-muted-foreground">-</span>
                       )}
@@ -495,31 +482,34 @@ const RmpBrandsPage = () => {
                     role="combobox"
                     aria-expanded={categoryPopoverOpen}
                     className="w-full justify-between h-auto min-h-10 font-normal"
-                    disabled={categoriesLoading}
+                    disabled={categoriesLoading || loadingBrandCategories}
                   >
                     <div className="flex flex-wrap gap-1 py-0.5">
-                      {selectedCategoryIds.length === 0 ? (
+                      {loadingBrandCategories ? (
+                        <span className="text-muted-foreground">Loading categories…</span>
+                      ) : selectedCategoryIds.length === 0 ? (
                         <span className="text-muted-foreground">
                           {categoriesLoading ? 'Loading categories…' : 'Select categories…'}
                         </span>
                       ) : (
-                        selectedCategoryIds
-                          .filter((id) => isActiveCategoryId(id))
-                          .map((id) => {
-                            const cat = allCategories.find((c) => c.id === id);
-                            return (
-                              <Badge key={id} variant="secondary" className="text-xs gap-1">
-                                {cat?.name ?? id}
-                                <X
-                                  className="h-3 w-3 cursor-pointer"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setSelectedCategoryIds((prev) => prev.filter((i) => i !== id));
-                                  }}
-                                />
-                              </Badge>
-                            );
-                          })
+                        selectedCategoryIds.map((id) => {
+                          const cat = allCategories.find((c) => c.id === id);
+                          const label = cat?.name ?? id;
+                          const inactive = cat && cat.status !== 'active';
+                          return (
+                            <Badge key={id} variant="secondary" className="text-xs gap-1">
+                              {label}
+                              {inactive ? ' (Inactive)' : ''}
+                              <X
+                                className="h-3 w-3 cursor-pointer"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setSelectedCategoryIds((prev) => prev.filter((i) => i !== id));
+                                }}
+                              />
+                            </Badge>
+                          );
+                        })
                       )}
                     </div>
                     <ChevronsUpDown className="h-4 w-4 ml-2 shrink-0 opacity-50" />
@@ -608,7 +598,12 @@ const RmpBrandsPage = () => {
             <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
             <Button
               onClick={() => void onSave()}
-              disabled={!name.trim() || createMut.isPending || updateMut.isPending}
+              disabled={
+                !name.trim() ||
+                createMut.isPending ||
+                updateMut.isPending ||
+                loadingBrandCategories
+              }
             >
               {createMut.isPending || updateMut.isPending ? 'Saving…' : editing ? 'Update' : 'Create'}
             </Button>
@@ -630,7 +625,6 @@ const RmpBrandsPage = () => {
           await createRmpBrand({
             name: payload.name,
             position: payload.position,
-            main_category: payload.main_category,
             authorized_brand_id: payload.authorized_brand_id,
             status: payload.status,
             is_deleted: payload.is_deleted,

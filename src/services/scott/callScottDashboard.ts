@@ -29,7 +29,12 @@ export type ScottResource =
   | 'rmp_price_types'
   | 'order_reports'
   | 'rmp_order_reports'
-  | 'tailor_reports';
+  | 'tailor_reports'
+  | 'orders'
+  | 'customers'
+  | 'inventory_reports';
+
+export type ScottQueryValue = string | number | boolean | string[] | undefined;
 
 export interface ScottFilePayload {
   __base64File: true;
@@ -41,7 +46,7 @@ export interface ScottProxyPayload {
   resource: ScottResource;
   method: 'GET' | 'POST' | 'PATCH' | 'DELETE';
   pathSuffix?: string;
-  query?: Record<string, string | number | boolean | undefined>;
+  query?: Record<string, ScottQueryValue>;
   body?: Record<string, unknown> | null;
   settingsAction?: 'airtable_sync';
   /**

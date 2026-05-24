@@ -8,6 +8,9 @@ import {
   Package,
   Scissors,
   ArrowRight,
+  BarChart3,
+  ClipboardList,
+  Users,
 } from 'lucide-react';
 
 interface ReportCategory {
@@ -46,6 +49,42 @@ const Reports = () => {
       path: '/reports/tailor-reports',
       color: 'text-amber-600',
       badge: 'Tailor',
+    },
+    {
+      title: 'RMP Sales Report',
+      description:
+        'Readymade product sales breakdown by brand, class, and sales coordinator with DRR and fill rate metrics',
+      icon: BarChart3,
+      path: '/reports/rmp-sales-report',
+      color: 'text-violet-600',
+      badge: 'RMP Sales',
+    },
+    {
+      title: 'Order Tracking Report',
+      description:
+        'Track pending, overdue, and failed orders with customer, class, qty, price, and status details',
+      icon: ClipboardList,
+      path: '/reports/order-tracking',
+      color: 'text-orange-600',
+      badge: 'Tracking',
+    },
+    {
+      title: 'Total Inventory Report',
+      description:
+        'SKU inventory across WH1 and WH2 with DRR, days of cover, OOS status, and sales loss',
+      icon: Package,
+      path: '/reports/total-inventory',
+      color: 'text-emerald-600',
+      badge: 'Inventory',
+    },
+    {
+      title: 'Customer Performance Report',
+      description:
+        'Unique customer KPIs and dual-period comparison with WoW, MoM, quarterly, and yearly growth',
+      icon: Users,
+      path: '/reports/customer-performance',
+      color: 'text-blue-600',
+      badge: 'Customers',
     },
   ];
 

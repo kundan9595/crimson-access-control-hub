@@ -29,7 +29,13 @@ import { useMasterListBulkSelection } from '@/hooks/masters/useMasterListBulkSel
 import { fetchAllRecordIds } from '@/services/scott/scottPagination';
 import { callScottBulkDelete } from '@/services/scott/callScottDashboard';
 import { exportToCSV, generateExportFilename } from '@/utils/exportUtils';
-import { fetchRmpPrices, fetchRmpPricesPaginated, createRmpPrice, updateRmpPrice } from '@/services/masters/rmpPricesService';
+import {
+  fetchRmpPrices,
+  fetchRmpPricesPaginated,
+  fetchRmpPricesForBulkImportMatch,
+  createRmpPrice,
+  updateRmpPrice,
+} from '@/services/masters/rmpPricesService';
 import { config } from '@/config/environment';
 import { openBulkEditTab, BulkImportFromConfigDialog } from '@/components/masters/bulk-edit';
 import {
@@ -57,8 +63,6 @@ const RmpPricesPage = () => {
   const deleteMut = useDeleteRmpPrice();
   const queryClient = useQueryClient();
   const bulk = useMasterListBulkSelection();
-  const { data: rmpSkus = [], isLoading: isLoadingSkus } = useAllRmpSkus();
-  const { data: rmpPriceTypes = [], isLoading: isLoadingPriceTypes } = useAllRmpPriceTypes();
 
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<RmpPrice | null>(null);
@@ -69,6 +73,11 @@ const RmpPricesPage = () => {
   const [rmpPriceTypeId, setRmpPriceTypeId] = useState('');
   const [status, setStatus] = useState('active');
   const [importOpen, setImportOpen] = useState(false);
+
+  const { data: rmpSkus = [], isLoading: isLoadingSkus } = useAllRmpSkus({
+    enabled: importOpen || open,
+  });
+  const { data: rmpPriceTypes = [], isLoading: isLoadingPriceTypes } = useAllRmpPriceTypes();
 
   useEffect(() => {
     setPage(1);
@@ -89,7 +98,25 @@ const RmpPricesPage = () => {
     [search],
   );
 
+  const skuIdToName = useMemo(
+    () => new Map(rmpSkus.map((s) => [s.id, s.name] as const)),
+    [rmpSkus],
+  );
+
+  const fetchPricesForImportMatch = useCallback(
+    (rows: RmpPrice[]) =>
+      fetchRmpPricesForBulkImportMatch(
+        rows.map((r) => ({
+          rmp_sku_id: r.rmp_sku_id,
+          rmp_price_type_id: r.rmp_price_type_id,
+        })),
+        skuIdToName,
+      ),
+    [skuIdToName],
+  );
+
   const importColumns = useMemo(() => {
+    const t0 = performance.now();
     const rmpSkuOptions = rmpSkus.map((s) => ({ value: s.id, label: s.name }));
     const rmpSkuEditorOptions = rmpSkus
       .filter((s) => s.status === 'active')
@@ -98,13 +125,14 @@ const RmpPricesPage = () => {
     const rmpPriceTypeEditorOptions = rmpPriceTypes
       .filter((p) => p.status === 'active')
       .map((p) => ({ value: p.id, label: p.name }));
-    return buildRmpPricesColumns({
+    const cols = buildRmpPricesColumns({
       rmpSkuOptions,
       rmpSkuEditorOptions,
       rmpPriceTypeOptions,
       rmpPriceTypeEditorOptions,
     });
-  }, [rmpSkus, rmpPriceTypes]);
+    return cols;
+  }, [rmpSkus, rmpPriceTypes, isLoadingSkus, isLoadingPriceTypes]);
 
   const handleExport = async () => {
     const all = await fetchRmpPrices();
@@ -419,8 +447,10 @@ const RmpPricesPage = () => {
           await updateRmpPrice(id, updates);
         }}
         fetchAll={fetchRmpPrices}
+        fetchAllForMatching={fetchPricesForImportMatch}
         getRowId={rmpPricesGetRowId}
         defaultKeyFields={['rmp_sku_id', 'rmp_price_type_id']}
+        matchEnumKeysByValueId
       />
     </div>
   );

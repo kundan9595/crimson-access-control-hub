@@ -196,11 +196,13 @@ export async function fetchRmpSkusPaginated(
  * page through with the default 250-page safety cap (= up to 25,000 SKUs).
  */
 export const fetchRmpSkus = async (): Promise<RmpSku[]> => {
+  const t0 = performance.now();
   try {
-    return await fetchAllScottPages(
+    const result = await fetchAllScottPages(
       (pp) => fetchRmpSkusPaginated(pp),
       { pageSize: 100, maxPages: 250 },
     );
+    return result;
   } catch (err) {
     console.error('fetchRmpSkus failed:', err);
     return [];

@@ -24,11 +24,12 @@ export const useRmpSkus = (
   });
 };
 
-export const useAllRmpSkus = () => {
+export const useAllRmpSkus = (options?: { enabled?: boolean }) => {
   return useQuery({
     queryKey: ['rmp_skus', 'all'],
     queryFn: fetchRmpSkus,
     staleTime: 5 * 60 * 1000,
+    enabled: options?.enabled ?? true,
   });
 };
 

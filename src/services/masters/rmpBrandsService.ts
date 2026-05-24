@@ -49,6 +49,24 @@ function extractEmbeddedAuthorizedBrand(
   };
 }
 
+function extractRmpCategories(
+  r: Record<string, unknown>,
+): { id: string; name: string }[] | undefined {
+  const linked = r.rmp_categories;
+  const active = r.active_rmp_categories;
+  const raw =
+    Array.isArray(linked) && linked.length > 0
+      ? linked
+      : Array.isArray(active) && active.length > 0
+        ? active
+        : undefined;
+  if (!raw) return undefined;
+  return raw.map((c) => ({
+    id: normalizeId((c as Record<string, unknown>).id ?? (c as Record<string, unknown>).rmp_category_id),
+    name: String((c as Record<string, unknown>).name ?? ''),
+  }));
+}
+
 function normalizeRmpBrand(r: Record<string, unknown>): RmpBrand {
   const status =
     typeof r.status === 'string'
@@ -64,12 +82,7 @@ function normalizeRmpBrand(r: Record<string, unknown>): RmpBrand {
       ? String(rawAuthId)
       : embeddedAuth?.id;
 
-  const rmp_categories = Array.isArray(r.rmp_categories)
-    ? (r.rmp_categories as Record<string, unknown>[]).map((c) => ({
-        id: normalizeId(c.id ?? c.rmp_category_id),
-        name: String(c.name ?? ''),
-      }))
-    : undefined;
+  const rmp_categories = extractRmpCategories(r);
 
   return {
     id: normalizeId(r.id ?? r.rmp_brand_id),
@@ -223,20 +236,23 @@ export const deleteRmpBrand = async (id: string): Promise<void> => {
   });
 };
 
-// Special endpoint to update RMP Brand categories
+function buildRmpCategoryUpdateBody(rmpCategoryIds: string[]): Record<string, unknown> {
+  if (rmpCategoryIds.length === 0) {
+    // Scott returns 400 when PATCH has no form fields; send explicit empty param to clear all.
+    return { 'rmp_category_ids[]': '' };
+  }
+  return { 'rmp_category_ids[]': rmpCategoryIds };
+}
+
+// Special endpoint to update RMP Brand categories — sends the full final list of IDs.
 export const updateRmpBrandCategories = async (
   id: string,
   rmpCategoryIds: string[],
 ): Promise<void> => {
-  const formData: Record<string, unknown> = {};
-  rmpCategoryIds.forEach((categoryId, index) => {
-    formData[`rmp_category_ids[${index}]`] = categoryId;
-  });
-
   await callScottDashboard<Record<string, unknown>>({
     resource: 'rmp_brands',
     method: 'PATCH',
     pathSuffix: `${id}/update_categories`,
-    body: formData,
+    body: buildRmpCategoryUpdateBody(rmpCategoryIds),
   });
 };

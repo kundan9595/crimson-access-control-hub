@@ -7,6 +7,7 @@ import {
 import {
   buildScottPaginatedMeta,
   fetchAllScottPages,
+  hasNextScottPage,
   normalizeScottPageParams,
   type ScottPageParams,
   type ScottPaginatedResult,
@@ -31,6 +32,7 @@ export interface RmpPrice {
 
 export interface RmpPriceFilter {
   search?: string;
+  rmp_sku_id?: string;
 }
 
 function extractIdFromRelation(
@@ -124,6 +126,9 @@ export async function fetchRmpPricesPaginated(
   if (filters?.search) {
     query.search = filters.search;
   }
+  if (filters?.rmp_sku_id) {
+    query.rmp_sku_id = filters.rmp_sku_id;
+  }
   const { body } = await callScottDashboard<Record<string, unknown>>({
     resource: 'rmp_prices',
     method: 'GET',
@@ -139,6 +144,124 @@ export async function fetchRmpPricesPaginated(
 
 export const fetchRmpPrices = async (): Promise<RmpPrice[]> =>
   fetchAllScottPages((pp) => fetchRmpPricesPaginated(pp), { pageSize: 1000 });
+
+export type RmpPriceMatchKey = { rmp_sku_id: string; rmp_price_type_id: string };
+
+/** Below this unique-SKU count, per-SKU API calls are faster than a full-table scan. */
+const PER_SKU_MATCH_THRESHOLD = 40;
+const SKU_FETCH_CONCURRENCY = 8;
+const FULL_SCAN_PAGE_SIZE = 5000;
+const FULL_SCAN_CONCURRENCY = 6;
+
+async function runBatched<T>(items: T[], concurrency: number, fn: (item: T) => Promise<void>) {
+  for (let i = 0; i < items.length; i += concurrency) {
+    await Promise.all(items.slice(i, i + concurrency).map(fn));
+  }
+}
+
+function collectNeededPairs(matchKeys: RmpPriceMatchKey[]) {
+  return new Set(
+    matchKeys
+      .filter((k) => k.rmp_sku_id && k.rmp_price_type_id)
+      .map((k) => `${k.rmp_sku_id}|${k.rmp_price_type_id}`),
+  );
+}
+
+function absorbMatchingPrices(
+  prices: RmpPrice[],
+  neededPairs: Set<string>,
+  foundByPair: Map<string, RmpPrice>,
+) {
+  for (const price of prices) {
+    const pairKey = `${price.rmp_sku_id}|${price.rmp_price_type_id}`;
+    if (neededPairs.has(pairKey) && !foundByPair.has(pairKey)) {
+      foundByPair.set(pairKey, price);
+    }
+  }
+}
+
+async function fetchPricesBySkuIds(
+  uniqueSkuIds: string[],
+  neededPairs: Set<string>,
+): Promise<RmpPrice[]> {
+  const foundByPair = new Map<string, RmpPrice>();
+  await runBatched(uniqueSkuIds, SKU_FETCH_CONCURRENCY, async (skuId) => {
+    let page = 1;
+    for (;;) {
+      const result = await fetchRmpPricesPaginated(
+        { page, items: 500 },
+        { rmp_sku_id: skuId },
+      );
+      absorbMatchingPrices(result.data, neededPairs, foundByPair);
+      if (!hasNextScottPage(result) || foundByPair.size >= neededPairs.size) break;
+      page += 1;
+      if (page > 50) break;
+    }
+  });
+  return [...foundByPair.values()];
+}
+
+async function fetchPricesByFullScan(neededPairs: Set<string>): Promise<RmpPrice[]> {
+  const scanT0 = performance.now();
+  const foundByPair = new Map<string, RmpPrice>();
+  const pageSize = FULL_SCAN_PAGE_SIZE;
+  const concurrency = FULL_SCAN_CONCURRENCY;
+
+  const first = await fetchRmpPricesPaginated({ page: 1, items: pageSize });
+  absorbMatchingPrices(first.data, neededPairs, foundByPair);
+
+  if (foundByPair.size >= neededPairs.size) {
+    return [...foundByPair.values()];
+  }
+  if (first.data.length < pageSize) {
+    return [...foundByPair.values()];
+  }
+
+  const totalPages = first.totalCountIsExact
+    ? Math.min(first.totalPages, 250)
+    : 250;
+  if (totalPages <= 1) {
+    return [...foundByPair.values()];
+  }
+
+  const remainingPages = Array.from({ length: totalPages - 1 }, (_, i) => i + 2);
+  for (let i = 0; i < remainingPages.length; i += concurrency) {
+    if (foundByPair.size >= neededPairs.size) break;
+    const batch = remainingPages.slice(i, i + concurrency);
+    const batchResults = await Promise.all(
+      batch.map(async (page) => {
+        try {
+          return await fetchRmpPricesPaginated({ page, items: pageSize });
+        } catch (err) {
+          console.error(`fetchPricesByFullScan page ${page} failed:`, err);
+          return null;
+        }
+      }),
+    );
+    for (const result of batchResults) {
+      if (result) absorbMatchingPrices(result.data, neededPairs, foundByPair);
+    }
+  }
+
+  return [...foundByPair.values()];
+}
+
+/** Load existing prices for CSV rows — per-SKU for small imports, parallel full scan for large ones. */
+export async function fetchRmpPricesForBulkImportMatch(
+  matchKeys: RmpPriceMatchKey[],
+  _skuIdToName: Map<string, string>,
+): Promise<RmpPrice[]> {
+  const t0 = performance.now();
+  const neededPairs = collectNeededPairs(matchKeys);
+  const uniqueSkuIds = [...new Set(matchKeys.map((k) => k.rmp_sku_id).filter(Boolean))];
+  const strategy = uniqueSkuIds.length <= PER_SKU_MATCH_THRESHOLD ? 'per-sku' : 'full-scan';
+
+  const result =
+    strategy === 'per-sku'
+      ? await fetchPricesBySkuIds(uniqueSkuIds, neededPairs)
+      : await fetchPricesByFullScan(neededPairs);
+  return result;
+}
 
 export const getRmpPriceById = async (id: string): Promise<RmpPrice | null> => {
   const { body } = await callScottDashboard<Record<string, unknown>>({

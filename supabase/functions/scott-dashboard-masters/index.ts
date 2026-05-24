@@ -33,7 +33,10 @@ type ScottResource =
   | "rmp_price_types"
   | "order_reports"
   | "rmp_order_reports"
-  | "tailor_reports";
+  | "tailor_reports"
+  | "orders"
+  | "customers"
+  | "inventory_reports";
 
 /** Keep in sync with `ScottResource` in src/services/scott/callScottDashboard.ts */
 const ALLOWED: Set<ScottResource> = new Set([
@@ -63,6 +66,9 @@ const ALLOWED: Set<ScottResource> = new Set([
   "order_reports",
   "rmp_order_reports",
   "tailor_reports",
+  "orders",
+  "customers",
+  "inventory_reports",
 ]);
 
 interface ScottProxyPayload {
@@ -208,12 +214,18 @@ async function getScottAuthToken(baseUrl: string, reqId: string): Promise<string
   return token;
 }
 
-function buildQueryString(q?: Record<string, string | number | boolean | undefined>): string {
+function buildQueryString(q?: Record<string, string | number | boolean | string[] | undefined>): string {
   if (!q) return "";
   const params = new URLSearchParams();
   for (const [k, v] of Object.entries(q)) {
     if (v === undefined) continue;
-    params.set(k, String(v));
+    if (Array.isArray(v)) {
+      for (const item of v) {
+        params.append(k, String(item));
+      }
+    } else {
+      params.set(k, String(v));
+    }
   }
   const s = params.toString();
   return s ? `?${s}` : "";

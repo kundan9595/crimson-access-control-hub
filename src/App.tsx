@@ -66,6 +66,10 @@ const OrderReportsPage = lazy(() => import("./pages/reports/OrderReportsPage"));
 const OrderReportDetailPage = lazy(() => import("./pages/reports/OrderReportDetailPage"));
 const RmpOrderReportsPage = lazy(() => import("./pages/reports/RmpOrderReportsPage"));
 const TailorReportsPage = lazy(() => import("./pages/reports/TailorReportsPage"));
+const RmpSalesReportPage = lazy(() => import("./pages/reports/RmpSalesReportPage"));
+const OrderTrackingReportPage = lazy(() => import("./pages/reports/OrderTrackingReportPage"));
+const TotalInventoryReportPage = lazy(() => import("./pages/reports/TotalInventoryReportPage"));
+const CustomerPerformanceReportPage = lazy(() => import("./pages/reports/CustomerPerformanceReportPage"));
 
 // Bulk-edit pages (open in their own browser tab; full-screen, no dashboard chrome)
 const RmpBrandsBulkEditPage = lazy(() => import("./pages/bulk-edit/RmpBrandsBulkEditPage"));
@@ -213,6 +217,10 @@ const App = () => {
                     <Route path="reports/order-reports/:id" element={<OrderReportDetailPage />} />
                     <Route path="reports/rmp-order-reports" element={<RmpOrderReportsPage />} />
                     <Route path="reports/tailor-reports" element={<TailorReportsPage />} />
+                    <Route path="reports/rmp-sales-report" element={<RmpSalesReportPage />} />
+                    <Route path="reports/order-tracking" element={<OrderTrackingReportPage />} />
+                    <Route path="reports/total-inventory" element={<TotalInventoryReportPage />} />
+                    <Route path="reports/customer-performance" element={<CustomerPerformanceReportPage />} />
                     <Route path="settings" element={<Settings />} />
                   </Route>
                   <Route path="*" element={<NotFound />} />
