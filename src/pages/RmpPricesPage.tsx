@@ -32,12 +32,10 @@ import { exportToCSV, generateExportFilename } from '@/utils/exportUtils';
 import {
   fetchRmpPrices,
   fetchRmpPricesPaginated,
-  fetchRmpPricesForBulkImportMatch,
-  createRmpPrice,
-  updateRmpPrice,
 } from '@/services/masters/rmpPricesService';
+import { runRmpPricesBulkImport } from '@/services/masters/rmpPricesBulkUpload';
 import { config } from '@/config/environment';
-import { openBulkEditTab, BulkImportFromConfigDialog } from '@/components/masters/bulk-edit';
+import { openBulkEditTab, BulkImportFromConfigDialog, type ServerBulkImportConfig } from '@/components/masters/bulk-edit';
 import {
   buildRmpPricesColumns,
   rmpPricesGetRowId,
@@ -98,21 +96,33 @@ const RmpPricesPage = () => {
     [search],
   );
 
-  const skuIdToName = useMemo(
-    () => new Map(rmpSkus.map((s) => [s.id, s.name] as const)),
-    [rmpSkus],
-  );
-
-  const fetchPricesForImportMatch = useCallback(
-    (rows: RmpPrice[]) =>
-      fetchRmpPricesForBulkImportMatch(
-        rows.map((r) => ({
-          rmp_sku_id: r.rmp_sku_id,
-          rmp_price_type_id: r.rmp_price_type_id,
-        })),
-        skuIdToName,
-      ),
-    [skuIdToName],
+  const serverBulkImport = useMemo<ServerBulkImportConfig>(
+    () => ({
+      importFile: (file, options) =>
+        runRmpPricesBulkImport(file, {
+          signal: options?.signal,
+          onUploadComplete: () => {
+            options?.onProgress?.({
+              phase: 'uploading',
+              completed: 0,
+              total: 0,
+              message: 'Upload complete. Processing on Scott…',
+            });
+          },
+          onProgress: (status) => {
+            options?.onProgress?.({
+              phase:
+                status.phase === 'pending' || status.phase === 'idle'
+                  ? 'uploading'
+                  : 'processing',
+              completed: status.processed ?? 0,
+              total: status.total ?? 0,
+              message: status.message,
+            });
+          },
+        }),
+    }),
+    [],
   );
 
   const importColumns = useMemo(() => {
@@ -432,22 +442,7 @@ const RmpPricesPage = () => {
         toCreatePayload={rmpPricesToCreatePayload}
         toUpdatePayload={rmpPricesToUpdatePayload}
         queryKey={rmpPricesQueryKey}
-        createMutation={async (payload) => {
-          await createRmpPrice({
-            name: payload.name,
-            price: payload.price,
-            mrp: payload.mrp,
-            rmp_sku_id: payload.rmp_sku_id,
-            rmp_price_type_id: payload.rmp_price_type_id,
-            status: payload.status,
-            is_deleted: payload.is_deleted,
-          });
-        }}
-        updateMutation={async ({ id, updates }) => {
-          await updateRmpPrice(id, updates);
-        }}
-        fetchAll={fetchRmpPrices}
-        fetchAllForMatching={fetchPricesForImportMatch}
+        serverBulkImport={serverBulkImport}
         getRowId={rmpPricesGetRowId}
         defaultKeyFields={['rmp_sku_id', 'rmp_price_type_id']}
         matchEnumKeysByValueId

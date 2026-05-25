@@ -9,4 +9,9 @@ export type { BulkEditViewProps } from './BulkEditView';
 export { default as BulkEditPageShell } from './BulkEditPageShell';
 export { openBulkEditTab, useBulkEditCloser } from './openBulkEditTab';
 export { default as BulkImportFromConfigDialog } from './BulkImportFromConfigDialog';
-export type { BulkImportFromConfigDialogProps } from './BulkImportFromConfigDialog';
+export type {
+  BulkImportFromConfigDialogProps,
+  ServerBulkImportConfig,
+  ServerBulkImportProgress,
+  ServerBulkImportResult,
+} from './BulkImportFromConfigDialog';

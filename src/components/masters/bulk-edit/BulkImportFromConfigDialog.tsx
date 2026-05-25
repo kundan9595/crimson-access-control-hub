@@ -21,6 +21,34 @@ import { parseCSV, createCSVContent, downloadCSV } from '@/components/masters/bu
 import { parseEnum, validateCellValue, enumOptionDisplayName } from './cellTypes';
 import type { BulkEditColumn } from './types';
 
+export interface ServerBulkImportProgress {
+  phase: 'uploading' | 'processing';
+  completed: number;
+  total: number;
+  message?: string;
+}
+
+export interface ServerBulkImportResult {
+  createdCount: number;
+  updatedCount: number;
+  skippedCount: number;
+  failures: Array<{
+    rowNumber: number;
+    error: string;
+    raw?: string[];
+  }>;
+}
+
+export interface ServerBulkImportConfig {
+  importFile: (
+    file: File,
+    options?: {
+      signal?: AbortSignal;
+      onProgress?: (progress: ServerBulkImportProgress) => void;
+    },
+  ) => Promise<ServerBulkImportResult>;
+}
+
 export interface BulkImportFromConfigDialogProps<TRow, TCreate, TUpdate> {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -35,10 +63,12 @@ export interface BulkImportFromConfigDialogProps<TRow, TCreate, TUpdate> {
   toCreatePayload: (row: TRow) => TCreate;
   toUpdatePayload: (row: TRow) => TUpdate;
   queryKey: string[];
-  createMutation: UseMutateAsyncFunction<unknown, Error, TCreate, unknown>;
-  updateMutation: UseMutateAsyncFunction<unknown, Error, { id: string; updates: TUpdate }, unknown>;
-  /** Fetch all existing records for matching (upsert) */
-  fetchAll: () => Promise<TRow[]>;
+  /** When set, CSV is uploaded to Scott for server-side import instead of row-by-row API calls. */
+  serverBulkImport?: ServerBulkImportConfig;
+  createMutation?: UseMutateAsyncFunction<unknown, Error, TCreate, unknown>;
+  updateMutation?: UseMutateAsyncFunction<unknown, Error, { id: string; updates: TUpdate }, unknown>;
+  /** Fetch all existing records for matching (upsert). Not used in server bulk import mode. */
+  fetchAll?: () => Promise<TRow[]>;
   /**
    * When set, used for match + import instead of {@link fetchAll}.
    * Receives parsed CSV row payloads so large tables can use targeted API lookups.
@@ -96,6 +126,7 @@ function BulkImportFromConfigDialog<TRow, TCreate, TUpdate>({
   toCreatePayload,
   toUpdatePayload,
   queryKey,
+  serverBulkImport,
   createMutation,
   updateMutation,
   fetchAll,
@@ -104,6 +135,7 @@ function BulkImportFromConfigDialog<TRow, TCreate, TUpdate>({
   defaultKeyFields,
   matchEnumKeysByValueId = false,
 }: BulkImportFromConfigDialogProps<TRow, TCreate, TUpdate>) {
+  const serverImportMode = Boolean(serverBulkImport);
   const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const prevProcessFileRef = useRef<((file: File) => Promise<void>) | null>(null);
@@ -119,6 +151,7 @@ function BulkImportFromConfigDialog<TRow, TCreate, TUpdate>({
   const [importProgress, setImportProgress] = useState({ completed: 0, total: 0, startTime: 0 });
   const [saveResult, setSaveResult] = useState<SaveResult | null>(null);
   const abortRef = useRef(false);
+  const serverAbortRef = useRef<AbortController | null>(null);
 
   // Upsert-specific state
   const [existingRows, setExistingRows] = useState<TRow[]>([]);
@@ -198,6 +231,8 @@ function BulkImportFromConfigDialog<TRow, TCreate, TUpdate>({
     setUnknownHeaders([]);
     setMissingRequiredLabels([]);
     abortRef.current = false;
+    serverAbortRef.current?.abort();
+    serverAbortRef.current = null;
     setIsImporting(false);
     setImportProgress({ completed: 0, total: 0, startTime: 0 });
     setSaveResult(null);
@@ -215,6 +250,7 @@ function BulkImportFromConfigDialog<TRow, TCreate, TUpdate>({
 
   const handleCancelImport = useCallback(() => {
     abortRef.current = true;
+    serverAbortRef.current?.abort();
   }, []);
 
   const processFile = useCallback(
@@ -324,13 +360,13 @@ function BulkImportFromConfigDialog<TRow, TCreate, TUpdate>({
         }
 
         setParsedRows(rows);
-        setStep('configure');
+        setStep(serverBulkImport ? 'review' : 'configure');
         const enumCols = columns.filter((c) => c.type === 'enum' && c.options);
       } catch (e) {
         toast.error(e instanceof Error ? e.message : 'Failed to parse CSV');
       }
     },
-    [columns, columnByHeader, createEmptyRow, title],
+    [columns, columnByHeader, createEmptyRow, serverBulkImport, title],
   );
 
   // When columns update (e.g. enum options finish loading after the file was already uploaded),
@@ -437,6 +473,9 @@ function BulkImportFromConfigDialog<TRow, TCreate, TUpdate>({
     async (rowPayloads: TRow[]) => {
       if (fetchAllForMatching) {
         return fetchAllForMatching(rowPayloads);
+      }
+      if (!fetchAll) {
+        throw new Error('fetchAll is required for client-side bulk import matching');
       }
       return fetchAll();
     },
@@ -575,8 +614,83 @@ function BulkImportFromConfigDialog<TRow, TCreate, TUpdate>({
     [classifiedRows.create, classifiedRows.update]
   );
 
+  const confirmServerImport = useCallback(async () => {
+    if (!serverBulkImport || !selectedFile) return;
+
+    const validRows = parsedRows.filter((row) => row.valid);
+    if (validRows.length === 0) return;
+
+    abortRef.current = false;
+    setIsImporting(true);
+    setImportProgress({
+      completed: 0,
+      total: validRows.length,
+      startTime: Date.now(),
+    });
+
+    const toastId = toast.loading('Uploading prices to Scott…');
+    const controller = new AbortController();
+    serverAbortRef.current = controller;
+
+    try {
+      const result = await serverBulkImport.importFile(selectedFile, {
+        signal: controller.signal,
+        onProgress: (progress) => {
+          setImportProgress((prev) => ({
+            ...prev,
+            completed: progress.completed,
+            total: Math.max(progress.total, prev.total),
+            startTime: prev.startTime || Date.now(),
+          }));
+        },
+      });
+
+      if (abortRef.current) {
+        toast.dismiss(toastId);
+        toast.warning('Import cancelled.');
+        setIsImporting(false);
+        setImportProgress({ completed: 0, total: 0, startTime: 0 });
+        return;
+      }
+
+      await queryClient.invalidateQueries({ queryKey });
+      setSaveResult(result);
+      setIsImporting(false);
+      setStep('complete');
+      toast.dismiss(toastId);
+
+      if (result.failures.length === 0) {
+        toast.success(
+          `Import complete: ${result.createdCount} created, ${result.updatedCount} updated, ${result.skippedCount} skipped`,
+        );
+      } else {
+        toast.error(`${result.failures.length} row${result.failures.length === 1 ? '' : 's'} failed during import.`);
+      }
+    } catch (error) {
+      toast.dismiss(toastId);
+      setIsImporting(false);
+      setImportProgress({ completed: 0, total: 0, startTime: 0 });
+      if (abortRef.current || (error instanceof Error && error.message === 'Import cancelled')) {
+        toast.warning('Import cancelled.');
+        return;
+      }
+      toast.error(error instanceof Error ? error.message : 'Bulk import failed');
+    } finally {
+      serverAbortRef.current = null;
+    }
+  }, [parsedRows, queryClient, queryKey, selectedFile, serverBulkImport]);
+
   const confirmImport = useCallback(async () => {
+    if (serverImportMode) {
+      await confirmServerImport();
+      return;
+    }
+
     if (actionableRows.length === 0) return;
+    if (!createMutation || !updateMutation) {
+      toast.error('Import is not configured.');
+      return;
+    }
 
     abortRef.current = false;
     setIsImporting(true);
@@ -686,6 +800,7 @@ function BulkImportFromConfigDialog<TRow, TCreate, TUpdate>({
   }, [
     actionableRows,
     classifiedRows.skip.length,
+    confirmServerImport,
     createMutation,
     toCreatePayload,
     toUpdatePayload,
@@ -700,6 +815,7 @@ function BulkImportFromConfigDialog<TRow, TCreate, TUpdate>({
     setExistingRows,
     normalizeKeyValue,
     selectedKeys,
+    serverImportMode,
     strategy,
   ]);
 
@@ -724,6 +840,7 @@ function BulkImportFromConfigDialog<TRow, TCreate, TUpdate>({
               onFile={handleFile}
               onDownloadTemplate={downloadTemplate}
               filenameStem={filenameStem}
+              serverImportMode={serverImportMode}
             />
           )}
 
@@ -763,6 +880,7 @@ function BulkImportFromConfigDialog<TRow, TCreate, TUpdate>({
               setStrategy={setStrategy}
               onRefreshExisting={fetchExistingRows}
               filenameStem={filenameStem}
+              serverImportMode={serverImportMode}
             />
           )}
 
@@ -791,6 +909,7 @@ interface UploadStepProps<TRow> {
   onFile: (file: File) => void;
   onDownloadTemplate: () => void;
   filenameStem: string;
+  serverImportMode?: boolean;
 }
 
 function UploadStep<TRow>({
@@ -802,11 +921,21 @@ function UploadStep<TRow>({
   onFile,
   onDownloadTemplate,
   filenameStem,
+  serverImportMode = false,
 }: UploadStepProps<TRow>) {
   const requiredCols = columns.filter((c) => c.required);
 
   return (
     <div className="space-y-4">
+      {serverImportMode && (
+        <div className="rounded-md border border-primary/20 bg-primary/5 px-3 py-2.5 text-sm">
+          <p className="font-medium">Scott server bulk import</p>
+          <p className="text-xs text-muted-foreground mt-1">
+            After validation, your CSV is sent to Scott in one upload. Large files import much faster than
+            row-by-row updates.
+          </p>
+        </div>
+      )}
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-sm">Step 1 — Download the template</CardTitle>
@@ -1147,6 +1276,7 @@ interface ReviewStepProps<TRow> {
   setStrategy: (s: DuplicateStrategy) => void;
   onRefreshExisting: () => void;
   filenameStem: string;
+  serverImportMode?: boolean;
 }
 
 function ReviewStep<TRow>({
@@ -1169,9 +1299,13 @@ function ReviewStep<TRow>({
   setStrategy,
   onRefreshExisting,
   filenameStem,
+  serverImportMode = false,
 }: ReviewStepProps<TRow>) {
   const previewLimit = 6;
-  const actionableCount = classifiedRows.create.length + classifiedRows.update.length;
+  const validCount = parsedRows.filter((row) => row.valid).length;
+  const actionableCount = serverImportMode
+    ? validCount
+    : classifiedRows.create.length + classifiedRows.update.length;
 
   const exportValidationErrorsCsv = useCallback(() => {
     const errorRows = classifiedRows.error;
@@ -1218,7 +1352,19 @@ function ReviewStep<TRow>({
 
   return (
     <div className="space-y-4">
-      {parsedRows.length > 10_000 && !isImporting && (
+      {serverImportMode && !isImporting && (
+        <div className="rounded-md border border-primary/20 bg-primary/5 px-3 py-2.5 text-sm text-foreground space-y-1">
+          <p className="font-medium flex items-center gap-1.5">
+            <Upload className="h-3.5 w-3.5 shrink-0" />
+            Server-side bulk import
+          </p>
+          <p className="text-xs text-muted-foreground">
+            Valid rows are uploaded to Scott as a single CSV job. The server handles create/update matching — no
+            row-by-row API calls from your browser.
+          </p>
+        </div>
+      )}
+      {parsedRows.length > 10_000 && !isImporting && !serverImportMode && (
         <div className="rounded-md border border-amber-500/30 bg-amber-500/10 px-3 py-2.5 text-sm text-amber-700 dark:text-amber-400 space-y-1">
           <p className="font-medium flex items-center gap-1.5">
             <AlertCircle className="h-3.5 w-3.5 shrink-0" />
@@ -1243,24 +1389,30 @@ function ReviewStep<TRow>({
         </CardHeader>
         <CardContent className="space-y-3">
           <div className="flex flex-wrap gap-2">
-            {classifiedRows.create.length > 0 && (
+            {serverImportMode && validCount > 0 && (
+              <Badge variant="outline" className="text-xs bg-emerald-500/10 text-emerald-600 border-emerald-500/20">
+                <CheckCircle2 className="h-3 w-3 mr-1" />
+                {validCount} ready to import
+              </Badge>
+            )}
+            {!serverImportMode && classifiedRows.create.length > 0 && (
               <Badge variant="outline" className="text-xs bg-emerald-500/10 text-emerald-600 border-emerald-500/20">
                 <CheckCircle2 className="h-3 w-3 mr-1" />
                 {classifiedRows.create.length} create
               </Badge>
             )}
-            {classifiedRows.update.length > 0 && (
+            {!serverImportMode && classifiedRows.update.length > 0 && (
               <Badge variant="outline" className="text-xs bg-primary/10 text-primary border-primary/20">
                 <RefreshCw className="h-3 w-3 mr-1" />
                 {classifiedRows.update.length} update
               </Badge>
             )}
-            {classifiedRows.skip.length > 0 && (
+            {!serverImportMode && classifiedRows.skip.length > 0 && (
               <Badge variant="outline" className="text-xs bg-muted text-muted-foreground border-muted-foreground/20">
                 {classifiedRows.skip.length} skip (duplicate)
               </Badge>
             )}
-            {classifiedRows.duplicate.length > 0 && (
+            {!serverImportMode && classifiedRows.duplicate.length > 0 && (
               <Badge variant="outline" className="text-xs bg-amber-500/10 text-amber-600 border-amber-500/20">
                 <AlertCircle className="h-3 w-3 mr-1" />
                 {classifiedRows.duplicate.length} duplicate{classifiedRows.duplicate.length === 1 ? '' : 's'} in file
@@ -1287,7 +1439,7 @@ function ReviewStep<TRow>({
         </CardContent>
       </Card>
 
-      {/* Match Settings */}
+      {!serverImportMode && (
       <Card>
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
@@ -1411,8 +1563,9 @@ function ReviewStep<TRow>({
           </Button>
         </CardContent>
       </Card>
+      )}
 
-      {classifiedRows.duplicate.length > 0 && (
+      {!serverImportMode && classifiedRows.duplicate.length > 0 && (
         <Card className="border-amber-500/40">
           <CardHeader className="pb-3">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -1493,11 +1646,12 @@ function ReviewStep<TRow>({
         </Card>
       )}
 
-      {(classifiedRows.create.length > 0 || classifiedRows.update.length > 0) && (
+      {(serverImportMode ? validCount > 0 : classifiedRows.create.length > 0 || classifiedRows.update.length > 0) && (
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-sm">
-              Preview (first {Math.min(previewLimit, actionableCount)} of {actionableCount} to import)
+              Preview (first {Math.min(previewLimit, serverImportMode ? validCount : actionableCount)} of{' '}
+              {serverImportMode ? validCount : actionableCount} to import)
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -1505,22 +1659,29 @@ function ReviewStep<TRow>({
               <table className="text-xs border-collapse w-full">
                 <thead>
                   <tr className="border-b bg-muted/40">
-                    <th className="text-left p-1.5 font-medium w-16">Action</th>
+                    {!serverImportMode && <th className="text-left p-1.5 font-medium w-16">Action</th>}
                     {csvHeaders.map((h) => (
                       <th key={h} className="text-left p-1.5 font-medium">{h}</th>
                     ))}
                   </tr>
                 </thead>
                 <tbody>
-                  {[...classifiedRows.create, ...classifiedRows.update].slice(0, previewLimit).map((r) => (
+                  {(serverImportMode
+                    ? parsedRows.filter((row) => row.valid)
+                    : [...classifiedRows.create, ...classifiedRows.update]
+                  )
+                    .slice(0, previewLimit)
+                    .map((r) => (
                     <tr key={r.rowNumber} className="border-b">
-                      <td className="p-1.5">
-                        {r.action === 'create' ? (
-                          <Badge variant="outline" className="text-xs bg-emerald-500/10 text-emerald-600 border-emerald-500/20">Create</Badge>
-                        ) : (
-                          <Badge variant="outline" className="text-xs bg-primary/10 text-primary border-primary/20">Update</Badge>
-                        )}
-                      </td>
+                      {!serverImportMode && (
+                        <td className="p-1.5">
+                          {r.action === 'create' ? (
+                            <Badge variant="outline" className="text-xs bg-emerald-500/10 text-emerald-600 border-emerald-500/20">Create</Badge>
+                          ) : (
+                            <Badge variant="outline" className="text-xs bg-primary/10 text-primary border-primary/20">Update</Badge>
+                          )}
+                        </td>
+                      )}
                       {csvHeaders.map((_, i) => (
                         <td key={i} className="p-1.5 text-muted-foreground truncate max-w-[14ch]">
                           {r.raw[i] || '-'}
@@ -1539,7 +1700,11 @@ function ReviewStep<TRow>({
         <div className="space-y-2">
           <Progress value={(importProgress.completed / Math.max(1, importProgress.total)) * 100} />
           <div className="flex items-center justify-between text-xs text-muted-foreground">
-            <span>Importing {importProgress.completed.toLocaleString()} / {importProgress.total.toLocaleString()}</span>
+            <span>
+              {serverImportMode
+                ? `Processing ${importProgress.completed.toLocaleString()} / ${importProgress.total.toLocaleString()}`
+                : `Importing ${importProgress.completed.toLocaleString()} / ${importProgress.total.toLocaleString()}`}
+            </span>
             {importProgress.startTime > 0 && importProgress.completed > 0 && (() => {
               const elapsed = (Date.now() - importProgress.startTime) / 1000;
               const rate = importProgress.completed / elapsed;
@@ -1550,7 +1715,11 @@ function ReviewStep<TRow>({
               return <span>~{mins > 0 ? `${mins}m ` : ''}{secs}s remaining</span>;
             })()}
           </div>
-          <p className="text-xs text-amber-600/80 text-center">Do not close this tab — import is in progress.</p>
+          <p className="text-xs text-amber-600/80 text-center">
+            {serverImportMode
+              ? 'Do not close this tab — Scott is processing your upload.'
+              : 'Do not close this tab — import is in progress.'}
+          </p>
         </div>
       )}
 
@@ -1570,8 +1739,12 @@ function ReviewStep<TRow>({
           disabled={isImporting || actionableCount === 0}
         >
           {isImporting
-            ? `Importing ${importProgress.completed.toLocaleString()}/${importProgress.total.toLocaleString()}…`
-            : `Import ${actionableCount} row${actionableCount === 1 ? '' : 's'}`}
+            ? serverImportMode
+              ? `Processing ${importProgress.completed.toLocaleString()}/${importProgress.total.toLocaleString()}…`
+              : `Importing ${importProgress.completed.toLocaleString()}/${importProgress.total.toLocaleString()}…`
+            : serverImportMode
+              ? `Upload & import ${actionableCount} row${actionableCount === 1 ? '' : 's'}`
+              : `Import ${actionableCount} row${actionableCount === 1 ? '' : 's'}`}
         </Button>
       </div>
     </div>
