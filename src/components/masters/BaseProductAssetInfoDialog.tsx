@@ -11,11 +11,11 @@ import {
   useUpdateBaseProductAssetInfo,
   type BaseProductAssetInfo,
 } from '@/hooks/masters/useBaseProductAssetInfos';
-import { useBaseProducts } from '@/hooks/masters/useBaseProducts';
-import { useAddOns } from '@/hooks/masters/useAddOns';
+import { useAllBaseProducts } from '@/hooks/masters/useBaseProducts';
+import { useAllAddOns } from '@/hooks/masters/useAddOns';
 import { useAllParts } from '@/hooks/masters/useParts';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useGetAppAssets } from '@/hooks/masters/useAppAssets';
+import { useAllAppAssets } from '@/hooks/masters/useAppAssets';
 
 const baseProductAssetInfoSchema = z.object({
   base_product_id: z.string().min(1, 'Base Product is required'),
@@ -40,10 +40,10 @@ const BaseProductAssetInfoDialog = ({
   const createAssetInfo = useCreateBaseProductAssetInfo();
   const updateAssetInfo = useUpdateBaseProductAssetInfo();
 
-  const { data: baseProducts = [], isLoading: isBaseProductsLoading } = useBaseProducts();
-  const { data: addOns = [], isLoading: isAddOnsLoading } = useAddOns();
+  const { data: baseProducts = [], isLoading: isBaseProductsLoading } = useAllBaseProducts();
+  const { data: addOns = [], isLoading: isAddOnsLoading } = useAllAddOns();
   const { data: parts = [], isLoading: isPartsLoading } = useAllParts();
-  const { data: appAssets = [], isLoading: isAppAssetsLoading } = useGetAppAssets();
+  const { data: appAssets = [], isLoading: isAppAssetsLoading } = useAllAppAssets();
 
   const form = useForm<BaseProductAssetInfoFormData>({
     resolver: zodResolver(baseProductAssetInfoSchema),

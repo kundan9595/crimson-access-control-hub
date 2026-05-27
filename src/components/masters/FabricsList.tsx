@@ -1,6 +1,7 @@
 
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { DeleteConfirmDialog } from '@/components/ui/delete-confirm-dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Edit, Trash2, Eye } from 'lucide-react';
@@ -15,20 +16,25 @@ interface FabricsListProps {
   isLoading: boolean;
 }
 
+function formatDate(value: string | undefined): string {
+  if (!value) return '—';
+  const d = new Date(value);
+  return isNaN(d.getTime()) ? '—' : d.toLocaleDateString();
+}
+
 export const FabricsList: React.FC<FabricsListProps> = ({ fabrics, isLoading }) => {
   const deleteFabric = useDeleteFabric();
   const [editingFabric, setEditingFabric] = useState<Fabric | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
 
   const handleEdit = (fabric: Fabric) => {
     setEditingFabric(fabric);
     setDialogOpen(true);
   };
 
-  const handleDelete = async (fabricId: string) => {
-    if (window.confirm('Are you sure you want to delete this fabric?')) {
-      await deleteFabric.mutateAsync(fabricId);
-    }
+  const handleDelete = (fabricId: string) => {
+    setDeleteConfirmId(fabricId);
   };
 
   const handleDialogClose = () => {
@@ -110,8 +116,8 @@ export const FabricsList: React.FC<FabricsListProps> = ({ fabrics, isLoading }) 
                     {fabric.status}
                   </Badge>
                 </TableCell>
-                <TableCell>{new Date(fabric.created_at).toLocaleDateString()}</TableCell>
-                <TableCell>{new Date(fabric.updated_at).toLocaleDateString()}</TableCell>
+                <TableCell>{formatDate(fabric.created_at)}</TableCell>
+                <TableCell>{formatDate(fabric.updated_at)}</TableCell>
                 <TableCell className="text-right">
                   <div className="flex justify-end gap-2">
                     <Button
@@ -140,6 +146,15 @@ export const FabricsList: React.FC<FabricsListProps> = ({ fabrics, isLoading }) 
         fabric={editingFabric}
         open={dialogOpen}
         onOpenChange={handleDialogClose}
+      />
+
+      <DeleteConfirmDialog
+        open={deleteConfirmId !== null}
+        onOpenChange={(open) => !open && setDeleteConfirmId(null)}
+        onConfirm={() => deleteFabric.mutate(deleteConfirmId!, { onSettled: () => setDeleteConfirmId(null) })}
+        title="Delete Fabric"
+        description="Are you sure you want to delete this fabric? This action cannot be undone."
+        isPending={deleteFabric.isPending}
       />
     </>
   );

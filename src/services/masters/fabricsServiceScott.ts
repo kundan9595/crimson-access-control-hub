@@ -35,6 +35,15 @@ export interface Fabric {
   }[];
 }
 
+function normalizeFabricType(raw: unknown): string {
+  const s = String(raw ?? '').toLowerCase().replace(/_/g, ' ').trim();
+  if (s === 'cotton') return 'Cotton';
+  if (s === 'polyester') return 'Polyester';
+  if (s === 'poly cotton' || s === 'polycotton') return 'Poly Cotton';
+  // Fallback: title-case whatever the API returns
+  return String(raw ?? '');
+}
+
 function normalizeFabric(r: Record<string, unknown>): Fabric {
   const status =
     typeof r.status === 'string'
@@ -43,22 +52,42 @@ function normalizeFabric(r: Record<string, unknown>): Fabric {
         ? 'inactive'
         : 'active';
 
+  // API may return colors as nested objects or just as color_ids.
+  // Prefer color_id over id when present — id on the nested object is often the join-table row id.
+  let color_ids: string[] = [];
+  let colors: { id: string; name: string; hex_code: string }[] | undefined;
+
+  if (Array.isArray(r.colors) && r.colors.length > 0) {
+    const colorObjects = r.colors as Record<string, unknown>[];
+    colors = colorObjects.map((c) => ({
+      id: normalizeId(c.color_id ?? c.id),
+      name: String(c.name ?? ''),
+      hex_code: String(c.hex_code ?? c.color_code ?? '#000000'),
+    }));
+    color_ids = colors.map((c) => c.id);
+  } else if (Array.isArray(r.color_ids) && r.color_ids.length > 0) {
+    color_ids = r.color_ids as string[];
+  }
+
+  // Only use image_url when it's an actual HTTP URL to avoid passing filenames to the image preview
+  const rawImage = typeof r.image === 'string' ? r.image : typeof r.image_url === 'string' ? r.image_url : '';
+  const image_url = rawImage.startsWith('http') ? rawImage : undefined;
+
   return {
     id: normalizeId(r.id ?? r.fabric_id),
     name: String(r.name ?? ''),
-    fabric_type: String(r.fabric_type ?? ''),
+    fabric_type: normalizeFabricType(r.fabric_type),
     gsm: Number(r.gsm ?? 0),
-    uom: String(r.uom ?? 'kg'),
+    uom: String(r.uom ?? ''),
     price: Number(r.price ?? 0),
-    color_ids: Array.isArray(r.color_ids)
-      ? (r.color_ids as string[])
-      : [],
-    image_url: typeof r.image === 'string' ? r.image : r.image_url as string | undefined,
+    color_ids,
+    colors,
+    image_url,
     status,
     created_at:
-      typeof r.created_at === 'string' ? r.created_at : new Date().toISOString(),
+      typeof r.created_at === 'string' ? r.created_at : '',
     updated_at:
-      typeof r.updated_at === 'string' ? r.updated_at : new Date().toISOString(),
+      typeof r.updated_at === 'string' ? r.updated_at : '',
   };
 }
 
@@ -93,11 +122,23 @@ async function fabricToFormData(
 async function enrichFabricsWithColors(fabrics: Fabric[]): Promise<Fabric[]> {
   if (fabrics.length === 0) return fabrics;
 
+  // If all fabrics already have colors resolved from the API response, skip fetching
+  const needsEnrichment = fabrics.some(
+    (f) => f.colors === undefined && f.color_ids && f.color_ids.length > 0,
+  );
+
+  if (!needsEnrichment) {
+    return fabrics.map((f) => ({ ...f, colors: f.colors ?? [] }));
+  }
+
   try {
     const allColors = await fetchColors();
     const colorMap = new Map(allColors.map((c) => [c.id, c]));
 
     return fabrics.map((fabric) => {
+      // Already resolved from API — keep as-is
+      if (fabric.colors !== undefined) return fabric;
+
       if (fabric.color_ids && fabric.color_ids.length > 0) {
         const colorsData = fabric.color_ids
           .map((cid: string) => colorMap.get(cid))
@@ -112,7 +153,7 @@ async function enrichFabricsWithColors(fabrics: Fabric[]): Promise<Fabric[]> {
       return { ...fabric, colors: [] };
     });
   } catch (error) {
-    return fabrics.map((f) => ({ ...f, colors: [] }));
+    return fabrics.map((f) => ({ ...f, colors: f.colors ?? [] }));
   }
 }
 
