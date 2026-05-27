@@ -25,11 +25,12 @@ export const useRmpBrands = (
   });
 };
 
-export const useAllRmpBrands = () => {
+export const useAllRmpBrands = (options?: { enabled?: boolean }) => {
   return useQuery({
     queryKey: ['rmp_brands', 'all'],
     queryFn: fetchRmpBrands,
     staleTime: config.cache.staleTime,
+    enabled: options?.enabled ?? true,
   });
 };
 

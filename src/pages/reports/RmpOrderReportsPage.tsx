@@ -21,7 +21,8 @@ import {
   type RmpOrderReport,
 } from '@/hooks/reports/useRmpOrderReports';
 import { fetchRmpOrderReports } from '@/services/reports/rmpOrderReportsService';
-import { exportToCSV, generateExportFilename } from '@/utils/exportUtils';
+import { formatReportOrderId } from '@/services/reports/reportDisplayUtils';
+import { exportToCSV, generateExportFilename, withExportToast } from '@/utils/exportUtils';
 import { config } from '@/config/environment';
 
 const RmpOrderReportsPage = () => {
@@ -45,7 +46,7 @@ const RmpOrderReportsPage = () => {
     setDownloadModalOpen(true);
   };
 
-  const handleExportCurrent = async () => {
+  const handleExportCurrent = () => withExportToast('RMP Order Reports', () => {
     if (!reports.length) return;
 
     exportToCSV({
@@ -78,7 +79,7 @@ const RmpOrderReportsPage = () => {
           new Date(item.created_at).toLocaleDateString(),
       },
     });
-  };
+  });
 
   const handleDownloadWithFilters = async (filters: {
     startDate?: string;
@@ -95,7 +96,10 @@ const RmpOrderReportsPage = () => {
 
   const totalCount = reportsPage?.totalCount ?? reports.length;
   const totalQuantity = reports.reduce((sum, r) => sum + (r.quantity || 0), 0);
-  const totalValue = reports.reduce((sum, r) => sum + (r.price || 0) * (r.quantity || 0), 0);
+  const totalValue = reports.reduce(
+    (sum, r) => sum + (r.total_amount ?? (r.price || 0) * (r.quantity || 0)),
+    0,
+  );
 
   return (
     <div className="space-y-6">
@@ -216,7 +220,9 @@ const RmpOrderReportsPage = () => {
               <TableBody>
                 {reports.map((report) => (
                   <TableRow key={report.id}>
-                    <TableCell className="font-medium">{report.order_id || '-'}</TableCell>
+                    <TableCell className="font-medium">
+                      {formatReportOrderId(report.order_id, report.id)}
+                    </TableCell>
                     <TableCell>{report.order_number || '-'}</TableCell>
                     <TableCell>{report.customer_name || '-'}</TableCell>
                     <TableCell>{report.rmp_sku_id || '-'}</TableCell>
@@ -225,7 +231,7 @@ const RmpOrderReportsPage = () => {
                     <TableCell>{report.price ? `₹${report.price.toFixed(2)}` : '-'}</TableCell>
                     <TableCell>
                       <Badge variant={report.status === 'active' ? 'default' : 'secondary'}>
-                        {report.status || 'Unknown'}
+                        {report.status || '-'}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-right space-x-2">

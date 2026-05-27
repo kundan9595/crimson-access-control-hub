@@ -11,6 +11,7 @@ import {
   type ScottPageParams,
   type ScottPaginatedResult,
 } from '@/services/scott/scottPagination';
+import { enrichRowsByOrderId } from '@/services/reports/reportDisplayUtils';
 
 export interface OrderReport {
   id: string;
@@ -34,22 +35,85 @@ export interface OrderReportFilter {
   status?: string;
 }
 
+function str(v: unknown): string | undefined {
+  if (v === null || v === undefined) return undefined;
+  const s = String(v).trim();
+  return s === '' ? undefined : s;
+}
+
+function pickString(r: Record<string, unknown>, keys: string[]): string | undefined {
+  for (const key of keys) {
+    const value = str(r[key]);
+    if (value) return value;
+  }
+  return undefined;
+}
+
+function num(v: unknown): number | undefined {
+  if (v === null || v === undefined || v === '') return undefined;
+  const n = Number(v);
+  return Number.isFinite(n) ? n : undefined;
+}
+
+function pickNumeric(r: Record<string, unknown>, keys: string[]): number | undefined {
+  for (const key of keys) {
+    const value = num(r[key]);
+    if (value != null) return value;
+  }
+  return undefined;
+}
+
+function computeCustomOrderAmount(src: Record<string, unknown>): number | undefined {
+  const direct = pickNumeric(src, ['total_amount', 'amount', 'grand_total']);
+  if (direct != null) return direct;
+
+  const qty = pickNumeric(src, ['total_quantity', 'quantity', 'qty']) ?? 1;
+  const unitCost =
+    (pickNumeric(src, ['fabric_rate']) ?? 0) +
+    (pickNumeric(src, ['trims_cost']) ?? 0) +
+    (pickNumeric(src, ['overhead']) ?? 0) +
+    (pickNumeric(src, ['add_on_cost']) ?? 0) +
+    (pickNumeric(src, ['branding_cost']) ?? 0);
+
+  if (unitCost <= 0) return undefined;
+  return unitCost * qty;
+}
+
+function deriveOrderStatus(src: Record<string, unknown>): string {
+  const explicit = pickString(src, ['order_status', 'status']);
+  if (explicit) return explicit;
+
+  if (pickString(src, ['actual_delivery_date'])) return 'DELIVERED';
+  if (pickString(src, ['expected_delivery_date'])) return 'PENDING';
+  return '';
+}
+
 function normalizeOrderReport(r: Record<string, unknown>): OrderReport {
+  const nested =
+    r.order_report && typeof r.order_report === 'object' && !Array.isArray(r.order_report)
+      ? (r.order_report as Record<string, unknown>)
+      : null;
+  const src = nested ? { ...nested, ...r } : r;
+
   return {
-    id: normalizeId(r.id ?? r.order_report_id ?? r.order_id),
-    order_id: String(r.order_id ?? ''),
-    order_number: String(r.order_number ?? ''),
-    customer_name: String(r.customer_name ?? ''),
-    customer_code: String(r.customer_code ?? ''),
-    order_date: typeof r.order_date === 'string' ? r.order_date : undefined,
-    total_amount: r.total_amount != null ? Number(r.total_amount) : undefined,
-    status: String(r.status ?? ''),
-    order_type: String(r.order_type ?? ''),
-    created_at:
-      typeof r.created_at === 'string' ? r.created_at : new Date().toISOString(),
-    updated_at:
-      typeof r.updated_at === 'string' ? r.updated_at : new Date().toISOString(),
-    ...r,
+    ...src,
+    id: normalizeId(src.id ?? src.order_report_id ?? src.order_id),
+    order_id: pickString(src, ['order_id', 'orderId']) ?? '',
+    order_number: pickString(src, [
+      'order_number',
+      'jobsheet_number',
+      'order_no',
+      'number',
+    ]) ?? '',
+    customer_name: pickString(src, ['customer_name', 'company_name', 'name']) ?? '',
+    customer_code: pickString(src, ['customer_code', 'code']) ?? '',
+    product: pickString(src, ['product', 'description']) ?? '',
+    order_date: pickString(src, ['order_date', 'date']),
+    total_amount: computeCustomOrderAmount(src),
+    status: deriveOrderStatus(src),
+    order_type: pickString(src, ['order_type', 'item_type']) ?? '',
+    created_at: pickString(src, ['created_at']) ?? new Date().toISOString(),
+    updated_at: pickString(src, ['updated_at']) ?? new Date().toISOString(),
   };
 }
 
@@ -87,7 +151,11 @@ export async function fetchOrderReportsPaginated(
     method: 'GET',
     query,
   });
-  const data = extractRecords(body).map((r) => normalizeOrderReport(r));
+  const rawRecords = extractRecords(body);
+  const data = enrichRowsByOrderId(
+    rawRecords.map((r) => normalizeOrderReport(r)),
+    ['customer_name', 'customer_code', 'order_date', 'status'],
+  );
   return {
     data,
     ...buildScottPaginatedMeta(body, p, data.length),

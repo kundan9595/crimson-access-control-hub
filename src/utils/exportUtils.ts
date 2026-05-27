@@ -1,4 +1,6 @@
 
+import { toast } from 'sonner';
+
 export interface ExportConfig {
   filename: string;
   headers: string[];
@@ -48,3 +50,21 @@ export const generateExportFilename = (entityName: string) => {
   const date = new Date().toISOString().split('T')[0];
   return `${entityName.toLowerCase()}-${date}.csv`;
 };
+
+/**
+ * Wraps any async export function with a Sonner loading → success/error toast.
+ * The toast is non-blocking — the user can navigate while data is fetching and
+ * the download will still trigger when ready.
+ */
+export async function withExportToast(label: string, fn: () => Promise<void> | void): Promise<void> {
+  const toastId = toast.loading(`Preparing ${label} export…`);
+  try {
+    await Promise.resolve(fn());
+    toast.success('Export ready — file downloading now', { id: toastId, duration: 3000 });
+  } catch (err) {
+    toast.error('Export failed', {
+      id: toastId,
+      description: err instanceof Error ? err.message : 'Something went wrong',
+    });
+  }
+}

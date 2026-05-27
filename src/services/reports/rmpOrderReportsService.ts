@@ -11,6 +11,7 @@ import {
   type ScottPageParams,
   type ScottPaginatedResult,
 } from '@/services/scott/scottPagination';
+import { enrichRowsByOrderId, isIncompleteOrderId } from '@/services/reports/reportDisplayUtils';
 
 export interface RmpOrderReport {
   id: string;
@@ -38,25 +39,84 @@ export interface RmpOrderReportFilter {
   rmp_sku_id?: string;
 }
 
+function str(v: unknown): string | undefined {
+  if (v === null || v === undefined) return undefined;
+  const s = String(v).trim();
+  return s === '' ? undefined : s;
+}
+
+function pickString(r: Record<string, unknown>, keys: string[]): string | undefined {
+  for (const key of keys) {
+    const value = str(r[key]);
+    if (value) return value;
+  }
+  return undefined;
+}
+
+function num(v: unknown): number | undefined {
+  if (v === null || v === undefined || v === '') return undefined;
+  const n = Number(v);
+  return Number.isFinite(n) ? n : undefined;
+}
+
+function pickNumeric(r: Record<string, unknown>, keys: string[]): number | undefined {
+  for (const key of keys) {
+    const value = num(r[key]);
+    if (value != null) return value;
+  }
+  return undefined;
+}
+
+function deriveOrderStatus(src: Record<string, unknown>): string {
+  const explicit = pickString(src, ['order_status', 'status']);
+  if (explicit) return explicit;
+
+  if (pickString(src, ['dispatch_date', 'actual_delivery_date'])) return 'DISPATCHED';
+  if (pickString(src, ['delivery_required_on', 'expected_delivery_date'])) return 'PENDING';
+  return '';
+}
+
 function normalizeRmpOrderReport(r: Record<string, unknown>): RmpOrderReport {
+  const nested =
+    (r.rmp_order_report ?? r.order_report) &&
+    typeof (r.rmp_order_report ?? r.order_report) === 'object' &&
+    !Array.isArray(r.rmp_order_report ?? r.order_report)
+      ? ((r.rmp_order_report ?? r.order_report) as Record<string, unknown>)
+      : null;
+  const src = nested ? { ...nested, ...r } : r;
+
+  const totalAmount = pickNumeric(src, ['total_amount', 'amount']);
+  const quantity = pickNumeric(src, ['quantity', 'total_quantity', 'qty']);
+  const unitPrice = pickNumeric(src, ['per_piece_amount', 'price', 'unit_price']);
+
+  const orderId = pickString(src, ['order_id', 'orderId']) ?? '';
+  const explicitOrderNumber = pickString(src, [
+    'order_number',
+    'order_no',
+    'jobsheet_number',
+    'invoice_no',
+    'ref_no',
+    'po_number',
+  ]);
+  const orderNumber =
+    explicitOrderNumber ?? (!isIncompleteOrderId(orderId) ? orderId : '');
+
   return {
-    id: normalizeId(r.id ?? r.rmp_order_report_id ?? r.order_id),
-    order_id: String(r.order_id ?? ''),
-    order_number: String(r.order_number ?? ''),
-    customer_name: String(r.customer_name ?? ''),
-    customer_code: String(r.customer_code ?? ''),
-    order_date: typeof r.order_date === 'string' ? r.order_date : undefined,
-    total_amount: r.total_amount != null ? Number(r.total_amount) : undefined,
-    status: String(r.status ?? ''),
-    rmp_sku_id: String(r.rmp_sku_id ?? ''),
-    rmp_sku_name: String(r.rmp_sku_name ?? ''),
-    quantity: r.quantity != null ? Number(r.quantity) : undefined,
-    price: r.price != null ? Number(r.price) : undefined,
-    created_at:
-      typeof r.created_at === 'string' ? r.created_at : new Date().toISOString(),
-    updated_at:
-      typeof r.updated_at === 'string' ? r.updated_at : new Date().toISOString(),
-    ...r,
+    ...src,
+    id: normalizeId(src.id ?? src.rmp_order_report_id ?? src.order_id),
+    order_id: orderId,
+    order_number: orderNumber,
+    customer_name: pickString(src, ['customer_name', 'company_name', 'name']) ?? '',
+    customer_code: pickString(src, ['customer_code', 'code', 'customer_type']) ?? '',
+    order_date: pickString(src, ['order_date', 'date']),
+    total_amount: totalAmount,
+    status: deriveOrderStatus(src),
+    rmp_sku_id: pickString(src, ['rmp_sku_id', 'sku', 'sku_id']) ?? '',
+    rmp_sku_name: pickString(src, ['rmp_sku_name', 'product_name', 'sku_name']) ?? '',
+    quantity,
+    price: unitPrice ?? (totalAmount != null && quantity ? totalAmount / quantity : undefined),
+    created_at: pickString(src, ['created_at']) ?? new Date().toISOString(),
+    updated_at: pickString(src, ['updated_at']) ?? new Date().toISOString(),
   };
 }
 
@@ -97,7 +157,11 @@ export async function fetchRmpOrderReportsPaginated(
     method: 'GET',
     query,
   });
-  const data = extractRecords(body).map((r) => normalizeRmpOrderReport(r));
+  const rawRecords = extractRecords(body);
+  const data = enrichRowsByOrderId(
+    rawRecords.map((r) => normalizeRmpOrderReport(r)),
+    ['customer_name', 'customer_code', 'order_date', 'status', 'order_id', 'order_number'],
+  );
   return {
     data,
     ...buildScottPaginatedMeta(body, p, data.length),

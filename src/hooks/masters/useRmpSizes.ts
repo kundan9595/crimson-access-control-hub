@@ -24,11 +24,12 @@ export const useRmpSizes = (
   });
 };
 
-export const useAllRmpSizes = () => {
+export const useAllRmpSizes = (options?: { enabled?: boolean }) => {
   return useQuery({
     queryKey: ['rmp_sizes', 'all'],
     queryFn: fetchRmpSizes,
     staleTime: config.cache.staleTime,
+    enabled: options?.enabled ?? true,
   });
 };
 

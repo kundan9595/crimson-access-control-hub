@@ -15,7 +15,7 @@ export const useRmpOrderReports = (
   filters?: RmpOrderReportFilter,
 ) => {
   return useQuery({
-    queryKey: ['rmp_order_reports', 'list', page, pageSize, filters],
+    queryKey: ['rmp_order_reports', 'list', 'v4', page, pageSize, filters],
     queryFn: () => fetchRmpOrderReportsPaginated({ page, items: pageSize }, filters),
     placeholderData: (prev) => prev,
   });
@@ -23,7 +23,7 @@ export const useRmpOrderReports = (
 
 export const useAllRmpOrderReports = (filters?: RmpOrderReportFilter) => {
   return useQuery({
-    queryKey: ['rmp_order_reports', 'all', filters],
+    queryKey: ['rmp_order_reports', 'all', 'v2', filters],
     queryFn: () => fetchRmpOrderReports(filters),
     staleTime: 5 * 60 * 1000,
   });
@@ -31,7 +31,7 @@ export const useAllRmpOrderReports = (filters?: RmpOrderReportFilter) => {
 
 export const useRmpOrderReportById = (id: string | null) => {
   return useQuery({
-    queryKey: ['rmp_order_reports', 'detail', id],
+    queryKey: ['rmp_order_reports', 'detail', 'v2', id],
     queryFn: () => (id ? getRmpOrderReportById(id) : null),
     enabled: !!id,
   });

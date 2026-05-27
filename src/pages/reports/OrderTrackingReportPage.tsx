@@ -175,6 +175,7 @@ const OrderTrackingReportPage = () => {
   };
 
   const handleExport = async () => {
+    const toastId = toast.loading('Preparing order tracking export…');
     let exportRows = displayRows;
 
     if (clientFilterActive) {
@@ -191,13 +192,13 @@ const OrderTrackingReportPage = () => {
           isOos: filtersApplied.isOos,
         });
       } catch {
-        toast.error('Failed to fetch all rows for export');
+        toast.error('Failed to fetch all rows for export', { id: toastId });
         return;
       }
     }
 
     if (!exportRows.length) {
-      toast.error('No data to export');
+      toast.error('No data to export', { id: toastId });
       return;
     }
 
@@ -207,7 +208,7 @@ const OrderTrackingReportPage = () => {
       data: exportRows,
       fieldMap: orderTrackingExportFieldMap(),
     });
-    toast.success(`Exported ${exportRows.length} rows`);
+    toast.success(`Export ready — ${exportRows.length} rows downloading now`, { id: toastId, duration: 3000 });
   };
 
   return (

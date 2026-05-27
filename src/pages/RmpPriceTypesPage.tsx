@@ -19,6 +19,7 @@ import { MasterPageHeader } from '@/components/masters/shared/MasterPageHeader';
 import { SearchFilter } from '@/components/masters/shared/SearchFilter';
 import {
   useRmpPriceTypes,
+  useAllRmpPriceTypes,
   useCreateRmpPriceType,
   useUpdateRmpPriceType,
   useDeleteRmpPriceType,
@@ -48,18 +49,41 @@ import { fetchAllRecordIds } from '@/services/scott/scottPagination';
 import { callScottBulkDelete } from '@/services/scott/callScottDashboard';
 import { exportToCSV, generateExportFilename } from '@/utils/exportUtils';
 import { config } from '@/config/environment';
+import { AdvancedFilterPanel } from '@/components/masters/advanced-filter/AdvancedFilterPanel';
+import { buildFilterColumns } from '@/components/masters/advanced-filter/types';
+import { useAdvancedFilter } from '@/hooks/masters/useAdvancedFilter';
+import { QuickFilterBar } from '@/components/masters/advanced-filter/QuickFilterBar';
+import { useQuickFilters } from '@/hooks/masters/useQuickFilters';
 
 const RmpPriceTypesPage = () => {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(config.pagination.defaultPageSize);
   const [search, setSearch] = useState('');
 
+  const { filterGroup, setFilterGroup, isActive: filterActive, applyFilter, clearFilters } = useAdvancedFilter();
+  const { values: quickValues, setEnumFilter, setDateRange, clearFilter: clearQuickFilter, clearAll: clearAllQuick, isActive: quickFilterActive, applyQuickFilters } = useQuickFilters();
+  const isAnyFilterActive = filterActive || quickFilterActive;
+  const filterColumns = useMemo(() => buildFilterColumns(rmpPriceTypesColumns), []);
+
   const { data: pageData, isLoading, isFetching } = useRmpPriceTypes(
-    page,
-    pageSize,
-    search ? { search } : undefined
+    page, pageSize,
+    isAnyFilterActive ? undefined : (search ? { search } : undefined)
   );
-  const rows = pageData?.data ?? [];
+  const { data: allRmpPriceTypes = [], isLoading: isLoadingAll } = useAllRmpPriceTypes({ enabled: isAnyFilterActive });
+
+  const filteredRows = useMemo(
+    () => (isAnyFilterActive ? applyQuickFilters(applyFilter(allRmpPriceTypes, filterColumns), filterColumns) : []),
+    [isAnyFilterActive, allRmpPriceTypes, applyFilter, applyQuickFilters, filterColumns],
+  );
+  const rows = useMemo(() => {
+    if (isAnyFilterActive) return filteredRows.slice((page - 1) * pageSize, page * pageSize);
+    return pageData?.data ?? [];
+  }, [isAnyFilterActive, filteredRows, pageData, page, pageSize]);
+  const clientPaginationResult = useMemo(() => {
+    if (!isAnyFilterActive) return null;
+    return { page, pageSize, totalCount: filteredRows.length, totalPages: Math.max(1, Math.ceil(filteredRows.length / pageSize)), totalCountIsExact: true as const, data: rows };
+  }, [isAnyFilterActive, filteredRows, rows, page, pageSize]);
+
   const createMut = useCreateRmpPriceType();
   const updateMut = useUpdateRmpPriceType();
   const deleteMut = useDeleteRmpPriceType();
@@ -74,23 +98,17 @@ const RmpPriceTypesPage = () => {
   const [status, setStatus] = useState('active');
   const [importOpen, setImportOpen] = useState(false);
 
-  useEffect(() => {
-    setPage(1);
-  }, [search]);
-
-  useEffect(() => {
-    bulk.clearSelection();
-  }, [search, bulk.clearSelection]);
+  useEffect(() => { setPage(1); }, [search, isAnyFilterActive]);
+  useEffect(() => { bulk.clearSelection(); }, [search, isAnyFilterActive, bulk.clearSelection]);
 
   const pageRowIds = useMemo(() => rows.map((r) => r.id), [rows]);
-  const listTotal = pageData?.totalCount ?? rows.length;
+  const listTotal = isAnyFilterActive ? filteredRows.length : (pageData?.totalCount ?? rows.length);
 
   const fetchAllMatchingIds = useCallback(
-    () =>
-      fetchAllRecordIds((pp) =>
-        fetchRmpPriceTypesPaginated(pp, search ? { search } : undefined),
-      ),
-    [search],
+    () => isAnyFilterActive
+      ? Promise.resolve(filteredRows.map((r) => r.id))
+      : fetchAllRecordIds((pp) => fetchRmpPriceTypesPaginated(pp, search ? { search } : undefined)),
+    [isAnyFilterActive, filteredRows, search],
   );
 
   const handleExport = async () => {
@@ -162,13 +180,18 @@ const RmpPriceTypesPage = () => {
 
       <Card>
         <CardContent className="p-6">
-          <SearchFilter
-            placeholder="Search price types..."
-            value={search}
-            onChange={setSearch}
-            resultCount={rows.length}
-            totalCount={listTotal}
-          />
+          <div className="flex items-center gap-2 flex-wrap">
+            <SearchFilter
+              placeholder="Search price types..."
+              value={search}
+              onChange={setSearch}
+              resultCount={rows.length}
+              totalCount={listTotal}
+            />
+            <AdvancedFilterPanel columns={filterColumns} filterGroup={filterGroup} onChange={setFilterGroup} onClear={clearFilters} />
+            <QuickFilterBar columns={filterColumns} values={quickValues} onEnumChange={setEnumFilter} onDateChange={setDateRange} onClearField={clearQuickFilter} onClearAll={clearAllQuick} />
+            {isAnyFilterActive && <span className="text-xs text-muted-foreground">{filteredRows.length} filtered result{filteredRows.length !== 1 ? 's' : ''}</span>}
+          </div>
           {listTotal > 0 && (
             <MasterListBulkBar
               entityPlural="RMP price types"
@@ -184,11 +207,11 @@ const RmpPriceTypesPage = () => {
               }}
             />
           )}
-          {isLoading ? (
+          {isLoading || isLoadingAll ? (
             <MasterTableSkeleton showToolbar={false} columnCount={9} className="mt-6" />
           ) : rows.length === 0 ? (
             <p className="text-center text-muted-foreground py-8">
-              {search ? 'No price types match your search' : 'No price types found'}
+              {isAnyFilterActive ? 'No price types match your filters' : search ? 'No price types match your search' : 'No price types found'}
             </p>
           ) : (
             <Table className="mt-6">
@@ -252,13 +275,10 @@ const RmpPriceTypesPage = () => {
             </Table>
           )}
           <MasterServerPagination
-            result={pageData ?? null}
+            result={isAnyFilterActive ? clientPaginationResult : (pageData ?? null)}
             onPageChange={setPage}
-            onPageSizeChange={(size) => {
-              setPageSize(size);
-              setPage(1);
-            }}
-            disabled={isLoading || isFetching}
+            onPageSizeChange={(size) => { setPageSize(size); setPage(1); }}
+            disabled={isLoading || isFetching || isLoadingAll}
             className="mt-6"
           />
         </CardContent>
@@ -351,7 +371,6 @@ const RmpPriceTypesPage = () => {
         }}
         fetchAll={fetchRmpPriceTypes}
         getRowId={rmpPriceTypesGetRowId}
-        defaultKeyFields={['name']}
       />
 
     </div>

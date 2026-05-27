@@ -199,13 +199,17 @@ export function toBulkUploadSaveResult(status: RmpPricesBulkUploadStatus): RmpPr
   };
 }
 
-export async function uploadRmpPricesBulk(file: File): Promise<RmpPricesBulkUploadStatus> {
+export async function uploadRmpPricesBulk(
+  file: File,
+  options?: { replaceAll?: boolean },
+): Promise<RmpPricesBulkUploadStatus> {
   const { body } = await callScottDashboard<unknown>({
     resource: 'rmp_prices',
     method: 'POST',
     pathSuffix: 'bulk_upload',
     body: {
       file: await fileToScottPayload(file),
+      replace_all: options?.replaceAll ? 'true' : 'false',
     },
   });
   return parseRmpPricesBulkUploadStatus(body);
@@ -268,6 +272,7 @@ export async function pollRmpPricesBulkUploadStatus(
 }
 
 export interface RunRmpPricesBulkImportOptions extends PollRmpPricesBulkUploadOptions {
+  replaceAll?: boolean;
   onUploadComplete?: (status: RmpPricesBulkUploadStatus) => void;
 }
 
@@ -276,7 +281,7 @@ export async function runRmpPricesBulkImport(
   file: File,
   options: RunRmpPricesBulkImportOptions = {},
 ): Promise<RmpPricesBulkUploadSaveResult> {
-  const uploadStatus = await uploadRmpPricesBulk(file);
+  const uploadStatus = await uploadRmpPricesBulk(file, { replaceAll: options.replaceAll });
   options.onUploadComplete?.(uploadStatus);
   options.onProgress?.({
     ...uploadStatus,

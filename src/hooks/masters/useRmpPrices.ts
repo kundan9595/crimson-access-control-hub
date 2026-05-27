@@ -24,11 +24,12 @@ export const useRmpPrices = (
   });
 };
 
-export const useAllRmpPrices = () => {
+export const useAllRmpPrices = (options?: { enabled?: boolean }) => {
   return useQuery({
     queryKey: ['rmp_prices', 'all'],
     queryFn: fetchRmpPrices,
     staleTime: config.cache.staleTime,
+    enabled: options?.enabled ?? true,
   });
 };
 

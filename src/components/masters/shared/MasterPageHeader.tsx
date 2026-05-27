@@ -1,10 +1,11 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { ArrowLeft, Download, Upload, Plus, Pencil } from 'lucide-react';
+import { ArrowLeft, Download, Upload, Plus, Pencil, Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 
 interface MasterPageHeaderProps {
   title: string;
@@ -61,6 +62,24 @@ export const MasterPageHeader: React.FC<MasterPageHeaderProps> = ({
   isScottApi = false,
 }) => {
   const navigate = useNavigate();
+  const [isExporting, setIsExporting] = useState(false);
+
+  const handleExportClick = async () => {
+    if (!onExport || isExporting) return;
+    setIsExporting(true);
+    const toastId = toast.loading(`Preparing ${title} export…`);
+    try {
+      await Promise.resolve(onExport());
+      toast.success('Export ready — file downloading now', { id: toastId, duration: 3000 });
+    } catch (err) {
+      toast.error('Export failed', {
+        id: toastId,
+        description: err instanceof Error ? err.message : 'Something went wrong',
+      });
+    } finally {
+      setIsExporting(false);
+    }
+  };
 
   return (
     <div className="space-y-4">
@@ -105,10 +124,10 @@ export const MasterPageHeader: React.FC<MasterPageHeaderProps> = ({
             )}
             {onExport && (
               <IconAction
-                label="Export"
-                icon={<Download className="h-4 w-4" />}
-                onClick={onExport}
-                disabled={!canExport}
+                label={isExporting ? 'Exporting…' : 'Export'}
+                icon={isExporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+                onClick={handleExportClick}
+                disabled={!canExport || isExporting}
               />
             )}
             {onImport && (

@@ -24,11 +24,12 @@ export const useRmpColors = (
   });
 };
 
-export const useAllRmpColors = () => {
+export const useAllRmpColors = (options?: { enabled?: boolean }) => {
   return useQuery({
     queryKey: ['rmp_colors', 'all'],
     queryFn: fetchRmpColors,
     staleTime: config.cache.staleTime,
+    enabled: options?.enabled ?? true,
   });
 };
 

@@ -25,11 +25,12 @@ export const useRmpCategories = (
   });
 };
 
-export const useAllRmpCategories = () => {
+export const useAllRmpCategories = (options?: { enabled?: boolean }) => {
   return useQuery({
     queryKey: ['rmp_categories', 'all'],
     queryFn: fetchRmpCategories,
     staleTime: config.cache.staleTime,
+    enabled: options?.enabled ?? true,
   });
 };
 

@@ -2,7 +2,9 @@ import {
   callScottDashboard,
   extractRecords,
   extractScottEntity,
+  fileToScottPayload,
   normalizeId,
+  urlToScottFile,
 } from '@/services/scott/callScottDashboard';
 import { normalizeHexCode } from '@/services/masters/rmpColorsService';
 import {
@@ -51,6 +53,31 @@ export interface RmpClassImageFiles {
   image_3?: File;
   image_4?: File;
   image_5?: File;
+}
+
+export const RMP_CLASS_IMAGE_SLOTS = ['image_1', 'image_2', 'image_3', 'image_4', 'image_5'] as const;
+export type RmpClassImageSlot = (typeof RMP_CLASS_IMAGE_SLOTS)[number];
+
+async function appendRmpClassImagesToForm(
+  form: Record<string, unknown>,
+  imageSources: Partial<Pick<RmpClass, RmpClassImageSlot>>,
+  imageFiles?: RmpClassImageFiles,
+): Promise<void> {
+  for (const slot of RMP_CLASS_IMAGE_SLOTS) {
+    const file = imageFiles?.[slot];
+    if (file) {
+      form[slot] = await fileToScottPayload(file);
+      continue;
+    }
+    const url = imageSources[slot];
+    if (typeof url === 'string' && (url.startsWith('http://') || url.startsWith('https://'))) {
+      try {
+        form[slot] = await urlToScottFile(url, `rmp_class_${slot}.png`);
+      } catch {
+        /* optional image — skip failed URL fetch */
+      }
+    }
+  }
 }
 
 function extractEmbeddedRmpColor(
@@ -176,10 +203,10 @@ function normalizeRmpClass(r: Record<string, unknown>): RmpClass {
   };
 }
 
-function rmpClassToFormData(
+async function rmpClassToFormData(
   rmpClassData: Omit<RmpClass, 'id' | 'created_at' | 'updated_at' | 'created_by' | 'updated_by' | 'rmp_color'>,
   imageFiles?: RmpClassImageFiles,
-): Record<string, unknown> {
+): Promise<Record<string, unknown>> {
   const isActive = rmpClassData.status === 'active';
 
   const form: Record<string, unknown> = {
@@ -192,24 +219,7 @@ function rmpClassToFormData(
     form.rmp_color_id = rmpClassData.rmp_color_id;
   }
 
-  // Handle multiple image files
-  if (imageFiles) {
-    if (imageFiles.image_1) {
-      form.image_1 = imageFiles.image_1;
-    }
-    if (imageFiles.image_2) {
-      form.image_2 = imageFiles.image_2;
-    }
-    if (imageFiles.image_3) {
-      form.image_3 = imageFiles.image_3;
-    }
-    if (imageFiles.image_4) {
-      form.image_4 = imageFiles.image_4;
-    }
-    if (imageFiles.image_5) {
-      form.image_5 = imageFiles.image_5;
-    }
-  }
+  await appendRmpClassImagesToForm(form, rmpClassData, imageFiles);
 
   return form;
 }
@@ -275,7 +285,7 @@ export const createRmpClass = async (
   rmpClassData: Omit<RmpClass, 'id' | 'created_at' | 'updated_at' | 'created_by' | 'updated_by' | 'rmp_color'>,
   imageFiles?: RmpClassImageFiles,
 ): Promise<RmpClass> => {
-  const form = rmpClassToFormData(rmpClassData, imageFiles);
+  const form = await rmpClassToFormData(rmpClassData, imageFiles);
   const { body } = await callScottDashboard<Record<string, unknown>>({
     resource: 'rmp_classes',
     method: 'POST',
@@ -328,24 +338,7 @@ export const updateRmpClass = async (
     form.rmp_color_id = updates.rmp_color_id || '';
   }
 
-  // Handle multiple image files
-  if (imageFiles) {
-    if (imageFiles.image_1) {
-      form.image_1 = imageFiles.image_1;
-    }
-    if (imageFiles.image_2) {
-      form.image_2 = imageFiles.image_2;
-    }
-    if (imageFiles.image_3) {
-      form.image_3 = imageFiles.image_3;
-    }
-    if (imageFiles.image_4) {
-      form.image_4 = imageFiles.image_4;
-    }
-    if (imageFiles.image_5) {
-      form.image_5 = imageFiles.image_5;
-    }
-  }
+  await appendRmpClassImagesToForm(form, updates, imageFiles);
 
   const { body } = await callScottDashboard<Record<string, unknown>>({
     resource: 'rmp_classes',

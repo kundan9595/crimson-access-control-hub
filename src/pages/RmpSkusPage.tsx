@@ -17,7 +17,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { MasterPageHeader } from '@/components/masters/shared/MasterPageHeader';
 import { SearchFilter } from '@/components/masters/shared/SearchFilter';
-import { useRmpSkus, useCreateRmpSku, useUpdateRmpSku, useDeleteRmpSku } from '@/hooks/masters/useRmpSkus';
+import { useRmpSkus, useAllRmpSkus, useCreateRmpSku, useUpdateRmpSku, useDeleteRmpSku } from '@/hooks/masters/useRmpSkus';
 import { useAllRmpSizes } from '@/hooks/masters/useRmpSizes';
 import { useAllRmpClasses, useAllRmpClassesForImport } from '@/hooks/masters/useRmpClasses';
 import { useAllRmpBrands } from '@/hooks/masters/useRmpBrands';
@@ -40,6 +40,11 @@ import { fetchRmpBrands } from '@/services/masters/rmpBrandsService';
 import { fetchRmpCategories } from '@/services/masters/rmpCategoriesService';
 import { config } from '@/config/environment';
 import { BulkImportFromConfigDialog } from '@/components/masters/bulk-edit';
+import { AdvancedFilterPanel } from '@/components/masters/advanced-filter/AdvancedFilterPanel';
+import { buildFilterColumns } from '@/components/masters/advanced-filter/types';
+import { useAdvancedFilter } from '@/hooks/masters/useAdvancedFilter';
+import { QuickFilterBar } from '@/components/masters/advanced-filter/QuickFilterBar';
+import { useQuickFilters } from '@/hooks/masters/useQuickFilters';
 import {
   buildRmpSkusColumns,
   rmpSkusGetRowId,
@@ -57,12 +62,16 @@ const RmpSkusPage = () => {
   const [pageSize, setPageSize] = useState(config.pagination.defaultPageSize);
   const [search, setSearch] = useState('');
 
+  const { filterGroup, setFilterGroup, isActive: filterActive, applyFilter, clearFilters } = useAdvancedFilter();
+  const { values: quickValues, setEnumFilter, setDateRange, clearFilter: clearQuickFilter, clearAll: clearAllQuick, isActive: quickFilterActive, applyQuickFilters } = useQuickFilters();
+  const isAnyFilterActive = filterActive || quickFilterActive;
+
   const { data: rmpSkusPage, isLoading, isFetching } = useRmpSkus(
     page,
     pageSize,
-    search ? { search } : undefined
+    isAnyFilterActive ? undefined : (search ? { search } : undefined)
   );
-  const rows = rmpSkusPage?.data ?? [];
+  const { data: allRmpSkusData = [], isLoading: isLoadingAll } = useAllRmpSkus({ enabled: isAnyFilterActive });
   const createMut = useCreateRmpSku();
   const updateMut = useUpdateRmpSku();
   const deleteMut = useDeleteRmpSku();
@@ -127,27 +136,6 @@ const RmpSkusPage = () => {
   const [status, setStatus] = useState('active');
   const [importOpen, setImportOpen] = useState(false);
 
-  useEffect(() => {
-    setPage(1);
-  }, [search]);
-
-  useEffect(() => {
-    bulk.clearSelection();
-  }, [search, bulk.clearSelection]);
-
-  const pageRowIds = useMemo(() => rows.map((r) => r.id), [rows]);
-  const listTotal = rmpSkusPage?.totalCount ?? rows.length;
-
-  const fetchAllMatchingIds = useCallback(async () => {
-    const term = search.trim().toLowerCase();
-    const allRows = await fetchAllScottPages((pp) => fetchRmpSkusPaginated(pp), {
-      pageSize: 100,
-      maxPages: 250,
-    });
-    if (!term) return allRows.map((r) => r.id);
-    return allRows.filter((r) => r.name.toLowerCase().includes(term)).map((r) => r.id);
-  }, [search]);
-
   const importColumns = useMemo(() => {
     const rmpSizeOptions = rmpSizes.map((s) => ({ value: s.id, label: s.name }));
     const rmpClassOptions = rmpClassesForImport.map((c) => ({ value: c.id, label: c.name }));
@@ -160,6 +148,40 @@ const RmpSkusPage = () => {
       rmpCategoryOptions,
     });
   }, [rmpSizes, rmpClassesForImport, rmpBrands, rmpCategories]);
+
+  const filterColumns = useMemo(() => buildFilterColumns(importColumns), [importColumns]);
+
+  const filteredRows = useMemo(
+    () => (isAnyFilterActive ? applyQuickFilters(applyFilter(allRmpSkusData, filterColumns), filterColumns) : []),
+    [isAnyFilterActive, allRmpSkusData, applyFilter, applyQuickFilters, filterColumns],
+  );
+
+  const rows = useMemo(() => {
+    if (isAnyFilterActive) return filteredRows.slice((page - 1) * pageSize, page * pageSize);
+    return rmpSkusPage?.data ?? [];
+  }, [isAnyFilterActive, filteredRows, rmpSkusPage, page, pageSize]);
+
+  const clientPaginationResult = useMemo(() => {
+    if (!isAnyFilterActive) return null;
+    return { page, pageSize, totalCount: filteredRows.length, totalPages: Math.max(1, Math.ceil(filteredRows.length / pageSize)), totalCountIsExact: true as const, data: rows };
+  }, [isAnyFilterActive, filteredRows, rows, page, pageSize]);
+
+  useEffect(() => { setPage(1); }, [search, isAnyFilterActive]);
+  useEffect(() => { bulk.clearSelection(); }, [search, isAnyFilterActive, bulk.clearSelection]);
+
+  const pageRowIds = useMemo(() => rows.map((r) => r.id), [rows]);
+  const listTotal = isAnyFilterActive ? filteredRows.length : (rmpSkusPage?.totalCount ?? rows.length);
+
+  const fetchAllMatchingIds = useCallback(async () => {
+    if (isAnyFilterActive) return filteredRows.map((r) => r.id);
+    const term = search.trim().toLowerCase();
+    const allRows = await fetchAllScottPages((pp) => fetchRmpSkusPaginated(pp), {
+      pageSize: 100,
+      maxPages: 250,
+    });
+    if (!term) return allRows.map((r) => r.id);
+    return allRows.filter((r) => r.name.toLowerCase().includes(term)).map((r) => r.id);
+  }, [isAnyFilterActive, filteredRows, search]);
 
   const handleExport = async () => {
     const [all, sizes, classes, brands] = await Promise.all([
@@ -273,13 +295,18 @@ const RmpSkusPage = () => {
 
       <Card>
         <CardContent className="p-6">
-          <SearchFilter
-            placeholder="Search RMP SKUs..."
-            value={search}
-            onChange={setSearch}
-            resultCount={rows.length}
-            totalCount={listTotal}
-          />
+          <div className="flex items-center gap-2 flex-wrap">
+            <SearchFilter
+              placeholder="Search RMP SKUs..."
+              value={search}
+              onChange={setSearch}
+              resultCount={rows.length}
+              totalCount={listTotal}
+            />
+            <AdvancedFilterPanel columns={filterColumns} filterGroup={filterGroup} onChange={setFilterGroup} onClear={clearFilters} />
+            <QuickFilterBar columns={filterColumns} values={quickValues} onEnumChange={setEnumFilter} onDateChange={setDateRange} onClearField={clearQuickFilter} onClearAll={clearAllQuick} />
+            {isAnyFilterActive && <span className="text-xs text-muted-foreground">{filteredRows.length} filtered result{filteredRows.length !== 1 ? 's' : ''}</span>}
+          </div>
           {listTotal > 0 && (
             <MasterListBulkBar
               entityPlural="RMP SKUs"
@@ -295,11 +322,11 @@ const RmpSkusPage = () => {
               }}
             />
           )}
-          {isLoading ? (
+          {isLoading || isLoadingAll ? (
             <MasterTableSkeleton showToolbar={false} columnCount={13} className="mt-6" />
           ) : rows.length === 0 ? (
             <p className="text-center text-muted-foreground py-8">
-              {search ? 'No RMP SKUs match your search' : 'No RMP SKUs found'}
+              {isAnyFilterActive ? 'No SKUs match your filters' : search ? 'No RMP SKUs match your search' : 'No RMP SKUs found'}
             </p>
           ) : (
             <Table className="mt-6">
@@ -383,13 +410,10 @@ const RmpSkusPage = () => {
             </Table>
           )}
           <MasterServerPagination
-            result={rmpSkusPage ?? null}
+            result={isAnyFilterActive ? clientPaginationResult : (rmpSkusPage ?? null)}
             onPageChange={setPage}
-            onPageSizeChange={(size) => {
-              setPageSize(size);
-              setPage(1);
-            }}
-            disabled={isLoading || isFetching}
+            onPageSizeChange={(size) => { setPageSize(size); setPage(1); }}
+            disabled={isLoading || isFetching || isLoadingAll}
             className="mt-6"
           />
         </CardContent>
@@ -546,7 +570,6 @@ const RmpSkusPage = () => {
         }}
         fetchAll={fetchRmpSkusForBulkImport}
         getRowId={rmpSkusGetRowId}
-        defaultKeyFields={['name']}
       />
     </div>
   );

@@ -15,7 +15,7 @@ export const useOrderReports = (
   filters?: OrderReportFilter,
 ) => {
   return useQuery({
-    queryKey: ['order_reports', 'list', page, pageSize, filters],
+    queryKey: ['order_reports', 'list', 'v4', page, pageSize, filters],
     queryFn: () => fetchOrderReportsPaginated({ page, items: pageSize }, filters),
     placeholderData: (prev) => prev,
   });
@@ -23,7 +23,7 @@ export const useOrderReports = (
 
 export const useAllOrderReports = (filters?: OrderReportFilter) => {
   return useQuery({
-    queryKey: ['order_reports', 'all', filters],
+    queryKey: ['order_reports', 'all', 'v2', filters],
     queryFn: () => fetchOrderReports(filters),
     staleTime: 5 * 60 * 1000,
   });
@@ -31,7 +31,7 @@ export const useAllOrderReports = (filters?: OrderReportFilter) => {
 
 export const useOrderReportById = (id: string | null) => {
   return useQuery({
-    queryKey: ['order_reports', 'detail', id],
+    queryKey: ['order_reports', 'detail', 'v2', id],
     queryFn: () => (id ? getOrderReportById(id) : null),
     enabled: !!id,
   });

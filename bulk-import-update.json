@@ -1,0 +1,7226 @@
+{
+	"info": {
+		"_postman_id": "dc988076-1e04-4142-aad7-4d785620d9e6",
+		"name": "scott-international-dashboard",
+		"description": "UPDATED COLLECTION — Changelog vs original scott-international collection:\n\n• Promotions index: URL now has items=10&page=1 (original had empty ?).  \n• Profit Margin index: query uses 'items' (not 'item'), added status=active filter; create/update: added status field.  \n• Colors create/update: added status (active|inactive); Delete: URL fixed to colors/:id (original wrongly used authorized_brands/2).  \n• Authorized Brands create/update: added description, logo_url, status, sort_order; Delete: URL fixed to authorized_brands/:id.  \n• Asset Infos create/update: added name, add_on_id, status; body keys use snake_case (dx, dy, mirror_dx, asset_height_resp_to_box).  \n• Customers index: query params now search, status, customer_type, zone_id, items, page (aligned with app).  \n• Customers: NEW endpoint 'get by customer_code' (GET .../by_code?customer_code=).  \n• Customers create: body aligned with app — customer_code, company_name, contact_person, customer_type, zone_id, status, credit_limit, payment_terms, gst, notes, distributor_ids, brand_ids, addresses with label, type, address, city_id, state_id, postal_code, is_primary.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "28600663",
+		"_collection_link": "https://techsaints.postman.co/workspace/Team-Workspace~bf1971e4-3f0e-438e-8aef-2a6c59f7deff/collection/8581452-dc988076-1e04-4142-aad7-4d785620d9e6?action=share&source=collection_link&creator=28600663"
+	},
+	"item": [
+		{
+			"name": "custom dashboard",
+			"item": [
+				{
+					"name": "Promotions",
+					"item": [
+						{
+							"name": "index",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "{{auth_token}}",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/api/dashboard/v1/promotions?items=10&page=1&is_deleted=false&search=Polo",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"dashboard",
+										"v1",
+										"promotions"
+									],
+									"query": [
+										{
+											"key": "items",
+											"value": "10",
+											"description": "Page size"
+										},
+										{
+											"key": "page",
+											"value": "1"
+										},
+										{
+											"key": "is_deleted",
+											"value": "false",
+											"description": "true | false"
+										},
+										{
+											"key": "search",
+											"value": "Polo"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "create",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "{{auth_token}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "formdata",
+									"formdata": [
+										{
+											"key": "name",
+											"value": "testing",
+											"description": "Airtable Key: Name",
+											"type": "text"
+										},
+										{
+											"key": "upload_date",
+											"value": "",
+											"description": "Airtable Key: Upload Date",
+											"type": "text"
+										},
+										{
+											"key": "link",
+											"value": "https://drive.google.com/drive/folders/1PGtuUaNVs_mSxiRKbseOCUp6yWGC4qvq?usp=drive_link",
+											"description": "Airtable Key: Link",
+											"type": "text"
+										},
+										{
+											"key": "category",
+											"value": "Catalogues",
+											"description": "Airtable Key: catagory",
+											"type": "text"
+										},
+										{
+											"key": "thumbnail",
+											"description": "Airtable Key: Thumbnail",
+											"type": "file",
+											"src": "/home/hafeez-laptop/Pictures/Screenshot from 2025-10-09 14-17-13.png"
+										},
+										{
+											"key": "file_size",
+											"value": "",
+											"type": "text"
+										},
+										{
+											"key": "is_deleted",
+											"value": "true",
+											"description": "true | false",
+											"type": "text"
+										}
+									]
+								},
+								"url": {
+									"raw": "{{base_url}}/api/dashboard/v1/promotions",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"dashboard",
+										"v1",
+										"promotions"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "update",
+							"request": {
+								"method": "PATCH",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "{{auth_token}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "formdata",
+									"formdata": [
+										{
+											"key": "name",
+											"value": "testing 2",
+											"type": "text"
+										},
+										{
+											"key": "upload_date",
+											"value": "",
+											"type": "text"
+										},
+										{
+											"key": "link",
+											"value": "https://drive.google.com/drive/folders/1PGtuUaNVs_mSxiRKbseOCUp6yWGC4qvq?usp=drive_link",
+											"type": "text"
+										},
+										{
+											"key": "category",
+											"value": "Catalogues",
+											"type": "text"
+										},
+										{
+											"key": "thumbnail",
+											"type": "file",
+											"src": "/home/hafeez-laptop/Pictures/Screenshot from 2025-10-06 12-49-28.png"
+										},
+										{
+											"key": "file_size",
+											"value": "",
+											"type": "text"
+										},
+										{
+											"key": "is_deleted",
+											"value": "true",
+											"description": "true | false",
+											"type": "text"
+										}
+									]
+								},
+								"url": {
+									"raw": "{{base_url}}/api/dashboard/v1/promotions/2",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"dashboard",
+										"v1",
+										"promotions",
+										"2"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Delete",
+							"request": {
+								"method": "DELETE",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "{{auth_token}}",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/api/dashboard/v1/promotions/2",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"dashboard",
+										"v1",
+										"promotions",
+										"2"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Bulk delete",
+							"request": {
+								"method": "DELETE",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "{{auth_token}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "formdata",
+									"formdata": [
+										{
+											"key": "delete_all",
+											"value": "true",
+											"description": "true, false",
+											"type": "text"
+										},
+										{
+											"key": "ids[]",
+											"value": "1",
+											"type": "text"
+										},
+										{
+											"key": "ids[]",
+											"value": "20",
+											"type": "text"
+										}
+									]
+								},
+								"url": {
+									"raw": "{{base_url}}/api/dashboard/v1/promotions/bulk_delete",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"dashboard",
+										"v1",
+										"promotions",
+										"bulk_delete"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Promotions Banners",
+					"item": [
+						{
+							"name": "index",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "{{auth_token}}",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/api/dashboard/v1/promotional_banners?items=10&page=1&is_deleted=true&search=-3",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"dashboard",
+										"v1",
+										"promotional_banners"
+									],
+									"query": [
+										{
+											"key": "items",
+											"value": "10",
+											"description": "Page size"
+										},
+										{
+											"key": "page",
+											"value": "1"
+										},
+										{
+											"key": "is_deleted",
+											"value": "true",
+											"description": "true | false"
+										},
+										{
+											"key": "search",
+											"value": "-3"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "create",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "{{auth_token}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "formdata",
+									"formdata": [
+										{
+											"key": "title",
+											"value": "testing",
+											"description": "Airtable Key: Name",
+											"type": "text"
+										},
+										{
+											"key": "status",
+											"value": "active",
+											"description": "active | inactive",
+											"type": "text",
+											"disabled": true
+										},
+										{
+											"key": "rmp_category_id",
+											"value": "42",
+											"description": "Rmp Category ID.",
+											"type": "text",
+											"disabled": true
+										},
+										{
+											"key": "rmp_class_id",
+											"value": "",
+											"description": "Rmp Class ID.",
+											"type": "text",
+											"disabled": true
+										},
+										{
+											"key": "image",
+											"description": "Airtable Key: Thumbnail",
+											"type": "file",
+											"src": "/home/hafeez-laptop/Pictures/Screenshot from 2025-10-09 14-17-13.png"
+										},
+										{
+											"key": "rmp_brand_id",
+											"value": "70",
+											"description": "Rmp Brand ID.",
+											"type": "text"
+										},
+										{
+											"key": "is_deleted",
+											"value": "true",
+											"description": "true | false",
+											"type": "text"
+										},
+										{
+											"key": "position",
+											"value": "5",
+											"type": "text"
+										}
+									]
+								},
+								"url": {
+									"raw": "{{base_url}}/api/dashboard/v1/promotional_banners",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"dashboard",
+										"v1",
+										"promotional_banners"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "update",
+							"request": {
+								"method": "PATCH",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "{{auth_token}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "formdata",
+									"formdata": [
+										{
+											"key": "title",
+											"value": "testing",
+											"type": "text"
+										},
+										{
+											"key": "status",
+											"value": "active",
+											"type": "text"
+										},
+										{
+											"key": "rmp_category_id",
+											"value": "42",
+											"type": "text",
+											"disabled": true
+										},
+										{
+											"key": "rmp_class_id",
+											"value": "",
+											"type": "text",
+											"disabled": true
+										},
+										{
+											"key": "rmp_brand_id",
+											"value": "682",
+											"type": "text"
+										},
+										{
+											"key": "is_deleted",
+											"value": "false",
+											"type": "text"
+										},
+										{
+											"key": "position",
+											"value": "5",
+											"description": "true | false",
+											"type": "text"
+										},
+										{
+											"key": "thumbnail",
+											"type": "file",
+											"src": "/home/hafeez-laptop/Pictures/Screenshot from 2025-10-06 12-49-28.png"
+										}
+									]
+								},
+								"url": {
+									"raw": "{{base_url}}/api/dashboard/v1/promotional_banners/2",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"dashboard",
+										"v1",
+										"promotional_banners",
+										"2"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Delete",
+							"request": {
+								"method": "DELETE",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "{{auth_token}}",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/api/dashboard/v1/promotional_banners/2",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"dashboard",
+										"v1",
+										"promotional_banners",
+										"2"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Bulk delete",
+							"request": {
+								"method": "DELETE",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "{{auth_token}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "formdata",
+									"formdata": [
+										{
+											"key": "delete_all",
+											"value": "true",
+											"description": "true, false",
+											"type": "text",
+											"disabled": true
+										},
+										{
+											"key": "ids[]",
+											"value": "4",
+											"type": "text"
+										},
+										{
+											"key": "ids[]",
+											"value": "20",
+											"type": "text",
+											"disabled": true
+										}
+									]
+								},
+								"url": {
+									"raw": "{{base_url}}/api/dashboard/v1/promotional_banners/bulk_delete",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"dashboard",
+										"v1",
+										"promotional_banners",
+										"bulk_delete"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Show",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "{{auth_token}}",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/api/dashboard/v1/promotional_banners/2",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"dashboard",
+										"v1",
+										"promotional_banners",
+										"2"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Profit Margin",
+					"item": [
+						{
+							"name": "index",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "{{auth_token}}",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/api/dashboard/v1/profit_margins?items=10&page=1&is_deleted=false&search=sample",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"dashboard",
+										"v1",
+										"profit_margins"
+									],
+									"query": [
+										{
+											"key": "items",
+											"value": "10",
+											"description": "Page size (consistent with other dashboard APIs)"
+										},
+										{
+											"key": "page",
+											"value": "1"
+										},
+										{
+											"key": "is_deleted",
+											"value": "false",
+											"description": "Optional filter: false | true"
+										},
+										{
+											"key": "search",
+											"value": "sample"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "create",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "{{auth_token}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "formdata",
+									"formdata": [
+										{
+											"key": "name",
+											"value": "testing",
+											"description": "Airtable Key: Name",
+											"type": "text"
+										},
+										{
+											"key": "min_range",
+											"value": "2",
+											"description": "Airtable Key: Min Range",
+											"type": "text"
+										},
+										{
+											"key": "max_range",
+											"value": "10",
+											"description": "Airtable Key: Max Range",
+											"type": "text"
+										},
+										{
+											"key": "margin_percentage",
+											"value": "0.00",
+											"description": "Airtable Key: Margin Percentage",
+											"type": "text"
+										},
+										{
+											"key": "branding_embroidery",
+											"value": "60",
+											"description": "Airtable Key: Branding Embroidery",
+											"type": "text"
+										},
+										{
+											"key": "branding_print",
+											"value": "40",
+											"description": "Branding Print",
+											"type": "text"
+										},
+										{
+											"key": "is_deleted",
+											"value": "true",
+											"description": "true | false",
+											"type": "text"
+										}
+									]
+								},
+								"url": {
+									"raw": "{{base_url}}/api/dashboard/v1/profit_margins",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"dashboard",
+										"v1",
+										"profit_margins"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "update",
+							"request": {
+								"method": "PATCH",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "{{auth_token}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "formdata",
+									"formdata": [
+										{
+											"key": "name",
+											"value": "testing22",
+											"type": "text"
+										},
+										{
+											"key": "min_range",
+											"value": "1",
+											"type": "text"
+										},
+										{
+											"key": "max_range",
+											"value": "10",
+											"type": "text",
+											"disabled": true
+										},
+										{
+											"key": "margin_percentage",
+											"value": "0.00",
+											"type": "text",
+											"disabled": true
+										},
+										{
+											"key": "branding_embroidery",
+											"value": "60",
+											"type": "text",
+											"disabled": true
+										},
+										{
+											"key": "branding_print",
+											"value": "40",
+											"type": "text",
+											"disabled": true
+										},
+										{
+											"key": "is_deleted",
+											"value": "false",
+											"description": "Optional: true | false",
+											"type": "text"
+										}
+									]
+								},
+								"url": {
+									"raw": "{{base_url}}/api/dashboard/v1/profit_margins/6",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"dashboard",
+										"v1",
+										"profit_margins",
+										"6"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Delete",
+							"request": {
+								"method": "DELETE",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "{{auth_token}}",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/api/dashboard/v1/profit_margins/46",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"dashboard",
+										"v1",
+										"profit_margins",
+										"46"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Bulk delete",
+							"request": {
+								"method": "DELETE",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "{{auth_token}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "formdata",
+									"formdata": [
+										{
+											"key": "delete_all",
+											"value": "true",
+											"description": "true, false",
+											"type": "text",
+											"disabled": true
+										},
+										{
+											"key": "ids[]",
+											"value": "1",
+											"type": "text",
+											"disabled": true
+										},
+										{
+											"key": "ids[]",
+											"value": "20",
+											"type": "text",
+											"disabled": true
+										}
+									]
+								},
+								"url": {
+									"raw": "{{base_url}}/api/dashboard/v1/profit_margins/bulk_delete",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"dashboard",
+										"v1",
+										"profit_margins",
+										"bulk_delete"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Colors",
+					"item": [
+						{
+							"name": "Index",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "{{auth_token}}",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/api/dashboard/v1/colors?items=10&page=1&is_deleted=false&search=dasda",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"dashboard",
+										"v1",
+										"colors"
+									],
+									"query": [
+										{
+											"key": "items",
+											"value": "10",
+											"description": "Airtable Name Colours (Scott Calculator Final)"
+										},
+										{
+											"key": "page",
+											"value": "1"
+										},
+										{
+											"key": "is_deleted",
+											"value": "false",
+											"description": "true | false"
+										},
+										{
+											"key": "search",
+											"value": "dasda"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Create",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "{{auth_token}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "formdata",
+									"formdata": [
+										{
+											"key": "name",
+											"value": "testing",
+											"description": "Name",
+											"type": "text"
+										},
+										{
+											"key": "hex_code",
+											"value": "121",
+											"description": "Hex Code",
+											"type": "text"
+										},
+										{
+											"key": "is_deleted",
+											"value": "true",
+											"description": "true | false",
+											"type": "text"
+										}
+									]
+								},
+								"url": {
+									"raw": "{{base_url}}/api/dashboard/v1/colors",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"dashboard",
+										"v1",
+										"colors"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "update",
+							"request": {
+								"method": "PATCH",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "{{auth_token}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "formdata",
+									"formdata": [
+										{
+											"key": "name",
+											"value": "testing 2",
+											"type": "text"
+										},
+										{
+											"key": "hex_code",
+											"value": "1212",
+											"type": "text"
+										},
+										{
+											"key": "is_deleted",
+											"value": "false",
+											"description": "Optional: true | false",
+											"type": "text"
+										}
+									]
+								},
+								"url": {
+									"raw": "{{base_url}}/api/dashboard/v1/colors/814",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"dashboard",
+										"v1",
+										"colors",
+										"814"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Delete",
+							"request": {
+								"method": "DELETE",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "{{auth_token}}",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/api/dashboard/v1/colors/814",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"dashboard",
+										"v1",
+										"colors",
+										"814"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Bulk delete",
+							"request": {
+								"method": "DELETE",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "{{auth_token}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "formdata",
+									"formdata": [
+										{
+											"key": "delete_all",
+											"value": "true",
+											"description": "true, false",
+											"type": "text",
+											"disabled": true
+										},
+										{
+											"key": "ids[]",
+											"value": "1",
+											"type": "text"
+										},
+										{
+											"key": "ids[]",
+											"value": "20",
+											"type": "text",
+											"disabled": true
+										}
+									]
+								},
+								"url": {
+									"raw": "{{base_url}}/api/dashboard/v1/colors/bulk_delete",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"dashboard",
+										"v1",
+										"colors",
+										"bulk_delete"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Authorized Brands",
+					"item": [
+						{
+							"name": "Index",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "{{auth_token}}",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/api/dashboard/v1/authorized_brands?items=10&page=1&is_deleted=true&search=testing",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"dashboard",
+										"v1",
+										"authorized_brands"
+									],
+									"query": [
+										{
+											"key": "items",
+											"value": "10",
+											"description": "Airtable Name Authorized Brands (Scott Ready Stock)"
+										},
+										{
+											"key": "page",
+											"value": "1"
+										},
+										{
+											"key": "is_deleted",
+											"value": "true",
+											"description": "true | false"
+										},
+										{
+											"key": "search",
+											"value": "testing"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Create",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "{{auth_token}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "formdata",
+									"formdata": [
+										{
+											"key": "name",
+											"value": "authorized brand 2",
+											"description": "Name",
+											"type": "text"
+										},
+										{
+											"key": "description",
+											"value": "testing",
+											"description": "Optional",
+											"type": "text"
+										},
+										{
+											"key": "logo",
+											"description": "Upload file.",
+											"type": "file",
+											"src": "/home/hafeez-laptop/Pictures/Screenshot from 2025-10-09 14-17-13.png"
+										},
+										{
+											"key": "is_deleted",
+											"value": "true",
+											"description": "true | false",
+											"type": "text"
+										},
+										{
+											"key": "sort_order",
+											"value": "0",
+											"description": "Optional number",
+											"type": "text"
+										}
+									]
+								},
+								"url": {
+									"raw": "{{base_url}}/api/dashboard/v1/authorized_brands",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"dashboard",
+										"v1",
+										"authorized_brands"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "update",
+							"request": {
+								"method": "PATCH",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "{{auth_token}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "formdata",
+									"formdata": [
+										{
+											"key": "name",
+											"value": "testing authorized brands",
+											"type": "text",
+											"disabled": true
+										},
+										{
+											"key": "description",
+											"value": "description 1.",
+											"type": "text",
+											"disabled": true
+										},
+										{
+											"key": "logo",
+											"type": "file",
+											"src": "/home/hafeez-laptop/Pictures/Screenshot from 2025-10-06 12-49-28.png"
+										},
+										{
+											"key": "is_deleted",
+											"value": "true",
+											"description": "true | false",
+											"type": "text"
+										},
+										{
+											"key": "sort_order",
+											"value": "5",
+											"type": "text"
+										}
+									]
+								},
+								"url": {
+									"raw": "{{base_url}}/api/dashboard/v1/authorized_brands/7",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"dashboard",
+										"v1",
+										"authorized_brands",
+										"7"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Delete",
+							"request": {
+								"method": "DELETE",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "{{auth_token}}",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/api/dashboard/v1/authorized_brands/2",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"dashboard",
+										"v1",
+										"authorized_brands",
+										"2"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Bulk delete",
+							"request": {
+								"method": "DELETE",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "{{auth_token}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "formdata",
+									"formdata": [
+										{
+											"key": "delete_all",
+											"value": "true",
+											"description": "true, false",
+											"type": "text",
+											"disabled": true
+										},
+										{
+											"key": "ids[]",
+											"value": "1",
+											"type": "text",
+											"disabled": true
+										},
+										{
+											"key": "ids[]",
+											"value": "20",
+											"type": "text",
+											"disabled": true
+										}
+									]
+								},
+								"url": {
+									"raw": "{{base_url}}/api/dashboard/v1/authorized_brands/bulk_delete",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"dashboard",
+										"v1",
+										"authorized_brands",
+										"bulk_delete"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Asset Infos",
+					"item": [
+						{
+							"name": "Index",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "{{auth_token}}",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/api/dashboard/v1/asset_infos?items=10&page=1&is_deleted=false&search=80",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"dashboard",
+										"v1",
+										"asset_infos"
+									],
+									"query": [
+										{
+											"key": "items",
+											"value": "10",
+											"description": "Airtable Name Asset Info (Scott Calculator Final)"
+										},
+										{
+											"key": "page",
+											"value": "1"
+										},
+										{
+											"key": "is_deleted",
+											"value": "false",
+											"description": "true | false"
+										},
+										{
+											"key": "search",
+											"value": "80"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Create",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "{{auth_token}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "formdata",
+									"formdata": [
+										{
+											"key": "name",
+											"value": "Asset name",
+											"description": "Required",
+											"type": "text"
+										},
+										{
+											"key": "dx",
+											"value": "100",
+											"description": "snake_case (was dX)",
+											"type": "text"
+										},
+										{
+											"key": "dy",
+											"value": "88.0",
+											"description": "snake_case (was dY)",
+											"type": "text"
+										},
+										{
+											"key": "mirror_dx",
+											"value": "88.0",
+											"description": "snake_case (was mirrorDX)",
+											"type": "text"
+										},
+										{
+											"key": "asset_height_resp_to_box",
+											"value": "888.0",
+											"description": "snake_case (was assetHeightRespToBox)",
+											"type": "text"
+										},
+										{
+											"key": "asset",
+											"description": "Asset file",
+											"type": "file",
+											"src": []
+										},
+										{
+											"key": "add_on_id",
+											"value": "",
+											"description": "Optional FK to add-ons",
+											"type": "text"
+										},
+										{
+											"key": "is_deleted",
+											"value": "true",
+											"description": "true | false",
+											"type": "text"
+										}
+									]
+								},
+								"url": {
+									"raw": "{{base_url}}/api/dashboard/v1/asset_infos",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"dashboard",
+										"v1",
+										"asset_infos"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "update",
+							"request": {
+								"method": "PATCH",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "{{auth_token}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "formdata",
+									"formdata": [
+										{
+											"key": "name",
+											"value": "",
+											"description": "Optional",
+											"type": "text"
+										},
+										{
+											"key": "dx",
+											"value": "50",
+											"type": "text"
+										},
+										{
+											"key": "dy",
+											"value": "50",
+											"type": "text"
+										},
+										{
+											"key": "mirror_dx",
+											"value": "50",
+											"type": "text"
+										},
+										{
+											"key": "asset_height_resp_to_box",
+											"value": "888.0",
+											"type": "text"
+										},
+										{
+											"key": "add_on_id",
+											"value": "",
+											"type": "text"
+										},
+										{
+											"key": "is_deleted",
+											"value": "true",
+											"description": "true | false",
+											"type": "text"
+										}
+									]
+								},
+								"url": {
+									"raw": "{{base_url}}/api/dashboard/v1/asset_infos/10",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"dashboard",
+										"v1",
+										"asset_infos",
+										"10"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Delete",
+							"request": {
+								"method": "DELETE",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "{{auth_token}}",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/api/dashboard/v1/asset_infos/10",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"dashboard",
+										"v1",
+										"asset_infos",
+										"10"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Bulk delete",
+							"request": {
+								"method": "DELETE",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "{{auth_token}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "formdata",
+									"formdata": [
+										{
+											"key": "delete_all",
+											"value": "true",
+											"description": "true, false",
+											"type": "text",
+											"disabled": true
+										},
+										{
+											"key": "ids[]",
+											"value": "1",
+											"type": "text"
+										},
+										{
+											"key": "ids[]",
+											"value": "20",
+											"type": "text",
+											"disabled": true
+										}
+									]
+								},
+								"url": {
+									"raw": "{{base_url}}/api/dashboard/v1/asset_infos/bulk_delete",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"dashboard",
+										"v1",
+										"asset_infos",
+										"bulk_delete"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Product Categories",
+					"item": [
+						{
+							"name": "Index",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "{{auth_token}}",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/api/dashboard/v1/rmp_categories?items=10&page=1&search=COLLECTION",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"dashboard",
+										"v1",
+										"rmp_categories"
+									],
+									"query": [
+										{
+											"key": "items",
+											"value": "10",
+											"description": "Airtable Name Product Category (Scott Ready Stock)"
+										},
+										{
+											"key": "page",
+											"value": "1"
+										},
+										{
+											"key": "is_deleted",
+											"value": "true",
+											"description": "true | false",
+											"disabled": true
+										},
+										{
+											"key": "search",
+											"value": "COLLECTION"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Create",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "{{auth_token}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "formdata",
+									"formdata": [
+										{
+											"key": "name",
+											"value": "Testing Category 1",
+											"description": "Required",
+											"type": "text"
+										},
+										{
+											"key": "position",
+											"value": "2",
+											"description": "Position",
+											"type": "text"
+										},
+										{
+											"key": "is_deleted",
+											"value": "true",
+											"description": "True | False",
+											"type": "text"
+										},
+										{
+											"key": "image",
+											"description": "Image",
+											"type": "file",
+											"src": "/home/hafeez-laptop/Pictures/Screenshot from 2025-10-01 22-38-10.png",
+											"disabled": true
+										}
+									]
+								},
+								"url": {
+									"raw": "{{base_url}}/api/dashboard/v1/rmp_categories",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"dashboard",
+										"v1",
+										"rmp_categories"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "update",
+							"request": {
+								"method": "PATCH",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "{{auth_token}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "formdata",
+									"formdata": [
+										{
+											"key": "name",
+											"value": "Category 2",
+											"description": "Product Category Name",
+											"type": "text"
+										},
+										{
+											"key": "position",
+											"value": "2",
+											"description": "position",
+											"type": "text"
+										},
+										{
+											"key": "is_deleted",
+											"value": "false",
+											"description": "True | False",
+											"type": "text"
+										},
+										{
+											"key": "image",
+											"type": "file",
+											"src": [],
+											"disabled": true
+										}
+									]
+								},
+								"url": {
+									"raw": "{{base_url}}/api/dashboard/v1/rmp_categories/145",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"dashboard",
+										"v1",
+										"rmp_categories",
+										"145"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Delete",
+							"request": {
+								"method": "DELETE",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "{{auth_token}}",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/api/dashboard/v1/rmp_categories/145",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"dashboard",
+										"v1",
+										"rmp_categories",
+										"145"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Show",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "{{auth_token}}",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/api/dashboard/v1/rmp_categories/145",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"dashboard",
+										"v1",
+										"rmp_categories",
+										"145"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Bulk delete",
+							"request": {
+								"method": "DELETE",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "{{auth_token}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "formdata",
+									"formdata": [
+										{
+											"key": "delete_all",
+											"value": "true",
+											"description": "true, false",
+											"type": "text",
+											"disabled": true
+										},
+										{
+											"key": "ids[]",
+											"value": "1",
+											"type": "text"
+										},
+										{
+											"key": "ids[]",
+											"value": "20",
+											"type": "text",
+											"disabled": true
+										}
+									]
+								},
+								"url": {
+									"raw": "{{base_url}}/api/dashboard/v1/rmp_categories/bulk_delete",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"dashboard",
+										"v1",
+										"rmp_categories",
+										"bulk_delete"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Rmp Skus",
+					"item": [
+						{
+							"name": "Index",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "{{auth_token}}",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/api/dashboard/v1/rmp_skus?items=10&page=1&search=BAGS",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"dashboard",
+										"v1",
+										"rmp_skus"
+									],
+									"query": [
+										{
+											"key": "items",
+											"value": "10",
+											"description": "Airtable Name Product Category (Scott Ready Stock)"
+										},
+										{
+											"key": "page",
+											"value": "1"
+										},
+										{
+											"key": "is_deleted",
+											"value": "false",
+											"description": "true | false",
+											"disabled": true
+										},
+										{
+											"key": "search",
+											"value": "BAGS"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Create",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "{{auth_token}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "formdata",
+									"formdata": [
+										{
+											"key": "name",
+											"value": "SKU-2",
+											"description": "Required SKU Name",
+											"type": "text"
+										},
+										{
+											"key": "cgst",
+											"value": "2",
+											"description": "CGST",
+											"type": "text"
+										},
+										{
+											"key": "igst",
+											"value": "1.5",
+											"description": "IGST",
+											"type": "text"
+										},
+										{
+											"key": "sgst",
+											"value": "0",
+											"description": "SGST",
+											"type": "text"
+										},
+										{
+											"key": "is_deleted",
+											"value": "true",
+											"description": "True | False",
+											"type": "text"
+										},
+										{
+											"key": "rmp_size_id",
+											"value": "225",
+											"type": "text"
+										},
+										{
+											"key": "rmp_class_id",
+											"value": "2674",
+											"type": "text"
+										},
+										{
+											"key": "rmp_brand_id",
+											"value": "545",
+											"type": "text"
+										},
+										{
+											"key": "rmp_category_id",
+											"value": "121",
+											"type": "text"
+										}
+									]
+								},
+								"url": {
+									"raw": "{{base_url}}/api/dashboard/v1/rmp_skus",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"dashboard",
+										"v1",
+										"rmp_skus"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "update",
+							"request": {
+								"method": "PATCH",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "{{auth_token}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "formdata",
+									"formdata": [
+										{
+											"key": "name",
+											"value": "SKU-2",
+											"description": "SKU Name",
+											"type": "text"
+										},
+										{
+											"key": "cgst",
+											"value": "21",
+											"type": "text"
+										},
+										{
+											"key": "igst",
+											"value": "1.5",
+											"type": "text"
+										},
+										{
+											"key": "sgst",
+											"value": "0",
+											"type": "text"
+										},
+										{
+											"key": "is_deleted",
+											"value": "true",
+											"type": "text"
+										},
+										{
+											"key": "rmp_size_id",
+											"value": "225",
+											"type": "text"
+										},
+										{
+											"key": "rmp_class_id",
+											"value": "2674",
+											"type": "text"
+										},
+										{
+											"key": "rmp_brand_id",
+											"value": "545",
+											"type": "text"
+										},
+										{
+											"key": "rmp_category_id",
+											"value": "121",
+											"type": "text"
+										},
+										{
+											"key": "image",
+											"type": "file",
+											"src": [],
+											"disabled": true
+										}
+									]
+								},
+								"url": {
+									"raw": "{{base_url}}/api/dashboard/v1/rmp_skus/21587",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"dashboard",
+										"v1",
+										"rmp_skus",
+										"21587"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Delete",
+							"request": {
+								"method": "DELETE",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "{{auth_token}}",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/api/dashboard/v1/rmp_skus/21587",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"dashboard",
+										"v1",
+										"rmp_skus",
+										"21587"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Show",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "{{auth_token}}",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/api/dashboard/v1/rmp_skus/21588",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"dashboard",
+										"v1",
+										"rmp_skus",
+										"21588"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Bulk delete",
+							"request": {
+								"method": "DELETE",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "{{auth_token}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "formdata",
+									"formdata": [
+										{
+											"key": "delete_all",
+											"value": "true",
+											"description": "true, false",
+											"type": "text",
+											"disabled": true
+										},
+										{
+											"key": "ids[]",
+											"value": "1",
+											"type": "text"
+										},
+										{
+											"key": "ids[]",
+											"value": "20",
+											"type": "text",
+											"disabled": true
+										}
+									]
+								},
+								"url": {
+									"raw": "{{base_url}}/api/dashboard/v1/rmp_skus/bulk_delete",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"dashboard",
+										"v1",
+										"rmp_skus",
+										"bulk_delete"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Rmp Brands",
+					"item": [
+						{
+							"name": "Index",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "{{auth_token}}",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/api/dashboard/v1/rmp_brands?items=10&page=1&is_deleted=false&search=RN-BIOWASH-WOMEN",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"dashboard",
+										"v1",
+										"rmp_brands"
+									],
+									"query": [
+										{
+											"key": "items",
+											"value": "10",
+											"description": "Airtable Name Brands (Scott Ready Stock)"
+										},
+										{
+											"key": "page",
+											"value": "1"
+										},
+										{
+											"key": "is_deleted",
+											"value": "false",
+											"description": "true | false"
+										},
+										{
+											"key": "search",
+											"value": "RN-BIOWASH-WOMEN"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Create",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "{{auth_token}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "formdata",
+									"formdata": [
+										{
+											"key": "name",
+											"value": "Brand 1",
+											"description": "Required",
+											"type": "text"
+										},
+										{
+											"key": "position",
+											"value": "2",
+											"description": "Position",
+											"type": "text"
+										},
+										{
+											"key": "is_deleted",
+											"value": "true",
+											"description": "True | False",
+											"type": "text"
+										},
+										{
+											"key": "main_category",
+											"value": "Testing",
+											"description": "Category",
+											"type": "text"
+										},
+										{
+											"key": "authorized_brand_id",
+											"value": "2",
+											"description": "Authorized brand",
+											"type": "text"
+										}
+									]
+								},
+								"url": {
+									"raw": "{{base_url}}/api/dashboard/v1/rmp_brands",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"dashboard",
+										"v1",
+										"rmp_brands"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "update",
+							"request": {
+								"method": "PATCH",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "{{auth_token}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "formdata",
+									"formdata": [
+										{
+											"key": "name",
+											"value": "Brand 11",
+											"description": "Product Category Name",
+											"type": "text"
+										},
+										{
+											"key": "position",
+											"value": "2",
+											"description": "position",
+											"type": "text"
+										},
+										{
+											"key": "is_deleted",
+											"value": "true",
+											"description": "True | False",
+											"type": "text"
+										},
+										{
+											"key": "main_category",
+											"value": "Testing 2",
+											"type": "text"
+										},
+										{
+											"key": "authorized_brand_id",
+											"value": "2",
+											"type": "text"
+										},
+										{
+											"key": "image",
+											"type": "file",
+											"src": [],
+											"disabled": true
+										}
+									]
+								},
+								"url": {
+									"raw": "{{base_url}}/api/dashboard/v1/rmp_brands/653",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"dashboard",
+										"v1",
+										"rmp_brands",
+										"653"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Delete",
+							"request": {
+								"method": "DELETE",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "{{auth_token}}",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/api/dashboard/v1/rmp_brands/653",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"dashboard",
+										"v1",
+										"rmp_brands",
+										"653"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Show",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "{{auth_token}}",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/api/dashboard/v1/rmp_brands/626",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"dashboard",
+										"v1",
+										"rmp_brands",
+										"626"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Update Categories",
+							"request": {
+								"method": "PATCH",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "{{auth_token}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "formdata",
+									"formdata": [
+										{
+											"key": "rmp_category_ids[]",
+											"value": "136",
+											"type": "text"
+										},
+										{
+											"key": "rmp_category_ids[]",
+											"value": "140",
+											"type": "text"
+										}
+									]
+								},
+								"url": {
+									"raw": "{{base_url}}/api/dashboard/v1/rmp_brands/653/update_categories",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"dashboard",
+										"v1",
+										"rmp_brands",
+										"653",
+										"update_categories"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Bulk delete",
+							"request": {
+								"method": "DELETE",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "{{auth_token}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "formdata",
+									"formdata": [
+										{
+											"key": "delete_all",
+											"value": "true",
+											"description": "true",
+											"type": "text",
+											"disabled": true
+										},
+										{
+											"key": "ids[]",
+											"value": "1",
+											"type": "text",
+											"disabled": true
+										},
+										{
+											"key": "ids[]",
+											"value": "20",
+											"type": "text",
+											"disabled": true
+										}
+									]
+								},
+								"url": {
+									"raw": "{{base_url}}/api/dashboard/v1/rmp_brands/bulk_delete",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"dashboard",
+										"v1",
+										"rmp_brands",
+										"bulk_delete"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Rmp Sizes",
+					"item": [
+						{
+							"name": "Index",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "{{auth_token}}",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/api/dashboard/v1/rmp_sizes?items=10&page=1&is_deleted=true&search=free",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"dashboard",
+										"v1",
+										"rmp_sizes"
+									],
+									"query": [
+										{
+											"key": "items",
+											"value": "10",
+											"description": "Airtable Name Brands (Scott Ready Stock)"
+										},
+										{
+											"key": "page",
+											"value": "1"
+										},
+										{
+											"key": "is_deleted",
+											"value": "true",
+											"description": "true | false"
+										},
+										{
+											"key": "search",
+											"value": "free"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Create",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "{{auth_token}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "formdata",
+									"formdata": [
+										{
+											"key": "name",
+											"value": "Size 1",
+											"description": "Required",
+											"type": "text"
+										},
+										{
+											"key": "position",
+											"value": "2",
+											"description": "Position",
+											"type": "text"
+										},
+										{
+											"key": "is_deleted",
+											"value": "false",
+											"description": "True | False",
+											"type": "text"
+										},
+										{
+											"key": "size_type",
+											"value": "bags",
+											"description": "Size Types: alpha, numeric, free_size, kids, bags",
+											"type": "text"
+										}
+									]
+								},
+								"url": {
+									"raw": "{{base_url}}/api/dashboard/v1/rmp_sizes",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"dashboard",
+										"v1",
+										"rmp_sizes"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "update",
+							"request": {
+								"method": "PATCH",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "{{auth_token}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "formdata",
+									"formdata": [
+										{
+											"key": "name",
+											"value": "Size 1",
+											"description": "RmpSize Name",
+											"type": "text"
+										},
+										{
+											"key": "position",
+											"value": "2",
+											"description": "position",
+											"type": "text"
+										},
+										{
+											"key": "is_deleted",
+											"value": "false",
+											"description": "True | False",
+											"type": "text"
+										},
+										{
+											"key": "size_type",
+											"value": "alpha",
+											"description": "Size Types",
+											"type": "text"
+										},
+										{
+											"key": "image",
+											"type": "file",
+											"src": [],
+											"disabled": true
+										}
+									]
+								},
+								"url": {
+									"raw": "{{base_url}}/api/dashboard/v1/rmp_sizes/264",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"dashboard",
+										"v1",
+										"rmp_sizes",
+										"264"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Delete",
+							"request": {
+								"method": "DELETE",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "{{auth_token}}",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/api/dashboard/v1/rmp_sizes/264",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"dashboard",
+										"v1",
+										"rmp_sizes",
+										"264"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Show",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "{{auth_token}}",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/api/dashboard/v1/rmp_sizes/264",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"dashboard",
+										"v1",
+										"rmp_sizes",
+										"264"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Bulk delete",
+							"request": {
+								"method": "DELETE",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "{{auth_token}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "formdata",
+									"formdata": [
+										{
+											"key": "delete_all",
+											"value": "true",
+											"description": "true, false",
+											"type": "text",
+											"disabled": true
+										},
+										{
+											"key": "ids[]",
+											"value": "1",
+											"type": "text",
+											"disabled": true
+										},
+										{
+											"key": "ids[]",
+											"value": "20",
+											"type": "text",
+											"disabled": true
+										}
+									]
+								},
+								"url": {
+									"raw": "{{base_url}}/api/dashboard/v1/rmp_sizes/bulk_delete",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"dashboard",
+										"v1",
+										"rmp_sizes",
+										"bulk_delete"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Rmp Colors",
+					"item": [
+						{
+							"name": "Index",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "{{auth_token}}",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/api/dashboard/v1/rmp_colors?items=10&page=1&is_deleted=false&search=anthara",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"dashboard",
+										"v1",
+										"rmp_colors"
+									],
+									"query": [
+										{
+											"key": "items",
+											"value": "10",
+											"description": "Airtable Name Colours (Scott Ready Stock)"
+										},
+										{
+											"key": "page",
+											"value": "1"
+										},
+										{
+											"key": "is_deleted",
+											"value": "false",
+											"description": "true | false"
+										},
+										{
+											"key": "search",
+											"value": "anthara"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Create",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "{{auth_token}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "formdata",
+									"formdata": [
+										{
+											"key": "name",
+											"value": "testing",
+											"description": "Required",
+											"type": "text"
+										},
+										{
+											"key": "code",
+											"value": "#2321",
+											"description": "Color Code",
+											"type": "text"
+										},
+										{
+											"key": "is_deleted",
+											"value": "true",
+											"description": "True | False",
+											"type": "text"
+										}
+									]
+								},
+								"url": {
+									"raw": "{{base_url}}/api/dashboard/v1/rmp_colors",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"dashboard",
+										"v1",
+										"rmp_colors"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "update",
+							"request": {
+								"method": "PATCH",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "{{auth_token}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "formdata",
+									"formdata": [
+										{
+											"key": "name",
+											"value": "testing1",
+											"description": "Color Name",
+											"type": "text"
+										},
+										{
+											"key": "code",
+											"value": "#23212",
+											"description": "Color Code",
+											"type": "text"
+										},
+										{
+											"key": "is_deleted",
+											"value": "false",
+											"description": "True | False",
+											"type": "text"
+										}
+									]
+								},
+								"url": {
+									"raw": "{{base_url}}/api/dashboard/v1/rmp_colors/1437",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"dashboard",
+										"v1",
+										"rmp_colors",
+										"1437"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Delete",
+							"request": {
+								"method": "DELETE",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "{{auth_token}}",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/api/dashboard/v1/rmp_colors/1437",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"dashboard",
+										"v1",
+										"rmp_colors",
+										"1437"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Show",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "{{auth_token}}",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/api/dashboard/v1/rmp_colors/1437",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"dashboard",
+										"v1",
+										"rmp_colors",
+										"1437"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Bulk delete",
+							"request": {
+								"method": "DELETE",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "{{auth_token}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "formdata",
+									"formdata": [
+										{
+											"key": "delete_all",
+											"value": "true",
+											"description": "true",
+											"type": "text",
+											"disabled": true
+										},
+										{
+											"key": "ids[]",
+											"value": "1",
+											"type": "text"
+										},
+										{
+											"key": "ids[]",
+											"value": "20",
+											"type": "text",
+											"disabled": true
+										}
+									]
+								},
+								"url": {
+									"raw": "{{base_url}}/api/dashboard/v1/rmp_colors/bulk_delete",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"dashboard",
+										"v1",
+										"rmp_colors",
+										"bulk_delete"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Rmp Class",
+					"item": [
+						{
+							"name": "Index",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "{{auth_token}}",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/api/dashboard/v1/rmp_classes?items=10&page=1&is_deleted=false&search=hood",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"dashboard",
+										"v1",
+										"rmp_classes"
+									],
+									"query": [
+										{
+											"key": "items",
+											"value": "10",
+											"description": "Airtable Name Classes (Scott Ready Stock)"
+										},
+										{
+											"key": "page",
+											"value": "1"
+										},
+										{
+											"key": "is_deleted",
+											"value": "false",
+											"description": "true | false"
+										},
+										{
+											"key": "search",
+											"value": "hood"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Create",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "{{auth_token}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "formdata",
+									"formdata": [
+										{
+											"key": "name",
+											"value": "testing",
+											"description": "Required",
+											"type": "text"
+										},
+										{
+											"key": "position",
+											"value": "2",
+											"description": "Position",
+											"type": "text"
+										},
+										{
+											"key": "is_deleted",
+											"value": "true",
+											"description": "True | False",
+											"type": "text"
+										},
+										{
+											"key": "rmp_color_id",
+											"value": "1437",
+											"description": "RmpColor ID",
+											"type": "text"
+										},
+										{
+											"key": "image_1",
+											"type": "file",
+											"src": []
+										},
+										{
+											"key": "image_1_thumb",
+											"type": "file",
+											"src": []
+										},
+										{
+											"key": "image_2",
+											"type": "file",
+											"src": "/home/hafeez-laptop/Pictures/Screenshot from 2025-10-09 14-04-09.png"
+										},
+										{
+											"key": "image_2_thumb",
+											"type": "file",
+											"src": []
+										},
+										{
+											"key": "image_3",
+											"type": "file",
+											"src": []
+										},
+										{
+											"key": "image_3_thumb",
+											"type": "file",
+											"src": "/home/hafeez-laptop/Pictures/Screenshot from 2025-10-01 22-18-07.png"
+										},
+										{
+											"key": "image_4",
+											"type": "file",
+											"src": []
+										},
+										{
+											"key": "image_4_thumb",
+											"type": "file",
+											"src": []
+										},
+										{
+											"key": "image_5",
+											"type": "file",
+											"src": []
+										},
+										{
+											"key": "image_5_thumb",
+											"type": "file",
+											"src": []
+										},
+										{
+											"key": "is_deleted",
+											"value": "false",
+											"type": "text"
+										}
+									]
+								},
+								"url": {
+									"raw": "{{base_url}}/api/dashboard/v1/rmp_classes",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"dashboard",
+										"v1",
+										"rmp_classes"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Update",
+							"request": {
+								"method": "PATCH",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "{{auth_token}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "formdata",
+									"formdata": [
+										{
+											"key": "name",
+											"value": "testing1",
+											"description": "Required",
+											"type": "text"
+										},
+										{
+											"key": "position",
+											"value": "2",
+											"description": "Position",
+											"type": "text"
+										},
+										{
+											"key": "is_deleted",
+											"value": "true",
+											"description": "True | False",
+											"type": "text"
+										},
+										{
+											"key": "rmp_color_id",
+											"value": "1437",
+											"description": "RmpColor ID",
+											"type": "text"
+										},
+										{
+											"key": "image_1",
+											"type": "file",
+											"src": []
+										},
+										{
+											"key": "image_1_thumb",
+											"type": "file",
+											"src": []
+										},
+										{
+											"key": "image_2",
+											"type": "file",
+											"src": "/home/hafeez-laptop/Pictures/Screenshot from 2025-10-09 14-04-09.png"
+										},
+										{
+											"key": "image_2_thumb",
+											"type": "file",
+											"src": []
+										},
+										{
+											"key": "image_3",
+											"type": "file",
+											"src": "/home/hafeez-laptop/Pictures/Screenshot from 2024-02-21 00-17-19.png"
+										},
+										{
+											"key": "image_3_thumb",
+											"type": "file",
+											"src": "/home/hafeez-laptop/Pictures/Screenshot from 2025-10-01 22-18-07.png"
+										},
+										{
+											"key": "image_4",
+											"type": "file",
+											"src": "/home/hafeez-laptop/Pictures/Screenshot from 2024-08-31 23-04-39.png"
+										},
+										{
+											"key": "image_4_thumb",
+											"type": "file",
+											"src": "/home/hafeez-laptop/Pictures/Screenshot from 2024-07-04 21-48-02.png"
+										},
+										{
+											"key": "image_5",
+											"type": "file",
+											"src": "/home/hafeez-laptop/Pictures/Screenshot from 2024-05-15 21-30-20.png"
+										},
+										{
+											"key": "image_5_thumb",
+											"type": "file",
+											"src": "/home/hafeez-laptop/Pictures/Screenshot from 2025-10-01 22-38-10.png"
+										},
+										{
+											"key": "is_deleted",
+											"value": "false",
+											"type": "text"
+										}
+									]
+								},
+								"url": {
+									"raw": "{{base_url}}/api/dashboard/v1/rmp_classes/3347",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"dashboard",
+										"v1",
+										"rmp_classes",
+										"3347"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Delete",
+							"request": {
+								"method": "DELETE",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "{{auth_token}}",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/api/dashboard/v1/rmp_classes/3302",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"dashboard",
+										"v1",
+										"rmp_classes",
+										"3302"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Show",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "{{auth_token}}",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/api/dashboard/v1/rmp_classes/3302",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"dashboard",
+										"v1",
+										"rmp_classes",
+										"3302"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Bulk delete",
+							"request": {
+								"method": "DELETE",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "{{auth_token}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "formdata",
+									"formdata": [
+										{
+											"key": "delete_all",
+											"value": "true",
+											"description": "true",
+											"type": "text",
+											"disabled": true
+										},
+										{
+											"key": "ids[]",
+											"value": "1",
+											"type": "text",
+											"disabled": true
+										},
+										{
+											"key": "ids[]",
+											"value": "20",
+											"type": "text"
+										}
+									]
+								},
+								"url": {
+									"raw": "{{base_url}}/api/dashboard/v1/rmp_classes/bulk_delete",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"dashboard",
+										"v1",
+										"rmp_classes",
+										"bulk_delete"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Rmp Prices",
+					"item": [
+						{
+							"name": "Index",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "{{auth_token}}",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/api/dashboard/v1/rmp_prices?items=10&page=1&is_deleted=false&search=AWG-SB-CH-XXLL",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"dashboard",
+										"v1",
+										"rmp_prices"
+									],
+									"query": [
+										{
+											"key": "items",
+											"value": "10",
+											"description": "Airtable Name Prices (Scott Ready Stock)"
+										},
+										{
+											"key": "page",
+											"value": "1"
+										},
+										{
+											"key": "is_deleted",
+											"value": "false",
+											"description": "true | false"
+										},
+										{
+											"key": "search",
+											"value": "AWG-SB-CH-XXLL"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Create",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "{{auth_token}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "formdata",
+									"formdata": [
+										{
+											"key": "name",
+											"value": "testing-21-1",
+											"description": "Price Prefix (Required)",
+											"type": "text"
+										},
+										{
+											"key": "price",
+											"value": "29",
+											"description": "Price",
+											"type": "text"
+										},
+										{
+											"key": "is_deleted",
+											"value": "false",
+											"description": "True | False",
+											"type": "text"
+										},
+										{
+											"key": "mrp",
+											"value": "5",
+											"description": "MRP",
+											"type": "text"
+										},
+										{
+											"key": "rmp_sku_id",
+											"value": "21587",
+											"type": "text"
+										},
+										{
+											"key": "rmp_price_type_id",
+											"value": "264",
+											"type": "text"
+										}
+									]
+								},
+								"url": {
+									"raw": "{{base_url}}/api/dashboard/v1/rmp_prices",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"dashboard",
+										"v1",
+										"rmp_prices"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Update",
+							"request": {
+								"method": "PATCH",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "{{auth_token}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "formdata",
+									"formdata": [
+										{
+											"key": "name",
+											"value": "testing",
+											"type": "text"
+										},
+										{
+											"key": "price",
+											"value": "299",
+											"type": "text"
+										},
+										{
+											"key": "is_deleted",
+											"value": "false",
+											"type": "text"
+										},
+										{
+											"key": "mrp",
+											"value": "101",
+											"type": "text"
+										},
+										{
+											"key": "rmp_sku_id",
+											"value": "21587",
+											"type": "text"
+										},
+										{
+											"key": "rmp_price_type_id",
+											"value": "264",
+											"type": "text"
+										}
+									]
+								},
+								"url": {
+									"raw": "{{base_url}}/api/dashboard/v1/rmp_prices/32631",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"dashboard",
+										"v1",
+										"rmp_prices",
+										"32631"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Delete",
+							"request": {
+								"method": "DELETE",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "{{auth_token}}",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/api/dashboard/v1/rmp_prices/32631",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"dashboard",
+										"v1",
+										"rmp_prices",
+										"32631"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Show",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "{{auth_token}}",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/api/dashboard/v1/rmp_prices/32631",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"dashboard",
+										"v1",
+										"rmp_prices",
+										"32631"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Bulk delete",
+							"request": {
+								"method": "DELETE",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "{{auth_token}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "formdata",
+									"formdata": [
+										{
+											"key": "delete_all",
+											"value": "true",
+											"description": "true",
+											"type": "text",
+											"disabled": true
+										},
+										{
+											"key": "ids[]",
+											"value": "1",
+											"type": "text",
+											"disabled": true
+										},
+										{
+											"key": "ids[]",
+											"value": "20",
+											"type": "text",
+											"disabled": true
+										}
+									]
+								},
+								"url": {
+									"raw": "{{base_url}}/api/dashboard/v1/rmp_prices/bulk_delete",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"dashboard",
+										"v1",
+										"rmp_prices",
+										"bulk_delete"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Bulk Uploading",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "{{auth_token}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "formdata",
+									"formdata": [
+										{
+											"key": "file",
+											"type": "file",
+											"src": "/home/hafeez-laptop/Downloads/rmp-prices-MIAN.csv"
+										}
+									]
+								},
+								"url": {
+									"raw": "{{base_url}}/api/dashboard/v1/rmp_prices/bulk_upload",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"dashboard",
+										"v1",
+										"rmp_prices",
+										"bulk_upload"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Bulk Upload Status",
+							"protocolProfileBehavior": {
+								"disableBodyPruning": true
+							},
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "{{auth_token}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "formdata",
+									"formdata": [
+										{
+											"key": "file",
+											"type": "file",
+											"src": "/home/hafeez-laptop/Downloads/rmp-prices-MIAN.csv"
+										}
+									]
+								},
+								"url": {
+									"raw": "{{base_url}}/api/dashboard/v1/rmp_prices/bulk_upload_status",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"dashboard",
+										"v1",
+										"rmp_prices",
+										"bulk_upload_status"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Rmp Price Types",
+					"item": [
+						{
+							"name": "Index",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "{{auth_token}}",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/api/dashboard/v1/rmp_price_types?items=10&page=1&is_deleted=false&search=pune",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"dashboard",
+										"v1",
+										"rmp_price_types"
+									],
+									"query": [
+										{
+											"key": "items",
+											"value": "10",
+											"description": "Airtable Name Prices (Scott Ready Stock)"
+										},
+										{
+											"key": "page",
+											"value": "1"
+										},
+										{
+											"key": "is_deleted",
+											"value": "false",
+											"description": "true | false"
+										},
+										{
+											"key": "search",
+											"value": "pune"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Create",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "{{auth_token}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "formdata",
+									"formdata": [
+										{
+											"key": "name",
+											"value": "testing-21-1",
+											"description": "Price Type (Required)",
+											"type": "text"
+										},
+										{
+											"key": "price_for",
+											"value": "zone",
+											"description": "Price For -> customer,dealer,zone",
+											"type": "text"
+										},
+										{
+											"key": "is_deleted",
+											"value": "false",
+											"description": "True | False",
+											"type": "text"
+										},
+										{
+											"key": "zone_id",
+											"value": "3",
+											"description": "Zone ID",
+											"type": "text"
+										}
+									]
+								},
+								"url": {
+									"raw": "{{base_url}}/api/dashboard/v1/rmp_price_types",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"dashboard",
+										"v1",
+										"rmp_price_types"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Update",
+							"request": {
+								"method": "PATCH",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "{{auth_token}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "formdata",
+									"formdata": [
+										{
+											"key": "name",
+											"value": "testing-21-3",
+											"type": "text"
+										},
+										{
+											"key": "price_for",
+											"value": "zone",
+											"type": "text"
+										},
+										{
+											"key": "is_deleted",
+											"value": "false",
+											"type": "text"
+										},
+										{
+											"key": "zone_id",
+											"value": "3",
+											"type": "text"
+										}
+									]
+								},
+								"url": {
+									"raw": "{{base_url}}/api/dashboard/v1/rmp_price_types/367",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"dashboard",
+										"v1",
+										"rmp_price_types",
+										"367"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Delete",
+							"request": {
+								"method": "DELETE",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "{{auth_token}}",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/api/dashboard/v1/rmp_price_types/367",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"dashboard",
+										"v1",
+										"rmp_price_types",
+										"367"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Show",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "{{auth_token}}",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/api/dashboard/v1/rmp_price_types/367",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"dashboard",
+										"v1",
+										"rmp_price_types",
+										"367"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Bulk delete",
+							"request": {
+								"method": "DELETE",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "{{auth_token}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "formdata",
+									"formdata": [
+										{
+											"key": "delete_all",
+											"value": "true",
+											"description": "true",
+											"type": "text",
+											"disabled": true
+										},
+										{
+											"key": "ids[]",
+											"value": "1",
+											"type": "text"
+										},
+										{
+											"key": "ids[]",
+											"value": "20",
+											"type": "text",
+											"disabled": true
+										}
+									]
+								},
+								"url": {
+									"raw": "{{base_url}}/api/dashboard/v1/rmp_price_types/bulk_delete",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"dashboard",
+										"v1",
+										"rmp_price_types",
+										"bulk_delete"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Size Types",
+					"item": [
+						{
+							"name": "Index",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "{{auth_token}}",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/api/dashboard/v1/size_types?items=10&page=1&is_deleted=true&search=size",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"dashboard",
+										"v1",
+										"size_types"
+									],
+									"query": [
+										{
+											"key": "items",
+											"value": "10"
+										},
+										{
+											"key": "page",
+											"value": "1"
+										},
+										{
+											"key": "is_deleted",
+											"value": "true"
+										},
+										{
+											"key": "search",
+											"value": "size"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Create",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "{{auth_token}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "formdata",
+									"formdata": [
+										{
+											"key": "name",
+											"value": "New Size",
+											"description": "Required",
+											"type": "text"
+										},
+										{
+											"key": "is_deleted",
+											"value": "true",
+											"description": "True | False",
+											"type": "text"
+										}
+									]
+								},
+								"url": {
+									"raw": "{{base_url}}/api/dashboard/v1/size_types",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"dashboard",
+										"v1",
+										"size_types"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "update",
+							"request": {
+								"method": "PATCH",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "{{auth_token}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "formdata",
+									"formdata": [
+										{
+											"key": "name",
+											"value": "Testing",
+											"description": "Optional",
+											"type": "text"
+										},
+										{
+											"key": "is_deleted",
+											"value": "false",
+											"type": "text"
+										}
+									]
+								},
+								"url": {
+									"raw": "{{base_url}}/api/dashboard/v1/size_types/1",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"dashboard",
+										"v1",
+										"size_types",
+										"1"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Delete",
+							"request": {
+								"method": "DELETE",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "{{auth_token}}",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/api/dashboard/v1/size_types/1",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"dashboard",
+										"v1",
+										"size_types",
+										"1"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Bulk delete",
+							"request": {
+								"method": "DELETE",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "{{auth_token}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "formdata",
+									"formdata": [
+										{
+											"key": "delete_all",
+											"value": "true",
+											"description": "true, false",
+											"type": "text",
+											"disabled": true
+										},
+										{
+											"key": "ids[]",
+											"value": "1",
+											"type": "text"
+										},
+										{
+											"key": "ids[]",
+											"value": "20",
+											"type": "text",
+											"disabled": true
+										}
+									]
+								},
+								"url": {
+									"raw": "{{base_url}}/api/dashboard/v1/size_types/bulk_delete",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"dashboard",
+										"v1",
+										"size_types",
+										"bulk_delete"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Sizes",
+					"item": [
+						{
+							"name": "Index",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "{{auth_token}}",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/api/dashboard/v1/sc_sizes?items=10&page=1&is_deleted=true&search=new",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"dashboard",
+										"v1",
+										"sc_sizes"
+									],
+									"query": [
+										{
+											"key": "items",
+											"value": "10"
+										},
+										{
+											"key": "page",
+											"value": "1"
+										},
+										{
+											"key": "is_deleted",
+											"value": "true"
+										},
+										{
+											"key": "search",
+											"value": "new"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Create",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "{{auth_token}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "formdata",
+									"formdata": [
+										{
+											"key": "name",
+											"value": "New Size",
+											"description": "Required",
+											"type": "text"
+										},
+										{
+											"key": "is_deleted",
+											"value": "true",
+											"description": "True | False",
+											"type": "text"
+										},
+										{
+											"key": "position",
+											"value": "2",
+											"type": "text"
+										},
+										{
+											"key": "size_type_id",
+											"value": "2",
+											"type": "text"
+										}
+									]
+								},
+								"url": {
+									"raw": "{{base_url}}/api/dashboard/v1/sc_sizes",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"dashboard",
+										"v1",
+										"sc_sizes"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "update",
+							"request": {
+								"method": "PATCH",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "{{auth_token}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "formdata",
+									"formdata": [
+										{
+											"key": "name",
+											"value": "New Size",
+											"description": "Optional",
+											"type": "text"
+										},
+										{
+											"key": "is_deleted",
+											"value": "false",
+											"type": "text"
+										},
+										{
+											"key": "position",
+											"value": "1",
+											"type": "text"
+										},
+										{
+											"key": "size_type_id",
+											"value": "2",
+											"type": "text"
+										}
+									]
+								},
+								"url": {
+									"raw": "{{base_url}}/api/dashboard/v1/sc_sizes/2",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"dashboard",
+										"v1",
+										"sc_sizes",
+										"2"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Delete",
+							"request": {
+								"method": "DELETE",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "{{auth_token}}",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/api/dashboard/v1/sc_sizes/2",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"dashboard",
+										"v1",
+										"sc_sizes",
+										"2"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Show",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "{{auth_token}}",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/api/dashboard/v1/sc_sizes/3",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"dashboard",
+										"v1",
+										"sc_sizes",
+										"3"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Bulk delete",
+							"request": {
+								"method": "DELETE",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "{{auth_token}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "formdata",
+									"formdata": [
+										{
+											"key": "delete_all",
+											"value": "true",
+											"description": "true, false",
+											"type": "text",
+											"disabled": true
+										},
+										{
+											"key": "ids[]",
+											"value": "1",
+											"type": "text"
+										},
+										{
+											"key": "ids[]",
+											"value": "20",
+											"type": "text",
+											"disabled": true
+										}
+									]
+								},
+								"url": {
+									"raw": "{{base_url}}/api/dashboard/v1/sc_sizes/bulk_delete",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"dashboard",
+										"v1",
+										"sc_sizes",
+										"bulk_delete"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Parts",
+					"item": [
+						{
+							"name": "Index",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "{{auth_token}}",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/api/dashboard/v1/parts?items=10&page=1&is_deleted=true&search=tagg",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"dashboard",
+										"v1",
+										"parts"
+									],
+									"query": [
+										{
+											"key": "items",
+											"value": "10"
+										},
+										{
+											"key": "page",
+											"value": "1"
+										},
+										{
+											"key": "is_deleted",
+											"value": "true"
+										},
+										{
+											"key": "search",
+											"value": "tagg"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Create",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "{{auth_token}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "formdata",
+									"formdata": [
+										{
+											"key": "name",
+											"value": "New Part 2",
+											"description": "Required",
+											"type": "text"
+										},
+										{
+											"key": "is_deleted",
+											"value": "true",
+											"description": "True | False",
+											"type": "text"
+										},
+										{
+											"key": "order_criteria",
+											"value": "false",
+											"description": "true | false",
+											"type": "text"
+										},
+										{
+											"key": "position",
+											"value": "3",
+											"type": "text"
+										}
+									]
+								},
+								"url": {
+									"raw": "{{base_url}}/api/dashboard/v1/parts",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"dashboard",
+										"v1",
+										"parts"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "update",
+							"request": {
+								"method": "PATCH",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "{{auth_token}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "formdata",
+									"formdata": [
+										{
+											"key": "name",
+											"value": "New Part 2",
+											"description": "Optional",
+											"type": "text",
+											"disabled": true
+										},
+										{
+											"key": "is_deleted",
+											"value": "true",
+											"type": "text"
+										},
+										{
+											"key": "order_criteria",
+											"value": "true",
+											"type": "text"
+										},
+										{
+											"key": "position",
+											"value": "34",
+											"type": "text"
+										}
+									]
+								},
+								"url": {
+									"raw": "{{base_url}}/api/dashboard/v1/parts/150",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"dashboard",
+										"v1",
+										"parts",
+										"150"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Delete",
+							"request": {
+								"method": "DELETE",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "{{auth_token}}",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/api/dashboard/v1/parts/150",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"dashboard",
+										"v1",
+										"parts",
+										"150"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Part Colors",
+							"request": {
+								"method": "PATCH",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "{{auth_token}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "formdata",
+									"formdata": [
+										{
+											"key": "color_ids[]",
+											"value": "2",
+											"type": "text",
+											"disabled": true
+										},
+										{
+											"key": "color_ids[]",
+											"value": "759",
+											"type": "text"
+										}
+									]
+								},
+								"url": {
+									"raw": "{{base_url}}/api/dashboard/v1/parts/150/update_colors",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"dashboard",
+										"v1",
+										"parts",
+										"150",
+										"update_colors"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Part AddOns",
+							"request": {
+								"method": "PATCH",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "{{auth_token}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "formdata",
+									"formdata": [
+										{
+											"key": "add_on_ids[]",
+											"value": "2",
+											"type": "text",
+											"disabled": true
+										},
+										{
+											"key": "add_on_ids[]",
+											"value": "691",
+											"type": "text"
+										}
+									]
+								},
+								"url": {
+									"raw": "{{base_url}}/api/dashboard/v1/parts/150/update_add_ons",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"dashboard",
+										"v1",
+										"parts",
+										"150",
+										"update_add_ons"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Bulk delete",
+							"request": {
+								"method": "DELETE",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "{{auth_token}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "formdata",
+									"formdata": [
+										{
+											"key": "delete_all",
+											"value": "true",
+											"description": "true, false",
+											"type": "text",
+											"disabled": true
+										},
+										{
+											"key": "ids[]",
+											"value": "1",
+											"type": "text",
+											"disabled": true
+										},
+										{
+											"key": "ids[]",
+											"value": "20",
+											"type": "text",
+											"disabled": true
+										}
+									]
+								},
+								"url": {
+									"raw": "{{base_url}}/api/dashboard/v1/parts/bulk_delete",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"dashboard",
+										"v1",
+										"parts",
+										"bulk_delete"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Add Ons",
+					"item": [
+						{
+							"name": "Index",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "{{auth_token}}",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/api/dashboard/v1/add_ons?items=10&page=1&is_deleted=false&search=HJKT",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"dashboard",
+										"v1",
+										"add_ons"
+									],
+									"query": [
+										{
+											"key": "items",
+											"value": "10"
+										},
+										{
+											"key": "page",
+											"value": "1"
+										},
+										{
+											"key": "is_deleted",
+											"value": "false"
+										},
+										{
+											"key": "search",
+											"value": "HJKT"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Create",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "{{auth_token}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "formdata",
+									"formdata": [
+										{
+											"key": "add_on",
+											"value": "SCOTT New 2",
+											"description": "Required",
+											"type": "text"
+										},
+										{
+											"key": "add_on_price",
+											"value": " 0.0",
+											"description": "True | False",
+											"type": "text"
+										},
+										{
+											"key": "add_on_of",
+											"value": " 0.0",
+											"description": "true | false",
+											"type": "text"
+										},
+										{
+											"key": "add_on_sn",
+											"value": " 0.0",
+											"type": "text"
+										},
+										{
+											"key": "has_color",
+											"value": " false",
+											"type": "text"
+										},
+										{
+											"key": "select_type",
+											"value": "single",
+											"type": "text"
+										},
+										{
+											"key": "group_name",
+											"value": "group1",
+											"type": "text"
+										},
+										{
+											"key": "position",
+											"value": "21",
+											"type": "text"
+										},
+										{
+											"key": "layer_sort",
+											"value": "0",
+											"type": "text"
+										},
+										{
+											"key": "is_deleted",
+											"value": "true",
+											"type": "text"
+										},
+										{
+											"key": "image",
+											"type": "file",
+											"src": "/home/hafeez-laptop/Pictures/Screenshot from 2025-10-09 14-17-13.png"
+										}
+									]
+								},
+								"url": {
+									"raw": "{{base_url}}/api/dashboard/v1/add_ons",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"dashboard",
+										"v1",
+										"add_ons"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "update",
+							"request": {
+								"method": "PATCH",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "{{auth_token}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "formdata",
+									"formdata": [
+										{
+											"key": "add_on",
+											"value": "SCOTT New",
+											"description": "Optional",
+											"type": "text",
+											"disabled": true
+										},
+										{
+											"key": "add_on_price",
+											"value": "20",
+											"type": "text"
+										},
+										{
+											"key": "add_on_of",
+											"value": "10",
+											"type": "text"
+										},
+										{
+											"key": "add_on_sn",
+											"value": "10",
+											"type": "text"
+										},
+										{
+											"key": "has_color",
+											"value": "true",
+											"type": "text"
+										},
+										{
+											"key": "select_type",
+											"value": "single",
+											"type": "text"
+										},
+										{
+											"key": "group_name",
+											"value": "group1",
+											"type": "text"
+										},
+										{
+											"key": "position",
+											"value": "21",
+											"type": "text"
+										},
+										{
+											"key": "layer_sort",
+											"value": "0",
+											"type": "text"
+										},
+										{
+											"key": "is_deleted",
+											"value": "true",
+											"type": "text"
+										}
+									]
+								},
+								"url": {
+									"raw": "{{base_url}}/api/dashboard/v1/add_ons/699",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"dashboard",
+										"v1",
+										"add_ons",
+										"699"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Delete",
+							"request": {
+								"method": "DELETE",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "{{auth_token}}",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/api/dashboard/v1/add_ons/699",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"dashboard",
+										"v1",
+										"add_ons",
+										"699"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Add On Colors",
+							"request": {
+								"method": "PATCH",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "{{auth_token}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "formdata",
+									"formdata": [
+										{
+											"key": "color_ids[]",
+											"value": "2",
+											"type": "text",
+											"disabled": true
+										},
+										{
+											"key": "color_ids[]",
+											"value": "759",
+											"type": "text"
+										}
+									]
+								},
+								"url": {
+									"raw": "{{base_url}}/api/dashboard/v1/add_ons/699/update_colors",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"dashboard",
+										"v1",
+										"add_ons",
+										"699",
+										"update_colors"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "AddOn Base products",
+							"request": {
+								"method": "PATCH",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "{{auth_token}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "formdata",
+									"formdata": [
+										{
+											"key": "base_product_ids[]",
+											"value": "2",
+											"type": "text",
+											"disabled": true
+										},
+										{
+											"key": "base_product_ids[]",
+											"value": "209",
+											"type": "text"
+										}
+									]
+								},
+								"url": {
+									"raw": "{{base_url}}/api/dashboard/v1/add_ons/699/update_base_products",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"dashboard",
+										"v1",
+										"add_ons",
+										"699",
+										"update_base_products"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Bulk delete",
+							"request": {
+								"method": "DELETE",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "{{auth_token}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "formdata",
+									"formdata": [
+										{
+											"key": "delete_all",
+											"value": "true",
+											"description": "true, false",
+											"type": "text",
+											"disabled": true
+										},
+										{
+											"key": "ids[]",
+											"value": "1",
+											"type": "text"
+										},
+										{
+											"key": "ids[]",
+											"value": "20",
+											"type": "text",
+											"disabled": true
+										}
+									]
+								},
+								"url": {
+									"raw": "{{base_url}}/api/dashboard/v1/add_ons/bulk_delete",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"dashboard",
+										"v1",
+										"add_ons",
+										"bulk_delete"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Base Products",
+					"item": [
+						{
+							"name": "Index",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "{{auth_token}}",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/api/dashboard/v1/base_products?items=10&page=1&is_deleted=true&search=new 2",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"dashboard",
+										"v1",
+										"base_products"
+									],
+									"query": [
+										{
+											"key": "items",
+											"value": "10"
+										},
+										{
+											"key": "page",
+											"value": "1"
+										},
+										{
+											"key": "is_deleted",
+											"value": "true"
+										},
+										{
+											"key": "search",
+											"value": "new 2"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Create",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "{{auth_token}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "formdata",
+									"formdata": [
+										{
+											"key": "name",
+											"value": "SCOTT New 2",
+											"description": "Required",
+											"type": "text"
+										},
+										{
+											"key": "base_of",
+											"value": "10",
+											"description": "True | False",
+											"type": "text"
+										},
+										{
+											"key": "base_sn",
+											"value": "12",
+											"description": "true | false",
+											"type": "text"
+										},
+										{
+											"key": "tims_cost",
+											"value": "10",
+											"type": "text"
+										},
+										{
+											"key": "adult_consumption",
+											"value": "0.5",
+											"type": "text"
+										},
+										{
+											"key": "kids_consumption",
+											"value": "0.12",
+											"type": "text"
+										},
+										{
+											"key": "over_header_percentage",
+											"value": "14",
+											"type": "text"
+										},
+										{
+											"key": "calculator",
+											"value": "5584",
+											"type": "text"
+										},
+										{
+											"key": "branding_sides",
+											"value": "2",
+											"type": "text"
+										},
+										{
+											"key": "is_deleted",
+											"value": "true",
+											"type": "text"
+										},
+										{
+											"key": "image",
+											"type": "file",
+											"src": "/home/hafeez-laptop/Pictures/Screenshot from 2025-10-09 14-17-13.png"
+										},
+										{
+											"key": "sample_rate",
+											"value": "4",
+											"type": "text"
+										},
+										{
+											"key": "base_product_type_id",
+											"value": "30",
+											"description": "Base product type (Optional)",
+											"type": "text",
+											"disabled": true
+										},
+										{
+											"key": "asset_info_id",
+											"value": "1",
+											"description": "Asset Info (Optional)",
+											"type": "text",
+											"disabled": true
+										}
+									]
+								},
+								"url": {
+									"raw": "{{base_url}}/api/dashboard/v1/base_products",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"dashboard",
+										"v1",
+										"base_products"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "update",
+							"request": {
+								"method": "PATCH",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "{{auth_token}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "formdata",
+									"formdata": [
+										{
+											"key": "name",
+											"value": "SCOTT New 2",
+											"description": "Optional",
+											"type": "text"
+										},
+										{
+											"key": "base_of",
+											"value": "10",
+											"type": "text"
+										},
+										{
+											"key": "base_sn",
+											"value": "12",
+											"type": "text"
+										},
+										{
+											"key": "tims_cost",
+											"value": "10",
+											"type": "text"
+										},
+										{
+											"key": "adult_consumption",
+											"value": "0.5",
+											"type": "text"
+										},
+										{
+											"key": "kids_consumption",
+											"value": "0.12",
+											"type": "text"
+										},
+										{
+											"key": "over_header_percentage",
+											"value": "14",
+											"type": "text"
+										},
+										{
+											"key": "calculator",
+											"value": "5584",
+											"type": "text"
+										},
+										{
+											"key": "branding_sides",
+											"value": "21",
+											"type": "text"
+										},
+										{
+											"key": "is_deleted",
+											"value": "true",
+											"type": "text"
+										},
+										{
+											"key": "sample_rate",
+											"value": "4",
+											"type": "text"
+										},
+										{
+											"key": "image",
+											"type": "file",
+											"src": "/home/hafeez-laptop/Pictures/Screenshot from 2025-10-06 12-49-28.png",
+											"disabled": true
+										},
+										{
+											"key": "base_product_type_id",
+											"value": "1",
+											"description": "Base Product Type Optional",
+											"type": "text",
+											"disabled": true
+										},
+										{
+											"key": "asset_info_id",
+											"value": "2",
+											"description": "Asset Info Optional",
+											"type": "text",
+											"disabled": true
+										}
+									]
+								},
+								"url": {
+									"raw": "{{base_url}}/api/dashboard/v1/base_products/236",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"dashboard",
+										"v1",
+										"base_products",
+										"236"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Delete",
+							"request": {
+								"method": "DELETE",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "{{auth_token}}",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/api/dashboard/v1/base_products/236",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"dashboard",
+										"v1",
+										"base_products",
+										"236"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Size Types",
+							"request": {
+								"method": "PATCH",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "{{auth_token}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "formdata",
+									"formdata": [
+										{
+											"key": "size_type_ids[]",
+											"value": "2",
+											"type": "text",
+											"disabled": true
+										},
+										{
+											"key": "size_type_ids[]",
+											"value": "1",
+											"type": "text"
+										}
+									]
+								},
+								"url": {
+									"raw": "{{base_url}}/api/dashboard/v1/base_products/236/update_size_types",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"dashboard",
+										"v1",
+										"base_products",
+										"236",
+										"update_size_types"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Categories",
+							"request": {
+								"method": "PATCH",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "{{auth_token}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "formdata",
+									"formdata": [
+										{
+											"key": "category_ids[]",
+											"value": "26",
+											"type": "text"
+										},
+										{
+											"key": "category_ids[]",
+											"value": "25",
+											"type": "text"
+										}
+									]
+								},
+								"url": {
+									"raw": "{{base_url}}/api/dashboard/v1/base_products/236/update_categories",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"dashboard",
+										"v1",
+										"base_products",
+										"236",
+										"update_categories"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Base Product Parts",
+							"request": {
+								"method": "PATCH",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "{{auth_token}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "formdata",
+									"formdata": [
+										{
+											"key": "part_ids[]",
+											"value": "26",
+											"type": "text",
+											"disabled": true
+										},
+										{
+											"key": "part_ids[]",
+											"value": "113",
+											"type": "text"
+										}
+									]
+								},
+								"url": {
+									"raw": "{{base_url}}/api/dashboard/v1/base_products/236/update_parts",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"dashboard",
+										"v1",
+										"base_products",
+										"236",
+										"update_parts"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Fabrics",
+							"request": {
+								"method": "PATCH",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "{{auth_token}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "formdata",
+									"formdata": [
+										{
+											"key": "fabric_ids[]",
+											"value": "26",
+											"type": "text",
+											"disabled": true
+										},
+										{
+											"key": "fabric_ids[]",
+											"value": "186",
+											"type": "text"
+										}
+									]
+								},
+								"url": {
+									"raw": "{{base_url}}/api/dashboard/v1/base_products/236/update_fabrics",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"dashboard",
+										"v1",
+										"base_products",
+										"236",
+										"update_fabrics"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Bulk delete",
+							"request": {
+								"method": "DELETE",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "{{auth_token}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "formdata",
+									"formdata": [
+										{
+											"key": "delete_all",
+											"value": "true",
+											"description": "true, false",
+											"type": "text",
+											"disabled": true
+										},
+										{
+											"key": "ids[]",
+											"value": "1",
+											"type": "text"
+										},
+										{
+											"key": "ids[]",
+											"value": "20",
+											"type": "text",
+											"disabled": true
+										}
+									]
+								},
+								"url": {
+									"raw": "{{base_url}}/api/dashboard/v1/base_products/bulk_delete",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"dashboard",
+										"v1",
+										"base_products",
+										"bulk_delete"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Fabrics",
+					"item": [
+						{
+							"name": "Index",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "{{auth_token}}",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/api/dashboard/v1/fabrics?items=30&page=1&is_deleted=false&search=gsm 2",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"dashboard",
+										"v1",
+										"fabrics"
+									],
+									"query": [
+										{
+											"key": "items",
+											"value": "30"
+										},
+										{
+											"key": "page",
+											"value": "1"
+										},
+										{
+											"key": "is_deleted",
+											"value": "false"
+										},
+										{
+											"key": "search",
+											"value": "gsm 2"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Create",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "{{auth_token}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "formdata",
+									"formdata": [
+										{
+											"key": "name",
+											"value": "New Size",
+											"description": "Required -> Fabric Name Column",
+											"type": "text"
+										},
+										{
+											"key": "is_deleted",
+											"value": "true",
+											"description": "True | False",
+											"type": "text"
+										},
+										{
+											"key": "fabric_type",
+											"value": "cotton",
+											"description": "Fabric Type -> cotton, polyester, poly_cotton",
+											"type": "text"
+										},
+										{
+											"key": "gsm",
+											"value": "100",
+											"description": "GSM",
+											"type": "text"
+										},
+										{
+											"key": "uom",
+											"value": "KG",
+											"description": "UOM",
+											"type": "text"
+										},
+										{
+											"key": "price",
+											"value": "420",
+											"description": "Price",
+											"type": "text"
+										},
+										{
+											"key": "image",
+											"description": "Image",
+											"type": "file",
+											"src": "/home/hafeez-laptop/Pictures/Screenshot from 2025-10-09 14-17-13.png"
+										},
+										{
+											"key": "color_ids[]",
+											"value": "713",
+											"type": "text"
+										},
+										{
+											"key": "color_ids[]",
+											"value": "714",
+											"type": "text"
+										}
+									]
+								},
+								"url": {
+									"raw": "{{base_url}}/api/dashboard/v1/fabrics",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"dashboard",
+										"v1",
+										"fabrics"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "update",
+							"request": {
+								"method": "PATCH",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "{{auth_token}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "formdata",
+									"formdata": [
+										{
+											"key": "name",
+											"value": "New Size",
+											"description": "Optional",
+											"type": "text",
+											"disabled": true
+										},
+										{
+											"key": "is_deleted",
+											"value": "true",
+											"type": "text"
+										},
+										{
+											"key": "fabric_type",
+											"value": "cotton",
+											"type": "text"
+										},
+										{
+											"key": "gsm",
+											"value": "100",
+											"type": "text"
+										},
+										{
+											"key": "uom",
+											"value": "KG",
+											"type": "text"
+										},
+										{
+											"key": "price",
+											"value": "420",
+											"type": "text"
+										},
+										{
+											"key": "image",
+											"type": "file",
+											"src": [],
+											"disabled": true
+										},
+										{
+											"key": "color_ids[]",
+											"value": "713",
+											"type": "text"
+										},
+										{
+											"key": "color_ids[]",
+											"value": "716",
+											"type": "text"
+										}
+									]
+								},
+								"url": {
+									"raw": "{{base_url}}/api/dashboard/v1/fabrics/246",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"dashboard",
+										"v1",
+										"fabrics",
+										"246"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Delete",
+							"request": {
+								"method": "PATCH",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "{{auth_token}}",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/api/dashboard/v1/fabrics/246",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"dashboard",
+										"v1",
+										"fabrics",
+										"246"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Bulk delete",
+							"request": {
+								"method": "DELETE",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "{{auth_token}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "formdata",
+									"formdata": [
+										{
+											"key": "delete_all",
+											"value": "true",
+											"description": "true, false",
+											"type": "text",
+											"disabled": true
+										},
+										{
+											"key": "ids[]",
+											"value": "1",
+											"type": "text"
+										},
+										{
+											"key": "ids[]",
+											"value": "20",
+											"type": "text",
+											"disabled": true
+										}
+									]
+								},
+								"url": {
+									"raw": "{{base_url}}/api/dashboard/v1/fabrics/bulk_delete",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"dashboard",
+										"v1",
+										"fabrics",
+										"bulk_delete"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Base Product Types",
+					"item": [
+						{
+							"name": "Index",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "{{auth_token}}",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/api/dashboard/v1/base_product_types?items=10&page=1&search=type2",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"dashboard",
+										"v1",
+										"base_product_types"
+									],
+									"query": [
+										{
+											"key": "items",
+											"value": "10"
+										},
+										{
+											"key": "page",
+											"value": "1"
+										},
+										{
+											"key": "is_deleted",
+											"value": "true",
+											"disabled": true
+										},
+										{
+											"key": "search",
+											"value": "type2"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Create",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "{{auth_token}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "formdata",
+									"formdata": [
+										{
+											"key": "name",
+											"value": "New Product Type2",
+											"description": "Required",
+											"type": "text"
+										},
+										{
+											"key": "is_deleted",
+											"value": "true",
+											"description": "True | False",
+											"type": "text"
+										},
+										{
+											"key": "position",
+											"value": "1",
+											"description": "sort order",
+											"type": "text"
+										},
+										{
+											"key": "image",
+											"description": "File",
+											"type": "file",
+											"src": "/home/hafeez-laptop/Pictures/Screenshot from 2025-09-27 17-04-54.png"
+										}
+									]
+								},
+								"url": {
+									"raw": "{{base_url}}/api/dashboard/v1/base_product_types",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"dashboard",
+										"v1",
+										"base_product_types"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "update",
+							"request": {
+								"method": "PATCH",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "{{auth_token}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "formdata",
+									"formdata": [
+										{
+											"key": "name",
+											"value": "Testing",
+											"description": "Optional",
+											"type": "text"
+										},
+										{
+											"key": "is_deleted",
+											"value": "false",
+											"description": "True | False",
+											"type": "text"
+										},
+										{
+											"key": "position",
+											"value": "3",
+											"description": "Sort Order",
+											"type": "text"
+										},
+										{
+											"key": "Image",
+											"description": "file upload",
+											"type": "file",
+											"src": []
+										}
+									]
+								},
+								"url": {
+									"raw": "{{base_url}}/api/dashboard/v1/base_product_types/1",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"dashboard",
+										"v1",
+										"base_product_types",
+										"1"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Delete",
+							"request": {
+								"method": "DELETE",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "{{auth_token}}",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/api/dashboard/v1/base_product_types/1",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"dashboard",
+										"v1",
+										"base_product_types",
+										"1"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Bulk delete",
+							"request": {
+								"method": "DELETE",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "{{auth_token}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "formdata",
+									"formdata": [
+										{
+											"key": "delete_all",
+											"value": "true",
+											"description": "true, false",
+											"type": "text",
+											"disabled": true
+										},
+										{
+											"key": "ids[]",
+											"value": "1",
+											"type": "text",
+											"disabled": true
+										},
+										{
+											"key": "ids[]",
+											"value": "20",
+											"type": "text",
+											"disabled": true
+										}
+									]
+								},
+								"url": {
+									"raw": "{{base_url}}/api/dashboard/v1/base_product_types/bulk_delete",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"dashboard",
+										"v1",
+										"base_product_types",
+										"bulk_delete"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Base Product Asset Infos",
+					"item": [
+						{
+							"name": "Index",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "{{auth_token}}",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/api/dashboard/v1/base_product_asset_infos?items=10&page=1&search=Polo- Men",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"dashboard",
+										"v1",
+										"base_product_asset_infos"
+									],
+									"query": [
+										{
+											"key": "items",
+											"value": "10"
+										},
+										{
+											"key": "page",
+											"value": "1"
+										},
+										{
+											"key": "is_deleted",
+											"value": "true",
+											"disabled": true
+										},
+										{
+											"key": "search",
+											"value": "Polo- Men"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Create",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "{{auth_token}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "formdata",
+									"formdata": [
+										{
+											"key": "base_product_id",
+											"value": "210",
+											"description": "Base Product ID",
+											"type": "text"
+										},
+										{
+											"key": "add_on_id",
+											"value": "641",
+											"description": "Add On ID",
+											"type": "text"
+										},
+										{
+											"key": "part_id",
+											"value": "118",
+											"description": "Part ID",
+											"type": "text"
+										},
+										{
+											"key": "asset_info_id",
+											"value": "6",
+											"description": "Asset Info ID",
+											"type": "text"
+										},
+										{
+											"key": "is_deleted",
+											"value": "false",
+											"description": "True | false",
+											"type": "text"
+										}
+									]
+								},
+								"url": {
+									"raw": "{{base_url}}/api/dashboard/v1/base_product_asset_infos",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"dashboard",
+										"v1",
+										"base_product_asset_infos"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "update",
+							"request": {
+								"method": "PATCH",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "{{auth_token}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "formdata",
+									"formdata": [
+										{
+											"key": "base_product_id",
+											"value": "210",
+											"description": "Base Product",
+											"type": "text"
+										},
+										{
+											"key": "add_on_id",
+											"value": "641",
+											"description": "Add On ID",
+											"type": "text"
+										},
+										{
+											"key": "part_id",
+											"value": "120",
+											"description": "Part ID",
+											"type": "text"
+										},
+										{
+											"key": "asset_info_id",
+											"value": "6",
+											"description": "Asset Info ID",
+											"type": "text"
+										},
+										{
+											"key": "is_deleted",
+											"value": "false",
+											"type": "text"
+										}
+									]
+								},
+								"url": {
+									"raw": "{{base_url}}/api/dashboard/v1/base_product_asset_infos/10",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"dashboard",
+										"v1",
+										"base_product_asset_infos",
+										"10"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Delete",
+							"request": {
+								"method": "DELETE",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "{{auth_token}}",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/api/dashboard/v1/base_product_asset_infos/10",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"dashboard",
+										"v1",
+										"base_product_asset_infos",
+										"10"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Show",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "{{auth_token}}",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/api/dashboard/v1/base_product_asset_infos/10",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"dashboard",
+										"v1",
+										"base_product_asset_infos",
+										"10"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Bulk delete",
+							"request": {
+								"method": "DELETE",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "{{auth_token}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "formdata",
+									"formdata": [
+										{
+											"key": "delete_all",
+											"value": "true",
+											"description": "true, false",
+											"type": "text",
+											"disabled": true
+										},
+										{
+											"key": "ids[]",
+											"value": "1",
+											"type": "text",
+											"disabled": true
+										},
+										{
+											"key": "ids[]",
+											"value": "20",
+											"type": "text"
+										}
+									]
+								},
+								"url": {
+									"raw": "{{base_url}}/api/dashboard/v1/base_product_asset_infos/bulk_delete",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"dashboard",
+										"v1",
+										"base_product_asset_infos",
+										"bulk_delete"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "settings",
+					"item": [
+						{
+							"name": "Enable / Disabled Airtable Sync",
+							"request": {
+								"method": "PATCH",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "{{auth_token}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "formdata",
+									"formdata": [
+										{
+											"key": "enabled",
+											"value": "false",
+											"description": "true/false",
+											"type": "text"
+										}
+									]
+								},
+								"url": {
+									"raw": "{{base_url}}/api/dashboard/v1/settings/airtable_sync",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"dashboard",
+										"v1",
+										"settings",
+										"airtable_sync"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Reports",
+					"item": [
+						{
+							"name": "custom order reports",
+							"protocolProfileBehavior": {
+								"disableBodyPruning": true
+							},
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "{{auth_token}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "formdata",
+									"formdata": []
+								},
+								"url": {
+									"raw": "{{base_url}}/api/dashboard/v1/order_reports?page=15&items=10",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"dashboard",
+										"v1",
+										"order_reports"
+									],
+									"query": [
+										{
+											"key": "page",
+											"value": "15"
+										},
+										{
+											"key": "items",
+											"value": "10"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Rmp Order Reports",
+							"protocolProfileBehavior": {
+								"disableBodyPruning": true
+							},
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "{{auth_token}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "formdata",
+									"formdata": []
+								},
+								"url": {
+									"raw": "{{base_url}}/api/dashboard/v1/rmp_order_reports?page=1&items=10",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"dashboard",
+										"v1",
+										"rmp_order_reports"
+									],
+									"query": [
+										{
+											"key": "page",
+											"value": "1"
+										},
+										{
+											"key": "items",
+											"value": "10"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "custom order details",
+							"protocolProfileBehavior": {
+								"disableBodyPruning": true
+							},
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "{{auth_token}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "formdata",
+									"formdata": []
+								},
+								"url": {
+									"raw": "{{base_url}}/api/dashboard/v1/order_reports/20034",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"dashboard",
+										"v1",
+										"order_reports",
+										"20034"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "customer reports",
+							"protocolProfileBehavior": {
+								"disableBodyPruning": true
+							},
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "{{auth_token}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "formdata",
+									"formdata": []
+								},
+								"url": {
+									"raw": "{{base_url}}/api/dashboard/v1/customers?page=1&items=10",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"dashboard",
+										"v1",
+										"customers"
+									],
+									"query": [
+										{
+											"key": "page",
+											"value": "1"
+										},
+										{
+											"key": "items",
+											"value": "10"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Tailor Reports",
+							"protocolProfileBehavior": {
+								"disableBodyPruning": true
+							},
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "{{auth_token}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "formdata",
+									"formdata": []
+								},
+								"url": {
+									"raw": "{{base_url}}/api/dashboard/v1/tailor_reports?page=2&items=10",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"dashboard",
+										"v1",
+										"tailor_reports"
+									],
+									"query": [
+										{
+											"key": "page",
+											"value": "2"
+										},
+										{
+											"key": "items",
+											"value": "10"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "customer details",
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "{{auth_token}}",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/api/dashboard/v1/customers/3853",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"dashboard",
+										"v1",
+										"customers",
+										"3853"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "customers",
+					"item": [
+						{
+							"name": "Performance",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "{{auth_token}}",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/api/dashboard/v1/customers/performance?start_date=01-02-2025&end_date=28-02-2025&period=monthly",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"dashboard",
+										"v1",
+										"customers",
+										"performance"
+									],
+									"query": [
+										{
+											"key": "start_date",
+											"value": "01-02-2025"
+										},
+										{
+											"key": "end_date",
+											"value": "28-02-2025"
+										},
+										{
+											"key": "period",
+											"value": "monthly",
+											"description": "weekly, monthly, quarterly, yearly"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Unique Customers Count",
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "{{auth_token}}",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/api/dashboard/v1/customers/unique_customers",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"dashboard",
+										"v1",
+										"customers",
+										"unique_customers"
+									],
+									"query": [
+										{
+											"key": "start_date",
+											"value": "01-02-2025",
+											"disabled": true
+										},
+										{
+											"key": "end_date",
+											"value": "28-02-2025",
+											"disabled": true
+										}
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Bulk delete Copy",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "{{auth_token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "delete_all",
+									"value": "true",
+									"description": "true, false",
+									"type": "text",
+									"disabled": true
+								},
+								{
+									"key": "ids[]",
+									"value": "1",
+									"type": "text"
+								},
+								{
+									"key": "ids[]",
+									"value": "20",
+									"type": "text",
+									"disabled": true
+								}
+							]
+						},
+						"url": {
+							"raw": "{{base_url}}/api/dashboard/v1/asset_infos/bulk_delete",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"dashboard",
+								"v1",
+								"asset_infos",
+								"bulk_delete"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Brand Order Tracking",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "{{auth_token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": []
+						},
+						"url": {
+							"raw": "{{base_url}}/api/dashboard/v1//orders/brand_orders?report_type=pending&brand_id=587&start_date=01-02-2025&end_date=28-02-2025",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"dashboard",
+								"v1",
+								"",
+								"orders",
+								"brand_orders"
+							],
+							"query": [
+								{
+									"key": "report_type",
+									"value": "pending",
+									"description": "pending, completed, overdue, failed"
+								},
+								{
+									"key": "brand_id",
+									"value": "587"
+								},
+								{
+									"key": "start_date",
+									"value": "01-02-2025"
+								},
+								{
+									"key": "end_date",
+									"value": "28-02-2025"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Class Based Order Tracking",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "{{auth_token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": []
+						},
+						"url": {
+							"raw": "{{base_url}}/api/dashboard/v1//orders/class_orders?report_type=pending&start_date=01-05-2026&end_date=28-05-2026",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"dashboard",
+								"v1",
+								"",
+								"orders",
+								"class_orders"
+							],
+							"query": [
+								{
+									"key": "report_type",
+									"value": "pending",
+									"description": "pending, completed, overdue, failed"
+								},
+								{
+									"key": "class_id",
+									"value": "3302",
+									"disabled": true
+								},
+								{
+									"key": "start_date",
+									"value": "01-05-2026"
+								},
+								{
+									"key": "end_date",
+									"value": "28-05-2026"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Sales Coordinator Orders Tracking",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "{{auth_token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/dashboard/v1//orders/sc_orders?start_date=01-02-2025&end_date=28-02-2025",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"dashboard",
+								"v1",
+								"",
+								"orders",
+								"sc_orders"
+							],
+							"query": [
+								{
+									"key": "report_type",
+									"value": "failed",
+									"disabled": true
+								},
+								{
+									"key": "user_id",
+									"value": "148",
+									"disabled": true
+								},
+								{
+									"key": "start_date",
+									"value": "01-02-2025"
+								},
+								{
+									"key": "end_date",
+									"value": "28-02-2025"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Orders Tracking Report",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "{{auth_token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/dashboard/v1/orders?report_type=completed&start_date=01-05-2025&end_date=23-06-2026&page=1&items=10",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"dashboard",
+								"v1",
+								"orders"
+							],
+							"query": [
+								{
+									"key": "report_type",
+									"value": "completed",
+									"description": "pending, completed, overdue, failed"
+								},
+								{
+									"key": "start_date",
+									"value": "01-05-2025"
+								},
+								{
+									"key": "end_date",
+									"value": "23-06-2026"
+								},
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "items",
+									"value": "10"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "https://leaderboard.sagarfab.com"
+		},
+		{
+			"key": "auth_token",
+			"value": ""
+		}
+	]
+}

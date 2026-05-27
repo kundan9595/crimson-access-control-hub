@@ -32,7 +32,7 @@ const OrderReportDetailPage = () => {
   const { data: report, isLoading, error } = useOrderReportById(id || null);
 
   // Get the nested order report data
-  const orderData = report?.order_report || {};
+  const orderData = (report?.order_report as Record<string, unknown> | undefined) ?? report ?? {};
 
   if (isLoading) {
     return (

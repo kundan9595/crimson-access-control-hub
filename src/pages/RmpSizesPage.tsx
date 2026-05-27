@@ -17,7 +17,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { MasterPageHeader } from '@/components/masters/shared/MasterPageHeader';
 import { SearchFilter } from '@/components/masters/shared/SearchFilter';
-import { useRmpSizes, useCreateRmpSize, useUpdateRmpSize, useDeleteRmpSize } from '@/hooks/masters/useRmpSizes';
+import { useRmpSizes, useAllRmpSizes, useCreateRmpSize, useUpdateRmpSize, useDeleteRmpSize } from '@/hooks/masters/useRmpSizes';
 import type { RmpSize, RmpSizeType } from '@/services/masters/rmpSizesService';
 import { Ruler, Edit, Trash2 } from 'lucide-react';
 import { openBulkEditTab, BulkImportFromConfigDialog } from '@/components/masters/bulk-edit';
@@ -40,18 +40,41 @@ import { fetchAllRecordIds } from '@/services/scott/scottPagination';
 import { callScottBulkDelete } from '@/services/scott/callScottDashboard';
 import { exportToCSV, generateExportFilename } from '@/utils/exportUtils';
 import { config } from '@/config/environment';
+import { AdvancedFilterPanel } from '@/components/masters/advanced-filter/AdvancedFilterPanel';
+import { buildFilterColumns } from '@/components/masters/advanced-filter/types';
+import { useAdvancedFilter } from '@/hooks/masters/useAdvancedFilter';
+import { QuickFilterBar } from '@/components/masters/advanced-filter/QuickFilterBar';
+import { useQuickFilters } from '@/hooks/masters/useQuickFilters';
 
 const RmpSizesPage = () => {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(config.pagination.defaultPageSize);
   const [search, setSearch] = useState('');
 
+  const { filterGroup, setFilterGroup, isActive: filterActive, applyFilter, clearFilters } = useAdvancedFilter();
+  const { values: quickValues, setEnumFilter, setDateRange, clearFilter: clearQuickFilter, clearAll: clearAllQuick, isActive: quickFilterActive, applyQuickFilters } = useQuickFilters();
+  const isAnyFilterActive = filterActive || quickFilterActive;
+  const filterColumns = useMemo(() => buildFilterColumns(rmpSizesColumns), []);
+
   const { data: rmpSizesPage, isLoading, isFetching } = useRmpSizes(
-    page,
-    pageSize,
-    search ? { search } : undefined
+    page, pageSize,
+    isAnyFilterActive ? undefined : (search ? { search } : undefined)
   );
-  const rows = rmpSizesPage?.data ?? [];
+  const { data: allRmpSizes = [], isLoading: isLoadingAll } = useAllRmpSizes({ enabled: isAnyFilterActive });
+
+  const filteredRows = useMemo(
+    () => (isAnyFilterActive ? applyQuickFilters(applyFilter(allRmpSizes, filterColumns), filterColumns) : []),
+    [isAnyFilterActive, allRmpSizes, applyFilter, applyQuickFilters, filterColumns],
+  );
+  const rows = useMemo(() => {
+    if (isAnyFilterActive) return filteredRows.slice((page - 1) * pageSize, page * pageSize);
+    return rmpSizesPage?.data ?? [];
+  }, [isAnyFilterActive, filteredRows, rmpSizesPage, page, pageSize]);
+  const clientPaginationResult = useMemo(() => {
+    if (!isAnyFilterActive) return null;
+    return { page, pageSize, totalCount: filteredRows.length, totalPages: Math.max(1, Math.ceil(filteredRows.length / pageSize)), totalCountIsExact: true as const, data: rows };
+  }, [isAnyFilterActive, filteredRows, rows, page, pageSize]);
+
   const createMut = useCreateRmpSize();
   const updateMut = useUpdateRmpSize();
   const deleteMut = useDeleteRmpSize();
@@ -66,23 +89,17 @@ const RmpSizesPage = () => {
   const [status, setStatus] = useState('active');
   const [importOpen, setImportOpen] = useState(false);
 
-  useEffect(() => {
-    setPage(1);
-  }, [search]);
-
-  useEffect(() => {
-    bulk.clearSelection();
-  }, [search, bulk.clearSelection]);
+  useEffect(() => { setPage(1); }, [search, isAnyFilterActive]);
+  useEffect(() => { bulk.clearSelection(); }, [search, isAnyFilterActive, bulk.clearSelection]);
 
   const pageRowIds = useMemo(() => rows.map((r) => r.id), [rows]);
-  const listTotal = rmpSizesPage?.totalCount ?? rows.length;
+  const listTotal = isAnyFilterActive ? filteredRows.length : (rmpSizesPage?.totalCount ?? rows.length);
 
   const fetchAllMatchingIds = useCallback(
-    () =>
-      fetchAllRecordIds((pp) =>
-        fetchRmpSizesPaginated(pp, search ? { search } : undefined),
-      ),
-    [search],
+    () => isAnyFilterActive
+      ? Promise.resolve(filteredRows.map((r) => r.id))
+      : fetchAllRecordIds((pp) => fetchRmpSizesPaginated(pp, search ? { search } : undefined)),
+    [isAnyFilterActive, filteredRows, search],
   );
 
   const handleExport = async () => {
@@ -165,13 +182,18 @@ const RmpSizesPage = () => {
 
       <Card>
         <CardContent className="p-6">
-          <SearchFilter
-            placeholder="Search RMP sizes..."
-            value={search}
-            onChange={setSearch}
-            resultCount={rows.length}
-            totalCount={listTotal}
-          />
+          <div className="flex items-center gap-2 flex-wrap">
+            <SearchFilter
+              placeholder="Search RMP sizes..."
+              value={search}
+              onChange={setSearch}
+              resultCount={rows.length}
+              totalCount={listTotal}
+            />
+            <AdvancedFilterPanel columns={filterColumns} filterGroup={filterGroup} onChange={setFilterGroup} onClear={clearFilters} />
+            <QuickFilterBar columns={filterColumns} values={quickValues} onEnumChange={setEnumFilter} onDateChange={setDateRange} onClearField={clearQuickFilter} onClearAll={clearAllQuick} />
+            {isAnyFilterActive && <span className="text-xs text-muted-foreground">{filteredRows.length} filtered result{filteredRows.length !== 1 ? 's' : ''}</span>}
+          </div>
           {listTotal > 0 && (
             <MasterListBulkBar
               entityPlural="RMP sizes"
@@ -187,11 +209,11 @@ const RmpSizesPage = () => {
               }}
             />
           )}
-              {isLoading ? (
+              {isLoading || isLoadingAll ? (
             <MasterTableSkeleton showToolbar={false} columnCount={8} className="mt-6" />
           ) : rows.length === 0 ? (
             <p className="text-center text-muted-foreground py-8">
-              {search ? 'No RMP sizes match your search' : 'No RMP sizes found'}
+              {isAnyFilterActive ? 'No sizes match your filters' : search ? 'No RMP sizes match your search' : 'No RMP sizes found'}
             </p>
           ) : (
             <Table className="mt-6">
@@ -267,13 +289,10 @@ const RmpSizesPage = () => {
             </Table>
           )}
           <MasterServerPagination
-            result={rmpSizesPage ?? null}
+            result={isAnyFilterActive ? clientPaginationResult : (rmpSizesPage ?? null)}
             onPageChange={setPage}
-            onPageSizeChange={(size) => {
-              setPageSize(size);
-              setPage(1);
-            }}
-            disabled={isLoading || isFetching}
+            onPageSizeChange={(size) => { setPageSize(size); setPage(1); }}
+            disabled={isLoading || isFetching || isLoadingAll}
             className="mt-6"
           />
         </CardContent>
@@ -358,7 +377,6 @@ const RmpSizesPage = () => {
         }}
         fetchAll={fetchRmpSizes}
         getRowId={rmpSizesGetRowId}
-        defaultKeyFields={['name']}
       />
 
     </div>

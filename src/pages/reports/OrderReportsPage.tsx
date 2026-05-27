@@ -18,11 +18,11 @@ import { MasterTableSkeleton } from '@/components/masters/shared/MasterListPageS
 import ReportDownloadModal from '@/components/reports/ReportDownloadModal';
 import {
   useOrderReports,
-  useAllOrderReports,
   type OrderReport,
 } from '@/hooks/reports/useOrderReports';
 import { fetchOrderReports } from '@/services/reports/orderReportsService';
-import { exportToCSV, generateExportFilename } from '@/utils/exportUtils';
+import { formatReportOrderId } from '@/services/reports/reportDisplayUtils';
+import { exportToCSV, generateExportFilename, withExportToast } from '@/utils/exportUtils';
 import { config } from '@/config/environment';
 
 const OrderReportsPage = () => {
@@ -35,7 +35,6 @@ const OrderReportsPage = () => {
   const filters = searchTerm ? { search: searchTerm } : undefined;
 
   const { data: reportsPage, isLoading, isFetching } = useOrderReports(page, pageSize, filters);
-  const { data: allReports } = useAllOrderReports();
 
   const reports = reportsPage?.data ?? [];
 
@@ -51,18 +50,19 @@ const OrderReportsPage = () => {
     setDownloadModalOpen(true);
   };
 
-  const handleExportCurrent = async () => {
+  const handleExportCurrent = () => withExportToast('Order Reports', () => {
     if (!reports.length) return;
 
     exportToCSV({
       filename: generateExportFilename('custom-order-reports'),
-      headers: ['Order ID', 'Order Number', 'Customer', 'Customer Code', 'Date', 'Amount', 'Status', 'Created'],
+      headers: ['Order ID', 'Order Number', 'Customer', 'Product', 'Date', 'Amount', 'Status', 'Created'],
       data: reports,
       fieldMap: {
         'Order ID': 'order_id',
         'Order Number': 'order_number',
         'Customer': 'customer_name',
-        'Customer Code': 'customer_code',
+        'Product': (item: OrderReport) =>
+          typeof item.product === 'string' && item.product.trim() ? item.product : '-',
         'Date': (item: OrderReport) =>
           item.order_date ? new Date(item.order_date).toLocaleDateString() : '-',
         'Amount': (item: OrderReport) =>
@@ -72,7 +72,7 @@ const OrderReportsPage = () => {
           new Date(item.created_at).toLocaleDateString(),
       },
     });
-  };
+  });
 
   const handleDownloadWithFilters = async (filters: {
     startDate?: string;
@@ -198,7 +198,7 @@ const OrderReportsPage = () => {
                   <TableHead>Order ID</TableHead>
                   <TableHead>Order Number</TableHead>
                   <TableHead>Customer</TableHead>
-                  <TableHead>Code</TableHead>
+                  <TableHead>Product</TableHead>
                   <TableHead>Date</TableHead>
                   <TableHead>Amount</TableHead>
                   <TableHead>Status</TableHead>
@@ -208,10 +208,16 @@ const OrderReportsPage = () => {
               <TableBody>
                 {reports.map((report) => (
                   <TableRow key={report.id}>
-                    <TableCell className="font-medium">{report.order_id || '-'}</TableCell>
+                    <TableCell className="font-medium">
+                      {formatReportOrderId(report.order_id, report.id)}
+                    </TableCell>
                     <TableCell>{report.order_number || '-'}</TableCell>
                     <TableCell>{report.customer_name || '-'}</TableCell>
-                    <TableCell>{report.customer_code || '-'}</TableCell>
+                    <TableCell>
+                      {typeof report.product === 'string' && report.product.trim()
+                        ? report.product
+                        : '-'}
+                    </TableCell>
                     <TableCell>
                       {report.order_date
                         ? new Date(report.order_date).toLocaleDateString()
@@ -222,7 +228,7 @@ const OrderReportsPage = () => {
                     </TableCell>
                     <TableCell>
                       <Badge variant={report.status === 'active' ? 'default' : 'secondary'}>
-                        {report.status || 'Unknown'}
+                        {report.status || '-'}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-right space-x-2">
@@ -254,12 +260,16 @@ const OrderReportsPage = () => {
         onOpenChange={setDownloadModalOpen}
         title="Custom Order Reports"
         onDownload={handleDownloadWithFilters}
-        headers={['Order ID', 'Order Number', 'Customer', 'Customer Code', 'Date', 'Amount', 'Status', 'Created']}
+        headers={['Order ID', 'Order Number', 'Customer', 'Product', 'Date', 'Amount', 'Status', 'Created']}
         fieldMap={{
           'Order ID': 'order_id',
           'Order Number': 'order_number',
           'Customer': 'customer_name',
-          'Customer Code': 'customer_code',
+          'Product': (item: OrderReport) =>
+            typeof (item as OrderReport).product === 'string' &&
+            (item as OrderReport).product!.trim()
+              ? (item as OrderReport).product!
+              : '-',
           'Date': (item: OrderReport) =>
             (item as OrderReport).order_date
               ? new Date((item as OrderReport).order_date!).toLocaleDateString()

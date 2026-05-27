@@ -21,7 +21,7 @@ import {
   type TailorReport,
 } from '@/hooks/reports/useTailorReports';
 import { fetchTailorReports } from '@/services/reports/tailorReportsService';
-import { exportToCSV, generateExportFilename } from '@/utils/exportUtils';
+import { exportToCSV, generateExportFilename, withExportToast } from '@/utils/exportUtils';
 import { config } from '@/config/environment';
 
 const TailorReportsPage = () => {
@@ -45,7 +45,7 @@ const TailorReportsPage = () => {
     setDownloadModalOpen(true);
   };
 
-  const handleExportCurrent = async () => {
+  const handleExportCurrent = () => withExportToast('Tailor Reports', () => {
     if (!reports.length) return;
 
     exportToCSV({
@@ -82,7 +82,7 @@ const TailorReportsPage = () => {
           new Date(item.created_at).toLocaleDateString(),
       },
     });
-  };
+  });
 
   const handleDownloadWithFilters = async (filters: {
     startDate?: string;

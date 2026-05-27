@@ -28,7 +28,7 @@ import {
 } from '@/components/ui/command';
 import { MasterPageHeader } from '@/components/masters/shared/MasterPageHeader';
 import { SearchFilter } from '@/components/masters/shared/SearchFilter';
-import { useRmpBrands, useCreateRmpBrand, useUpdateRmpBrand, useDeleteRmpBrand } from '@/hooks/masters/useRmpBrands';
+import { useRmpBrands, useCreateRmpBrand, useUpdateRmpBrand, useDeleteRmpBrand, useAllRmpBrands } from '@/hooks/masters/useRmpBrands';
 import { useAllBrands } from '@/hooks/masters/useBrands';
 import { useAllRmpCategories } from '@/hooks/masters/useRmpCategories';
 import { ImageCell } from '@/components/masters/shared/ImageCell';
@@ -61,6 +61,11 @@ import {
   rmpBrandsToUpdatePayload,
   rmpBrandsQueryKey,
 } from '@/components/masters/bulk-edit/configs/rmpBrandsConfig';
+import { AdvancedFilterPanel } from '@/components/masters/advanced-filter/AdvancedFilterPanel';
+import { buildFilterColumns } from '@/components/masters/advanced-filter/types';
+import { useAdvancedFilter } from '@/hooks/masters/useAdvancedFilter';
+import { QuickFilterBar } from '@/components/masters/advanced-filter/QuickFilterBar';
+import { useQuickFilters } from '@/hooks/masters/useQuickFilters';
 
 /** Radix Select reserves empty string; use a sentinel for optional "None" rows. */
 const SELECT_NONE = '__none__';
@@ -72,30 +77,17 @@ const RmpBrandsPage = () => {
   const [pageSize, setPageSize] = useState(config.pagination.defaultPageSize);
   const [search, setSearch] = useState('');
 
+  const { filterGroup, setFilterGroup, isActive: filterActive, activeCount: filterCount, applyFilter, clearFilters } = useAdvancedFilter();
+  const { values: quickValues, setEnumFilter, setDateRange, clearFilter: clearQuickFilter, clearAll: clearAllQuick, isActive: quickFilterActive, applyQuickFilters } = useQuickFilters();
+
+  const isAnyFilterActive = filterActive || quickFilterActive;
+
   const { data: rmpBrandsPage, isLoading, isFetching, error, isError } = useRmpBrands(
     page,
     pageSize,
-    search ? { search } : undefined
+    isAnyFilterActive ? undefined : (search ? { search } : undefined)
   );
-  const rows = rmpBrandsPage?.data ?? [];
-
-  const brandDetailQueries = useQueries({
-    queries: rows.map((row) => ({
-      queryKey: rmpBrandDetailQueryKey(row.id),
-      queryFn: () => getRmpBrandById(row.id),
-      enabled: Boolean(row.id),
-      staleTime: config.cache.staleTime,
-    })),
-  });
-
-  const brandCategoriesById = useMemo(() => {
-    const map = new Map<string, { id: string; name: string }[]>();
-    rows.forEach((row, index) => {
-      const detail = brandDetailQueries[index]?.data;
-      map.set(row.id, detail?.rmp_categories ?? row.rmp_categories ?? []);
-    });
-    return map;
-  }, [rows, brandDetailQueries]);
+  const { data: allRmpBrands = [], isLoading: isLoadingAll } = useAllRmpBrands({ enabled: isAnyFilterActive });
 
   const createMut = useCreateRmpBrand();
   const updateMut = useUpdateRmpBrand();
@@ -160,23 +152,69 @@ const RmpBrandsPage = () => {
     });
   }, [authorizedBrands]);
 
+  const filterColumns = useMemo(() => buildFilterColumns(importColumns), [importColumns]);
+
+  const filteredRows = useMemo(
+    () => (isAnyFilterActive ? applyQuickFilters(applyFilter(allRmpBrands, filterColumns), filterColumns) : []),
+    [isAnyFilterActive, allRmpBrands, applyFilter, applyQuickFilters, filterColumns],
+  );
+
+  const rows = useMemo(() => {
+    if (isAnyFilterActive) {
+      return filteredRows.slice((page - 1) * pageSize, page * pageSize);
+    }
+    return rmpBrandsPage?.data ?? [];
+  }, [isAnyFilterActive, filteredRows, rmpBrandsPage, page, pageSize]);
+
+  const brandDetailQueries = useQueries({
+    queries: rows.map((row) => ({
+      queryKey: rmpBrandDetailQueryKey(row.id),
+      queryFn: () => getRmpBrandById(row.id),
+      enabled: Boolean(row.id),
+      staleTime: config.cache.staleTime,
+    })),
+  });
+
+  const brandCategoriesById = useMemo(() => {
+    const map = new Map<string, { id: string; name: string }[]>();
+    rows.forEach((row, index) => {
+      const detail = brandDetailQueries[index]?.data;
+      map.set(row.id, detail?.rmp_categories ?? row.rmp_categories ?? []);
+    });
+    return map;
+  }, [rows, brandDetailQueries]);
+
+  const clientPaginationResult = useMemo(() => {
+    if (!isAnyFilterActive) return null;
+    return {
+      page,
+      pageSize,
+      totalCount: filteredRows.length,
+      totalPages: Math.max(1, Math.ceil(filteredRows.length / pageSize)),
+      totalCountIsExact: true as const,
+      data: rows,
+    };
+  }, [isAnyFilterActive, filteredRows, rows, page, pageSize]);
+
   useEffect(() => {
     setPage(1);
-  }, [search]);
+  }, [search, isAnyFilterActive]);
 
   useEffect(() => {
     bulk.clearSelection();
-  }, [search, bulk.clearSelection]);
+  }, [search, isAnyFilterActive, bulk.clearSelection]);
 
   const pageRowIds = useMemo(() => rows.map((r) => r.id), [rows]);
-  const listTotal = rmpBrandsPage?.totalCount ?? rows.length;
+  const listTotal = isAnyFilterActive ? filteredRows.length : (rmpBrandsPage?.totalCount ?? rows.length);
 
   const fetchAllMatchingIds = useCallback(
     () =>
-      fetchAllRecordIds((pp) =>
-        fetchRmpBrandsPaginated(pp, search ? { search } : undefined),
-      ),
-    [search],
+      isAnyFilterActive
+        ? Promise.resolve(filteredRows.map((r) => r.id))
+        : fetchAllRecordIds((pp) =>
+            fetchRmpBrandsPaginated(pp, search ? { search } : undefined),
+          ),
+    [isAnyFilterActive, filteredRows, search],
   );
 
   const handleExport = async () => {
@@ -310,13 +348,34 @@ const RmpBrandsPage = () => {
 
       <Card>
         <CardContent className="p-6">
-          <SearchFilter
-            placeholder="Search RMP brands..."
-            value={search}
-            onChange={setSearch}
-            resultCount={rows.length}
-            totalCount={listTotal}
-          />
+          <div className="flex items-center gap-2 flex-wrap">
+            <SearchFilter
+              placeholder="Search RMP brands..."
+              value={search}
+              onChange={(v) => { setSearch(v); }}
+              resultCount={rows.length}
+              totalCount={listTotal}
+            />
+            <AdvancedFilterPanel
+              columns={filterColumns}
+              filterGroup={filterGroup}
+              onChange={setFilterGroup}
+              onClear={clearFilters}
+            />
+            <QuickFilterBar
+              columns={filterColumns}
+              values={quickValues}
+              onEnumChange={setEnumFilter}
+              onDateChange={setDateRange}
+              onClearField={clearQuickFilter}
+              onClearAll={clearAllQuick}
+            />
+            {isAnyFilterActive && (
+              <span className="text-xs text-muted-foreground">
+                {filteredRows.length} filtered result{filteredRows.length !== 1 ? 's' : ''}
+              </span>
+            )}
+          </div>
           {listTotal > 0 && (
             <MasterListBulkBar
               entityPlural="RMP brands"
@@ -337,11 +396,11 @@ const RmpBrandsPage = () => {
               <p className="font-semibold">Failed to load RMP brands</p>
               <p className="mt-1 text-xs opacity-80">{error instanceof Error ? error.message : 'Unknown error'}</p>
             </div>
-          ) : isLoading ? (
+          ) : isLoading || isLoadingAll ? (
             <MasterTableSkeleton showToolbar={false} columnCount={9} className="mt-6" />
           ) : rows.length === 0 ? (
             <p className="text-center text-muted-foreground py-8">
-              {search ? 'No RMP brands match your search' : 'No RMP brands found'}
+              {isAnyFilterActive ? 'No RMP brands match your filters' : search ? 'No RMP brands match your search' : 'No RMP brands found'}
             </p>
           ) : (
             <Table className="mt-6">
@@ -442,13 +501,13 @@ const RmpBrandsPage = () => {
             </Table>
           )}
           <MasterServerPagination
-            result={rmpBrandsPage ?? null}
+            result={isAnyFilterActive ? clientPaginationResult : (rmpBrandsPage ?? null)}
             onPageChange={setPage}
             onPageSizeChange={(size) => {
               setPageSize(size);
               setPage(1);
             }}
-            disabled={isLoading || isFetching}
+            disabled={isLoading || isFetching || isLoadingAll}
             className="mt-6"
           />
         </CardContent>
@@ -636,7 +695,6 @@ const RmpBrandsPage = () => {
         }}
         fetchAll={fetchRmpBrands}
         getRowId={rmpBrandsGetRowId}
-        defaultKeyFields={['name']}
       />
     </div>
   );

@@ -26,11 +26,12 @@ export const useRmpClasses = (
   });
 };
 
-export const useAllRmpClasses = () => {
+export const useAllRmpClasses = (options?: { enabled?: boolean }) => {
   return useQuery({
     queryKey: ['rmp_classes', 'all'],
     queryFn: fetchRmpClasses,
     staleTime: config.cache.staleTime,
+    enabled: options?.enabled ?? true,
   });
 };
 

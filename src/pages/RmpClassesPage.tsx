@@ -17,10 +17,11 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { MasterPageHeader } from '@/components/masters/shared/MasterPageHeader';
 import { SearchFilter } from '@/components/masters/shared/SearchFilter';
-import { useRmpClasses, useCreateRmpClass, useUpdateRmpClass, useDeleteRmpClass } from '@/hooks/masters/useRmpClasses';
+import { useRmpClasses, useCreateRmpClass, useUpdateRmpClass, useDeleteRmpClass, useAllRmpClasses } from '@/hooks/masters/useRmpClasses';
 import { useAllRmpColors } from '@/hooks/masters/useRmpColors';
 import { useAllRmpSkus } from '@/hooks/masters/useRmpSkus';
-import type { RmpClass } from '@/services/masters/rmpClassesService';
+import type { RmpClass, RmpClassImageFiles } from '@/services/masters/rmpClassesService';
+import RmpClassMultiImageInput, { type RmpClassImageSlotUrls } from '@/components/masters/RmpClassMultiImageInput';
 import type { RmpSku } from '@/services/masters/rmpSkusService';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Shirt, Edit, Trash2, Image as ImageIcon } from 'lucide-react';
@@ -38,6 +39,11 @@ import { config } from '@/config/environment';
 import { ImageCell } from '@/components/masters/shared/ImageCell';
 import { proxifyScottImageUrl } from '@/utils/scottImageProxyUrl';
 import { BulkImportFromConfigDialog } from '@/components/masters/bulk-edit';
+import { AdvancedFilterPanel } from '@/components/masters/advanced-filter/AdvancedFilterPanel';
+import { buildFilterColumns } from '@/components/masters/advanced-filter/types';
+import { useAdvancedFilter } from '@/hooks/masters/useAdvancedFilter';
+import { QuickFilterBar } from '@/components/masters/advanced-filter/QuickFilterBar';
+import { useQuickFilters } from '@/hooks/masters/useQuickFilters';
 import {
   buildRmpClassesColumns,
   rmpClassesGetRowId,
@@ -156,12 +162,16 @@ const RmpClassesPage = () => {
   const [pageSize, setPageSize] = useState(config.pagination.defaultPageSize);
   const [search, setSearch] = useState('');
 
+  const { filterGroup, setFilterGroup, isActive: filterActive, applyFilter, clearFilters } = useAdvancedFilter();
+  const { values: quickValues, setEnumFilter, setDateRange, clearFilter: clearQuickFilter, clearAll: clearAllQuick, isActive: quickFilterActive, applyQuickFilters } = useQuickFilters();
+  const isAnyFilterActive = filterActive || quickFilterActive;
+
   const { data: rmpClassesPage, isLoading, isFetching } = useRmpClasses(
     page,
     pageSize,
-    search ? { search } : undefined
+    isAnyFilterActive ? undefined : (search ? { search } : undefined)
   );
-  const rows = rmpClassesPage?.data ?? [];
+  const { data: allRmpClasses = [], isLoading: isLoadingAll } = useAllRmpClasses({ enabled: isAnyFilterActive });
   const createMut = useCreateRmpClass();
   const updateMut = useUpdateRmpClass();
   const deleteMut = useDeleteRmpClass();
@@ -199,26 +209,8 @@ const RmpClassesPage = () => {
   const [position, setPosition] = useState(0);
   const [rmpColorId, setRmpColorId] = useState('');
   const [status, setStatus] = useState('active');
+  const [imageFiles, setImageFiles] = useState<RmpClassImageFiles>({});
   const [importOpen, setImportOpen] = useState(false);
-
-  useEffect(() => {
-    setPage(1);
-  }, [search]);
-
-  useEffect(() => {
-    bulk.clearSelection();
-  }, [search, bulk.clearSelection]);
-
-  const pageRowIds = useMemo(() => rows.map((r) => r.id), [rows]);
-  const listTotal = rmpClassesPage?.totalCount ?? rows.length;
-
-  const fetchAllMatchingIds = useCallback(
-    () =>
-      fetchAllRecordIds((pp) =>
-        fetchRmpClassesPaginated(pp, search ? { search } : undefined),
-      ),
-    [search],
-  );
 
   const importColumns = useMemo(() => {
     const rmpColorOptions = rmpColors.map((c) => ({ value: c.id, label: `${c.name} (${c.code})` }));
@@ -226,6 +218,36 @@ const RmpClassesPage = () => {
       rmpColorOptions,
     });
   }, [rmpColors]);
+
+  const filterColumns = useMemo(() => buildFilterColumns(importColumns), [importColumns]);
+
+  const filteredRows = useMemo(
+    () => (isAnyFilterActive ? applyQuickFilters(applyFilter(allRmpClasses, filterColumns), filterColumns) : []),
+    [isAnyFilterActive, allRmpClasses, applyFilter, applyQuickFilters, filterColumns],
+  );
+
+  const rows = useMemo(() => {
+    if (isAnyFilterActive) return filteredRows.slice((page - 1) * pageSize, page * pageSize);
+    return rmpClassesPage?.data ?? [];
+  }, [isAnyFilterActive, filteredRows, rmpClassesPage, page, pageSize]);
+
+  const clientPaginationResult = useMemo(() => {
+    if (!isAnyFilterActive) return null;
+    return { page, pageSize, totalCount: filteredRows.length, totalPages: Math.max(1, Math.ceil(filteredRows.length / pageSize)), totalCountIsExact: true as const, data: rows };
+  }, [isAnyFilterActive, filteredRows, rows, page, pageSize]);
+
+  useEffect(() => { setPage(1); }, [search, isAnyFilterActive]);
+  useEffect(() => { bulk.clearSelection(); }, [search, isAnyFilterActive, bulk.clearSelection]);
+
+  const pageRowIds = useMemo(() => rows.map((r) => r.id), [rows]);
+  const listTotal = isAnyFilterActive ? filteredRows.length : (rmpClassesPage?.totalCount ?? rows.length);
+
+  const fetchAllMatchingIds = useCallback(
+    () => isAnyFilterActive
+      ? Promise.resolve(filteredRows.map((r) => r.id))
+      : fetchAllRecordIds((pp) => fetchRmpClassesPaginated(pp, search ? { search } : undefined)),
+    [isAnyFilterActive, filteredRows, search],
+  );
 
   const handleExport = async () => {
     const [all, colors, skus] = await Promise.all([
@@ -258,12 +280,30 @@ const RmpClassesPage = () => {
 
     exportToCSV({
       filename: generateExportFilename('rmp-classes'),
-      headers: ['Name', 'Position', 'Color', 'Linked SKUs', 'Status', 'Created At', 'Updated At'],
+      headers: [
+        'Name',
+        'Position',
+        'Color',
+        'Image 1',
+        'Image 2',
+        'Image 3',
+        'Image 4',
+        'Image 5',
+        'Linked SKUs',
+        'Status',
+        'Created At',
+        'Updated At',
+      ],
       data: all,
       fieldMap: {
         'Name': 'name',
         'Position': 'position',
         'Color': colorLabel,
+        'Image 1': 'image_1',
+        'Image 2': 'image_2',
+        'Image 3': 'image_3',
+        'Image 4': 'image_4',
+        'Image 5': 'image_5',
         'Linked SKUs': skuNamesForClass,
         'Status': 'status',
         'Created At': (item: RmpClass) => new Date(item.created_at).toLocaleDateString(),
@@ -272,12 +312,24 @@ const RmpClassesPage = () => {
     });
   };
 
+  const editingImageUrls = useMemo((): RmpClassImageSlotUrls | undefined => {
+    if (!editing) return undefined;
+    return {
+      image_1: editing.image_1,
+      image_2: editing.image_2,
+      image_3: editing.image_3,
+      image_4: editing.image_4,
+      image_5: editing.image_5,
+    };
+  }, [editing]);
+
   const openCreate = () => {
     setEditing(null);
     setName('');
     setPosition(0);
     setRmpColorId('');
     setStatus('active');
+    setImageFiles({});
     setOpen(true);
   };
 
@@ -287,13 +339,15 @@ const RmpClassesPage = () => {
     setPosition(r.position);
     setRmpColorId(r.rmp_color_id || '');
     setStatus(r.status === 'inactive' ? 'inactive' : 'active');
+    setImageFiles({});
     setOpen(true);
   };
 
   const onSave = () => {
     if (!name.trim()) return;
-    const data = { 
-      name: name.trim(), 
+    const hasImageFiles = Object.keys(imageFiles).length > 0;
+    const data = {
+      name: name.trim(),
       position,
       rmp_color_id: rmpColorId || undefined,
       status,
@@ -301,11 +355,18 @@ const RmpClassesPage = () => {
     };
     if (editing) {
       updateMut.mutate(
-        { id: editing.id, updates: data },
+        {
+          id: editing.id,
+          updates: data,
+          imageFiles: hasImageFiles ? imageFiles : undefined,
+        },
         { onSuccess: () => setOpen(false) },
       );
     } else {
-      createMut.mutate({ data }, { onSuccess: () => setOpen(false) });
+      createMut.mutate(
+        { data, imageFiles: hasImageFiles ? imageFiles : undefined },
+        { onSuccess: () => setOpen(false) },
+      );
     }
   };
 
@@ -324,13 +385,18 @@ const RmpClassesPage = () => {
 
       <Card>
         <CardContent className="p-6">
-          <SearchFilter
-            placeholder="Search RMP classes..."
-            value={search}
-            onChange={setSearch}
-            resultCount={rows.length}
-            totalCount={listTotal}
-          />
+          <div className="flex items-center gap-2 flex-wrap">
+            <SearchFilter
+              placeholder="Search RMP classes..."
+              value={search}
+              onChange={setSearch}
+              resultCount={rows.length}
+              totalCount={listTotal}
+            />
+            <AdvancedFilterPanel columns={filterColumns} filterGroup={filterGroup} onChange={setFilterGroup} onClear={clearFilters} />
+            <QuickFilterBar columns={filterColumns} values={quickValues} onEnumChange={setEnumFilter} onDateChange={setDateRange} onClearField={clearQuickFilter} onClearAll={clearAllQuick} />
+            {isAnyFilterActive && <span className="text-xs text-muted-foreground">{filteredRows.length} filtered result{filteredRows.length !== 1 ? 's' : ''}</span>}
+          </div>
           {listTotal > 0 && (
             <MasterListBulkBar
               entityPlural="RMP classes"
@@ -346,11 +412,11 @@ const RmpClassesPage = () => {
               }}
             />
           )}
-              {isLoading ? (
+              {isLoading || isLoadingAll ? (
             <MasterTableSkeleton showToolbar={false} columnCount={10} className="mt-6" />
           ) : rows.length === 0 ? (
             <p className="text-center text-muted-foreground py-8">
-              {search ? 'No RMP classes match your search' : 'No RMP classes found'}
+              {isAnyFilterActive ? 'No classes match your filters' : search ? 'No RMP classes match your search' : 'No RMP classes found'}
             </p>
           ) : (
             <Table className="mt-6">
@@ -465,20 +531,17 @@ const RmpClassesPage = () => {
             </Table>
           )}
           <MasterServerPagination
-            result={rmpClassesPage ?? null}
+            result={isAnyFilterActive ? clientPaginationResult : (rmpClassesPage ?? null)}
             onPageChange={setPage}
-            onPageSizeChange={(size) => {
-              setPageSize(size);
-              setPage(1);
-            }}
-            disabled={isLoading || isFetching}
+            onPageSizeChange={(size) => { setPageSize(size); setPage(1); }}
+            disabled={isLoading || isFetching || isLoadingAll}
             className="mt-6"
           />
         </CardContent>
       </Card>
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent aria-describedby={undefined}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto" aria-describedby={undefined}>
           <DialogHeader>
             <DialogTitle>{editing ? 'Edit RMP Class' : 'Add RMP Class'}</DialogTitle>
           </DialogHeader>
@@ -533,6 +596,12 @@ const RmpClassesPage = () => {
                 </SelectContent>
               </Select>
             </div>
+            <RmpClassMultiImageInput
+              existingUrls={editingImageUrls}
+              value={imageFiles}
+              onChange={setImageFiles}
+              disabled={createMut.isPending || updateMut.isPending}
+            />
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
@@ -554,18 +623,28 @@ const RmpClassesPage = () => {
         toUpdatePayload={rmpClassesToUpdatePayload}
         queryKey={rmpClassesQueryKey}
         createMutation={async (payload) =>
-          createRmpClass({
-            name: payload.name,
-            position: payload.position,
-            status: payload.status,
-            is_deleted: payload.is_deleted,
-            rmp_color_id: payload.rmp_color_id,
-          })
+          createRmpClass(
+            {
+              name: payload.name,
+              position: payload.position,
+              status: payload.status,
+              is_deleted: payload.is_deleted,
+              rmp_color_id: payload.rmp_color_id,
+              image_1: payload.image_1,
+              image_2: payload.image_2,
+              image_3: payload.image_3,
+              image_4: payload.image_4,
+              image_5: payload.image_5,
+            },
+            payload.imageFiles,
+          )
         }
-        updateMutation={async ({ id, updates }) => updateRmpClass(id, updates)}
+        updateMutation={async ({ id, updates }) => {
+          const { imageFiles: files, ...rest } = updates;
+          await updateRmpClass(id, rest, files);
+        }}
         fetchAll={fetchRmpClassesForBulkImport}
         getRowId={rmpClassesGetRowId}
-        defaultKeyFields={['name']}
       />
     </div>
   );

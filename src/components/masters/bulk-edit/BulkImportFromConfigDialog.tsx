@@ -44,6 +44,7 @@ export interface ServerBulkImportConfig {
     file: File,
     options?: {
       signal?: AbortSignal;
+      replaceAll?: boolean;
       onProgress?: (progress: ServerBulkImportProgress) => void;
     },
   ) => Promise<ServerBulkImportResult>;
@@ -76,7 +77,7 @@ export interface BulkImportFromConfigDialogProps<TRow, TCreate, TUpdate> {
   fetchAllForMatching?: (parsedRows: TRow[]) => Promise<TRow[]>;
   /** Get the unique ID from a row */
   getRowId: (row: TRow) => string;
-  /** Default key field(s) to use for matching (defaults to first required text column) */
+  /** Optional override for match-key checkboxes. When omitted, the first "Name" column is selected (case-insensitive). */
   defaultKeyFields?: Array<keyof TRow & string>;
   /** Match enum columns by option id (recommended for FK fields like rmp_sku_id) */
   matchEnumKeysByValueId?: boolean;
@@ -113,6 +114,33 @@ interface SaveResult {
     error: string;
     raw?: string[]; // Original CSV row data for re-export
   }>;
+}
+
+function isNameMatchColumn<TRow>(col: BulkEditColumn<TRow>): boolean {
+  return col.name.trim().toLowerCase() === 'name' || col.key.trim().toLowerCase() === 'name';
+}
+
+/** Resolves default match keys: explicit props → Name column → first required text → first eligible. */
+function resolveDefaultMatchKeys<TRow>(
+  keyEligibleColumns: BulkEditColumn<TRow>[],
+  defaultKeyFields?: string[],
+): string[] {
+  if (keyEligibleColumns.length === 0) return [];
+
+  if (defaultKeyFields && defaultKeyFields.length > 0) {
+    const validDefaults = defaultKeyFields.filter((k) =>
+      keyEligibleColumns.some((c) => c.key === k),
+    );
+    if (validDefaults.length > 0) return validDefaults;
+  }
+
+  const nameColumn = keyEligibleColumns.find(isNameMatchColumn);
+  if (nameColumn) return [nameColumn.key];
+
+  const firstRequiredText = keyEligibleColumns.find((c) => c.required && c.type === 'text');
+  if (firstRequiredText) return [firstRequiredText.key];
+
+  return [keyEligibleColumns[0].key];
 }
 
 function BulkImportFromConfigDialog<TRow, TCreate, TUpdate>({
@@ -158,6 +186,7 @@ function BulkImportFromConfigDialog<TRow, TCreate, TUpdate>({
   const [isFetchingExisting, setIsFetchingExisting] = useState(false);
   const [selectedKeys, setSelectedKeys] = useState<string[]>([]);
   const [strategy, setStrategy] = useState<DuplicateStrategy>('update');
+  const [replaceAll, setReplaceAll] = useState(false);
 
   const columnByHeader = useMemo(() => {
     const map = new Map<string, BulkEditColumn<TRow>>();
@@ -175,28 +204,26 @@ function BulkImportFromConfigDialog<TRow, TCreate, TUpdate>({
     );
   }, [columns]);
 
-  // Initialize default key fields when columns change or on first open
+  const defaultMatchKeys = useMemo(
+    () => resolveDefaultMatchKeys(keyEligibleColumns, defaultKeyFields),
+    [keyEligibleColumns, defaultKeyFields],
+  );
+
+  const prevOpenRef = useRef(false);
+
+  // Apply defaults when the dialog opens, or when columns become ready / keys were cleared
   useEffect(() => {
-    if (selectedKeys.length === 0 && keyEligibleColumns.length > 0) {
-      if (defaultKeyFields && defaultKeyFields.length > 0) {
-        // Validate that defaultKeyFields are eligible
-        const validDefaults = defaultKeyFields.filter((k) =>
-          keyEligibleColumns.some((c) => c.key === k)
-        );
-        if (validDefaults.length > 0) {
-          setSelectedKeys(validDefaults);
-        } else {
-          // Fallback to first required text column
-          const firstRequiredText = keyEligibleColumns.find((c) => c.required && c.type === 'text');
-          setSelectedKeys(firstRequiredText ? [firstRequiredText.key] : [keyEligibleColumns[0].key]);
-        }
-      } else {
-        // Default to first required text column, or first eligible column
-        const firstRequiredText = keyEligibleColumns.find((c) => c.required && c.type === 'text');
-        setSelectedKeys(firstRequiredText ? [firstRequiredText.key] : [keyEligibleColumns[0].key]);
-      }
+    if (!open) {
+      prevOpenRef.current = false;
+      return;
     }
-  }, [keyEligibleColumns, defaultKeyFields, selectedKeys.length]);
+    const justOpened = !prevOpenRef.current;
+    prevOpenRef.current = true;
+    if (defaultMatchKeys.length === 0) return;
+    if (justOpened || selectedKeys.length === 0) {
+      setSelectedKeys(defaultMatchKeys);
+    }
+  }, [open, defaultMatchKeys, selectedKeys.length]);
 
   const headerNames = useMemo(() => columns.map((c) => c.name), [columns]);
   const sampleRow = useMemo(() => {
@@ -237,6 +264,7 @@ function BulkImportFromConfigDialog<TRow, TCreate, TUpdate>({
     setImportProgress({ completed: 0, total: 0, startTime: 0 });
     setSaveResult(null);
     setExistingRows([]);
+    setReplaceAll(false);
     setIsFetchingExisting(false);
     // Keep selectedKeys and strategy as-is for convenience
     if (fileInputRef.current) fileInputRef.current.value = '';
@@ -360,7 +388,7 @@ function BulkImportFromConfigDialog<TRow, TCreate, TUpdate>({
         }
 
         setParsedRows(rows);
-        setStep(serverBulkImport ? 'review' : 'configure');
+        setStep('configure');
         const enumCols = columns.filter((c) => c.type === 'enum' && c.options);
       } catch (e) {
         toast.error(e instanceof Error ? e.message : 'Failed to parse CSV');
@@ -503,6 +531,11 @@ function BulkImportFromConfigDialog<TRow, TCreate, TUpdate>({
   }, [fetchAll, fetchAllForMatching, loadExistingForMatch, parsedRows, title]);
 
   const runMatch = useCallback(async () => {
+    // Server upload sends the whole CSV to Scott — matching is handled server-side.
+    if (serverImportMode) {
+      setStep('review');
+      return;
+    }
     // For create_new strategy we never need to compare against existing rows
     if (strategy !== 'create_new') {
       await fetchExistingRows();
@@ -510,7 +543,7 @@ function BulkImportFromConfigDialog<TRow, TCreate, TUpdate>({
       setExistingRows([]);
     }
     setStep('review');
-  }, [fetchExistingRows, strategy]);
+  }, [fetchExistingRows, serverImportMode, strategy]);
 
   // Re-classify parsed rows whenever keys, strategy, or existing data changes
   useEffect(() => {
@@ -622,27 +655,15 @@ function BulkImportFromConfigDialog<TRow, TCreate, TUpdate>({
 
     abortRef.current = false;
     setIsImporting(true);
-    setImportProgress({
-      completed: 0,
-      total: validRows.length,
-      startTime: Date.now(),
-    });
 
-    const toastId = toast.loading('Uploading prices to Scott…');
+    const toastId = toast.loading('Importing prices on Scott…');
     const controller = new AbortController();
     serverAbortRef.current = controller;
 
     try {
       const result = await serverBulkImport.importFile(selectedFile, {
         signal: controller.signal,
-        onProgress: (progress) => {
-          setImportProgress((prev) => ({
-            ...prev,
-            completed: progress.completed,
-            total: Math.max(progress.total, prev.total),
-            startTime: prev.startTime || Date.now(),
-          }));
-        },
+        replaceAll,
       });
 
       if (abortRef.current) {
@@ -678,7 +699,7 @@ function BulkImportFromConfigDialog<TRow, TCreate, TUpdate>({
     } finally {
       serverAbortRef.current = null;
     }
-  }, [parsedRows, queryClient, queryKey, selectedFile, serverBulkImport]);
+  }, [parsedRows, queryClient, queryKey, replaceAll, selectedFile, serverBulkImport]);
 
   const confirmImport = useCallback(async () => {
     if (serverImportMode) {
@@ -881,6 +902,8 @@ function BulkImportFromConfigDialog<TRow, TCreate, TUpdate>({
               onRefreshExisting={fetchExistingRows}
               filenameStem={filenameStem}
               serverImportMode={serverImportMode}
+              replaceAll={replaceAll}
+              setReplaceAll={setReplaceAll}
             />
           )}
 
@@ -989,7 +1012,7 @@ function UploadStep<TRow>({
                     const row: string[] = [];
                     for (const col of enumColumns) {
                       const opt = col.options?.[i];
-                      row.push(opt ? `${opt.label} (${opt.value})` : '');
+                      row.push(opt?.label ?? '');
                     }
                     allRows.push(row);
                   }
@@ -1277,6 +1300,8 @@ interface ReviewStepProps<TRow> {
   onRefreshExisting: () => void;
   filenameStem: string;
   serverImportMode?: boolean;
+  replaceAll?: boolean;
+  setReplaceAll?: (value: boolean) => void;
 }
 
 function ReviewStep<TRow>({
@@ -1300,6 +1325,8 @@ function ReviewStep<TRow>({
   onRefreshExisting,
   filenameStem,
   serverImportMode = false,
+  replaceAll = false,
+  setReplaceAll,
 }: ReviewStepProps<TRow>) {
   const previewLimit = 6;
   const validCount = parsedRows.filter((row) => row.valid).length;
@@ -1359,10 +1386,46 @@ function ReviewStep<TRow>({
             Server-side bulk import
           </p>
           <p className="text-xs text-muted-foreground">
-            Valid rows are uploaded to Scott as a single CSV job. The server handles create/update matching — no
-            row-by-row API calls from your browser.
+            {replaceAll
+              ? 'Replace-all mode deletes every existing price on Scott, then imports this file from scratch.'
+              : 'Valid rows are uploaded to Scott as a single CSV job. The server handles create/update matching — no row-by-row API calls from your browser.'}
           </p>
         </div>
+      )}
+      {serverImportMode && !isImporting && setReplaceAll && (
+        <Card className={replaceAll ? 'border-destructive/40 bg-destructive/5' : undefined}>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm">Import mode</CardTitle>
+            <CardDescription>
+              Choose whether to merge with existing prices or replace the entire table.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="flex items-start gap-3">
+              <Checkbox
+                id="replace-all-prices"
+                checked={replaceAll}
+                onCheckedChange={(checked) => setReplaceAll(checked === true)}
+                disabled={isImporting}
+                className="mt-0.5"
+              />
+              <div className="space-y-1">
+                <Label htmlFor="replace-all-prices" className="text-sm font-medium cursor-pointer">
+                  Replace all existing prices
+                </Label>
+                <p className="text-xs text-muted-foreground">
+                  Sends <code className="text-[11px]">replace_all=true</code> to Scott. All current RMP price
+                  records are deleted before this CSV is imported.
+                </p>
+                {replaceAll && (
+                  <p className="text-xs text-destructive font-medium pt-1">
+                    Destructive action — this cannot be undone. Only the rows in your CSV will remain afterward.
+                  </p>
+                )}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       )}
       {parsedRows.length > 10_000 && !isImporting && !serverImportMode && (
         <div className="rounded-md border border-amber-500/30 bg-amber-500/10 px-3 py-2.5 text-sm text-amber-700 dark:text-amber-400 space-y-1">
@@ -1646,7 +1709,8 @@ function ReviewStep<TRow>({
         </Card>
       )}
 
-      {(serverImportMode ? validCount > 0 : classifiedRows.create.length > 0 || classifiedRows.update.length > 0) && (
+      {(serverImportMode ? validCount > 0 : classifiedRows.create.length > 0 || classifiedRows.update.length > 0) &&
+        !(serverImportMode && isImporting) && (
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-sm">
@@ -1698,28 +1762,37 @@ function ReviewStep<TRow>({
 
       {isImporting && (
         <div className="space-y-2">
-          <Progress value={(importProgress.completed / Math.max(1, importProgress.total)) * 100} />
-          <div className="flex items-center justify-between text-xs text-muted-foreground">
-            <span>
-              {serverImportMode
-                ? `Processing ${importProgress.completed.toLocaleString()} / ${importProgress.total.toLocaleString()}`
-                : `Importing ${importProgress.completed.toLocaleString()} / ${importProgress.total.toLocaleString()}`}
-            </span>
-            {importProgress.startTime > 0 && importProgress.completed > 0 && (() => {
-              const elapsed = (Date.now() - importProgress.startTime) / 1000;
-              const rate = importProgress.completed / elapsed;
-              const remaining = (importProgress.total - importProgress.completed) / Math.max(rate, 0.1);
-              if (remaining < 5) return null;
-              const mins = Math.floor(remaining / 60);
-              const secs = Math.round(remaining % 60);
-              return <span>~{mins > 0 ? `${mins}m ` : ''}{secs}s remaining</span>;
-            })()}
-          </div>
-          <p className="text-xs text-amber-600/80 text-center">
-            {serverImportMode
-              ? 'Do not close this tab — Scott is processing your upload.'
-              : 'Do not close this tab — import is in progress.'}
-          </p>
+          {serverImportMode ? (
+            <div className="flex flex-col items-center gap-2 py-4 text-center">
+              <RefreshCw className="h-6 w-6 animate-spin text-muted-foreground" />
+              <p className="text-sm text-muted-foreground">Importing on Scott…</p>
+              <p className="text-xs text-amber-600/80">
+                Do not close this tab until the import finishes.
+              </p>
+            </div>
+          ) : (
+            <>
+              <Progress value={(importProgress.completed / Math.max(1, importProgress.total)) * 100} />
+              <div className="flex items-center justify-between text-xs text-muted-foreground">
+                <span>
+                  Importing {importProgress.completed.toLocaleString()} /{' '}
+                  {importProgress.total.toLocaleString()}
+                </span>
+                {importProgress.startTime > 0 && importProgress.completed > 0 && (() => {
+                  const elapsed = (Date.now() - importProgress.startTime) / 1000;
+                  const rate = importProgress.completed / elapsed;
+                  const remaining = (importProgress.total - importProgress.completed) / Math.max(rate, 0.1);
+                  if (remaining < 5) return null;
+                  const mins = Math.floor(remaining / 60);
+                  const secs = Math.round(remaining % 60);
+                  return <span>~{mins > 0 ? `${mins}m ` : ''}{secs}s remaining</span>;
+                })()}
+              </div>
+              <p className="text-xs text-amber-600/80 text-center">
+                Do not close this tab — import is in progress.
+              </p>
+            </>
+          )}
         </div>
       )}
 
@@ -1737,13 +1810,16 @@ function ReviewStep<TRow>({
         <Button
           onClick={onConfirmImport}
           disabled={isImporting || actionableCount === 0}
+          variant={serverImportMode && replaceAll ? 'destructive' : 'default'}
         >
           {isImporting
             ? serverImportMode
-              ? `Processing ${importProgress.completed.toLocaleString()}/${importProgress.total.toLocaleString()}…`
+              ? 'Uploading…'
               : `Importing ${importProgress.completed.toLocaleString()}/${importProgress.total.toLocaleString()}…`
             : serverImportMode
-              ? `Upload & import ${actionableCount} row${actionableCount === 1 ? '' : 's'}`
+              ? replaceAll
+                ? `Replace all & import ${actionableCount} row${actionableCount === 1 ? '' : 's'}`
+                : `Upload & import ${actionableCount} row${actionableCount === 1 ? '' : 's'}`
               : `Import ${actionableCount} row${actionableCount === 1 ? '' : 's'}`}
         </Button>
       </div>

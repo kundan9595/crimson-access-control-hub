@@ -20,6 +20,7 @@ import { MasterPageHeader } from '@/components/masters/shared/MasterPageHeader';
 import { SearchFilter } from '@/components/masters/shared/SearchFilter';
 import {
   useRmpCategories,
+  useAllRmpCategories,
   useCreateRmpCategory,
   useUpdateRmpCategory,
   useDeleteRmpCategory,
@@ -46,6 +47,11 @@ import { callScottBulkDelete } from '@/services/scott/callScottDashboard';
 import { exportToCSV, generateExportFilename } from '@/utils/exportUtils';
 import { config } from '@/config/environment';
 import { ImageCell } from '@/components/masters/shared/ImageCell';
+import { AdvancedFilterPanel } from '@/components/masters/advanced-filter/AdvancedFilterPanel';
+import { buildFilterColumns } from '@/components/masters/advanced-filter/types';
+import { useAdvancedFilter } from '@/hooks/masters/useAdvancedFilter';
+import { QuickFilterBar } from '@/components/masters/advanced-filter/QuickFilterBar';
+import { useQuickFilters } from '@/hooks/masters/useQuickFilters';
 
 const RmpCategoriesPage = () => {
   const [page, setPage] = useState(1);
@@ -53,12 +59,39 @@ const RmpCategoriesPage = () => {
   const [search, setSearch] = useState('');
   const [showInactive, setShowInactive] = useState(false);
 
+  const { filterGroup, setFilterGroup, isActive: filterActive, applyFilter, clearFilters } = useAdvancedFilter();
+  const { values: quickValues, setEnumFilter, setDateRange, clearFilter: clearQuickFilter, clearAll: clearAllQuick, isActive: quickFilterActive, applyQuickFilters } = useQuickFilters();
+  const isAnyFilterActive = filterActive || quickFilterActive;
+  const filterColumns = useMemo(() => buildFilterColumns(rmpCategoriesColumns), []);
+
   const { data: pageData, isLoading, isFetching } = useRmpCategories(
     page,
     pageSize,
-    { search: search || undefined, includeInactive: showInactive }
+    isAnyFilterActive ? { includeInactive: showInactive } : { search: search || undefined, includeInactive: showInactive }
   );
-  const rows = pageData?.data ?? [];
+  const { data: allRmpCategories = [], isLoading: isLoadingAll } = useAllRmpCategories({ enabled: isAnyFilterActive });
+
+  const filteredRows = useMemo(
+    () => (isAnyFilterActive ? applyQuickFilters(applyFilter(allRmpCategories, filterColumns), filterColumns) : []),
+    [isAnyFilterActive, allRmpCategories, applyFilter, applyQuickFilters, filterColumns],
+  );
+
+  const rows = useMemo(() => {
+    if (isAnyFilterActive) return filteredRows.slice((page - 1) * pageSize, page * pageSize);
+    return pageData?.data ?? [];
+  }, [isAnyFilterActive, filteredRows, pageData, page, pageSize]);
+
+  const clientPaginationResult = useMemo(() => {
+    if (!isAnyFilterActive) return null;
+    return {
+      page, pageSize,
+      totalCount: filteredRows.length,
+      totalPages: Math.max(1, Math.ceil(filteredRows.length / pageSize)),
+      totalCountIsExact: true as const,
+      data: rows,
+    };
+  }, [isAnyFilterActive, filteredRows, rows, page, pageSize]);
+
   const createMut = useCreateRmpCategory();
   const updateMut = useUpdateRmpCategory();
   const deleteMut = useDeleteRmpCategory();
@@ -76,21 +109,23 @@ const RmpCategoriesPage = () => {
 
   useEffect(() => {
     setPage(1);
-  }, [search, showInactive]);
+  }, [search, showInactive, isAnyFilterActive]);
 
   useEffect(() => {
     bulk.clearSelection();
-  }, [search, showInactive, bulk.clearSelection]);
+  }, [search, showInactive, isAnyFilterActive, bulk.clearSelection]);
 
   const pageRowIds = useMemo(() => rows.map((r) => r.id), [rows]);
-  const listTotal = pageData?.totalCount ?? rows.length;
+  const listTotal = isAnyFilterActive ? filteredRows.length : (pageData?.totalCount ?? rows.length);
 
   const fetchAllMatchingIds = useCallback(
     () =>
-      fetchAllRecordIds((pp) =>
-        fetchRmpCategoriesPaginated(pp, { search: search || undefined, includeInactive: showInactive }),
-      ),
-    [search, showInactive],
+      isAnyFilterActive
+        ? Promise.resolve(filteredRows.map((r) => r.id))
+        : fetchAllRecordIds((pp) =>
+            fetchRmpCategoriesPaginated(pp, { search: search || undefined, includeInactive: showInactive }),
+          ),
+    [isAnyFilterActive, filteredRows, search, showInactive],
   );
 
   const handleExport = async () => {
@@ -175,14 +210,35 @@ const RmpCategoriesPage = () => {
 
       <Card>
         <CardContent className="p-6">
-          <div className="flex items-center justify-between gap-4">
-            <SearchFilter
-              placeholder="Search categories..."
-              value={search}
-              onChange={setSearch}
-              resultCount={rows.length}
-              totalCount={listTotal}
-            />
+          <div className="flex items-center justify-between gap-4 flex-wrap">
+            <div className="flex items-center gap-2 flex-wrap flex-1">
+              <SearchFilter
+                placeholder="Search categories..."
+                value={search}
+                onChange={setSearch}
+                resultCount={rows.length}
+                totalCount={listTotal}
+              />
+              <AdvancedFilterPanel
+                columns={filterColumns}
+                filterGroup={filterGroup}
+                onChange={setFilterGroup}
+                onClear={clearFilters}
+              />
+              <QuickFilterBar
+                columns={filterColumns}
+                values={quickValues}
+                onEnumChange={setEnumFilter}
+                onDateChange={setDateRange}
+                onClearField={clearQuickFilter}
+                onClearAll={clearAllQuick}
+              />
+              {isAnyFilterActive && (
+                <span className="text-xs text-muted-foreground">
+                  {filteredRows.length} filtered result{filteredRows.length !== 1 ? 's' : ''}
+                </span>
+              )}
+            </div>
             <div className="flex items-center gap-2 shrink-0">
               <Switch
                 id="show-inactive"
@@ -209,11 +265,11 @@ const RmpCategoriesPage = () => {
               }}
             />
           )}
-          {isLoading ? (
+          {isLoading || isLoadingAll ? (
             <MasterTableSkeleton showToolbar={false} columnCount={8} className="mt-6" />
           ) : rows.length === 0 ? (
             <p className="text-center text-muted-foreground py-8">
-              {search ? 'No categories match your search' : 'No categories found'}
+              {isAnyFilterActive ? 'No categories match your filters' : search ? 'No categories match your search' : 'No categories found'}
             </p>
           ) : (
             <Table className="mt-6">
@@ -314,13 +370,13 @@ const RmpCategoriesPage = () => {
             </Table>
           )}
           <MasterServerPagination
-            result={pageData ?? null}
+            result={isAnyFilterActive ? clientPaginationResult : (pageData ?? null)}
             onPageChange={setPage}
             onPageSizeChange={(size) => {
               setPageSize(size);
               setPage(1);
             }}
-            disabled={isLoading || isFetching}
+            disabled={isLoading || isFetching || isLoadingAll}
             className="mt-6"
           />
         </CardContent>
@@ -400,7 +456,6 @@ const RmpCategoriesPage = () => {
         }}
         fetchAll={fetchRmpCategories}
         getRowId={rmpCategoriesGetRowId}
-        defaultKeyFields={['name']}
       />
     </div>
   );

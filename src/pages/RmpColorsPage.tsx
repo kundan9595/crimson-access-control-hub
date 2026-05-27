@@ -17,7 +17,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { MasterPageHeader } from '@/components/masters/shared/MasterPageHeader';
 import { SearchFilter } from '@/components/masters/shared/SearchFilter';
-import { useRmpColors, useCreateRmpColor, useUpdateRmpColor, useDeleteRmpColor } from '@/hooks/masters/useRmpColors';
+import { useRmpColors, useAllRmpColors, useCreateRmpColor, useUpdateRmpColor, useDeleteRmpColor } from '@/hooks/masters/useRmpColors';
 import type { RmpColor } from '@/services/masters/rmpColorsService';
 import { Palette, Edit, Trash2 } from 'lucide-react';
 import { openBulkEditTab, BulkImportFromConfigDialog } from '@/components/masters/bulk-edit';
@@ -39,18 +39,44 @@ import { fetchAllRecordIds } from '@/services/scott/scottPagination';
 import { callScottBulkDelete } from '@/services/scott/callScottDashboard';
 import { exportToCSV, generateExportFilename } from '@/utils/exportUtils';
 import { config } from '@/config/environment';
+import { AdvancedFilterPanel } from '@/components/masters/advanced-filter/AdvancedFilterPanel';
+import { buildFilterColumns } from '@/components/masters/advanced-filter/types';
+import { useAdvancedFilter } from '@/hooks/masters/useAdvancedFilter';
+import { QuickFilterBar } from '@/components/masters/advanced-filter/QuickFilterBar';
+import { useQuickFilters } from '@/hooks/masters/useQuickFilters';
 
 const RmpColorsPage = () => {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(config.pagination.defaultPageSize);
   const [search, setSearch] = useState('');
 
+  const { filterGroup, setFilterGroup, isActive: filterActive, applyFilter, clearFilters } = useAdvancedFilter();
+  const { values: quickValues, setEnumFilter, setDateRange, clearFilter: clearQuickFilter, clearAll: clearAllQuick, isActive: quickFilterActive, applyQuickFilters } = useQuickFilters();
+  const isAnyFilterActive = filterActive || quickFilterActive;
+  const filterColumns = useMemo(() => buildFilterColumns(rmpColorsColumns), []);
+
   const { data: rmpColorsPage, isLoading, isFetching } = useRmpColors(
     page,
     pageSize,
-    search ? { search } : undefined
+    isAnyFilterActive ? undefined : (search ? { search } : undefined)
   );
-  const rows = rmpColorsPage?.data ?? [];
+  const { data: allRmpColors = [], isLoading: isLoadingAll } = useAllRmpColors({ enabled: isAnyFilterActive });
+
+  const filteredRows = useMemo(
+    () => (isAnyFilterActive ? applyQuickFilters(applyFilter(allRmpColors, filterColumns), filterColumns) : []),
+    [isAnyFilterActive, allRmpColors, applyFilter, applyQuickFilters, filterColumns],
+  );
+
+  const rows = useMemo(() => {
+    if (isAnyFilterActive) return filteredRows.slice((page - 1) * pageSize, page * pageSize);
+    return rmpColorsPage?.data ?? [];
+  }, [isAnyFilterActive, filteredRows, rmpColorsPage, page, pageSize]);
+
+  const clientPaginationResult = useMemo(() => {
+    if (!isAnyFilterActive) return null;
+    return { page, pageSize, totalCount: filteredRows.length, totalPages: Math.max(1, Math.ceil(filteredRows.length / pageSize)), totalCountIsExact: true as const, data: rows };
+  }, [isAnyFilterActive, filteredRows, rows, page, pageSize]);
+
   const createMut = useCreateRmpColor();
   const updateMut = useUpdateRmpColor();
   const deleteMut = useDeleteRmpColor();
@@ -66,21 +92,23 @@ const RmpColorsPage = () => {
 
   useEffect(() => {
     setPage(1);
-  }, [search]);
+  }, [search, isAnyFilterActive]);
 
   useEffect(() => {
     bulk.clearSelection();
-  }, [search, bulk.clearSelection]);
+  }, [search, isAnyFilterActive, bulk.clearSelection]);
 
   const pageRowIds = useMemo(() => rows.map((r) => r.id), [rows]);
-  const listTotal = rmpColorsPage?.totalCount ?? rows.length;
+  const listTotal = isAnyFilterActive ? filteredRows.length : (rmpColorsPage?.totalCount ?? rows.length);
 
   const fetchAllMatchingIds = useCallback(
     () =>
-      fetchAllRecordIds((pp) =>
-        fetchRmpColorsPaginated(pp, search ? { search } : undefined),
-      ),
-    [search],
+      isAnyFilterActive
+        ? Promise.resolve(filteredRows.map((r) => r.id))
+        : fetchAllRecordIds((pp) =>
+            fetchRmpColorsPaginated(pp, search ? { search } : undefined),
+          ),
+    [isAnyFilterActive, filteredRows, search],
   );
 
   const handleExport = async () => {
@@ -151,13 +179,18 @@ const RmpColorsPage = () => {
 
       <Card>
         <CardContent className="p-6">
-          <SearchFilter
-            placeholder="Search RMP colors..."
-            value={search}
-            onChange={setSearch}
-            resultCount={rows.length}
-            totalCount={listTotal}
-          />
+          <div className="flex items-center gap-2 flex-wrap">
+            <SearchFilter
+              placeholder="Search RMP colors..."
+              value={search}
+              onChange={setSearch}
+              resultCount={rows.length}
+              totalCount={listTotal}
+            />
+            <AdvancedFilterPanel columns={filterColumns} filterGroup={filterGroup} onChange={setFilterGroup} onClear={clearFilters} />
+            <QuickFilterBar columns={filterColumns} values={quickValues} onEnumChange={setEnumFilter} onDateChange={setDateRange} onClearField={clearQuickFilter} onClearAll={clearAllQuick} />
+            {isAnyFilterActive && <span className="text-xs text-muted-foreground">{filteredRows.length} filtered result{filteredRows.length !== 1 ? 's' : ''}</span>}
+          </div>
           {listTotal > 0 && (
             <MasterListBulkBar
               entityPlural="RMP colors"
@@ -173,11 +206,11 @@ const RmpColorsPage = () => {
               }}
             />
           )}
-          {isLoading ? (
+          {isLoading || isLoadingAll ? (
             <MasterTableSkeleton showToolbar={false} columnCount={7} className="mt-6" />
           ) : rows.length === 0 ? (
             <p className="text-center text-muted-foreground py-8">
-              {search ? 'No RMP colors match your search' : 'No RMP colors found'}
+              {isAnyFilterActive ? 'No colors match your filters' : search ? 'No RMP colors match your search' : 'No RMP colors found'}
             </p>
           ) : (
             <Table className="mt-6">
@@ -247,13 +280,10 @@ const RmpColorsPage = () => {
             </Table>
           )}
           <MasterServerPagination
-            result={rmpColorsPage ?? null}
+            result={isAnyFilterActive ? clientPaginationResult : (rmpColorsPage ?? null)}
             onPageChange={setPage}
-            onPageSizeChange={(size) => {
-              setPageSize(size);
-              setPage(1);
-            }}
-            disabled={isLoading || isFetching}
+            onPageSizeChange={(size) => { setPageSize(size); setPage(1); }}
+            disabled={isLoading || isFetching || isLoadingAll}
             className="mt-6"
           />
         </CardContent>
@@ -324,7 +354,6 @@ const RmpColorsPage = () => {
         }}
         fetchAll={fetchRmpColors}
         getRowId={rmpColorsGetRowId}
-        defaultKeyFields={['name']}
       />
     </div>
   );

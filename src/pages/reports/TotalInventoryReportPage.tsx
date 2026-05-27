@@ -99,10 +99,11 @@ const TotalInventoryReportPage = () => {
   };
 
   const handleExport = async () => {
+    const toastId = toast.loading('Preparing inventory export…');
     try {
       const exportRows = await fetchAllTotalInventory(apiFilters, appliedDaysInPeriod);
       if (!exportRows.length) {
-        toast.error('No data to export');
+        toast.error('No data to export', { id: toastId });
         return;
       }
       exportToCSV({
@@ -111,9 +112,9 @@ const TotalInventoryReportPage = () => {
         data: exportRows,
         fieldMap: totalInventoryExportFieldMap(),
       });
-      toast.success(`Exported ${exportRows.length} rows`);
+      toast.success(`Export ready — ${exportRows.length} rows downloading now`, { id: toastId, duration: 3000 });
     } catch {
-      toast.error('Failed to export inventory report');
+      toast.error('Failed to export inventory report', { id: toastId });
     }
   };
 
